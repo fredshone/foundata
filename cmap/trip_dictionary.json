@@ -1,0 +1,38 @@
+{
+    "apptrips": {
+        "-9": "Not ascertained"
+    },
+    "app_activity_end": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    },
+    "app_activity_begin": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    },
+    "removed_places": {
+        "-9": "Not ascertained"
+    },
+    "home_end": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    },
+    "acceleration_activity": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    },
+    "home_start": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    },
+    "location_activity": {
+        "-9": "Not ascertained",
+        "0": "False",
+        "1": "True"
+    }
+}
