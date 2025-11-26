@@ -5,9 +5,14 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "cml-pam>=0.3.2",
     "fastexcel>=0.16.0",
-    "ipykernel>=7.1.0",
+    "ipykernel>=6.31.0",
     "ipython>=9.7.0",
     "pip>=25.3",
     "polars>=1.35.2",
+    "pyarrow>=22.0.0",
 ]
+
+[tool.uv]
+find-links = ["https://girder.github.io/large_image_wheels"]
