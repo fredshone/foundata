@@ -1,3 +1,24 @@
+columns:
+    sampno: hid
+    perno: pid
+    locno: dzone
+    placeno: seq
+    placeGroup: seq2
+    tpurp: dact
+    mode: mode
+    arrtime: tet
+    deptime: tst
+    distance: distance
+
+day:
+    0: Monday
+    1: Tuesday
+    2: Wednesday
+    3: Thursday
+    4: Friday
+    5: Saturday
+    6: Sunday
+
 mode:
     101: walk #  walk,
     102: bike #  personal bike,
