@@ -11,7 +11,7 @@
 
 _________________________
 
-### Persons
+### Labels
 
 Age:
 |                   | raw    |
@@ -19,7 +19,7 @@ Age:
 | NTS (UK)          |           |
 | CMAP (US)         | 0-4, 5-12, 13-15, 16-17, 18-44, 45-64, 65+|
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | numeric   |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -27,9 +27,9 @@ Sex:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
-| CMAP (US)         | m,f,o|
+| CMAP (US)         | m,f,o     |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | m,f       |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -37,9 +37,9 @@ Education:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
-| CMAP (US)         | visual, hearing, mobility, chair, mental |
+| CMAP (US)         | detailed |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | detailed  |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -49,7 +49,7 @@ Disability:
 | NTS (UK)          |           |
 | CMAP (US)         | visual, hearing, mobility, chair, mental |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | yes, no difficulty traveling or individual columns for each disability         |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -59,7 +59,7 @@ Can Wfh:
 | NTS (UK)          |           |
 | CMAP (US)         | yes, no |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | Days per week worked from home |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -69,7 +69,7 @@ Employmnet status:
 | NTS (UK)          |           |
 | CMAP (US)         | retired, volunteer, home, unemployed, student, etc |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | retired, volunteer, home, unemployed, student, etc |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -79,7 +79,7 @@ Industry:
 | NTS (UK)          |           |
 | CMAP (US)         | agriculture, utilities, construction, etc |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | ---       |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -89,7 +89,7 @@ Race:
 | NTS (UK)          |           |
 | CMAP (US)         | w, aab, asian, etc |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | w, b, asian, other, from respondent | 
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -99,7 +99,7 @@ Has license:
 | NTS (UK)          |           |
 | CMAP (US)         | y, n |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | derived drives as y, n |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -109,51 +109,48 @@ Relationship to respondent:
 | NTS (UK)          |           |
 | CMAP (US)         | spouse, father, child, self, etc|
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | spouse, father, child, self, etc|
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
-___________________
 
-### HHs
-
-Num people:
-|                   | raw    |
+HH num people:
+|                   | raw       |
 | ----------------- | --------- |
 | NTS (UK)          |           |
-| CMAP (US)         | numeric|
+| CMAP (US)         | numeric   |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | numeric   |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
-Income:
+HH income:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
 | CMAP (US)         | $0-15k, 25, 30, 35, 50, 60, 75, 100, 150, +|
-| Metropolitan (US) |           |
-| NHTS (US)         |           |
+| Metropolitan (US) |          |
+| NHTS (US)         | $0-10k, 15, 25, 35, 50, 75, 100, 125, 150, 200, + |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
-Type:
+HH type:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
 | CMAP (US)         | detached, apartment, etc|
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | None          |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
-Ownership:
+HH ownership:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
 | CMAP (US)         | own, rent, etc|
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | own, rent, other |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
@@ -163,7 +160,27 @@ Num vehicles:
 | NTS (UK)          |           |
 | CMAP (US)         | numeric|
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         | numeric |
+| Queensland (AUS)  |           |
+| Melbourne (AUS)   |           |
+
+Urban rural:
+|                   | raw    |
+| ----------------- | --------- |
+| NTS (UK)          |           |
+| CMAP (US)         |           |
+| Metropolitan (US) |           |
+| NHTS (US)         | urban, rural |
+| Queensland (AUS)  |           |
+| Melbourne (AUS)   |           |
+
+HH composition:
+|                   | raw    |
+| ----------------- | --------- |
+| NTS (UK)          |           |
+| CMAP (US)         |           |
+| Metropolitan (US) |           |
+| NHTS (US)         | 1a, 2+a, 1a1c, etc, also by age of child |
 | Queensland (AUS)  |           |
 | Melbourne (AUS)   |           |
 
