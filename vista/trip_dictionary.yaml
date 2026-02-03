@@ -1,0 +1,49 @@
+column_mapping:
+    2012_2020: {
+        "hhid": "hid",
+        "persid": "pid",
+        "tripno": "seq",
+        "linkmode": "mode",
+        "distance": "cumdist",
+        "startime": "tst",  # minutes > 1440
+        "arrtime": "tet",  # minutes > 1440
+        "origpurp1": "oact",
+        "destpurp1": "dact"
+    }
+
+mode_mappings:
+  2012_2020: {
+    Bicycle: bike,
+    Jogging: walk,
+    Mobility Scooter: other,
+    Motorcycle: car,
+    Other: other,
+    Public Bus: bus,
+    School Bus: bus,
+    Taxi: car,
+    Train: rail,
+    Tram: rail,
+    Vehicle Driver: car,
+    Vehicle Passenger: car,
+    Walking: walk,
+  }
+
+act_mappings:
+    2012_2020: {
+        Accompany Someone: escort,
+        At Home: home,
+        At or Go Home: home,
+        Buy Something: shop,
+        Change Mode: other,
+        Education: education,
+        Not Stated: other,
+        Other Purpose: other,
+        Personal Business: work,
+        Pick-up or Deliver Something: work,
+        Pick-up or Drop-off Someone: escort,
+        Recreational: leisure,
+        Social: visit,
+        Unknown Purpose: other,
+        Work Related: work,
+    }
+    

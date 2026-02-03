@@ -1,0 +1,53 @@
+column_mappings: {
+    persid: pid,
+    hhid: hid,
+    age: age,
+    sex: sex,
+    relationship: relationship,
+    nolicence: has_license,
+    anywork: anywork, 
+    studying: studying,
+    anzsco1: occupation,
+    # anzsco2: occupation_detailed,
+
+    # "EDUC": "education",
+    # "MEDCOND": "disability",
+    }
+
+sex:
+    default: {
+        M: male,
+        F: female
+    }
+relationship:
+    default: {
+        Self: self,
+        Spouse: spouse/partner,
+        Child: child,
+        Grandchild: child,
+        Other relative: other,
+        Sibling: sibling,
+        Other: other,
+        Non related: other,
+        Unrelated: other,
+    }
+has_licence:
+    default: {
+        Some Licence: yes,
+        No Licence: no,   
+    }
+occupation:
+    default: {
+        Clerical and Administrative Workers: clerical_admin,
+        Community and Personal Service Workers: community_personal_service,
+        Labourers: labourer,
+        Machinery Operators and Drivers: machinery_operator_driver,
+        Managers: manager,
+        Missing/Refused: unknown,
+        Not in Work Force: not_in_labor_force,
+        Professionals: professional,
+        Sales Workers: sales_worker,
+        Technicians and Trades Workers: technician_trade,
+    }
+ 
+   
