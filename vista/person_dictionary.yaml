@@ -1,23 +1,34 @@
-column_mappings: {
-    persid: pid,
-    hhid: hid,
-    age: age,
-    sex: sex,
-    relationship: relationship,
-    nolicence: has_license,
-    anywork: anywork, 
-    studying: studying,
-    anzsco1: occupation,
-    # anzsco2: occupation_detailed,
+column_mappings:
+    default:
+        persid: pid
+        hhid: hid
+        agegroup: age
+        sex: sex
+        relationship: relationship
+        nolicence: has_license
+        anywork: anywork
+        studying: studying
+        anzsco1: occupation
+        # anzsco2: occupation_detailed
+    2012-2020:
+        persid: pid
+        hhid: hid
+        age: age
+        sex: sex
+        relationship: relationship
+        nolicence: has_license
+        anywork: anywork
+        studying: studying
+        anzsco1: occupation
+        # anzsco2: occupation_detailed
 
-    # "EDUC": "education",
-    # "MEDCOND": "disability",
-    }
 
 sex:
     default: {
         M: male,
-        F: female
+        F: female,
+        Male: male,
+        Female: female
     }
 relationship:
     default: {

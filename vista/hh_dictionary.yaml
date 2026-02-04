@@ -1,26 +1,64 @@
-column_mappings: {
-    hhid: hid,
-    surveyperiod: year,
-    travdow: day,
-    travmonth: month,
-    # dwelltype: dwelling_type,
-    owndwell: home_ownership,
-    hhsize: hh_size,
-    hhinc: hh_income,
-    totalvehs: num_vehicles,
-    homeLGA: zone,
-    totalbikes: num_bikes,
-    wdhhwgt_LGA: wd_weight,
-    wehhwgt_LGA: we_weight,
+column_mappings:
+    default:
+        hhid: hid
+        surveyperiod: year
+        travdow: day
+        travmonth: month
+        # dwelltype: dwelling_type
+        owndwell: home_ownership
+        hhsize: hh_size
+        hhinc_group: hh_income
+        totalvehs: num_vehicles
+        homelga: zone
+        totalbikes: num_bikes
+        hhpoststratweight: weight
 
-    #  URBRUR :  urban_rural ,
-    #  HBPPOPDN :  population_density ,
-    #  LIF_CYC :  life_cycle ,
-    #  WRKCOUNT :  num_workers ,
-    #  HH_RACE :  race ,
-    #  HHR_RACE :  race ,
-    }
+    2012-2020:
+        hhid: hid
+        surveyperiod: year
+        travdow: day
+        travmonth: month
+        # dwelltype: dwelling_type
+        owndwell: home_ownership
+        hhsize: hh_size
+        hhinc: hh_income
+        totalvehs: num_vehicles
+        homeLGA: zone
+        totalbikes: num_bikes
+        wdhhwgt_LGA: wd_weight
+        wehhwgt_LGA: we_weight
 
+    #  URBRUR :  urban_rural
+    #  HBPPOPDN :  population_density
+    #  LIF_CYC :  life_cycle
+    #  WRKCOUNT :  num_workers
+    #  HH_RACE :  race
+    #  HHR_RACE :  race
+
+
+hh_income:
+    default:
+        "": [0, 0]
+        $1-$149 ($1-$7,799): [1, 7800]
+        $150-$299 ($7,800-$15,599): [7800, 15600]
+        $300-$399 ($15,600-$20,799): [15600, 20800]
+        $400-$499 ($20,800-$25,999): [20800, 26000]
+        $500-$649 ($26,000-$33,799): [26000, 33800]
+        $650-$799 ($33,800-$41,599): [33800, 41600]
+        $800-$999 ($41,600-$51,999): [41600, 52000]
+        $1,000-$1,249 ($52,000-$64,999): [52000, 65000]
+        $1,250-$1,499 ($65,000-$77,999): [65000, 78000]
+        $1,500-$1,749 ($78,000-$90,999): [78000, 91000]
+        $1,750-$1,999 ($91,000-$103,999): [91000, 104000]
+        $2,000-$2,499 ($104,000-$129,999): [104000, 130000]
+        $2,500-$2,999 ($130,000-$155,999): [130000, 156000]
+        $3,000-$3,499 ($156,000-$181,999): [156000, 182000]
+        $3,500-$3,999 ($182,000-$207,999): [182000, 208000]
+        $4,000-$4,499 ($208,000-$233,999): [208000, 234000]
+        $4,500-$4,999 ($234,000-$259,999): [234000, 260000]
+        $5,000-$5,999 ($260,000-$311,999): [260000, 312000]
+        $6,000-$7,999 ($312,000-$415,999): [312000, 416000]
+        $8,000 or more ($416,000 or more): [416000, 1000000]
 
 home_ownership: {
     default: {
@@ -33,37 +71,52 @@ home_ownership: {
 }
 
 zone:
-    default: {
-        Banyule (C): suburban,  # Metro middle-ring LGA wholly in Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Bayside (C): urban,     # Inner–inner/middle bay-side municipality within metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Boroondara (C) : urban,  # Inner-eastern municipality (Camberwell/Hawthorn/Kew). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Brimbank (C) : suburban, # Outer-west metro (Sunshine/St Albans), partial within UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Cardinia (S) : suburban, # Interface growth area (Officer/Pakenham) – outer suburban. [4](https://outermelbournecouncils.com.au/)
-        Casey (C) : suburban,    # Interface growth area (Cranbourne/Narre Warren) – outer suburban. [4](https://outermelbournecouncils.com.au/)
-        Darebin (C) : urban,     # Inner-north (Northcote/Preston), metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Frankston (C) : suburban, # Metro bay suburb city; partial within Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Glen Eira (C) : urban,   # Inner south-east (Caulfield/Elsternwick), metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Greater Dandenong (C) : suburban, # South-east metro industrial/residential LGA. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Greater Geelong (C) : urban,      # Regional city; primarily urban population base. [7](https://www.vic.gov.au/know-your-council-greater-geelong-city-council)[8](https://en.wikipedia.org/wiki/City_of_Greater_Geelong)
-        Hobsons Bay (C) : suburban, # Inner-west/foreshore metro (Williamstown/Altona). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Hume (C) : suburban,      # Interface growth area (Broadmeadows/Sunbury corridor). [4](https://outermelbournecouncils.com.au/)
-        Kingston (C) (Vic.) : suburban, # South-east bayside metro (Cheltenham/Moorabbin). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Knox (C) : suburban,      # Outer east metro (Wantirna/Boronia), partial UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Manningham (C) : suburban, # North-east metro (Doncaster/Templestowe), partial UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Maribyrnong (C) : urban,  # Inner-west (Footscray/Yarraville) close to CBD. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Maroondah (C) : suburban, # Outer east metro (Ringwood/Croydon). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Melbourne (C) : urban,    # Central city municipality. [2](https://www.melbourne.vic.gov.au/our-city)
-        Melton (C) : suburban,    # Interface growth area (outer west). [4](https://outermelbournecouncils.com.au/)
-        Monash (C) : suburban,    # South-east middle/outer metro (Glen Waverley/Clayton). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Moonee Valley (C) : suburban, # Inner-northwest metro (Moonee Ponds/Essendon). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Moreland (C) : urban,     # Now “Merri-bek”; inner-north metro (Brunswick/Coburg). [9](https://www.merri-bek.vic.gov.au/my-council/news-and-publications/news/merri-bek-name-for-council-approved/)[3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Mornington Peninsula (S) : rural, # Metro-fringe LGA with strong rural/green‑wedge character despite metro status. [6](https://www.mornpen.vic.gov.au/files/assets/public/v/1/new-website-documents/about-us/advocacy/peri-regional_-_faqs.pdf)
-        Nillumbik (S) : rural,    # Interface; majority green‑wedge/rural land. [5](https://www.aph.gov.au/Parliamentary_Business/Committees/House_of_Representatives_Committees?url=environ/cities/subs/sub146.pdf)
-        Port Phillip (C) : urban, # Inner bayside (St Kilda/Southbank/Port Melbourne). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Stonnington (C) : urban,  # Inner south-east (South Yarra/Prahran/Malvern). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Whitehorse (C) : suburban, # East metro (Box Hill/Blackburn). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
-        Whittlesea (C) : suburban, # Interface growth area (Epping/South Morang). [4](https://outermelbournecouncils.com.au/)
-        Wyndham (C) : suburban,   # Interface growth area (Werribee/Point Cook). [4](https://outermelbournecouncils.com.au/)
-        Yarra (C) : urban,        # Inner-north (Fitzroy/Collingwood/Richmond). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
-        Yarra Ranges (S) : rural  # Interface; substantial rural/forest areas beyond outer suburbs. [5](https://www.aph.gov.au/Parliamentary_Business/Committees/House_of_Representatives_Committees?url=environ/cities/subs/sub146.pdf)
-    }
+    default:
+        "Banyule (C)": suburban  # Metro middle-ring LGA wholly in Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Bayside (C)": urban     # Inner–inner/middle bay-side municipality within metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        "Boroondara (C)": urban  # Inner-eastern municipality (Camberwell/Hawthorn/Kew). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        "Brimbank (C)": suburban # Outer-west metro (Sunshine/St Albans), partial within UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Cardinia (S)": suburban # Interface growth area (Officer/Pakenham) – outer suburban. [4](https://outermelbournecouncils.com.au/)
+        "Casey (C)": suburban    # Interface growth area (Cranbourne/Narre Warren) – outer suburban. [4](https://outermelbournecouncils.com.au/)
+        "Darebin (C)": urban     # Inner-north (Northcote/Preston), metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        "Frankston (C)": suburban # Metro bay suburb city; partial within Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Glen Eira (C)": urban   # Inner south-east (Caulfield/Elsternwick), metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        "Greater Dandenong (C)": suburban # South-east metro industrial/residential LGA. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Greater Geelong (C)": urban      # Regional city; primarily urban population base. [7](https://www.vic.gov.au/know-your-council-greater-geelong-city-council)[8](https://en.wikipedia.org/wiki/City_of_Greater_Geelong)
+        "Hobsons Bay (C)": suburban # Inner-west/foreshore metro (Williamstown/Altona). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Hume (C)": suburban      # Interface growth area (Broadmeadows/Sunbury corridor). [4](https://outermelbournecouncils.com.au/)
+        "Kingston (C) (Vic.)": suburban # South-east bayside metro (Cheltenham/Moorabbin). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        "Kingston (C)": suburban # South-east bayside metro (Cheltenham/Moorabbin). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Knox (C): suburban      # Outer east metro (Wantirna/Boronia), partial UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Manningham (C): suburban # North-east metro (Doncaster/Templestowe), partial UGB. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Maribyrnong (C): urban  # Inner-west (Footscray/Yarraville) close to CBD. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        Maroondah (C): suburban # Outer east metro (Ringwood/Croydon). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Melbourne (C): urban    # Central city municipality. [2](https://www.melbourne.vic.gov.au/our-city)
+        Melton (C): suburban    # Interface growth area (outer west). [4](https://outermelbournecouncils.com.au/)
+        Monash (C): suburban    # South-east middle/outer metro (Glen Waverley/Clayton). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Moonee Valley (C): suburban # Inner-northwest metro (Moonee Ponds/Essendon). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Moreland (C): urban     # Now “Merri-bek”; inner-north metro (Brunswick/Coburg). [9](https://www.merri-bek.vic.gov.au/my-council/news-and-publications/news/merri-bek-name-for-council-approved/)[3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        Mornington Peninsula (S): rural # Metro-fringe LGA with strong rural/green‑wedge character despite metro status. [6](https://www.mornpen.vic.gov.au/files/assets/public/v/1/new-website-documents/about-us/advocacy/peri-regional_-_faqs.pdf)
+        Nillumbik (S): rural    # Interface; majority green‑wedge/rural land. [5](https://www.aph.gov.au/Parliamentary_Business/Committees/House_of_Representatives_Committees?url=environ/cities/subs/sub146.pdf)
+        Port Phillip (C): urban # Inner bayside (St Kilda/Southbank/Port Melbourne). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        Stonnington (C): urban  # Inner south-east (South Yarra/Prahran/Malvern). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        Whitehorse (C): suburban # East metro (Box Hill/Blackburn). [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
+        Whittlesea (C): suburban # Interface growth area (Epping/South Morang). [4](https://outermelbournecouncils.com.au/)
+        Wyndham (C): suburban   # Interface growth area (Werribee/Point Cook). [4](https://outermelbournecouncils.com.au/)
+        Yarra (C): urban        # Inner-north (Fitzroy/Collingwood/Richmond). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
+        Yarra Ranges (S): rural # Interface; substantial rural/forest areas beyond outer suburbs. [5](https://www.aph.gov.au/Parliamentary_Business/Committees/House_of_Representatives_Committees?url=environ/cities/subs/sub146.pdf)
+        Macedon Ranges (S): rural # Predominantly rural landscape and towns (e.g., Kyneton, Woodend) [3](https://docslib.org/doc/6115618/21-02-municipal-snapshot-the-macedon-ranges-shire-comprises)[4](https://www.mrsc.vic.gov.au/See-Do/Our-Region/Geographic-Profile)
+        Mount Alexander (S): rural       # Regional shire centred on Castlemaine; mostly rural outside township areas [5](https://en.wikipedia.org/wiki/Castlemaine,_Victoria)[6](https://www.mountalexander.vic.gov.au/Building-and-Planning/Heritage/Heritage-studies/Castlemaine)
+        Golden Plains (S): rural         # Shire is predominantly rural between Geelong and Ballarat [7](https://forecast.id.com.au/golden-plains/drivers-of-population-change)[8](http://www.wimmerapcp.org.au/wp-gidbox/uploads/2014/03/Golden-Plains.pdf)
+        Hepburn (S): rural               # Central Highlands spa/goldfields shire with rural towns (Daylesford, Creswick) [9](https://en.wikipedia.org/wiki/Shire_of_Hepburn)[10](https://victorianplaces.com.au/hepburn-shire)
+        Loddon (S): rural                # Large low-density agricultural shire in Loddon Mallee region [11](https://en.wikipedia.org/wiki/Shire_of_Loddon)[12](https://goregional.com.au/post/loddon-region-profile)
+        Central Goldfields (S): rural    # Maryborough-based shire; small towns and rural hinterland [13](https://en.wikipedia.org/wiki/Shire_of_Central_Goldfields)[14](https://www.visitvictoria.com/regions/goldfields/practical-information/visitor-information-centres/central-goldfields-visitor-centre)
+        Greater Bendigo (C): urban       # Major regional city and service centre for north-central Victoria [15](https://en.wikipedia.org/wiki/City_of_Greater_Bendigo)[16](https://www.bendigo.vic.gov.au/about-us/our-region)
+        Ballarat (C): urban              # Major regional city; primarily urban LGA [17](https://en.wikipedia.org/wiki/Ballarat)[18](https://www.ballarat.vic.gov.au/)
+        Merri-bek (C): urban             # Inner-north metropolitan LGA (formerly Moreland) [1](https://en.wikipedia.org/wiki/City_of_Merri-bek)
+        Moorabool (S): suburban          # Peri-urban interface with Bacchus Marsh growth/commuter role [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)[19](https://en.wikipedia.org/wiki/Bacchus_Marsh)
+        Melton (S): suburban              # Outer-metropolitan growth area (same LGA as City of Melton) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
+
+
+
+    
