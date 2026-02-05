@@ -1,35 +1,54 @@
-column_mapping:
-    2012_2020: {
-        "hhid": "hid",
-        "persid": "pid",
-        "tripno": "seq",
-        "linkmode": "mode",
-        "distance": "cumdist",
-        "startime": "tst",  # minutes > 1440
-        "arrtime": "tet",  # minutes > 1440
-        "origpurp1": "oact",
-        "destpurp1": "dact"
+column_mappings:
+    default: {
+        hhid: hid,
+        persid: pid,
+        tripno: seq,
+        linkmode: mode,
+        cumdist: distance,
+        startime: tst,  # minutes > 1440
+        arrtime: tet,  # minutes > 1440
+        origpurp1: oact,
+        destpurp1: dact,
+        origlga: ozone,
+        destlga: dzone
+    }
+    2012-2020: {
+        hhid: hid,
+        persid: pid,
+        tripno: seq,
+        linkmode: mode,
+        cumdist: distance,
+        startime: tst,  # minutes > 1440
+        arrtime: tet,  # minutes > 1440
+        origpurp1: oact,
+        destpurp1: dact,
+        origLGA: ozone,
+        destLGA: dzone
     }
 
 mode_mappings:
-  2012_2020: {
-    Bicycle: bike,
-    Jogging: walk,
-    Mobility Scooter: other,
-    Motorcycle: car,
-    Other: other,
-    Public Bus: bus,
-    School Bus: bus,
-    Taxi: car,
-    Train: rail,
-    Tram: rail,
-    Vehicle Driver: car,
-    Vehicle Passenger: car,
-    Walking: walk,
-  }
+    default: {
+        Bicycle: bike,
+        Jogging: walk,
+        Mobility Scooter: other,
+        Motorcycle: car,
+        Other: other,
+        Public Bus: bus,
+        School Bus: bus,
+        Taxi: car,
+        Train: rail,
+        Tram: rail,
+        Vehicle Driver: car,
+        Vehicle Passenger: car,
+        Walking: walk,
+        Running/jogging: walk,
+        e-Scooter: bike,
+        Plane: other,
+        Rideshare Service: car
+    } 
 
 act_mappings:
-    2012_2020: {
+    default: {
         Accompany Someone: escort,
         At Home: home,
         At or Go Home: home,
@@ -45,5 +64,6 @@ act_mappings:
         Social: visit,
         Unknown Purpose: other,
         Work Related: work,
+        Unknown Purpose (at start of day): home
     }
     

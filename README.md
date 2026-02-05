@@ -3,11 +3,11 @@
 |                   | persons   | years     | label availability   |
 | ----------------- | --------- |-----------|----------------------|
 | NTS (UK)          |           |           |                   |
-| CMAP (US)         | 30k       | 17,18,19  | A                 |
+| CMAP (US)         | 30k       | 17,18,19  | A-                 |
 | Metropolitan (US) |           |           |                   |
-| NHTS (US)         |           | 01,09,17,22 |                 |
+| NHTS (US)         | ~1m       | 01,09,17,22 | A                |
 | Queensland (AUS)  |           |           |                   |
-| Melbourne (AUS)   |           |           |                   |
+| Melbourne (AUS)   | ~100k     | 12 -> 25  | B+                  |
 
 _________________________
 
@@ -21,7 +21,7 @@ Age:
 | Metropolitan (US) |           |
 | NHTS (US)         | numeric   |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | numeric & interpolated |
 
 Sex:
 |                   | raw    |
@@ -31,7 +31,7 @@ Sex:
 | Metropolitan (US) |           |
 | NHTS (US)         | m,f       |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | m,f       |
 
 Education:
 |                   | raw    |
@@ -41,7 +41,7 @@ Education:
 | Metropolitan (US) |           |
 | NHTS (US)         | detailed  |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING   |
 
 Disability:
 |                   | raw    |
@@ -51,7 +51,7 @@ Disability:
 | Metropolitan (US) |           |
 | NHTS (US)         | yes, no difficulty traveling or individual columns for each disability         |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING         |
 
 Can Wfh:
 |                   | raw    |
@@ -61,7 +61,7 @@ Can Wfh:
 | Metropolitan (US) |           |
 | NHTS (US)         | Days per week worked from home |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING   |
 
 Employmnet status:
 |                   | raw    |
@@ -71,7 +71,7 @@ Employmnet status:
 | Metropolitan (US) |           |
 | NHTS (US)         | retired, volunteer, home, unemployed, student, etc |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | employed, unemployed, student  |
 
 Industry:
 |                   | raw    |
@@ -81,7 +81,7 @@ Industry:
 | Metropolitan (US) |           |
 | NHTS (US)         | ---       |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | detailed  |
 
 Race:
 |                   | raw    |
@@ -91,17 +91,17 @@ Race:
 | Metropolitan (US) |           |
 | NHTS (US)         | w, b, asian, other, from respondent | 
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING   |
 
 Has license:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
-| CMAP (US)         | y, n |
+| CMAP (US)         | y, n      |
 | Metropolitan (US) |           |
 | NHTS (US)         | derived drives as y, n |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | y,n       |
 
 Relationship to respondent:
 |                   | raw    |
@@ -111,7 +111,7 @@ Relationship to respondent:
 | Metropolitan (US) |           |
 | NHTS (US)         | spouse, father, child, self, etc|
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | spouse, father, child, self, etc|
 
 
 HH num people:
@@ -122,7 +122,7 @@ HH num people:
 | Metropolitan (US) |           |
 | NHTS (US)         | numeric   |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | numeric   |
 
 HH income:
 |                   | raw    |
@@ -132,7 +132,7 @@ HH income:
 | Metropolitan (US) |          |
 | NHTS (US)         | $0-10k, 15, 25, 35, 50, 75, 100, 125, 150, 200, + |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | detailed  |
 
 HH type:
 |                   | raw    |
@@ -142,7 +142,7 @@ HH type:
 | Metropolitan (US) |           |
 | NHTS (US)         | None          |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING   |
 
 HH ownership:
 |                   | raw    |
@@ -152,17 +152,17 @@ HH ownership:
 | Metropolitan (US) |           |
 | NHTS (US)         | own, rent, other |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | own, rent, other |
 
 Num vehicles:
 |                   | raw    |
 | ----------------- | --------- |
 | NTS (UK)          |           |
-| CMAP (US)         | numeric|
+| CMAP (US)         | numeric   |
 | Metropolitan (US) |           |
-| NHTS (US)         | numeric |
+| NHTS (US)         | numeric   |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | numeric   |
 
 Urban rural:
 |                   | raw    |
@@ -172,7 +172,7 @@ Urban rural:
 | Metropolitan (US) |           |
 | NHTS (US)         | urban, rural |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | urban, rural |
 
 HH composition:
 |                   | raw    |
@@ -182,7 +182,7 @@ HH composition:
 | Metropolitan (US) |           |
 | NHTS (US)         | 1a, 2+a, 1a1c, etc, also by age of child |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | MISSING   |
 
 ___________________
 
@@ -196,7 +196,7 @@ Type/body:
 | Metropolitan (US) |           |
 | NHTS (US)         |           |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | detailed for hh |
 
 ___________________
 
@@ -208,9 +208,9 @@ Type/body:
 | NTS (UK)          |           |
 | CMAP (US)         | tract, county, state FIPS codes and tract lat/lon |
 | Metropolitan (US) |           |
-| NHTS (US)         |           |
+| NHTS (US)         |   ???     |
 | Queensland (AUS)  |           |
-| Melbourne (AUS)   |           |
+| Melbourne (AUS)   | lgas      |
 
 _________________
 Resources:
