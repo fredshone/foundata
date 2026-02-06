@@ -1,0 +1,58 @@
+column_mappings:
+    default: {
+        HHID: hid,
+        PERSID: pid,
+        STARTSTOP: seq,
+        MAINMODE: mode,
+        CUMDIST: distance,
+        STARTIME: tst,  # minutes > 1440
+        ARRTIME: tet,  # minutes > 1440
+        ORIGPURP: oact,
+        DESTPURP: dact,
+        ORIGSA1_2021: ozone,
+        DESTSA1_2021: dzone
+    }
+
+mode_mappings:
+    default:
+        School bus (private/chartered): bus
+        Motorcycle driver: car
+        Truck passenger: car
+        Charter/Courtesy/Other bus: bus
+        Car driver: car
+        Uber / Other Ride Share: car
+        Public Bus: bus
+        Truck driver: car
+        Mobility scooter: other
+        E-bike or E-scooter: bike
+        Bicycle: bike
+        Other method: other
+        Car passenger: car
+        Public bus: bus
+        Ferry: other
+        Light rail: rail
+        School bus (with route number): bus
+        Motorcycle passenger: car
+        Walking: walk
+        Taxi: car
+        Train: rail
+
+act_mappings:
+    default:
+        Personal business: other
+        Education: education
+        Eat/drink: shop
+        Refuel my vehicle: other
+        Social Visit: visit
+        Work (my workplace): work
+        Just accompanying someone: escort
+        Work (other work reason): work
+        Shopping: shop
+        Childcare or kindergarten: education
+        Pickup/deliver something (not work-related): other
+        Pick up or drop off a passenger: escort
+        Go home: home
+        Recreation/leisure activity: leisure
+        At Home: home
+        Other Place: other
+    

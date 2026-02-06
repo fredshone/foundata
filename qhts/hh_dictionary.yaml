@@ -1,0 +1,40 @@
+column_mappings:
+    default:
+        HHID: hid
+        TRAVYEAR: year
+        TRAVDOW: day
+        TRAVMONTH: month
+        DWELLTYPE: dwelling_type
+        # owndwell: home_ownership
+        HHSIZE: hh_size
+        # hhinc_group: hh_income
+        HHVEH: num_vehicles
+        STRATA_LGA: zone
+        BIKES: num_bikes
+        HHWGT_24: weight
+
+dwelling_type:
+    default:
+        Unit, flat, or apartment (less than 4 storeys): flat
+        Unit, flat, or apartment (4 or more storeys): flat
+        Semi-detached house, terrace house, townhouse, etc.: house
+        Separate house: house
+        
+zone:
+    default:
+        1: rural # Noosa
+        2: suburban # Sunshine Coast
+        3: suburban # Moreton Bay
+        4: urban # Brisbane
+        5: suburban # Ipswich
+        6: suburban # Logan
+        7: suburban # Redland
+        8: urban # Gold Coast
+        9: rural # Lockyer Valley
+        10: urban # Toowoomba
+        11: urban # Townsville
+        12: urban # Cairns
+        13: urban # Mackay
+        14: rural # Beaudesert-Tamborine
+
+            

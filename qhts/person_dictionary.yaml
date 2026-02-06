@@ -1,0 +1,106 @@
+column_mappings:
+    default:
+        PERSID: pid
+        HHID: hid
+        AGEGROUP: age
+        SEX: sex
+        RELATIONSHIP: relationship
+        CARLICENCE: has_licence
+        MAINACT: employment
+        ANZSCO_1-digit: occupation
+        ASSISTANY: disability
+        INCOME: income
+
+age:
+    default:
+        1: [0,4]
+        2: [5,9]
+        3: [10,14]
+        4: [15,19]
+        5: [20,24]
+        6: [25,29]
+        7: [30,34]
+        8: [35,39]
+        9: [40,44]
+        10: [45,49]
+        11: [50,54]
+        12: [55,59]
+        13: [60,64]
+        14: [65,69]
+        15: [70,74]
+        16: [75,79]
+        17: [80,84]
+        18: [85,89]
+        19: [90,94]
+        20: [95,99]
+        21: [100,103]
+
+sex:
+    default: {
+        M: male,
+        F: female,
+        Male: male,
+        Female: female,
+        male: male,
+        female: female,
+    }
+relationship:
+    default: {
+        spouse: spouse/partner,
+        child: child,
+        relative: other,
+        nonFamily: other,
+        parent: parent,
+    }
+has_licence:
+    default: {
+        1: yes,
+        0: no,   
+    }
+employment:
+    default:
+        Full-time TAFE/Uni: education
+        Primary School: education
+        Volunteer/Carer: unemployed
+        Retired: retired
+        Part-time TAFE/Uni: education
+        Full-time Work: employed
+        Other Education: education
+        Part-time Work: employed
+        Other Activity: other
+        Illness: unemployed
+        Childcare/Kindergarten: unemployed
+        Secondary School: education
+
+occupation:
+    default:
+        1: manager
+        2: professional
+        3: technical
+        4: service
+        5: clerical_admin
+        6: sales
+        7: operator
+        8: labourer
+        9: other
+
+income:
+    default:
+        Prefer not to say / can't say: [0,0]
+        Nil or negative income: [0, 0]
+        $1 - $149 per week ($1 - $7,799 per year): [1, 7800]
+        $150 - $299 per week ($7,800 - $15,599 per year): [7800, 15600]
+        $300 - $399 per week ($15,600 - $20,799 per year): [15600, 20800]
+        $400 - $499 per week ($20,800 - $25,999 per year): [20800, 26000]
+        $500 - $649 per week ($26,000 - $33,799 per year): [26000, 33800]
+        $650 - $799 per week ($33,800 - $41,599 per year): [33800, 41600]
+        $800 - $999 per week ($41,600 - $51,999 per year): [41600, 52000]
+        $1,000 - $1,249 per week ($52,000 - $64,999 per year): [52000, 65000]
+        $1,250 - $1,499 per week ($65,000 - $77,999 per year): [65000, 78000]
+        $1,500 - $1,749 per week ($78,000 - $90,999 per year): [78000, 91000]
+        $1,750 - $1,999 per week ($91,000 - $103,999 per year): [91000, 104000]
+        $2,000 - $2,999 per week ($104,000 - $155,999 per year): [104000, 156000]
+        $3,000 - $3,499 per week ($156,000 - $181,999 per year): [156000, 182000]
+        $3,500 or more per week ($182,000 or more per year): [182000, 1000000]
+ 
+   
