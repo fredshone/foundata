@@ -8,6 +8,19 @@
 | NHTS (US)         | ~1m       | 01,09,17,22 | A                |
 | Queensland (AUS)  |           |           |                   |
 | Melbourne (AUS)   | ~100k     | 12 -> 25  | B+                  |
+| California (US)   | ~40k      | 01        | OK?            |
+| LA (US)           | ?         | 01        | BAD?                 |
+| Seattle (US)      | 37k       | 00/02        | OK?                 |
+| SanFran (US)      | 35k       | 00        | OK?                 |
+| NY (US)           | 27k       | 98        | OK?                 |
+| Philly  (US)      | 10k       | 00        | OK?                 |
+| Pheonix (US)      | 10k       | 02        | OK?                 |
+| Baltimore (US)    | 8k       | 01        | OK?                 |
+| Indiana   (US)    | 8k       | 07/08     | OK?                 |
+| Spokane (US)      | 7k       | 05        | BAD?                 |
+| Idaho   (US)      | 6k       | 02        | OK?                 |
+| Columbia   (US)   | ~3k      | 07        | OK?                 |
+| Anchorage (US)    | 3k       | 01        | OK?                 |
 
 _________________________
 
