@@ -1,0 +1,27 @@
+column_mappings:
+    default:
+        ppid: pid
+        phid: hid
+        pdlcar: has_license
+        pwkstat: employment_status
+        # poccupa: occupation # cannot find lookup
+
+has_licence:
+    default:
+        -2: "unknown"
+        -1: "no"
+        1: "yes"
+        2: "no"
+
+employment_status:
+    default:
+        Not Working: unemployed
+        FT Worker: employed
+        Under 16: student
+        Retired: retired
+        Student: student
+        PT Worker: employed
+        Other: other
+
+occupation:
+    default:

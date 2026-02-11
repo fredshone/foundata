@@ -1,0 +1,37 @@
+column_mappings:
+    default:
+        thid: hid
+        tpid: pid
+        # tripno: seq
+        tdbmmode: mode
+        # cumdist: distance,
+        tshour: tst  # hour 0 - 23
+        tehour: tet  # hour 0 - 23
+        tdur5: duration
+        topurp: oact
+        tdpurp: dact
+        toaboro: ozone
+        tdaboro: dzone
+
+
+mode:
+    default:
+        Taxi/other: car
+        Motorcycle: car
+        Cycle: bike
+        Car driver: car
+        Walk: walk
+        National Rail/ Overground: rail
+        Car passenger: car
+        Bus/tram: bus
+        Underground/ DLR: rail
+
+act:
+    default:
+        01 Usual/ other work: work
+        02 Education (inc escort education): education
+        06 Other (inc Escort/ Worship): other
+        06 Home: home
+        03 Leisure: leisure
+        04 Shopping and personal business: shopping
+            

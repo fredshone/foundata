@@ -1,0 +1,40 @@
+column_mappings:
+    default:
+        hhid: hid
+        hyearid: year
+        htdow: day
+        # travmonth: month
+        # dwelltype: dwelling_type
+        # owndwell: home_ownership
+        hstruct: hh_structure
+        hpeoplen: hh_size  # ?
+        hincome: hh_income
+        hcarnan: num_vehicles  # ?
+        hhaboro: zone
+        hcycles: num_bikes
+        hiwt: weight  # ?
+
+hh_income:
+    default:
+        1: [0, 5000]
+        2: [5000, 10000]
+        3: [10000, 15000]
+        4: [15000, 20000]
+        5: [20000, 25000]
+        6: [25000, 35000]
+        7: [35000, 50000]
+        8: [50000, 75000]
+        9: [75000, 100000]
+        10: [100000, 200000]
+        11: [0, 200000]  # unknown
+        12: [0, 200000]  # refused
+
+hh_structure:
+    default:
+        1: couple
+        2: lone parent
+        3: single adult
+        4: single pensioner
+        5: other 
+
+    
