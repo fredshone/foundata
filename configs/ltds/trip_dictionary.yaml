@@ -2,6 +2,7 @@ column_mappings:
     default:
         thid: hid
         tpid: pid
+        ttid: tid
         # tripno: seq
         tdbmmode: mode
         # cumdist: distance,
@@ -12,7 +13,6 @@ column_mappings:
         tdpurp: dact
         toaboro: ozone
         tdaboro: dzone
-
 
 mode:
     default:

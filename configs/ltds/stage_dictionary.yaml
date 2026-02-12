@@ -1,0 +1,6 @@
+column_mappings:
+    default:
+        # shid: hid
+        spid: pid
+        stid: tid
+        slenn: distance # prob km?

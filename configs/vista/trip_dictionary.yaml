@@ -1,0 +1,69 @@
+column_mappings:
+    default: {
+        hhid: hid,
+        persid: pid,
+        tripno: seq,
+        linkmode: mode,
+        cumdist: distance,
+        startime: tst,  # minutes > 1440
+        arrtime: tet,  # minutes > 1440
+        origpurp1: oact,
+        destpurp1: dact,
+        origlga: ozone,
+        destlga: dzone
+    }
+    2012-2020: {
+        hhid: hid,
+        persid: pid,
+        tripno: seq,
+        linkmode: mode,
+        cumdist: distance,
+        startime: tst,  # minutes > 1440
+        arrtime: tet,  # minutes > 1440
+        origpurp1: oact,
+        destpurp1: dact,
+        origLGA: ozone,
+        destLGA: dzone
+    }
+
+mode_mappings:
+    default: {
+        Bicycle: bike,
+        Jogging: walk,
+        Mobility Scooter: other,
+        Motorcycle: car,
+        Other: other,
+        Public Bus: bus,
+        School Bus: bus,
+        Taxi: car,
+        Train: rail,
+        Tram: rail,
+        Vehicle Driver: car,
+        Vehicle Passenger: car,
+        Walking: walk,
+        Running/jogging: walk,
+        e-Scooter: bike,
+        Plane: other,
+        Rideshare Service: car
+    } 
+
+act_mappings:
+    default: {
+        Accompany Someone: escort,
+        At Home: home,
+        At or Go Home: home,
+        Buy Something: shop,
+        Change Mode: other,
+        Education: education,
+        Not Stated: other,
+        Other Purpose: other,
+        Personal Business: work,
+        Pick-up or Deliver Something: work,
+        Pick-up or Drop-off Someone: escort,
+        Recreational: leisure,
+        Social: visit,
+        Unknown Purpose: other,
+        Work Related: work,
+        Unknown Purpose (at start of day): home
+    }
+    

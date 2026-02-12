@@ -4,6 +4,7 @@ column_mappings:
         phid: hid
         pdlcar: has_license
         pwkstat: employment_status
+        pnotrips: no_trips
         # poccupa: occupation # cannot find lookup
 
 has_licence:
