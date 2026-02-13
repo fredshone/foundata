@@ -1,3 +1,6 @@
+import random
+from pathlib import Path
+
 import polars as pl
 
 
@@ -22,7 +25,9 @@ def check_overlap(table_a: pl.DataFrame, table_b: pl.DataFrame, on: str) -> set:
     return missing_in_a & missing_in_b
 
 
-def table_joiner(table_a: pl.DataFrame, table_b: pl.DataFrame, on: str) -> pl.DataFrame:
+def table_joiner(
+    table_a: pl.DataFrame, table_b: pl.DataFrame, on: str
+) -> pl.DataFrame:
     # check for missing keys
     check_overlap(table_a, table_b, on)
 
@@ -34,3 +39,25 @@ def table_joiner(table_a: pl.DataFrame, table_b: pl.DataFrame, on: str) -> pl.Da
         print(f"Warning: Duplicate columns (other than join key): {duplicates}")
 
     return table_a.join(table_b, on=on)
+
+
+def config_for_year(config: dict, year):
+    return config.get(year, config["default"])
+
+
+def sample_int_range(bounds: tuple[int, int]) -> int:
+    a, b = bounds
+    return random.randint(int(a), int(b))
+
+
+def sample_scaled_range(
+    bounds: tuple[int, int] | None, scale: float, default: int = 0
+) -> int:
+    if bounds is None:
+        return default
+    a, b = bounds
+    return int(random.randint(int(a), int(b)) * scale)
+
+
+def get_config_path(*parts: str) -> Path:
+    return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)

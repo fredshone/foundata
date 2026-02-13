@@ -1,4 +1,4 @@
-columns:
+column_mappings:
     sampno: hid
     perno: pid
     locno: dzone

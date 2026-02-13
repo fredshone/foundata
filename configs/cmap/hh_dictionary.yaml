@@ -1,0 +1,196 @@
+column_mappings:
+  wthhfin: weight
+  hhinc: hh_income
+  resty: residence
+  homeown: ownership
+  hhveh: vehicles
+  hhsize: hh_size
+  travdate: date
+
+hh_income:
+  -9: [0, 0]
+  -8: [0, 0]
+  -7: [0, 0]
+  1: [0, 15000]
+  2: [15000, 25000]
+  3: [25000, 30000]
+  4: [30000, 35000]
+  5: [35000, 50000]
+  6: [50000, 60000]
+  7: [60000, 75000]
+  8: [75000, 100000]
+  9: [100000, 150000]
+  10: [150000, 200000]
+
+residence:
+  -8: unknown
+  -7: unknown
+  1: house
+  2: house
+  3: flat
+  4: other
+  5: other
+  6: other
+  97: other
+
+ownership:
+  -9: unknown
+  -8: unknown
+  -7: unknown
+  0: own
+  1: own
+  2: own
+  3: rent
+  4: other
+  97: other
+
+################
+
+# raw dictionaries:
+
+restylast_o:
+  -1: Appropriate skip
+
+source:
+  -9: Not ascertained
+  -1: Appropriate skip
+  1: CMAP website
+  2: Facebook
+  3: Google Display Network
+  4: Google Search
+  5: Instagram
+  6: Meeting postcards
+  7: Partner emails
+  8: Press release
+  9: Quercus intercept
+  10: Saber es Poder
+  11: Schools/Districts
+  12: Waze
+  13: New
+  14: EDDM
+  15: CCOC
+  97: Other
+
+hhinc2:
+  -8: I don't know
+  -7: I prefer not to answer
+  -1: Appropriate skip
+  1: Less than $30,000
+  2: $30,000 to $59,999
+  3: $60,000 to $99,999
+  4: $100,000 to $149,999
+  5: $150,000 or more
+incendonate:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+  0: Send the gift to my household
+  10: Give 10% of my gift to my local school district
+  20: 20% to the school
+  30: 30% to the school
+  40: 40% to the school
+  50: 50% to the school
+  60: 60% to the school
+  70: 70% to the school
+  80: 80% to the school
+  90: 90% to the school
+  100: Give the entire gift to my local school district
+resty:
+  -8: I don't know
+  -7: I prefer not to answer
+  1: Single-family detached house,
+  2: 'Single-family attached house (duplex/townhouse/rowhouse), '
+  3: An apartment or condo,
+  4: Manufactured Home or Trailer,
+  5: Boat, RV, Van,
+  6: Dorm Room, Fraternity or Sorority House, or
+  97: Some other type of housing?
+phase:
+  0: Main
+  1: Pilot 1
+  2: Pilot 2
+  3: Pilot 3
+futuresurvey:
+  -9: Not ascertained
+  -8: I don’t know
+  -7: I prefer not to answer
+  1: 'Yes'
+  2: 'No'
+transprob_o:
+  -1: Appropriate skip
+restylast_zip:
+  -9: Not ascertained
+  -1: Appropriate skip
+restylast:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+  -1: Appropriate skip
+  1: Single-family detached house,
+  2: Single-family attached house (duplex/townhouse/rowhouse),
+  3: An apartment or condo,
+  4: Manufactured Home or Trailer,
+  5: Boat, RV, Van,
+  6: Dorm Room, Fraternity or Sorority House, or
+  97: Some other type of housing?
+homeown:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+  0: Own
+  1: Own without mortgage
+  2: Own with mortgage
+  3: Rent
+  4: Occupied without payment of rent
+  97: Some other arrangement
+transprob:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+  1: Too much traffic
+  2: Not enough public transportation options
+  3: Roads and bridges are in poor condition
+  4: Buses, trains, or train stations are in poor condition
+  5: Too hard to find parking
+  6: Walking and biking is too hard
+  97: 'Other:'
+homeown_o:
+  -1: Appropriate skip
+source_o:
+  -9: Not ascertained
+  -1: Appropriate skip
+hhveh:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+hlive:
+  -9: Not ascertained
+  -8: I don't know
+  -7: I prefer not to answer
+resty_o:
+  -1: Appropriate skip
+hhinc:
+  -9: Not ascertained
+  -8: I don’t know
+  -7: I prefer not to answer
+  1: Less than $15,000
+  2: $15,000 to $24,999
+  3: $25,000 to $29,999
+  4: $30,000 to $34,999
+  5: $35,000 to $49,999
+  6: $50,000 to $59,999
+  7: $60,000 to $74,999
+  8: $75,000 to $99,999
+  9: $100,000 to $149,999
+  10: $150,000 or more
+travday:
+  1: Sunday
+  2: Monday
+  3: Tuesday
+  4: Wednesday
+  5: Thursday
+  6: Friday
+  7: Saturday
+download:
+  1: Print
+  2: Receive in the mail
