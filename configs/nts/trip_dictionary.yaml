@@ -1,69 +1,59 @@
 column_mappings:
-    default: {
-        hhid: hid,
-        persid: pid,
-        tripno: seq,
-        linkmode: mode,
-        cumdist: distance,
-        startime: tst,  # minutes > 1440
-        arrtime: tet,  # minutes > 1440
-        origpurp1: oact,
-        destpurp1: dact,
-        origlga: ozone,
-        destlga: dzone
-    }
-    2012-2020: {
-        hhid: hid,
-        persid: pid,
-        tripno: seq,
-        linkmode: mode,
-        cumdist: distance,
-        startime: tst,  # minutes > 1440
-        arrtime: tet,  # minutes > 1440
-        origpurp1: oact,
-        destpurp1: dact,
-        origLGA: ozone,
-        destLGA: dzone
-    }
+    TripID: tid
+    JourSeq: seq
+    DayID: did
+    IndividualID: pid
+    HouseholdID: hid
+    TripOrigGOR_B02ID: ozone
+    TripDestGOR_B02ID: dzone
+    TripPurpFrom_B01ID: oact
+    TripPurpTo_B01ID: dact
+    MainMode_B04ID: mode
+    TripStart: tst
+    TripEnd: tet
+    TripDisIncSW: distance
+    W5: trip_weight
 
-mode_mappings:
-    default: {
-        Bicycle: bike,
-        Jogging: walk,
-        Mobility Scooter: other,
-        Motorcycle: car,
-        Other: other,
-        Public Bus: bus,
-        School Bus: bus,
-        Taxi: car,
-        Train: rail,
-        Tram: rail,
-        Vehicle Driver: car,
-        Vehicle Passenger: car,
-        Walking: walk,
-        Running/jogging: walk,
-        e-Scooter: bike,
-        Plane: other,
-        Rideshare Service: car
-    } 
+mode:
+    1: walk
+    2: bike
+    3: car  # Car/van driver
+    4: car  # Car/van driver
+    5: car  # Motorcycle
+    6: car  # Other private transport
+    7: bus  #  Bus in London
+    8: bus  # Other local bus
+    9: bus  # Non-local bus
+    10: rail  # London Underground
+    11: rail  # Surface Rail
+    12: car  # Taxi/minicab
+    13: rail  # Other public transport
+    -10: unknown
+    -8: unknown
 
-act_mappings:
-    default: {
-        Accompany Someone: escort,
-        At Home: home,
-        At or Go Home: home,
-        Buy Something: shop,
-        Change Mode: other,
-        Education: education,
-        Not Stated: other,
-        Other Purpose: other,
-        Personal Business: work,
-        Pick-up or Deliver Something: work,
-        Pick-up or Drop-off Someone: escort,
-        Recreational: leisure,
-        Social: visit,
-        Unknown Purpose: other,
-        Work Related: work,
-        Unknown Purpose (at start of day): home
-    }
-    
+act:
+    1: work
+    2: work  # In course of work
+    3: education
+    4: shop  # Food shopping
+    5: shop  # Non food shopping
+    6: medical  # Personal business medical
+    7: other  # Personal business eat/drink
+    8: other  # Personal business other
+    9: other  # Eat/drink with friends
+    10: visit  # Visit friends
+    11: other  # Other social
+    12: other  # Entertain/ public activity
+    13: other  # Sport: participate
+    14: home  # Holiday: base
+    15: other  # Day trip/just walk
+    16: other  # Other non-escort
+    17: escort  # Escort home
+    18: escort  # Escort work
+    19: escort  # Escort in course of work
+    20: escort  # Escort education
+    21: escort  # Escort shopping/personal business
+    22: escort  # Other escort
+    23: home  # Home
+    -10: unknown
+    -8: unknown

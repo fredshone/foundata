@@ -1,7 +1,7 @@
 column_mappings:
     HouseholdID: hid
     TWSMonth: month
-    TWSWeekday_B01ID: day
+    # TWSWeekday_B01ID: day
     SurveyYear: year
     Settlement2011EW_B04ID: area
     HHIncQISEngTS_B01ID: income
@@ -16,31 +16,6 @@ column_mappings:
     # BlueBdg_B01ID: disabled
     # NumLicHolders: num_license_holders
     W3: weight
-
-day:
-    1: Monday
-    2: Tuesday
-    3: Wednesday
-    4: Thursday
-    5: Friday
-    6: Saturday
-    7: Sunday
-    -10: unknown
-
-month:
-    1: January
-    2: February
-    3: March
-    4: April
-    5: May
-    6: June
-    7: July
-    8: August
-    9: September
-    10: October
-    11: November
-    12: December
-    -10: unknown
 
 income:
     1: [0,18000]
@@ -97,4 +72,19 @@ disabled:
     2: no
     -8: unknown
     -9: unknown
+    -10: unknown
+
+month:
+    1: January
+    2: February
+    3: March
+    4: April
+    5: May
+    6: June
+    7: July
+    8: August
+    9: September
+    10: October
+    11: November
+    12: December
     -10: unknown

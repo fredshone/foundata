@@ -2,7 +2,7 @@
 
 |  source           |     | persons  | years     | label quality | data availability  |
 | ----------------- |---- | -------- |-----------|---------------|--------------------|
-| NTS               | UK  |          | 02-23     | A             | [request](https://ukdataservice.ac.uk/)             |
+| NTS               | UK  | 400k     | 02-23     | A             | [request](https://ukdataservice.ac.uk/)             |
 | CMAP              | US  | 30k      | 17-19     | A-            | [data](https://github.com/CMAP-REPOS/mydailytravel) |
 | NHTS              | US  | 1m       | 01,09,17,22 | A           | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
 | Queensland        | AUS | 100k     | 12-24     | A-            | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |

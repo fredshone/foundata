@@ -9,9 +9,9 @@ column_mappings:
     CarAccess_B01ID: car_access
     EcoStat_B02ID: work_status
     EthGroupTS_B02ID: ethnicity
-    # PossHmN_B01ID: wfh
+    PossHmN_B01ID: wfh
     MobDiffSum_B01ID: mobility
-    # PowWhl_B01ID: wheelchair_user
+    PowWhl_B01ID: wheelchair_user
     # TicketHolding_B01ID: ticket_holder
     # GenHeal_B01ID: health
 
@@ -51,19 +51,19 @@ education:
     -8: unknown
     -9: unknown
     -10: unknown
-    1: yes
-    2: no
+    1: "yes"
+    2: "no"
 
 license:
     -8: unknown
     -9: unknown
     -10: unknown
-    1: yes
-    2: yes
-    3: yes
-    4: yes
-    5: no
-    6: no
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    5: "no"
+    6: "no"
 
 work_status: 
     -8: unknown
@@ -88,27 +88,27 @@ wfh:
     -8: unknown
     -9: unknown
     -10: unknown
-    1: yes
-    2: yes
-    3: yes
-    4: no
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "no"
 
 mobility: 
     -8: unknown
     -9: unknown
     -10: unknown
-    1: no
-    2: yes
-    3: yes
-    4: yes
-    5: yes
-    6: yes
-    7: yes
-    8: yes
+    1: "no"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    5: "yes"
+    6: "yes"
+    7: "yes"
+    8: "yes"
 
 wheelchair_user:
     -8: unknown
     -9: unknown
     -10: unknown
-    1: yes
-    2: no
+    1: "yes"
+    2: "no"

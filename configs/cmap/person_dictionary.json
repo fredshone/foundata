@@ -1,0 +1,1022 @@
+{
+    "nogowhy_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "typday_no": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "tolltrip": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "dtype_4": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "dtype": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "traveldatamode_dk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "wkstat_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "tnc_use": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "traveldatamode_rf": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "tnc_typ": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Low",
+        "2": "Typical",
+        "3": "High"
+    },
+    "traveldatadevice_2": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "emply_transit": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Employer pays 25% or less of my monthly fares",
+        "2": "Employer pays between 26% and 75% of my monthly fares",
+        "3": "Employer pays for more than 75% of my monthly fares",
+        "4": "Employer deducts pre-tax earnings to apply to my monthly fares",
+        "5": "No subsidy offered",
+        "97": "Something else"
+    },
+    "sweb": {
+        "-9": "Not ascertained",
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "age": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer"
+    },
+    "traveldatadevice_dk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "smode": {
+        "-9": "Not ascertained",
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Walk",
+        "2": "Bike",
+        "3": "Motorcycle/moped",
+        "4": "Auto / van / truck (as the driver)",
+        "5": "Auto / van / truck (as the passenger)",
+        "6": "Carpool/vanpool",
+        "7": "School bus",
+        "8": "Bus (CTA, PACE, Huskie Line, Indiana)",
+        "9": "Train (CTA/METRA/NICTD)",
+        "10": "Local transit (NIRPC region)",
+        "11": "Dial-a-Ride",
+        "12": "Call-n-Ride",
+        "13": "Paratransit",
+        "14": "Private shuttle bus",
+        "15": "Taxi/limo",
+        "16": "Uber/Lyft",
+        "17": "Airplane",
+        "18": "[$I_DO] not travel to school",
+        "97": "Something Else"
+    },
+    "indus": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "11": "Agriculture, Forestry, Fishing and Hunting",
+        "21": "Mining, Quarrying, and Oil and Gas Extraction",
+        "22": "Utilities",
+        "23": "Construction",
+        "42": "Wholesale Trade",
+        "51": "Information",
+        "52": "Finance and Insurance",
+        "53": "Real Estate and Rental and Leasing",
+        "54": "Professional, Scientific, and Technical Services",
+        "55": "Management of Companies and Enterprises",
+        "56": "Administrative and Support and Waste Management and Remediation Services",
+        "61": "Educational Services",
+        "62": "Health Care and Social Assistance",
+        "71": "Arts, Entertainment, and Recreation",
+        "72": "Accommodation and Food Services",
+        "81": "Other Services (except Public Administration)",
+        "92": "Public Administration",
+        "97": "Something else",
+        "48": "Transportation and Warehousing",
+        "49": "Transportation and Warehousing",
+        "31": "Manufacturing",
+        "32": "Manufacturing",
+        "33": "Manufacturing",
+        "44": "Retail Trade",
+        "45": "Retail Trade"
+    },
+    "traveldatamode_2": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "traveldatadevice_se": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "ribus": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Zero Times (never)",
+        "2": "Once or Twice",
+        "3": "Three or four times",
+        "4": "Five or more times"
+    },
+    "traveldatamode_se": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "educ_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "schol_o": {
+        "-1": "Appropriate skip"
+    },
+    "hisp_o": {
+        "-1": "Appropriate skip"
+    },
+    "emply_transit_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "tcoff": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "traveldatadevice_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "tcdays": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "hptol_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "dtype_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "dtype_2": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "dtype_se": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "traveldatamode_4": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "wkstat": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "0": "Worker, including self employed",
+        "1": "Retired ",
+        "2": "Volunteer",
+        "3": "Homemaker ",
+        "4": "Unemployed but looking for work",
+        "5": "Unemployed, not seeking employment",
+        "6": "Student (part-time or full-time)",
+        "7": "Disabled non-worker",
+        "97": "Something else"
+    },
+    "race_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "aage": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "0-4 years old ",
+        "2": "5-12 years old",
+        "3": "13-15 years old",
+        "4": "16-17 years old",
+        "5": "18-44 years old",
+        "6": "45-64 years old",
+        "7": "65 years old or older"
+    },
+    "traveldatamode_1": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "nogowhy": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Personally sick",
+        "2": "Vacation or personal day",
+        "3": "Caretaking",
+        "4": "Home-bound elderly or disabled",
+        "5": "Worked at home (for pay)",
+        "6": "Not scheduled to work",
+        "7": "Worked around home (not for pay)",
+        "8": "Out of area",
+        "9": "No transportation available",
+        "10": "No longer a household resident",
+        "97": "Something else"
+    },
+    "relate_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "traveldatadevice_rf": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "emply_ask": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "pervh": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "dtype_1": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "schol": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Daycare",
+        "2": "Nursery/Pre-school",
+        "3": "Kindergarten to 8th grade",
+        "4": "9th – 12th grade",
+        "5": "Vocational/Technical school",
+        "6": "2-year college (community college)",
+        "7": "4-year college or university",
+        "8": "Graduate/Professional school",
+        "97": "Something else"
+    },
+    "dtype2": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "nogowhy2_5": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "lic": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "dtype_rf": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "relate": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Self",
+        "2": "Spouse/Unmarried partner",
+        "3": "Son/Daughter",
+        "4": "Father/Mother",
+        "5": "Brother/Sister",
+        "6": "Grandparent",
+        "7": "Grandchild",
+        "8": "Live-In Help",
+        "9": "Roommate/Other Non-Related",
+        "97": "Other Related"
+    },
+    "pertrips": {
+        "-1": "Appropriate skip"
+    },
+    "sparkride": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "hisp": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Yes",
+        "2": "No",
+        "97": "Other"
+    },
+    "emply_park": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Free onsite parking",
+        "2": "Employer pays 25% or less of my parking costs",
+        "3": "Employer pays between 26% and 75% of my parking costs",
+        "4": "Employer pays for more than 75% of my parking costs",
+        "5": "Employer deducts pre-tax earnings to apply to my parking costs",
+        "6": "No subsidy offered",
+        "97": "Something else"
+    },
+    "tolls": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "nogowhy2_3": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "stude": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "1": "Yes - Full Time",
+        "2": "Yes - Part Time",
+        "3": "No"
+    },
+    "compr_o": {
+        "-1": "Appropriate skip"
+    },
+    "wmode": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Walk",
+        "2": "Bike",
+        "3": "Motorcycle/moped",
+        "4": "Auto / van / truck (as the driver)",
+        "5": "Auto / van / truck (as the passenger)",
+        "6": "Carpool/vanpool",
+        "7": "School bus",
+        "8": "Bus (CTA, PACE, Huskie Line, Indiana)",
+        "9": "Train (CTA/METRA/NICTD)",
+        "10": "Local transit (NIRPC region)",
+        "11": "Dial-a-Ride",
+        "12": "Call-n-Ride",
+        "13": "Paratransit",
+        "14": "Private shuttle bus",
+        "15": "Taxi/limo",
+        "16": "Uber/Lyft",
+        "17": "Airplane",
+        "18": "[$I_DO] not travel to work",
+        "97": "Something Else"
+    },
+    "nogowhy2_1": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "educ": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Not a high school graduate, grade 12 or less (this includes very young children)",
+        "2": "High school graduate (high school diploma or GED)",
+        "3": "Some college credit but no degree",
+        "4": "Associate or technical school degree",
+        "5": "Bachelor's or undergraduate degree",
+        "6": "Graduate degree (includes professional degree like PHD, MD, DD, JD)",
+        "97": "Some other degree"
+    },
+    "tnc_cost": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "age18": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes, 18 or older ",
+        "2": "No, under 18"
+    },
+    "proxy": {
+        "1": "Yes",
+        "2": "No"
+    },
+    "wparkride": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "tnc_purp": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "For [$YOUR] whole commute",
+        "2": "As part of [$YOUR] commute to get to transit",
+        "3": "For work-related travel during the day (e.g., off site meetings)",
+        "4": "For travel not related to work  during the day (e.g., personal errands or leisure)",
+        "5": "For late-night service (e.g., after dinner or socializing with friends)"
+    },
+    "smrtphn": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer ",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "typday": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "dtype_6": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "traveldatadevice_1": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "jobs": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "dtype_3": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "wrkhrs": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip"
+    },
+    "traveldatause": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "traveldatamode_3": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "traveldatamode_o": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-1": "Appropriate skip"
+    },
+    "volun_freq": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "1 day a week",
+        "2": "2 days a week",
+        "3": "3 days a week",
+        "4": "4 days a week",
+        "5": "5 days a week",
+        "6": "6 days a week",
+        "7": "7 days a week"
+    },
+    "wplace": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Same work place every day",
+        "2": "Work from home",
+        "3": "No fixed work place"
+    },
+    "wmode_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "hptol": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Cash",
+        "2": "IPASS (Electronic payment with transponder)",
+        "3": "Both cash and IPASS",
+        "97": "Something else"
+    },
+    "indus_o": {
+        "-1": "Appropriate skip"
+    },
+    "wtrav": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "0": "Never",
+        "1": "1 day a week",
+        "2": "2 days a week",
+        "3": "3 days a week",
+        "4": "4 days a week",
+        "5": "5 days a week",
+        "6": "6 days a week",
+        "7": "7 days a week"
+    },
+    "occup_o": {
+        "-1": "Appropriate skip"
+    },
+    "dtype_5": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "disab": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "nogowhy2_4": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "compr": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "4/40",
+        "2": "9/80",
+        "3": "3/36",
+        "4": "No",
+        "97": "Other, SPECIFY"
+    },
+    "traveldatamode_5": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "retmode_final": {
+        "1": "PHONE APP",
+        "2": "WEB",
+        "3": "CATI"
+    },
+    "carptowk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Zero Times (never)",
+        "2": "Once or Twice",
+        "3": "Three or four times",
+        "4": "Five or more times"
+    },
+    "typpl": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Planned",
+        "2": "Changed along the way"
+    },
+    "race": {
+        "-8": "I don't know ",
+        "-7": "I prefer not to answer ",
+        "1": "White ",
+        "2": "African American, Black",
+        "3": "Asian ",
+        "4": "American Indian, Alaskan Native",
+        "5": "Native Hawaiian or Pacific Islander",
+        "6": "Multiracial",
+        "97": "Some other race "
+    },
+    "dtype_dk": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Visually Impaired or Blind",
+        "2": "Hearing Impaired or Deaf",
+        "3": "Cane or Walker",
+        "4": "Wheelchair Non-Transferable",
+        "5": "Wheelchair Transferable",
+        "6": "Mentally or Emotionally Disabled",
+        "97": "Other (Specify)"
+    },
+    "emply_park_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "traveldatadevice": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    },
+    "wkflex": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "nogowhy2_rf": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "nogowhy2_2": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "occup": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "11": "Management Occupations",
+        "13": "Business and Financial Operations Occupations",
+        "15": "Computer and Mathematical Occupations",
+        "17": "Architecture and Engineering Occupations",
+        "19": "Life, Physical, and Social Science Occupations",
+        "21": "Community and Social Service Occupations",
+        "23": "Legal Occupations",
+        "25": "Educational Instruction and Library Occupations",
+        "27": "Arts, Design, Entertainment, Sports, and Media Occupations",
+        "29": "Healthcare Practitioners and Technical Occupations",
+        "31": "Healthcare Support Occupations",
+        "33": "Protective Service Occupations",
+        "35": "Food Preparation and Serving Related Occupations",
+        "37": "Building and Grounds Cleaning and Maintenance Occupations",
+        "39": "Personal Care and Service Occupations",
+        "41": "Sales and Related Occupations",
+        "43": "Office and Administrative Support Occupations",
+        "45": "Farming, Fishing, and Forestry Occupations",
+        "47": "Construction and Extraction Occupations",
+        "49": "Installation, Maintenance, and Repair Occupations",
+        "51": "Production Occupations",
+        "53": "Transportation and Material Moving Occupations",
+        "55": "Military Specific Occupations",
+        "97": "None of these are a match"
+    },
+    "traveldatamode": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Driving",
+        "2": "Public Transportation - Bus Schedule",
+        "3": "Public Transportation - Train Schedule",
+        "4": "Parking availability",
+        "5": "None",
+        "97": "Something Else"
+    },
+    "traveldatause_pilot": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Never",
+        "2": "Rarely",
+        "3": "Monthly",
+        "4": "Weekly",
+        "5": "Daily"
+    },
+    "biketowk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Zero Times (never)",
+        "2": "Once or Twice",
+        "3": "Three or four times",
+        "4": "Five or more times"
+    },
+    "walktowk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Zero Times (never)",
+        "2": "Once or Twice",
+        "3": "Three or four times",
+        "4": "Five or more times"
+    },
+    "pay_allday": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "smode_o": {
+        "-9": "Not ascertained",
+        "-1": "Appropriate skip"
+    },
+    "retmode": {
+        "1": "Smartphone App Only",
+        "2": "Smartphone App & Web",
+        "3": "Smartphone App & CATI",
+        "4": "Smartphone App, Web & CATI",
+        "5": "Web Only",
+        "6": "Web and CATI",
+        "7": "CATI only"
+    },
+    "nogowhy2": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "sex": {
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "1": "Male",
+        "2": "Female"
+    },
+    "nogowhy2_dk": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Shop online (including online groceries)",
+        "2": "Socialize online",
+        "3": "Order food for delivery",
+        "4": "Have a parcel delivered for home use",
+        "5": "I did none of these"
+    },
+    "sloc": {
+        "-8": "I don’t know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Yes",
+        "2": "No"
+    },
+    "traveldatadevice_3": {
+        "-9": "Not ascertained",
+        "-8": "I don't know",
+        "-7": "I prefer not to answer",
+        "-1": "Appropriate skip",
+        "1": "Message signs",
+        "2": "Smartphones",
+        "3": "Navigation devices",
+        "97": "Other"
+    }
+}

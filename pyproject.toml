@@ -17,3 +17,43 @@ dependencies = [
 
 [tool.uv]
 find-links = ["https://girder.github.io/large_image_wheels"]
+
+[tool.setuptools.packages.find]
+include = ["foundata*"]
+
+[tool.black]
+line-length = 80
+skip_magic_trailing_comma = true
+
+[tool.ruff]
+line-length = 80
+lint.select = ["E", "F", "I", "Q"]
+lint.ignore = [
+    "E501", # line too long: Black will handle this.
+    "D1",   # Ignore missing docstrings in public functions/modules. There are just too many of them missing...
+]
+
+# Exclude a variety of commonly ignored directories.
+exclude = [".*", "__pypackages__", "build", "dist", "venv", "reports/"]
+
+# Allow unused variables when underscore-prefixed.
+lint.dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+[tool.ruff.lint.pydocstyle]
+convention = "google"
+
+[tool.ruff.lint.mccabe]
+# Unlike Flake8, default to a complexity level of 10.
+max-complexity = 10
+
+# Ignore `E402` (import violations) and `F401` (unused imports) in all `__init__.py` files
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["E402", "F401"]
+"*.ipynb" = ["E402"]
+
+# Ignore `E402` for all notebooks
+[tool.nbqa.addopts]
+ruff = ["--extend-ignore=E402"]
+
+[tool.ruff.lint.flake8-quotes]
+docstring-quotes = "double"
