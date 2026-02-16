@@ -1,0 +1,36 @@
+attribute_columns:
+  - hid
+  - pid
+  - age
+  - hh_size
+  - hh_income
+  - sex
+  - residence
+  - ownership
+  - vehicles
+  - disability
+  - education
+  - can_wfh
+  - industry
+  - race
+  - has_licence
+  - relationship
+  - employment
+  - country
+  - source
+  - year
+  - month
+  - day
+
+trip_columns:
+  - hid
+  - pid
+  - seq
+  - ozone
+  - dzone
+  - oact
+  - dact
+  - mode
+  - tst
+  - tet
+  - distance

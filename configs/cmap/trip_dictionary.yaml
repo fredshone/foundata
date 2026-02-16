@@ -11,13 +11,13 @@ column_mappings:
     distance: distance
 
 day:
-    0: Monday
-    1: Tuesday
-    2: Wednesday
-    3: Thursday
-    4: Friday
-    5: Saturday
-    6: Sunday
+    1: monday
+    2: tuesday
+    3: wednesday
+    4: thursday
+    5: friday
+    6: saturday
+    7: sunday
 
 mode:
     101: walk #  walk,

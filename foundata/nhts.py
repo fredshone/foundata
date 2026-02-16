@@ -3,6 +3,8 @@ from pathlib import Path
 import polars as pl
 import yaml
 
+from foundata.utils import load_yaml_config, sample_us_to_euro
+
 from .utils import get_config_path
 
 
@@ -61,9 +63,9 @@ def _preprocess_trips(
 
 def load_households(
     root: str | Path,
+    config_path: str | Path | None = None,
     years: list[int] | None = None,
     names: list[str] | None = None,
-    config_path: str | Path | None = None,
 ) -> dict[int, pl.DataFrame]:
     root = _expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
@@ -74,34 +76,26 @@ def load_households(
         if config_path is not None
         else get_config_path("nhts", "hh_dictionary.yaml")
     )
-    with open(config_path) as handle:
-        config = yaml.safe_load(handle)
-
-    column_mapping = config["column_mappings"]
+    config = load_yaml_config(config_path)
 
     hhs: dict[int, pl.DataFrame] = {}
     for year, name in zip(years, names):
+
+        year_config = {}
+        for k, v in config.items():
+            if year in v:
+                year_config[k] = v[year]
+            else:
+                year_config[k] = v["default"]
+
+        column_mapping = year_config["column_mappings"]
+
+        print(f"Loading households for {year} from {name}...")
         path = root / str(year) / name
         data = pl.read_csv(path, ignore_errors=True)
 
-        available_cols = set(data.columns)
-        column_mapping_filtered = {
-            k: v for k, v in column_mapping.items() if k in available_cols
-        }
-        cols = list(column_mapping_filtered.keys())
-        data = data.select(cols)
-
-        data = data.with_columns(
-            pl.col(col)
-            .replace_strict(
-                config[col].get(year, config[col]["default"]), default=None
-            )
-            .fill_null(pl.col(col))
-            for col in column_mapping_filtered.keys()
-            if col in config
-        )
-
-        data = data.rename(column_mapping_filtered)
+        select = column_mapping.keys() & set(data.columns)
+        data = data.select(select).rename(column_mapping, strict=False)
 
         if "date" in data.columns:
             data = data.with_columns(
@@ -115,12 +109,36 @@ def load_households(
                 .str.slice(4)
                 .cast(pl.Int32)
                 .alias("month"),
+            ).drop("date")
+
+            # sample income within bounds
+            data = data.with_columns(
+                pl.col("hh_income")
+                .replace_strict(year_config["hh_income"])
+                .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
+                # pl.col("rurality").replace_strict(config["rurality"]),
+                pl.col("ownership").replace_strict(year_config["ownership"]),
+                pl.col("day").replace_strict(year_config["day"]),
             )
 
-        data = data.with_columns(
-            (pl.col("hid") + year * 10_000_000_000).alias("hid")
-        )
-        hhs[year] = data
+            if "race1" in data.columns:
+                data = data.with_columns(
+                    race=pl.col("race1").replace_strict(year_config["race1"])
+                ).drop("race1")
+            elif "race2" in data.columns:
+                data = data.with_columns(
+                    race=pl.col("race2").replace_strict(year_config["race2"])
+                ).drop("race2")
+            else:
+                data = data.with_columns(race=pl.lit("unknown"))
+
+            data = data.with_columns(
+                hid=(pl.col("hid") + (year * 1_000_000_000))
+            )
+
+            data.with_columns(source=pl.lit("nhts"), country=pl.lit("usa"))
+
+            hhs[year] = data
 
     return hhs
 

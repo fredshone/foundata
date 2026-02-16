@@ -2,6 +2,16 @@ import random
 from pathlib import Path
 
 import polars as pl
+import yaml
+
+
+def expand_root(root: str | Path) -> Path:
+    return Path(root).expanduser()
+
+
+def load_yaml_config(path: str | Path) -> dict:
+    with open(path) as handle:
+        return yaml.safe_load(handle)
 
 
 def check_overlap(table_a: pl.DataFrame, table_b: pl.DataFrame, on: str) -> set:
@@ -50,14 +60,62 @@ def sample_int_range(bounds: tuple[int, int]) -> int:
     return random.randint(int(a), int(b))
 
 
-def sample_scaled_range(
-    bounds: tuple[int, int] | None, scale: float, default: int = 0
-) -> int:
-    if bounds is None:
-        return default
+def sample_us_to_euro(bounds: tuple[int, int] | None) -> int | None:
     a, b = bounds
-    return int(random.randint(int(a), int(b)) * scale)
+    return int(random.randint(int(a), int(b)) / 0.85)
 
 
 def get_config_path(*parts: str) -> Path:
     return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)
+
+
+def negative_duration_plans(trips: pl.DataFrame) -> bool:
+    bad_trips = trips.filter(pl.col("tst") > pl.col("tet"))
+    return trips.join(bad_trips.select("pid").unique(), on="pid", how="inner")
+
+
+def time_inconsistent_plans(trips: pl.DataFrame) -> bool:
+    bad_trips = trips.filter(
+        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
+    )
+    return trips.join(bad_trips.select("pid").unique(), on="pid", how="inner")
+
+
+def filter_time_consistent(
+    attributes: pl.DataFrame, trips: pl.DataFrame
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    print(
+        f"Total trips: {len(trips)}, Total plans: {len(trips.select('pid').unique())}, from {len(attributes)} attributes"
+    )
+
+    negative_duration_trips = trips.filter(
+        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
+    )
+    clean_trips = trips.join(
+        negative_duration_trips.select("pid").unique(), on="pid", how="anti"
+    )
+    clean_attributes = attributes.join(
+        negative_duration_trips.select("pid").unique(), on="pid", how="anti"
+    )
+
+    inconsistent_trips = trips.filter(
+        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
+    )
+    clean_trips = clean_trips.join(
+        inconsistent_trips.select("pid").unique(), on="pid", how="anti"
+    )
+    clean_attributes = attributes.join(
+        inconsistent_trips.select("pid").unique(), on="pid", how="anti"
+    )
+
+    trips_removed = len(trips) - len(clean_trips)
+    plans_removed = len(trips.select("pid").unique()) - len(
+        clean_trips.select("pid").unique()
+    )
+    attributes_removed = len(attributes) - len(clean_attributes)
+
+    print(
+        f"Removed {trips_removed} trips or {plans_removed} plans and {attributes_removed} attributes due to time inconsistency"
+    )
+
+    return clean_attributes, clean_trips

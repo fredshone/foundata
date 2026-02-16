@@ -1,4 +1,5 @@
 column_mappings:
+  sampno: hid
   wthhfin: weight
   hhinc: hh_income
   resty: residence
@@ -6,6 +7,16 @@ column_mappings:
   hhveh: vehicles
   hhsize: hh_size
   travdate: date
+
+
+day:
+    1: monday
+    2: tuesday
+    3: wednesday
+    4: thursday
+    5: friday
+    6: saturday
+    7: sunday
 
 hh_income:
   -9: [0, 0]

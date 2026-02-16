@@ -1,53 +1,150 @@
-column_mappings: {
-    "HOUSEID": "hid",
-    "URBRUR": "urban_rural",
-    "HBPPOPDN": "population_density",
-    "HHFAMINC": "hh_income",
-    "HHSIZE": "hh_size",
-    "HHVEHCNT": "num_vehicles",
-    "HOMEOWN": "home_ownership",
-    "LIF_CYC": "life_cycle",
-    "TDAYDATE": "date",
-    "TRAVDAY": "day",
-    "WRKCOUNT": "num_workers",
-    "HH_RACE": "race",
-    "HHR_RACE": "race",
-    }
+column_mappings:
+    default:
+        "HOUSEID": "hid"
+        # "URBRUR": "rurality"
+        # "HBPPOPDN": "population_density"
+        "HHFAMINC": "hh_income"
+        "HHSIZE": "hh_size"
+        "HHVEHCNT": "num_vehicles"
+        "HOMEOWN": "ownership"
+        # "LIF_CYC": "life_cycle"
+        "TDAYDATE": "date"
+        "TRAVDAY": "day"
+        "WRKCOUNT": "num_workers"
+        "HH_RACE": "race1"
+        "HHR_RACE": "race2"
+
+rurality: {default: {1: 'urban', 2: 'rural'}}
+
+hh_income:
+    default:
+        -7: [0,0] # 'I prefer not to answer',
+        -9: [0,0] # 'Not ascertained',
+        -8: [0,0] # 'I do not know',
+        1: [0, 10000] #'Less than $10,000',
+        2: [10000, 15000] #'$10,000 to $14,999',
+        3: [15000, 25000] #'$15,000 to $24,999',
+        4: [25000, 35000] #'$25,000 to $34,999',
+        5: [35000, 50000] #'$35,000 to $49,999',
+        6: [50000, 75000] #'$50,000 to $74,999',
+        7: [75000, 100000] #'$75,000 to $99,999',
+        8: [100000, 125000] #'$100,000 to $124,999',
+        9: [125000, 150000] #'$125,000 to $149,999',
+        10: [150000, 200000] #'$150,000 to $199,999',
+        11: [200000, 400000] #'$200,000 or more'
+    2009:
+        -1: [0,0] # 'Appropriate Skip',
+        -7: [0,0] # 'I prefer not to answer',
+        -8: [0,0] # 'I do not know',
+        -9: [0,0] # 'Not ascertained',
+        1: [0, 5000] # '< $5,000',
+        2: [5000, 10000] # '$5,000 - $9,999',
+        3: [10000, 15000] # '$10,000 - $14,999',
+        4: [15000, 20000] # '$15,000 - $19,999',
+        5: [20000, 25000] # '$20,000 - $24,999',
+        6: [25000, 30000] # '$25,000 - $29,999',
+        7: [30000, 35000] # '$30,000 - $34,999',
+        8: [35000, 40000] # '$35,000 - $39,999',
+        9: [40000, 45000] # '$40,000 - $44,999',
+        10: [45000, 50000] #    '$45,000 - $49,999',
+        11: [50000, 55000] # '$50,000 - $54,999',
+        12: [55000, 60000] # '$55,000 - $59,999',
+        13: [60000, 65000] # '$60,000 - $64,999',
+        14: [65000, 70000] # '$65,000 - $69,999',
+        15: [70000, 75000] # '$70,000 - $74,999',
+        16: [75000, 80000] # '$75,000 - $79,999',
+        17: [80000, 100000] # '$80,000 - $99,999',
+        18: [100000, 200000] # '$100,000 or more'
+    2001:
+        -1: [0,0] # 'Appropriate Skip',
+        -7: [0,0] # 'I prefer not to answer',
+        -8: [0,0] # 'I do not know',
+        -9: [0,0] # 'Not ascertained',
+        1: [0, 5000] # '< $5,000',
+        2: [5000, 10000] # '$5,000 - $9,999',
+        3: [10000, 15000] # '$10,000 - $14,999',
+        4: [15000, 20000] # '$15,000 - $19,999',
+        5: [20000, 25000] # '$20,000 - $24,999',
+        6: [25000, 30000] # '$25,000 - $29,999',
+        7: [30000, 35000] # '$30,000 - $34,999',
+        8: [35000, 40000] # '$35,000 - $39,999',
+        9: [40000, 45000] # '$40,000 - $44,999',
+        10: [45000, 50000] #    '$45,000 - $49,999',
+        11: [50000, 55000] # '$50,000 - $54,999',
+        12: [55000, 60000] # '$55,000 - $59,999',
+        13: [60000, 65000] # '$60,000 - $64,999',
+        14: [65000, 70000] # '$65,000 - $69,999',
+        15: [70000, 75000] # '$70,000 - $74,999',
+        16: [75000, 80000] # '$75,000 - $79,999',
+        17: [80000, 100000] # '$80,000 - $99,999',
+        18: [100000, 200000] # '$100,000 or more'
+
+ownership:
+    default:
+        -8: unknown # 'I do not know',
+        -7: unknown #'I prefer not to answer',
+        1: owned # 'Owned',
+        2: rented # 'Rented',
+        3: other # 'Other',
+        91: other # 'Other'
+        97: other
+    2022:
+        1: owned #'Owned',
+        2: owned #'Owned',
+        3: rented, # 'Rented',
+        4: other
+
+day:
+    default:
+        1: sunday
+        2: monday
+        3: tuesday
+        4: wednesday
+        5: thursday
+        6: friday
+        7: saturday
 
 
-'HH_RACE': {
-    'default': {1: 'white',
-    2: 'black',
-    3: 'asian',
-    4: 'other',
-    5: 'other',
-    6: 'other',
-    97: 'other'}
-}
-'HHR_RACE': {
-    'default': {
-        -7: 'unknown',
-        -8: 'unknown',
-        -9: 'unknown',
-        1: 'white',
-        2: 'black',
-        3: 'asian',
-        4: 'other',
-        5: 'other',
-        6: 'other',
-        7: 'other',
-        8: 'other',
-        9: 'other',
-        10: 'other',
-        11: 'other',
-        12: 'other',
-        13: 'other',
-        14: 'other',
-        15: 'other',
-        16: 'other',
-        17: 'other',
-        97: 'other'}
-}
+race1:
+    default:
+        -7: unknown
+        -8: unknown
+        -9: unknown
+        -1: unknown
+        1: white
+        2: black
+        3: asian
+        4: other
+        5: other
+        6: other
+        7: other
+        97: other
+
+race2:
+    default:
+        -7: unknown
+        -8: unknown
+        -9: unknown
+        -1: unknown
+        1: white
+        2: black
+        3: asian
+        4: other
+        5: other
+        6: other
+        7: other
+        8: other
+        9: other
+        10: other
+        11: other
+        12: other
+        13: other
+        14: other
+        15: other
+        16: other
+        17: other
+        97: other
+
 'FLAG100': {'default': {1: 'All eligible household members completed',
     2: '75% to 99% of eligible household members completed'}}
 'HBPPOPDN': {
