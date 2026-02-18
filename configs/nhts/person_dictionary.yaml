@@ -1,53 +1,54 @@
 column_mappings: {
-    "PERSONID": "phid", # id within household
+    "PERSONID": "pid", # id within household
     "HOUSEID": "hid",
     "R_AGE": "age",
     "EDUC": "education",
     "MEDCOND": "disability",  # actually difficulty travelling
-    "PRMACT": "employment_status",
-    "R_RELAT": "relationship_to_respondent",
+    "PRMACT": "employment",
+    "R_RELAT": "relationship",
     "R_SEX": "sex",
-    "DRIVER": "has_license",  # actually derived
+    "DRIVER": "has_licence",  # actually derived
+    "HBHUR": "rurality",
     }
 
-"EDUC":
+"education":
     "default": {
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
         -1: "unknown",
-        1: "no_grad_high_school",
-        2: "high_school",
-        3: "some_college",
-        4: "bachelors_degree",
-        5: "graduate_degree",
+        1: "none",
+        2: "school",
+        3: "school",
+        4: "undergraduate",
+        5: "graduate",
     }
     2022: {
         -1: "unknown",
-        1: "no_grad_high_school",
-        2: "no_grad_high_school",
-        3: "high_school",
-        4: "some_college",
-        5: "some_college",
-        6: "bachelors_degree",
-        7: "graduate_degree",
-        8: "graduate_degree",
+        1: "none",
+        2: "none",
+        3: "school",
+        4: "undergraduate",
+        5: "undergraduate",
+        6: "undergraduate",
+        7: "graduate",
+        8: "graduate",
     }
     2001: {
         -8: "unknown",
         -7: "unknown",
         -1: "unknown",
         -9: "unknown",
-        1: "no_grad_high_school",
-        2: "high_school",
-        3: "some_college",
-        4: "some_college",
-        5: "bachelors_degree",
-        6: "bachelors_degree",
-        7: "bachelors_degree",
-        8: "graduate_degree",
+        1: "none",
+        2: "school",
+        3: "school",
+        4: "school",
+        5: "undergraduate",
+        6: "undergraduate",
+        7: "undergraduate",
+        8: "graduate",
     }
-"MEDCOND":
+"disability":
     "default": {
         -1: "unknown",
         -7: "unknown",
@@ -56,7 +57,7 @@ column_mappings: {
         1: "yes",
         2: "no",
     }
-"PRMACT":
+"employment":
     2022: {
         -9: "unknown",
         -8: "unknown",
@@ -83,7 +84,7 @@ column_mappings: {
         7: "other",
         97: "other",
     }
-"R_RACE":
+"race":
     "default": {
         -9: "unknown",
         -8: "unknown",
@@ -96,7 +97,7 @@ column_mappings: {
         6: "other",
         97: "other",
     }
-"R_RELAT":
+"relationship":
     "default": {
         -9: "unknown",
         -8: "unknown",
@@ -132,7 +133,7 @@ column_mappings: {
         6: "other",
         7: "self",
     }
-"R_SEX":
+"sex":
     "default": {
         -7: "unknown",
         -8: "unknown",
@@ -140,7 +141,7 @@ column_mappings: {
         1: "male",
         2: "female",
     }
-"DRIVER":
+"has_licence":
     "default": {
         -9: "unknown",
         -8: "unknown",
@@ -149,3 +150,11 @@ column_mappings: {
         1: "yes",
         2: "no",
     }
+rurality:
+    default:
+        -9: unknown
+        1: rural
+        2: suburban
+        3: urban
+        4: suburban
+        5: urban

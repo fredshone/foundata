@@ -1,5 +1,6 @@
 import random
 from pathlib import Path
+from typing import Mapping
 
 import polars as pl
 import yaml
@@ -23,16 +24,20 @@ def check_overlap(table_a: pl.DataFrame, table_b: pl.DataFrame, on: str) -> set:
     n_b = len(missing_in_b)
     perc_a = n_a / len(on_b) * 100
     perc_b = n_b / len(on_a) * 100
+
     if missing_in_a:
         print(
             f"Warning: Missing {n_a} ({perc_a:.2f}%) of '{on}' keys in table_a: {missing_in_a}"
         )
+    else:
+        print(f"All '{on}' keys in table_b are present in table_a")
+
     if missing_in_b:
         print(
             f"Warning: Missing {n_b} ({perc_b:.2f}%) of '{on}' keys in table_b: {missing_in_b}"
         )
-
-    return missing_in_a & missing_in_b
+    else:
+        print(f"All '{on}' keys in table_a are present in table_b")
 
 
 def table_joiner(
@@ -49,6 +54,17 @@ def table_joiner(
         print(f"Warning: Duplicate columns (other than join key): {duplicates}")
 
     return table_a.join(table_b, on=on)
+
+
+def tables_joiner(tables: Mapping[int, pl.DataFrame], on: str) -> pl.DataFrame:
+    if not tables:
+        raise ValueError("No tables to join")
+
+    result = tables[0]
+    for table in tables[1:]:
+        result = table_joiner(result, table, on)
+
+    return result
 
 
 def config_for_year(config: dict, year):

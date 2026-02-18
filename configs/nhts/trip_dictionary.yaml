@@ -12,6 +12,8 @@ column_mapping:
         # "WHYTRP1S": "purpose",
         "WHYFROM": "oact",
         "WHYTO": "dact",
+        "OBHUR": "ozone",
+        "DBHUR": "dzone",
       }
     2017: {
         "HOUSEID": "hid",
@@ -23,6 +25,8 @@ column_mapping:
         "TRVLCMIN": "duration",
         "WHYFROM": "oact",
         "WHYTO": "dact",
+        "OBHUR": "ozone",
+        "DBHUR": "dzone",
       }
     2009: {
         "HOUSEID": "hid",
@@ -46,6 +50,36 @@ column_mapping:
         "WHYFROM": "oact",
         "WHYTO": "dact",
     }
+
+rurality:
+    2022:
+        -9: unknown
+        1: rural
+        2: suburban
+        3: urban
+        4: suburban
+        5: urban
+    2017:
+        -9: unknown
+        1: rural
+        2: suburban
+        3: urban
+        4: suburban
+        5: urban
+    2009:
+        -9: unknown
+        1: rural
+        2: suburban
+        3: urban
+        4: suburban
+        5: urban
+    2001:
+        -9: unknown
+        1: rural
+        2: suburban
+        3: urban
+        4: suburban
+        5: urban
 
 mode_mappings:
   2022: {

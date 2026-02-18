@@ -21,6 +21,7 @@ attribute_columns:
   - year
   - month
   - day
+  - rurality
 
 trip_columns:
   - hid
