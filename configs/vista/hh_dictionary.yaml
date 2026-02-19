@@ -4,12 +4,12 @@ column_mappings:
         surveyperiod: year
         travdow: day
         travmonth: month
-        # dwelltype: dwelling_type
-        owndwell: home_ownership
+        dwelltype: dwelling
+        owndwell: ownership
         hhsize: hh_size
         hhinc_group: hh_income
-        totalvehs: num_vehicles
-        homelga: zone
+        totalvehs: vehicles
+        homelga: rurality
         totalbikes: num_bikes
         hhpoststratweight: weight
 
@@ -18,12 +18,12 @@ column_mappings:
         surveyperiod: year
         travdow: day
         travmonth: month
-        # dwelltype: dwelling_type
-        owndwell: home_ownership
+        dwelltype: dwelling
+        owndwell: ownership
         hhsize: hh_size
         hhinc: hh_income
-        totalvehs: num_vehicles
-        homeLGA: zone
+        totalvehs: vehicles
+        homeLGA: rurality
         totalbikes: num_bikes
         wdhhwgt_LGA: wd_weight
         wehhwgt_LGA: we_weight
@@ -35,6 +35,16 @@ column_mappings:
     #  HH_RACE :  race
     #  HHR_RACE :  race
 
+
+dwelling:
+    default:
+        "Flat or Apartment": flat
+        "Separate House": house
+        "Other": other
+        "Missing": unknown
+        "Unit, Flat or Apartment": flat
+        "Terrace/Townhouse": house
+        "Terrace or Townhouse": house
 
 hh_income:
     default:
@@ -60,7 +70,7 @@ hh_income:
         $6,000-$7,999 ($312,000-$415,999): [312000, 416000]
         $8,000 or more ($416,000 or more): [416000, 1000000]
 
-home_ownership: {
+ownership: {
     default: {
         Fully Owned: owned,
         Being Purchased: owned,
@@ -70,7 +80,7 @@ home_ownership: {
     }
 }
 
-zone:
+rurality:
     default:
         "Banyule (C)": suburban  # Metro middle-ring LGA wholly in Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
         "Bayside (C)": urban     # Inner–inner/middle bay-side municipality within metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
@@ -116,7 +126,3 @@ zone:
         Merri-bek (C): urban             # Inner-north metropolitan LGA (formerly Moreland) [1](https://en.wikipedia.org/wiki/City_of_Merri-bek)
         Moorabool (S): suburban          # Peri-urban interface with Bacchus Marsh growth/commuter role [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)[19](https://en.wikipedia.org/wiki/Bacchus_Marsh)
         Melton (S): suburban              # Outer-metropolitan growth area (same LGA as City of Melton) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
-
-
-
-    

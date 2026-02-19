@@ -53,7 +53,7 @@ def table_joiner(
     if duplicates:
         print(f"Warning: Duplicate columns (other than join key): {duplicates}")
 
-    return table_a.join(table_b, on=on)
+    return table_a.join(table_b, on=on, maintain_order="left_right")
 
 
 def tables_joiner(tables: Mapping[int, pl.DataFrame], on: str) -> pl.DataFrame:
@@ -78,7 +78,17 @@ def sample_int_range(bounds: tuple[int, int]) -> int:
 
 def sample_us_to_euro(bounds: tuple[int, int] | None) -> int | None:
     a, b = bounds
-    return int(random.randint(int(a), int(b)) / 0.85)
+    return int(random.randint(int(a), int(b)) * 0.85)
+
+
+def sample_uk_to_euro(bounds: tuple[int, int] | None) -> int | None:
+    a, b = bounds
+    return int(random.randint(int(a), int(b)) * 1.14)
+
+
+def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
+    a, b = bounds
+    return int(random.randint(int(a), int(b)) * 0.6)
 
 
 def get_config_path(*parts: str) -> Path:
@@ -87,46 +97,68 @@ def get_config_path(*parts: str) -> Path:
 
 def negative_duration_plans(trips: pl.DataFrame) -> bool:
     bad_trips = trips.filter(pl.col("tst") > pl.col("tet"))
-    return trips.join(bad_trips.select("pid").unique(), on="pid", how="inner")
+    return trips.join(
+        bad_trips.select("pid").unique(),
+        on="pid",
+        how="inner",
+        maintain_order="left_right",
+    )
 
 
 def time_inconsistent_plans(trips: pl.DataFrame) -> bool:
     bad_trips = trips.filter(
         (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
     )
-    return trips.join(bad_trips.select("pid").unique(), on="pid", how="inner")
+    return trips.join(
+        bad_trips.select("pid").unique(),
+        on="pid",
+        how="inner",
+        maintain_order="left_right",
+    )
 
 
 def filter_time_consistent(
-    attributes: pl.DataFrame, trips: pl.DataFrame
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     print(
-        f"Total trips: {len(trips)}, Total plans: {len(trips.select('pid').unique())}, from {len(attributes)} attributes"
+        f"Total trips: {len(trips)}, Total plans: {len(trips.select(on).unique())}, from {len(attributes)} attributes"
     )
 
     negative_duration_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
+        (pl.col("tst") < (pl.col("tet").shift(1)).over(on))
     )
     clean_trips = trips.join(
-        negative_duration_trips.select("pid").unique(), on="pid", how="anti"
+        negative_duration_trips.select(on).unique(),
+        on=on,
+        how="anti",
+        maintain_order="left",
     )
     clean_attributes = attributes.join(
-        negative_duration_trips.select("pid").unique(), on="pid", how="anti"
+        negative_duration_trips.select(on).unique(),
+        on=on,
+        how="anti",
+        maintain_order="left",
     )
 
     inconsistent_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
+        (pl.col("tst") < (pl.col("tet").shift(1)).over(on))
     )
     clean_trips = clean_trips.join(
-        inconsistent_trips.select("pid").unique(), on="pid", how="anti"
+        inconsistent_trips.select(on).unique(),
+        on=on,
+        how="anti",
+        maintain_order="left",
     )
     clean_attributes = attributes.join(
-        inconsistent_trips.select("pid").unique(), on="pid", how="anti"
+        inconsistent_trips.select(on).unique(),
+        on=on,
+        how="anti",
+        maintain_order="left",
     )
 
     trips_removed = len(trips) - len(clean_trips)
-    plans_removed = len(trips.select("pid").unique()) - len(
-        clean_trips.select("pid").unique()
+    plans_removed = len(trips.select(on).unique()) - len(
+        clean_trips.select(on).unique()
     )
     attributes_removed = len(attributes) - len(clean_attributes)
 
@@ -135,3 +167,16 @@ def filter_time_consistent(
     )
 
     return clean_attributes, clean_trips
+
+
+def fix_trips(trips: pl.DataFrame) -> pl.DataFrame:
+    return (
+        trips.with_columns(
+            flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
+            .then(1)
+            .otherwise(0)
+        )
+        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
+        .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
+        .drop("flag")
+    )

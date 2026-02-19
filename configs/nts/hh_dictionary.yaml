@@ -3,21 +3,35 @@ column_mappings:
     TWSMonth: month
     # TWSWeekday_B01ID: day
     SurveyYear: year
-    Settlement2011EW_B04ID: area
-    HHIncQISEngTS_B01ID: income
+    Settlement2011EW_B04ID: rurality
+    HHIncQISEngTS_B01ID: hh_income
     Ten1_B02ID: ownership
-    AddressType_B01ID: property_type
+    AddressType_B01ID: dwelling
     HHoldNumPeople: hh_size
     # HHoldStruct_B02ID: hh_composition
     # HHoldNumChildren: hh_children
-    NumCar: hh_cars
+    NumCar: vehicles
     # NumBike: hh_bikes
     # NumMCycle: hh_motorcycles
     # BlueBdg_B01ID: disabled
     # NumLicHolders: num_license_holders
     W3: weight
 
-income:
+
+dwelling:
+    1: house
+    2: house
+    3: house
+    4: house
+    5: flat
+    6: flat
+    7: flat
+    8: other
+    -8: unknown
+    -9: unknown
+    -10: unknown
+
+hh_income:
     1: [0,18000]
     2: [18000,26000]
     3: [26000,36000]
@@ -35,20 +49,7 @@ ownership:
     -9: unknown
     -10: unknown
 
-property_type:
-    1: detached
-    2: semi_detached
-    3: terrace
-    4: unknown
-    5: flat
-    6: flat
-    7: flat
-    8: other
-    -8: unknown
-    -9: unknown
-    -10: unknown
-
-area:
+rurality:
     1: suburban
     2: urban
     3: rural
@@ -74,17 +75,27 @@ disabled:
     -9: unknown
     -10: unknown
 
-month:
-    1: January
-    2: February
-    3: March
-    4: April
-    5: May
-    6: June
-    7: July
-    8: August
-    9: September
-    10: October
-    11: November
-    12: December
-    -10: unknown
+# month:
+#     1: january
+#     2: february
+#     3: march
+#     4: april
+#     5: may
+#     6: june
+#     7: july
+#     8: august
+#     9: september
+#     10: october
+#     11: november
+#     12: december
+#     -10: unknown
+
+# day:
+#     1: monday
+#     2: tuesday
+#     3: wednesday
+#     4: thursday
+#     5: friday
+#     6: saturday
+#     7: sunday
+#     -10: unknown

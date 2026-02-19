@@ -10,7 +10,7 @@ column_mappings:
   emply_ask: is_employed
   # jobs: jobs
   wkstat: work_status
-  indus: industry
+  indus: occupation
   race: race
   lic: has_licence
   relate: relationship
@@ -67,7 +67,7 @@ work_status:
   7: unemployed
   97: other
 
-industry:
+occupation:
   "-8": unknown
   "-7": unknown
   "-1": n/a

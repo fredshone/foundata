@@ -1,14 +1,18 @@
 from pathlib import Path
 
 import polars as pl
-import yaml
 
 from .utils import (
     config_for_year,
-    get_config_path,
+    fix_trips,
+    sample_aus_to_euro,
     sample_int_range,
-    sample_scaled_range,
+    table_joiner,
 )
+
+
+def default(config, year):
+    return config.get(year, config["default"])
 
 
 def _expand_root(root: str | Path) -> Path:
@@ -24,8 +28,9 @@ def preprocess_households(
 ) -> pl.DataFrame:
     column_mapping = config_for_year(config["column_mappings"], year)
     income_mapping = config_for_year(config["hh_income"], year)
-    ownership_mapping = config_for_year(config["home_ownership"], year)
-    zone_mapping = config_for_year(config["zone"], year)
+    ownership_mapping = config_for_year(config["ownership"], year)
+    dwelling_mapping = config_for_year(config["dwelling"], year)
+    zone_mapping = config_for_year(config["rurality"], year)
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
     hhs = hhs.with_columns(
@@ -35,7 +40,7 @@ def preprocess_households(
     if year == "2012-2020":
         hhs = hhs.with_columns(
             pl.when(pl.col("hh_income").is_null())
-            .then(0)
+            .then(pl.lit(None, pl.Int32))
             .otherwise(
                 (
                     pl.col("hh_income")
@@ -55,24 +60,19 @@ def preprocess_households(
                 income_mapping, default=pl.lit((0, 0)), return_dtype=pl.List
             )
             .map_elements(
-                lambda bounds: sample_scaled_range(bounds, 0.6),
+                lambda bounds: sample_aus_to_euro(bounds),
                 return_dtype=pl.Float64,
             )
         )
 
     hhs = hhs.with_columns(
-        pl.col("home_ownership")
+        pl.col("ownership")
         .replace_strict(ownership_mapping)
-        .fill_null("unknown")
-        .alias("home_ownership")
+        .fill_null("unknown"),
+        pl.col("dwelling")
+        .replace_strict(dwelling_mapping, default=pl.col("dwelling"))
+        .fill_null("unknown"),
     )
-
-    hhs = hhs.with_columns(
-        pl.col("zone")
-        .replace_strict(zone_mapping, default=pl.col("zone"))
-        .fill_null("unknown")
-        .alias("urban/rural")
-    ).drop("zone")
 
     if year == "2012-2020":
         hhs = hhs.with_columns(
@@ -82,7 +82,19 @@ def preprocess_households(
             .alias("weight")
         ).drop("wd_weight", "we_weight")
 
-    return hhs.drop_nulls()
+    hhs = hhs.with_columns(
+        pl.col("rurality")
+        .replace_strict(zone_mapping, default=pl.col("rurality"))
+        .fill_null("unknown")
+    )
+
+    hhs = hhs.with_columns(
+        source=pl.lit("vista"),
+        country=pl.lit("australia"),
+        can_wfh=pl.lit("unknown"),
+    )
+
+    return hhs
 
 
 def preprocess_persons(
@@ -103,7 +115,7 @@ def preprocess_persons(
             .str.split("->")
             .map_elements(
                 lambda bounds: sample_int_range(_bounds_from_list(bounds)),
-                pl.Float64,
+                pl.Int64,
             )
             .alias("age")
         )
@@ -119,9 +131,7 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
-        pl.col("has_license")
-        .replace_strict(has_license_mapping, default=None)
-        .alias("has_license")
+        pl.col("has_licence").replace_strict(has_license_mapping, default=None)
     )
 
     persons = persons.with_columns(
@@ -132,13 +142,19 @@ def preprocess_persons(
             .then(pl.lit("unemployed"))
             .otherwise(pl.lit("education"))
         )
-        .alias("employment_status")
+        .alias("employment")
     ).drop("anywork", "studying")
 
     persons = persons.with_columns(
         pl.col("occupation")
         .replace_strict(occupation_mapping)
         .alias("occupation")
+    )
+
+    persons = persons.with_columns(
+        education=pl.lit("unknown"),
+        race=pl.lit("unknown"),
+        disability=pl.lit("unknown"),
     )
 
     return persons
@@ -161,50 +177,87 @@ def preprocess_trips(
 
     mode_map = config_for_year(config["mode_mappings"], year)
     act_map = config_for_year(config["act_mappings"], year)
+    rurality_map = config_for_year(config["rurality"], year)
     trips = trips.with_columns(
         pl.col("mode").replace_strict(mode_map),
         pl.col("oact").replace_strict(act_map),
         pl.col("dact").replace_strict(act_map),
+        pl.col("ozone").replace_strict(rurality_map, default=pl.col("ozone")),
+        pl.col("dzone").replace_strict(rurality_map, default=pl.col("dzone")),
     )
 
     return trips
 
 
-def load_year(
-    root: str | Path, year: str, hh_name: str, person_name: str, trips_name: str
-) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
-    root = _expand_root(root)
-    hh_config = yaml.safe_load(
-        open(get_config_path("vista", "hh_dictionary.yaml"))
-    )
-    person_config = yaml.safe_load(
-        open(get_config_path("vista", "person_dictionary.yaml"))
-    )
-    trips_config = yaml.safe_load(
-        open(get_config_path("vista", "trip_dictionary.yaml"))
-    )
+def load_years(
+    data_root: str | Path,
+    years: list[str],
+    hh_config: dict,
+    person_config: dict,
+    trips_config: dict,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
 
-    hh_columns = list(
-        config_for_year(hh_config["column_mappings"], year).keys()
-    )
-    person_columns = list(
-        config_for_year(person_config["column_mappings"], year).keys()
-    )
-    trips_columns = list(
-        config_for_year(trips_config["column_mappings"], year).keys()
-    )
+    hhs_names = [
+        "households_vista_2012_2020_lga_v1.csv",
+        "household_vista_2022_2023.csv",
+        "household_vista_2023_2024.csv",
+    ]
+    persons_names = [
+        "persons_vista_2012_2020_lga_v1.csv",
+        "person_vista_2022_2023.csv",
+        "person_vista_2023_2024.csv",
+    ]
 
-    hhs = pl.read_csv(
-        root / year / hh_name, columns=hh_columns, null_values="Missing/Refused"
-    )
-    hhs = preprocess_households(hhs, hh_config, year=year)
+    trips_names = [
+        "trips_vista_2012_2020_lga_v1.csv",
+        "trips_vista_2022_2023.csv",
+        "trips_vista_2023_2024.csv",
+    ]
 
-    persons = pl.read_csv(root / year / person_name, columns=person_columns)
-    persons = preprocess_persons(persons, person_config, year=year)
+    all_attributes = []
+    all_trips = []
 
-    trips = pl.read_csv(
-        root / year / trips_name, columns=trips_columns, null_values="Missing"
-    )
-    trips = preprocess_trips(trips, trips_config, year=year)
+    for year, hh_name, persons_name, trips_name in zip(
+        years, hhs_names, persons_names, trips_names
+    ):
 
-    return hhs, persons, trips
+        hh_columns = list(default(hh_config["column_mappings"], year).keys())
+
+        person_columns = list(
+            default(person_config["column_mappings"], year).keys()
+        )
+
+        trips_columns = list(
+            default(trips_config["column_mappings"], year).keys()
+        )
+
+        print(year, ":")
+
+        hhs = pl.read_csv(
+            data_root / year / hh_name,
+            columns=hh_columns,
+            null_values="Missing/Refused",
+        )
+        hhs = preprocess_households(hhs, hh_config, year=year)
+
+        persons = pl.read_csv(
+            data_root / year / persons_name, columns=person_columns
+        )
+        persons = preprocess_persons(persons, person_config, year=year)
+
+        attributes = table_joiner(hhs, persons, on="hid")
+
+        trips = pl.read_csv(
+            data_root / year / trips_name,
+            columns=trips_columns,
+            null_values="Missing",
+        )
+        trips = preprocess_trips(trips, trips_config, year=year)
+        trips = fix_trips(trips)
+
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    attributes = pl.concat(all_attributes)
+    trips = pl.concat(all_trips)
+    return attributes, trips

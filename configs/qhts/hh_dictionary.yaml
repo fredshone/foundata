@@ -4,23 +4,49 @@ column_mappings:
         TRAVYEAR: year
         TRAVDOW: day
         TRAVMONTH: month
-        DWELLTYPE: dwelling_type
+        DWELLTYPE: dwelling
         # owndwell: home_ownership
         HHSIZE: hh_size
         # hhinc_group: hh_income
-        HHVEH: num_vehicles
-        STRATA_LGA: zone
-        BIKES: num_bikes
+        HHVEH: vehicles
+        STRATA_LGA: rurality
+        # BIKES: num_bikes
         HHWGT_24: weight
+    2019-22:
+        HHID: hid
+        TRAVYEAR: year
+        TRAVDOW: day
+        TRAVMONTH: month
+        DWELLTYPE: dwelling
+        # owndwell: home_ownership
+        HHSIZE: hh_size
+        # hhinc_group: hh_income
+        HHVEH: vehicles
+        STRATA_LGA: rurality
+        # BIKES: num_bikes
+        HHWGT_21: weight
+    2017-20:
+        HHID: hid
+        TRAVYEAR: year
+        TRAVDOW: day
+        TRAVMONTH: month
+        DWELLTYPE: dwelling
+        # owndwell: home_ownership
+        HHSIZE: hh_size
+        # hhinc_group: hh_income
+        HHVEH: vehicles
+        STRATA_LGA: rurality
+        # BIKES: num_bikes
+        HHWGT_19: weight
 
-dwelling_type:
+dwelling:
     default:
         Unit, flat, or apartment (less than 4 storeys): flat
         Unit, flat, or apartment (4 or more storeys): flat
         Semi-detached house, terrace house, townhouse, etc.: house
         Separate house: house
         
-zone:
+rurality:
     default:
         1: rural # Noosa
         2: suburban # Sunshine Coast
@@ -36,5 +62,3 @@ zone:
         12: urban # Cairns
         13: urban # Mackay
         14: rural # Beaudesert-Tamborine
-
-            

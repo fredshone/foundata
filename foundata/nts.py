@@ -7,8 +7,7 @@ from .utils import (
     check_overlap,
     get_config_path,
     sample_int_range,
-    sample_scaled_range,
-    table_joiner,
+    sample_uk_to_euro,
 )
 
 
@@ -29,25 +28,27 @@ def load_households(
     columns = config["column_mappings"]
 
     hhs = pl.read_csv(
-        root / "household_eul_2002-2023.tab",
+        root / "tab" / "household_eul_2002-2023.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
 
-    income_config = config["income"]
+    income_config = config["hh_income"]
     hhs = hhs.with_columns(
-        pl.col("income")
+        pl.col("hh_income")
         .replace_strict(income_config)
         .map_elements(
-            lambda bounds: sample_scaled_range(bounds, 0.15),
-            return_dtype=pl.Int32,
+            lambda bounds: sample_uk_to_euro(bounds), return_dtype=pl.Int32
         )
     )
 
     hhs = hhs.with_columns(
+        # pl.col("day").replace_strict(config["day"]),
         pl.col("ownership").replace_strict(config["ownership"]),
-        pl.col("property_type").replace_strict(config["property_type"]),
-        pl.col("area").replace_strict(config["area"]),
+        pl.col("dwelling").replace_strict(config["dwelling"]),
+        pl.col("rurality").replace_strict(config["rurality"]),
+        pl.lit("nts").alias("source"),
+        pl.lit("uk").alias("country"),
     )
 
     return hhs
@@ -66,7 +67,7 @@ def load_persons(
     columns = config["column_mappings"]
 
     persons = pl.read_csv(
-        root / "individual_eul_2002-2023.tab",
+        root / "tab" / "individual_eul_2002-2023.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
@@ -75,14 +76,18 @@ def load_persons(
         pl.col("age")
         .replace_strict(config["age"])
         .map_elements(sample_int_range, return_dtype=pl.Int32),
-        pl.col("gender").replace_strict(config["gender"]),
+        pl.col("sex").replace_strict(config["sex"]),
         pl.col("education").replace_strict(config["education"]),
-        pl.col("license").replace_strict(config["license"]),
-        pl.col("work_status").replace_strict(config["work_status"]),
-        pl.col("ethnicity").replace_strict(config["ethnicity"]),
-        pl.col("wfh").replace_strict(config["wfh"]),
-        pl.col("mobility").replace_strict(config["mobility"]),
-        pl.col("wheelchair_user").replace_strict(config["wheelchair_user"]),
+        pl.col("has_licence").replace_strict(config["has_licence"]),
+        pl.col("employment").replace_strict(config["employment"]),
+        pl.col("race").replace_strict(config["race"]),
+        pl.col("can_wfh").replace_strict(config["can_wfh"]),
+        pl.col("disability").replace_strict(config["disability"]),
+        pl.col("occupation").replace_strict(config["occupation"]),
+        pl.col("relationship").replace_strict(
+            config["relationship"], default=pl.col("relationship")
+        ),
+        # pl.col("wheelchair_user").replace_strict(config["wheelchair_user"]),
     )
 
     return persons
@@ -101,16 +106,17 @@ def load_trips(
     columns = config["column_mappings"]
 
     trips = pl.read_csv(
-        root / "trip_eul_2002-2023.tab",
+        root / "tab" / "trip_eul_2002-2023.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
 
-    trips = trips.with_columns(
-        pl.col("did").rank(method="dense").over("pid").alias("day")
-    )
-    trips = trips.with_columns(
-        (pl.col("pid") * 100 + pl.col("day")).alias("pdid")
+    trips = (
+        trips.with_columns(
+            pl.col("did").rank(method="dense").over("pid").alias("day")
+        )
+        .with_columns((pl.col("pid") * 100 + pl.col("day")).alias("pdid"))
+        .drop("day")
     )
 
     trips = trips.with_columns(
@@ -125,12 +131,12 @@ def load_trips(
     trips = trips.filter(pl.col("tst").is_not_null().over("pdid"))
     trips = trips.filter(pl.col("tet").is_not_null().over("pdid"))
 
-    trips = trips.with_columns(
-        pl.when(pl.col("tet") < pl.col("tst"))
-        .then(pl.col("tet") + 1440)
-        .otherwise(pl.col("tet"))
-        .alias("tet")
-    )
+    # trips = trips.with_columns(
+    #     pl.when(pl.col("tet") < pl.col("tst"))
+    #     .then(pl.col("tet") + 1440)
+    #     .otherwise(pl.col("tet"))
+    #     .alias("tet")
+    # )
 
     return trips.sort("hid", "pid", "tid")
 
@@ -148,25 +154,45 @@ def load_days(
     columns = config["column_mappings"]
 
     days = pl.read_csv(
-        root / "day_eul_2002-2023.tab",
+        root / "tab" / "day_eul_2002-2023.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
 
-    return days.with_columns(pl.col("dow").replace_strict(config["dow"]))
+    return days.with_columns(pl.col("day").replace_strict(config["day"]))
 
 
-def build_attributes(
-    persons: pl.DataFrame, households: pl.DataFrame
+def split_days(
+    trips: pl.DataFrame,
+    attributes: pl.DataFrame,
+    on_split: str,
+    on_base: str = "pid",
 ) -> pl.DataFrame:
-    return table_joiner(persons, households, "hid")
+    mapping = trips.select(on_base, on_split, "day").unique(maintain_order=True)
+    trips_split = trips.drop(on_base).rename({on_split: on_base})
+    attributes_expanded = (
+        mapping.join(attributes, on=on_base, how="left")
+        .drop(on_base)
+        .rename({on_split: on_base})
+    )
+    check_overlap(attributes_expanded, trips_split, on=on_base)
+
+    # also
+    trips_split = trips_split.drop(["tid", "did", "day"])
+    trips_split = fix_trips(trips_split)
+
+    return trips_split, attributes_expanded
 
 
-def merge_trips_days(trips: pl.DataFrame, days: pl.DataFrame) -> pl.DataFrame:
-    return table_joiner(trips, days, "did")
-
-
-def check_person_trip_overlap(
-    trips: pl.DataFrame, attributes: pl.DataFrame
-) -> set:
-    return check_overlap(trips, attributes, "pid")
+def fix_trips(trips: pl.DataFrame) -> pl.DataFrame:
+    # fix trips that pass midnight
+    return (
+        trips.with_columns(
+            flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
+            .then(1)
+            .otherwise(0)
+        )
+        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
+        .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
+        .drop("flag")
+    )

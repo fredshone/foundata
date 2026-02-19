@@ -2,7 +2,7 @@ column_mappings:
   sampno: hid
   wthhfin: weight
   hhinc: hh_income
-  resty: residence
+  resty: dwelling
   homeown: ownership
   hhveh: vehicles
   hhsize: hh_size
@@ -33,7 +33,7 @@ hh_income:
   9: [100000, 150000]
   10: [150000, 200000]
 
-residence:
+dwelling:
   -8: unknown
   -7: unknown
   1: house

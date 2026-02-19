@@ -154,8 +154,8 @@ def load_persons(
     persons = pl.concat(persons)
 
     persons = persons.with_columns(
-        industry=pl.lit("unknown"),
-        residence=pl.lit("unknown"),
+        occupation=pl.lit("unknown"),
+        dwelling=pl.lit("unknown"),
         can_wfh=pl.lit("unknown"),
     )
 

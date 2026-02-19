@@ -5,13 +5,13 @@ attribute_columns:
   - hh_size
   - hh_income
   - sex
-  - residence
+  - dwelling
   - ownership
   - vehicles
   - disability
   - education
   - can_wfh
-  - industry
+  - occupation
   - race
   - has_licence
   - relationship

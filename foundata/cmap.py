@@ -53,7 +53,7 @@ def load_households(
         pl.col("hh_income")
         .replace_strict(config["hh_income"])
         .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
-        pl.col("residence").replace_strict(config["residence"]),
+        pl.col("dwelling").replace_strict(config["dwelling"]),
         pl.col("ownership").replace_strict(config["ownership"]),
     )
 
@@ -93,7 +93,7 @@ def load_persons(
         .then(pl.lit("employed"))
         .otherwise(pl.col("work_status").replace_strict(config["work_status"]))
         .alias("employment"),
-        pl.col("industry").replace_strict(config["industry"]),
+        pl.col("occupation").replace_strict(config["occupation"]),
         pl.col("race").replace_strict(config["race"]),
         pl.col("has_licence").replace_strict(config["has_licence"]),
         pl.col("relationship").replace_strict(config["relationship"]),
@@ -145,11 +145,62 @@ def load_locations(
 
     locations = (
         locations.join(
-            rurality_table, left_on="fips", right_on="tractFIPS", how="left"
+            rurality_table,
+            left_on="fips",
+            right_on="tractFIPS",
+            how="left",
+            maintain_order="left_right",
         )
         .with_columns(rurality=pl.col("rurality").fill_null("unknown"))
         .drop("fips")
     )
+
+    return locations
+
+
+def load_home_locations(
+    root: str | Path, rurality_table: pl.DataFrame
+) -> pl.DataFrame:
+    root = expand_root(root)
+    locations = (
+        pl.read_csv(
+            root / "location.csv",
+            columns=[
+                "sampno",
+                "state_fips",
+                "county_fips",
+                "tract_fips",
+                "home",
+            ],
+        )
+        .filter(pl.col("home") == 1)
+        .drop("home")
+        .with_columns(
+            pl.col("state_fips").cast(pl.Utf8).str.zfill(2),
+            pl.col("county_fips").cast(pl.Utf8).str.zfill(3),
+            pl.col("tract_fips").cast(pl.Utf8).str.zfill(6),
+        )
+        .with_columns(
+            fips=(
+                pl.col("state_fips")
+                + pl.col("county_fips")
+                + pl.col("tract_fips")
+            ).str.replace_all("-", "0")
+        )
+        .drop(["state_fips", "county_fips", "tract_fips"])
+    )
+
+    locations = (
+        locations.join(
+            rurality_table,
+            left_on="fips",
+            right_on="tractFIPS",
+            how="left",
+            maintain_order="left_right",
+        )
+        .with_columns(rurality=pl.col("rurality").fill_null("unknown"))
+        .drop("fips")
+    ).rename({"sampno": "hid"})
 
     return locations
 
@@ -263,6 +314,7 @@ def load_trips(
                 left_on=["hid", "ozone_code"],
                 right_on=["sampno", "locno"],
                 how="left",
+                maintain_order="left_right",
             )
             .join(
                 rurality_mapping.select(
@@ -271,6 +323,7 @@ def load_trips(
                 left_on=["hid", "dzone_code"],
                 right_on=["sampno", "locno"],
                 how="left",
+                maintain_order="left_right",
             )
             .drop(["ozone_code", "dzone_code"])
         )

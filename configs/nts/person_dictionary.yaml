@@ -3,17 +3,57 @@ column_mappings:
     IndividualID: pid
     HouseholdID: hid
     Age_B01ID: age
-    Sex_B01ID: gender
+    Sex_B01ID: sex
     EdAttn1_B01ID: education  # certification
-    DrivLic_B02ID: license
+    DrivLic_B02ID: has_licence
     CarAccess_B01ID: car_access
-    EcoStat_B02ID: work_status
-    EthGroupTS_B02ID: ethnicity
-    PossHmN_B01ID: wfh
-    MobDiffSum_B01ID: mobility
-    PowWhl_B01ID: wheelchair_user
+    EcoStat_B02ID: employment
+    EthGroupTS_B02ID: race
+    PossHmN_B01ID: can_wfh
+    MobDiffSum_B01ID: disability
+    SC_B01ID: occupation
+    HRPRelation_B01ID: relationship
+    # PowWhl_B01ID: wheelchair_user
     # TicketHolding_B01ID: ticket_holder
     # GenHeal_B01ID: health
+
+
+relationship:
+    1: self
+    2: partner
+    3: child
+    4: child
+    5: child
+    6: child
+    7: parent
+    8: parent
+    9: parent
+    10: parent
+    11: sibling
+    12: sibling
+    13: sibling
+    14: sibling
+    15: child
+    16: parent
+    17: other
+    18: other
+    19: partner
+    -8: unknown
+    -9: unknown
+    -10: unknown
+
+
+occupation:
+    -8: unknown
+    -9: unknown
+    -10: unknown
+    1: professional
+    2: manager  # technical
+    3: skilled
+    4: skilled
+    5: unskilled
+    6: unskilled
+    7: unknown
 
 age:
     # -8: unknown
@@ -40,7 +80,7 @@ age:
     20: [80,84]
     21: [85,100]
 
-gender:
+sex:
     -8: unknown
     -9: unknown
     -10: unknown
@@ -54,7 +94,7 @@ education:
     1: "yes"
     2: "no"
 
-license:
+has_licence:
     -8: unknown
     -9: unknown
     -10: unknown
@@ -65,7 +105,7 @@ license:
     5: "no"
     6: "no"
 
-work_status: 
+employment: 
     -8: unknown
     -9: unknown
     -10: unknown
@@ -77,14 +117,14 @@ work_status:
     6: unemployed
 
 
-ethnicity:
+race:
     -8: unknown
     -9: unknown
     -10: unknown
     1: white
     2: non-white
 
-wfh:
+can_wfh:
     -8: unknown
     -9: unknown
     -10: unknown
@@ -93,7 +133,7 @@ wfh:
     3: "yes"
     4: "no"
 
-mobility: 
+disability: 
     -8: unknown
     -9: unknown
     -10: unknown

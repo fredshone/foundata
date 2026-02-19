@@ -5,7 +5,7 @@ column_mappings:
         agegroup: age
         sex: sex
         relationship: relationship
-        nolicence: has_license
+        nolicence: has_licence
         anywork: anywork
         studying: studying
         anzsco1: occupation
@@ -16,7 +16,7 @@ column_mappings:
         age: age
         sex: sex
         relationship: relationship
-        nolicence: has_license
+        nolicence: has_licence
         anywork: anywork
         studying: studying
         anzsco1: occupation

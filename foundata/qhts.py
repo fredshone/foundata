@@ -1,46 +1,121 @@
 from pathlib import Path
+from typing import Optional
 
 import polars as pl
-import yaml
 
 from .utils import (
     config_for_year,
-    get_config_path,
+    fix_trips,
+    sample_aus_to_euro,
     sample_int_range,
-    sample_scaled_range,
+    table_joiner,
 )
 
 
-def _expand_root(root: str | Path) -> Path:
-    return Path(root).expanduser()
+def default(config, year):
+    return config.get(year, config["default"])
 
 
-def preprocess_households(
-    hhs: pl.DataFrame, config: dict, year: str
-) -> pl.DataFrame:
+def load_years(
+    data_root: str | Path,
+    years: list[str],
+    hh_config: dict,
+    person_config: dict,
+    trips_config: dict,
+    zones_mapping: Optional[pl.DataFrame] = None,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+
+    all_attributes = []
+    all_trips = []
+
+    for year in years:
+        print(year, ":")
+
+        hh_columns = list(default(hh_config["column_mappings"], year).keys())
+        hhs = pl.read_csv(
+            data_root / year / "1_QTS_HOUSEHOLDS.csv",
+            columns=hh_columns,
+            null_values="Missing/Refused",
+        )
+        hhs = load_households(hhs, hh_config, year=year)
+
+        person_columns = list(
+            default(person_config["column_mappings"], year).keys()
+        )
+        persons = pl.read_csv(
+            data_root / year / "2_QTS_PERSONS.csv", columns=person_columns
+        )
+        persons = load_persons(persons, person_config, year=year)
+
+        attributes = table_joiner(hhs, persons, on="hid")
+
+        trips_columns = list(
+            default(trips_config["column_mappings"], year).keys()
+        )
+
+        trips = pl.read_csv(
+            data_root / year / "5_QTS_TRIPS.csv",
+            columns=trips_columns,
+            null_values="Missing",
+        )
+        trips = load_trips(trips, trips_config, year=year)
+        trips = fix_trips(trips)
+
+        if zones_mapping is not None:
+            trips = (
+                trips.join(
+                    zones_mapping,
+                    left_on="ozone",
+                    right_on="SA1_MAINCODE_2021",
+                    how="left",
+                )
+                .drop("ozone")
+                .rename({"rurality": "ozone"})
+            )
+            trips = (
+                trips.join(
+                    zones_mapping,
+                    left_on="dzone",
+                    right_on="SA1_MAINCODE_2021",
+                    how="left",
+                )
+                .drop("dzone")
+                .rename({"rurality": "dzone"})
+            )
+            trips = trips.with_columns(
+                ozone=pl.col("ozone").fill_null("unknown"),
+                dzone=pl.col("dzone").fill_null("unknown"),
+            )
+
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    attributes = pl.concat(all_attributes)
+    trips = pl.concat(all_trips)
+    return attributes, trips
+
+
+def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
     column_mapping = config_for_year(config["column_mappings"], year)
-    dwell_mapping = config_for_year(config["dwelling_type"], year)
-    zone_mapping = config_for_year(config["zone"], year)
+    dwell_mapping = config_for_year(config["dwelling"], year)
+    rurality_mapping = config_for_year(config["rurality"], year)
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
     hhs = hhs.with_columns(
-        pl.col("dwelling_type")
-        .replace_strict(dwell_mapping)
-        .fill_null("unknown")
+        pl.col("dwelling").replace_strict(dwell_mapping).fill_null("unknown")
     )
 
     hhs = hhs.with_columns(
-        pl.col("zone")
-        .replace_strict(zone_mapping, default=pl.col("zone"))
+        pl.col("rurality")
+        .replace_strict(rurality_mapping, default=pl.col("rurality"))
         .fill_null("unknown")
-        .alias("urban/rural")
-    ).drop("zone")
+    )
 
-    return hhs.drop_nulls()
+    return hhs
 
 
-def preprocess_persons(
+def load_persons(
     persons: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
     column_mapping = config_for_year(config["column_mappings"], year)
@@ -76,7 +151,9 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
-        pl.col("employment").replace_strict(employment_mapping)
+        pl.col("employment")
+        .replace_strict(employment_mapping, default=pl.col("employment"))
+        .fill_null("unknown")
     )
 
     persons = persons.with_columns(
@@ -90,20 +167,51 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
+        country=pl.lit("australia"),
+        source=pl.lit("qhts"),
+        race=pl.lit("unknown"),
+        can_wfh=pl.lit("unknown"),
+        ownership=pl.lit("unknown"),
+        education=pl.lit("unknown"),
+    )
+
+    persons = persons.with_columns(
         pl.col("income")
         .replace_strict(income_mapping, default=None)
         .map_elements(
-            lambda bounds: sample_scaled_range(bounds, 0.6),
-            return_dtype=pl.Int32,
+            lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
         )
     )
+
+    persons = persons.with_columns(
+        hh_income=pl.col("income").sum().over("hid")
+    ).drop("income")
 
     return persons
 
 
-def preprocess_trips(
-    trips: pl.DataFrame, config: dict, year: str
-) -> pl.DataFrame:
+def load_zone_mapping(path: str | Path) -> pl.DataFrame:
+
+    mapping = {
+        "Rural Balance": "rural",
+        "Bounded Locality": "rural",
+        "Other Urban": "suburban",
+        "Major Urban": "urban",
+    }
+    zones = (
+        pl.read_csv(path, columns=["SA1_MAINCODE_2021", "SOS_NAME_2021"])
+        .with_columns(
+            rurality=pl.col("SOS_NAME_2021")
+            .replace_strict(mapping, default="unknown")
+            .fill_null("unknown")
+        )
+        .drop("SOS_NAME_2021")
+    )
+
+    return zones
+
+
+def load_trips(trips: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
     column_mapping = config_for_year(config["column_mappings"], year)
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
@@ -125,39 +233,3 @@ def preprocess_trips(
     )
 
     return trips
-
-
-def load_year(
-    root: str | Path, year: str, hh_name: str, person_name: str, trips_name: str
-) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
-    root = _expand_root(root)
-    hh_config = yaml.safe_load(
-        open(get_config_path("qhts", "hh_dictionary.yaml"))
-    )
-    person_config = yaml.safe_load(
-        open(get_config_path("qhts", "person_dictionary.yaml"))
-    )
-    trips_config = yaml.safe_load(
-        open(get_config_path("qhts", "trip_dictionary.yaml"))
-    )
-
-    hh_columns = list(
-        config_for_year(hh_config["column_mappings"], year).keys()
-    )
-    person_columns = list(
-        config_for_year(person_config["column_mappings"], year).keys()
-    )
-    trips_columns = list(
-        config_for_year(trips_config["column_mappings"], year).keys()
-    )
-
-    hhs = pl.read_csv(root / year / hh_name, columns=hh_columns)
-    hhs = preprocess_households(hhs, hh_config, year=year)
-
-    persons = pl.read_csv(root / year / person_name, columns=person_columns)
-    persons = preprocess_persons(persons, person_config, year=year)
-
-    trips = pl.read_csv(root / year / trips_name, columns=trips_columns)
-    trips = preprocess_trips(trips, trips_config, year=year)
-
-    return hhs, persons, trips

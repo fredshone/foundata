@@ -10,6 +10,16 @@ column_mappings:
         ANZSCO_1-digit: occupation
         ASSISTANY: disability
         INCOME: income
+    2017-20:
+        PERSID: pid
+        HHID: hid
+        AGEGROUP: age
+        SEX: sex
+        RELATIONSHIP: relationship
+        CARLICENCE: has_licence
+        MAINACT: employment
+        ANZSCO_1-digit: occupation
+        ASSISTANY: disability
 
 age:
     default:
@@ -71,6 +81,8 @@ employment:
         Illness: unemployed
         Childcare/Kindergarten: unemployed
         Secondary School: education
+        Under Five: unemployed
+        Other Study: education
 
 occupation:
     default:

@@ -1,14 +1,14 @@
 column_mappings:
     DayID: did
-    TravelWeekDay_B01ID: dow
+    TravelWeekDay_B01ID: day
 
-dow:
-    1: Monday
-    2: Tuesday
-    3: Wednesday
-    4: Thursday
-    5: Friday
-    6: Saturday
-    7: Sunday
+day:
+    1: monday
+    2: tuesday
+    3: wednesday
+    4: thursday
+    5: friday
+    6: saturday
+    7: sunday
     -10: unknown
 
