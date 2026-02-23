@@ -3,9 +3,9 @@ from typing import Optional
 
 import polars as pl
 
+from .fix import fix_trips
 from .utils import (
     config_for_year,
-    fix_trips,
     sample_aus_to_euro,
     sample_int_range,
     table_joiner,

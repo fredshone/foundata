@@ -98,8 +98,8 @@ occupation:
 
 income:
     default:
-        Prefer not to say / can't say: [0,0]
-        Nil or negative income: [0, 0]
+        Prefer not to say / can't say: [0]
+        Nil or negative income: [0,0]
         $1 - $149 per week ($1 - $7,799 per year): [1, 7800]
         $150 - $299 per week ($7,800 - $15,599 per year): [7800, 15600]
         $300 - $399 per week ($15,600 - $20,799 per year): [15600, 20800]

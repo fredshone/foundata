@@ -54,28 +54,30 @@ def check_overlap(
     if missing_in_lhs:
         n = min(n_lhs, 3)
         print(
-            f"Warning: Missing {n_lhs} ({perc_lhs:.1f}%) of '{on}' keys in {lhs_name}: {list(missing_in_lhs)[:n]}"
+            f"Warning: Missing {n_lhs} ({perc_lhs:.1f}%) of '{on}' keys in '{lhs_name}': {list(missing_in_lhs)[:n]}"
         )
     else:
-        print(f"All '{on}' keys in {rhs_name} are present in {lhs_name}")
+        print(f"All '{on}' keys in '{rhs_name}' are present in '{lhs_name}'")
 
     if missing_in_rhs:
         n = min(n_rhs, 3)
         print(
-            f"Warning: Missing {n_rhs} ({perc_rhs:.1f}%) of '{on}' keys in {rhs_name}: {list(missing_in_rhs)[:n]}"
+            f"Warning: Missing {n_rhs} ({perc_rhs:.1f}%) of '{on}' keys in '{rhs_name}': {list(missing_in_rhs)[:n]}"
         )
     else:
-        print(f"All '{on}' keys in {lhs_name} are present in {rhs_name}")
+        print(f"All '{on}' keys in '{lhs_name}' are present in '{rhs_name}'")
 
 
 def table_joiner(
     lhs: pl.DataFrame,
     rhs: pl.DataFrame,
     on: str,
+    lhs_name: str = "lhs",
+    rhs_name: str = "rhs",
     maintain_order: str = "left_right",
 ) -> pl.DataFrame:
     # check for missing keys
-    check_overlap(lhs, rhs, on)
+    check_overlap(lhs, rhs, on, lhs_name=lhs_name, rhs_name=rhs_name)
 
     # check for duplicates
     a_cols = lhs.columns
@@ -123,28 +125,28 @@ def config_for_year(config: dict, year):
 
 
 def sample_int_range(bounds: tuple[int, int] | None) -> int | None:
-    if not bounds:
+    if len(bounds) == 1:
         return pl.lit(None, pl.Int32)
     a, b = bounds
     return random.randint(int(a), int(b))
 
 
 def sample_us_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if not bounds:
+    if len(bounds) == 1:
         return pl.lit(None, pl.Int32)
     a, b = bounds
     return int(random.randint(int(a), int(b)) * 0.85)
 
 
 def sample_uk_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if not bounds:
-        return pl.lit(None, pl.Int32)
+    if len(bounds) == 1:
+        return None
     a, b = bounds
     return int(random.randint(int(a), int(b)) * 1.14)
 
 
 def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if not bounds:
+    if len(bounds) == 1:
         return pl.lit(None, pl.Int32)
     a, b = bounds
     return int(random.randint(int(a), int(b)) * 0.6)
@@ -152,90 +154,3 @@ def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
 
 def get_config_path(*parts: str) -> Path:
     return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)
-
-
-def negative_duration_plans(trips: pl.DataFrame) -> bool:
-    bad_trips = trips.filter(pl.col("tst") > pl.col("tet"))
-    return trips.join(
-        bad_trips.select("pid").unique(),
-        on="pid",
-        how="inner",
-        maintain_order="left_right",
-    )
-
-
-def time_inconsistent_plans(trips: pl.DataFrame) -> bool:
-    bad_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
-    )
-    return trips.join(
-        bad_trips.select("pid").unique(),
-        on="pid",
-        how="inner",
-        maintain_order="left_right",
-    )
-
-
-def filter_time_consistent(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print(
-        f"Total trips: {len(trips)}, Total plans: {len(trips.select(on).unique())}, from {len(attributes)} attributes"
-    )
-
-    negative_duration_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over(on))
-    )
-    clean_trips = trips.join(
-        negative_duration_trips.select(on).unique(),
-        on=on,
-        how="anti",
-        maintain_order="left",
-    )
-    clean_attributes = attributes.join(
-        negative_duration_trips.select(on).unique(),
-        on=on,
-        how="anti",
-        maintain_order="left",
-    )
-
-    inconsistent_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over(on))
-    )
-    clean_trips = clean_trips.join(
-        inconsistent_trips.select(on).unique(),
-        on=on,
-        how="anti",
-        maintain_order="left",
-    )
-    clean_attributes = attributes.join(
-        inconsistent_trips.select(on).unique(),
-        on=on,
-        how="anti",
-        maintain_order="left",
-    )
-
-    trips_removed = len(trips) - len(clean_trips)
-    plans_removed = len(trips.select(on).unique()) - len(
-        clean_trips.select(on).unique()
-    )
-    attributes_removed = len(attributes) - len(clean_attributes)
-
-    print(
-        f"Removed {trips_removed} trips or {plans_removed} plans and {attributes_removed} attributes due to time inconsistency"
-    )
-
-    return clean_attributes, clean_trips
-
-
-def fix_trips(trips: pl.DataFrame) -> pl.DataFrame:
-    return (
-        trips.with_columns(
-            flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
-            .then(1)
-            .otherwise(0)
-        )
-        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
-        .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
-        .drop("flag")
-    )

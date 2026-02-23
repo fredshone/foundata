@@ -5,7 +5,6 @@ import polars as pl
 
 from .utils import (
     config_for_year,
-    filter_time_consistent,
     fuzzy_loader,
     sample_int_range,
     sample_uk_to_euro,
@@ -42,6 +41,7 @@ def load_years(
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     all_attributes = []
     all_trips = []
+    print("Loading LTDS...")
     for year in years:
         print(f"Loading {year}...")
         root = _expand_root(data_root) / year
@@ -73,20 +73,33 @@ def load_years(
 
         zone_mapping = load_mapping(root / "HABORO_T.csv")
 
-        hhs = preprocess_households(hhs, hh_config_year, year, zone_mapping)
+        print("processing hhs...")
+        hhs = preprocess_hhs(hhs, hh_config_year, year, zone_mapping)
+
+        print("processing persons...")
         persons = preprocess_persons(persons, person_config_year)
+
+        print("processing person data...")
         persons_data = preprocess_persons_data(
             persons_data, person_data_config_year, year
         )
-        attributes = table_joiner(persons, persons_data.drop("hid"), on="pid")
-        attributes = table_joiner(attributes, hhs, on="hid")
+        attributes = table_joiner(
+            persons,
+            persons_data.drop("hid"),
+            on="pid",
+            lhs_name="persons",
+            rhs_name="person_data",
+        )
+        attributes = table_joiner(
+            attributes, hhs, on="hid", lhs_name="attributes", rhs_name="hhs"
+        )
 
+        print("processing trips and stages...")
         trips = preprocess_trips(trips, trips_config_year, year, zone_mapping)
         stages = preprocess_stages(stages, stages_config_year, year)
-
-        trips = table_joiner(trips, stages, on="tid")
-
-        attributes, trips = filter_time_consistent(attributes, trips, on="pid")
+        trips = table_joiner(
+            trips, stages, on="tid", lhs_name="trips", rhs_name="stages"
+        )
 
         all_attributes.append(attributes)
         all_trips.append(trips)
@@ -107,7 +120,7 @@ def load_years(
     return attributes, trips
 
 
-def preprocess_households(
+def preprocess_hhs(
     hhs: pl.DataFrame, config: dict, year: str, zone_mapping: dict
 ) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
@@ -120,9 +133,15 @@ def preprocess_households(
 
     hhs = hhs.with_columns(
         hh_income=(
-            pl.col("hh_income")
-            .replace_strict(income_mapping, return_dtype=pl.List)
-            .map_elements(sample_uk_to_euro, return_dtype=pl.Int32)
+            pl.col("hh_income").replace_strict(
+                income_mapping, return_dtype=pl.List(pl.Int32)
+            )
+        )
+    ).with_columns(
+        hh_income=(
+            pl.col("hh_income").map_elements(
+                sample_uk_to_euro, return_dtype=pl.Int32
+            )
         )
     )
 
@@ -139,7 +158,7 @@ def preprocess_households(
         .alias("rurality")
     ).drop("zone")
 
-    return hhs.drop_nulls()
+    return hhs
 
 
 def preprocess_persons(
@@ -216,11 +235,31 @@ def sample_minute(base: int) -> int:
 
 
 def sample_tst(row) -> int:
-    tst_hr, tet_hr, duration = row["tst"], row["tet"], row["duration"]
-    earliest = max(tst_hr, tet_hr - duration)
-    latest = min(tst_hr + 60, tet_hr + 60 - duration)
+    print("===")
+    tst, tet, d, ptet, ntst = (
+        row["tst"],
+        row["tet"],
+        row["duration"],
+        row["ptet"],
+        row["ntst"],
+    )
+    first_trip = ptet is None
+    last_trip = ntst is None
+    ptet = ptet if not first_trip else tst - 30
+    ntst = ntst if not last_trip else tet + 30
+    # if limited by previous trip, start after it ends + 30 minutes
+    earliest = max(tst, tet - d, ptet + 30)
+    print(f"earliest: {earliest}, max: {tst}, {tet - d}, {ptet + 30}")
+    # if limited by next trip, start at least 30 minutes before it starts
+    latest = min(tst + 60, tet + 60 - d, ntst + 30 - d)
+    print(f"latest: {latest}, min: {tst + 60}, {tet + 60 - d}, {ntst + 30 -d}")
     if latest < earliest:
-        return int((tst_hr + tet_hr + duration) / 2)
+        print("Squeeze")
+        if first_trip:
+            return min([latest, earliest])
+        if last_trip:
+            return max([latest, earliest])
+        return int((tst + tet + 60 - d) / 2)
     return random.randint(earliest, latest)
 
 
@@ -230,7 +269,7 @@ def preprocess_trips(
     column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    trips = trips.sort("hid", "pid", "tid").with_columns(
+    trips = trips.sort(["hid", "pid", "tid"]).with_columns(
         seq=pl.col("tid").rank(method="dense").over("hid", "pid")
     )
 
@@ -245,15 +284,18 @@ def preprocess_trips(
 
     trips = trips.with_columns(pl.col("duration").map_elements(sample_minute))
 
-    trips = trips.with_columns(pl.col("tst") * 60, pl.col("tet") * 60)
-
-    trips = trips.with_columns(
-        pl.struct("tst", "tet", "duration")
-        .map_elements(sample_tst, return_dtype=pl.Int32)
-        .alias("tst")
-    )
-    trips = trips.with_columns(
-        (pl.col("tst") + pl.col("duration")).alias("tet")
+    trips = (
+        trips.with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
+        .with_columns(
+            ptet=pl.col("tet").shift(1).over("pid"),
+            ntst=pl.col("tst").shift(-1).over("pid"),
+        )
+        .with_columns(
+            pl.struct("tst", "tet", "duration", "ptet", "ntst")
+            .map_elements(sample_tst, return_dtype=pl.Int32)
+            .alias("tst")
+        )
+        .with_columns((pl.col("tst") + pl.col("duration")).alias("tet"))
     )
 
     trips = trips.with_columns(

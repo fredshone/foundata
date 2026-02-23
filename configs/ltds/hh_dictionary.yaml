@@ -23,8 +23,8 @@ hh_income:
         8: [50000, 75000]
         9: [75000, 100000]
         10: [100000, 200000]
-        11: None  # unknown
-        12: None  # refused
+        11: [0]  # unknown
+        12: [0]  # refused
 
 hh_structure:
     default:

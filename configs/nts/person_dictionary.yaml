@@ -56,8 +56,8 @@ occupation:
     7: unknown
 
 age:
-    # -8: unknown
-    # -10: unknown
+    -8: [0]
+    -10: [0]
     1: [0,1]
     2: [1,2]
     3: [3,4]

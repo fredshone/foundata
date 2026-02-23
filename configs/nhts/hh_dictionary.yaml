@@ -18,9 +18,9 @@ rurality: {default: {1: 'urban', 2: 'rural'}}
 
 hh_income:
     default:
-        -7: [0,0] # 'I prefer not to answer',
-        -9: [0,0] # 'Not ascertained',
-        -8: [0,0] # 'I do not know',
+        -7: [0] # 'I prefer not to answer',
+        -9: [0] # 'Not ascertained',
+        -8: [0] # 'I do not know',
         1: [0, 10000] #'Less than $10,000',
         2: [10000, 15000] #'$10,000 to $14,999',
         3: [15000, 25000] #'$15,000 to $24,999',
@@ -33,10 +33,10 @@ hh_income:
         10: [150000, 200000] #'$150,000 to $199,999',
         11: [200000, 400000] #'$200,000 or more'
     2009:
-        -1: [0,0] # 'Appropriate Skip',
-        -7: [0,0] # 'I prefer not to answer',
-        -8: [0,0] # 'I do not know',
-        -9: [0,0] # 'Not ascertained',
+        -1: [0] # 'Appropriate Skip',
+        -7: [0] # 'I prefer not to answer',
+        -8: [0] # 'I do not know',
+        -9: [0] # 'Not ascertained',
         1: [0, 5000] # '< $5,000',
         2: [5000, 10000] # '$5,000 - $9,999',
         3: [10000, 15000] # '$10,000 - $14,999',
@@ -56,10 +56,10 @@ hh_income:
         17: [80000, 100000] # '$80,000 - $99,999',
         18: [100000, 200000] # '$100,000 or more'
     2001:
-        -1: [0,0] # 'Appropriate Skip',
-        -7: [0,0] # 'I prefer not to answer',
-        -8: [0,0] # 'I do not know',
-        -9: [0,0] # 'Not ascertained',
+        -1: [0] # 'Appropriate Skip',
+        -7: [0] # 'I prefer not to answer',
+        -8: [0] # 'I do not know',
+        -9: [0] # 'Not ascertained',
         1: [0, 5000] # '< $5,000',
         2: [5000, 10000] # '$5,000 - $9,999',
         3: [10000, 15000] # '$10,000 - $14,999',
