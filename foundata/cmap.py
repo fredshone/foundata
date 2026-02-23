@@ -76,27 +76,28 @@ def load_persons(
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
     persons = persons.with_columns(
-        (pl.col("hid").cast(pl.String) + pl.col("pid").cast(pl.String))
-        .cast(pl.Int64)
-        .alias("pid"),
-        pl.col("sex").replace_strict(config["sex"]),
-        (
+        pid=(
+            pl.col("hid").cast(pl.String) + pl.col("pid").cast(pl.String)
+        ).cast(pl.Int64),
+        sex=pl.col("sex").replace_strict(config["sex"]),
+        disability=(
             pl.col("disability")
             .str.split(";")
             .cast(pl.List(pl.Int64))
             .list.sum()
             > 0
-        ).alias("disability"),
-        pl.col("education").replace_strict(config["education"]),
-        pl.col("can_wfh").replace_strict(config["can_wfh"]),
-        pl.when(pl.col("is_employed") == 1)
+        ),
+        education=pl.col("education").replace_strict(config["education"]),
+        can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
+        employment=pl.when(pl.col("is_employed") == 1)
         .then(pl.lit("employed"))
-        .otherwise(pl.col("work_status").replace_strict(config["work_status"]))
-        .alias("employment"),
-        pl.col("occupation").replace_strict(config["occupation"]),
-        pl.col("race").replace_strict(config["race"]),
-        pl.col("has_licence").replace_strict(config["has_licence"]),
-        pl.col("relationship").replace_strict(config["relationship"]),
+        .otherwise(pl.col("work_status").replace_strict(config["work_status"])),
+        occupation=pl.col("occupation").replace_strict(config["occupation"]),
+        race=pl.col("race").replace_strict(config["race"]),
+        has_licence=pl.col("has_licence").replace_strict(config["has_licence"]),
+        relationship=pl.col("relationship").replace_strict(
+            config["relationship"]
+        ),
     )
 
     persons = persons.drop(["is_employed", "work_status"])

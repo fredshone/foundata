@@ -112,9 +112,7 @@ def load_trips(
     ).rename(columns)
 
     trips = (
-        trips.with_columns(
-            pl.col("did").rank(method="dense").over("pid").alias("day")
-        )
+        trips.with_columns(day=pl.col("did").rank(method="dense").over("pid"))
         .with_columns((pl.col("pid") * 100 + pl.col("day")).alias("pdid"))
         .drop("day")
     )
@@ -128,8 +126,8 @@ def load_trips(
         (pl.col("distance") * 1.6).alias("distance"),
     )
 
-    trips = trips.filter(pl.col("tst").is_not_null().over("pdid"))
-    trips = trips.filter(pl.col("tet").is_not_null().over("pdid"))
+    # trips = trips.filter(pl.col("tst").is_not_null().over("pdid"))
+    # trips = trips.filter(pl.col("tet").is_not_null().over("pdid"))
 
     # trips = trips.with_columns(
     #     pl.when(pl.col("tet") < pl.col("tst"))

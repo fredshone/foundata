@@ -15,10 +15,6 @@ def default(config, year):
     return config.get(year, config["default"])
 
 
-def _expand_root(root: str | Path) -> Path:
-    return Path(root).expanduser()
-
-
 def _bounds_from_list(bounds: list[str]) -> tuple[int, int]:
     return int(bounds[0]), int(bounds[1])
 
@@ -166,14 +162,14 @@ def preprocess_trips(
     column_mapping = config_for_year(config["column_mappings"], year)
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    mask = pl.any_horizontal(pl.all().is_null())
-    keep = (
-        trips.group_by("pid")
-        .agg(mask.any().alias("flag"))
-        .filter(~pl.col("flag"))
-        .select("pid")
-    )
-    trips = trips.join(keep, on="pid")
+    # mask = pl.any_horizontal(pl.all().is_null())
+    # keep = (
+    #     trips.group_by("pid")
+    #     .agg(mask.any().alias("flag"))
+    #     .filter(~pl.col("flag"))
+    #     .select("pid")
+    # )
+    # trips = trips.join(keep, on="pid")
 
     mode_map = config_for_year(config["mode_mappings"], year)
     act_map = config_for_year(config["act_mappings"], year)

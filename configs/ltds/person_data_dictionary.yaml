@@ -2,10 +2,25 @@ column_mappings:
     default:
         ppid: pid
         phid: hid
-        pdlcar: has_license
-        pwkstat: employment_status
+        pdlcar: has_licence
+        pwkstat: employment
         pnotrips: no_trips
-        # poccupa: occupation # cannot find lookup
+        pawfh: can_wfh
+        poccupa: occupation
+    LTDS2223:
+        ppid: pid
+        phid: hid
+        pdlcar: has_licence
+        pnotrips: no_trips
+        pawfh: can_wfh
+        poccupa: occupation
+    LTDS1920:
+        ppid: pid
+        phid: hid
+        pdlcar: has_licence
+        pnotrips: no_trips
+        pawfh: can_wfh
+        poccupa: occupation
 
 has_licence:
     default:
@@ -14,8 +29,16 @@ has_licence:
         1: "yes"
         2: "no"
 
-employment_status:
+employment:
     default:
+        1 FT Worker: employed
+        2 PT Worker: employed
+        3 Student: student
+        4 Under 16: student
+        5 Not Working: unemployed
+        6 Retired: retired
+        
+    LTDS2425:
         Not Working: unemployed
         FT Worker: employed
         Under 16: student
@@ -24,5 +47,22 @@ employment_status:
         PT Worker: employed
         Other: other
 
+can_wfh:
+    default:
+        1: "yes"
+        2: "yes"
+        3: "no"
+        4: "no"
+        -1: "n/a"
+
 occupation:
     default:
+        1: professional
+        2: clerical
+        3: managerial
+        4: technical
+        5: manual
+        6: manual
+        7: managerial
+        8: professional
+        -1: n/a

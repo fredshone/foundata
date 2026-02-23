@@ -4,18 +4,41 @@ column_mappings:
         phid: hid
         pagei: age
         psex: sex
+        prelrsp: relationship
+        pegroup: race
+    LTDS2425:
+        ppid: pid
+        phid: hid
+        pagei: age
+        psex: sex
         prelrspi: relationship
         pegroup: race
+    LTDS2223:
+        ppid: pid
+        phid: hid
+        page: age
+        psex: sex
+        prelrsp: relationship
+        pegroup: race
+        pwkstat: employment
+    LTDS1920:
+        ppid: pid
+        phid: hid
+        page1: age
+        psex: sex
+        prelrsp: relationship
+        pegroup1: race
+        pwkstat1: employment
 
 age:
     default:
-    0-4: [0, 4]
-    5-16: [5, 16]
-    17-24: [17, 24]
-    25-44: [25, 44]
-    45-59: [45, 59]
-    60-64: [60, 64]
-    65+: [65, 100]
+        0-4: [0, 4]
+        5-16: [5, 16]
+        17-24: [17, 24]
+        25-44: [25, 44]
+        45-59: [45, 59]
+        60-64: [60, 64]
+        65+: [65, 100]
 
 sex:
     default:
@@ -47,4 +70,17 @@ race:
         04 Black: black
         98 Missing: unknown
 
+employment:
+    default:
+        1 FT Worker: employed
+        2 PT Worker: employed
+        3 Student: student
+        4 Under 16: student
+        5 Not Working: unemployed
+        6 Retired: retired
 
+disability:
+    default:
+        1: "yes"
+        2: "no"
+        -1: "unknown"

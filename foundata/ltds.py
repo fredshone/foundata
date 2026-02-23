@@ -2,15 +2,15 @@ import random
 from pathlib import Path
 
 import polars as pl
-import yaml
 
 from .utils import (
-    check_overlap,
     config_for_year,
-    get_config_path,
+    filter_time_consistent,
+    fuzzy_loader,
     sample_int_range,
-    sample_scaled_range,
+    sample_uk_to_euro,
     table_joiner,
+    table_stacker,
 )
 
 
@@ -22,30 +22,107 @@ def _bounds_from_list(bounds: list[str]) -> tuple[int, int]:
     return int(bounds[0]), int(bounds[1])
 
 
-def load_mapping(path: Path, key_name: str, value_name: str) -> dict:
-    file = pl.read_csv(path)
-    return dict(zip(file[key_name], file[value_name]))
+def load_mapping(path: Path) -> dict:
+    zones = pl.read_csv(path)
+    mapping = {1: "urban", 2: "suburban", 3: "rural"}
+    zones = zones.with_columns(
+        pl.col("HIOX").replace_strict(mapping, default="rural")
+    )
+    return dict(zip(zones["HABORO"], zones["HIOX"]))
+
+
+def load_years(
+    data_root: str | Path,
+    years: list[str],
+    hh_config: dict,
+    person_config: dict,
+    person_data_config: dict,
+    trips_config: dict,
+    stages_config: dict,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    all_attributes = []
+    all_trips = []
+    for year in years:
+        print(f"Loading {year}...")
+        root = _expand_root(data_root) / year
+
+        hh_config_year = config_for_year(hh_config, year)
+        person_config_year = config_for_year(person_config, year)
+        person_data_config_year = config_for_year(person_data_config, year)
+        trips_config_year = config_for_year(trips_config, year)
+        stages_config_year = config_for_year(stages_config, year)
+
+        hh_columns = list(hh_config_year["column_mappings"].keys())
+        hhs = fuzzy_loader(root, "Household.csv", columns=hh_columns)
+
+        person_columns = list(person_config_year["column_mappings"].keys())
+        persons = fuzzy_loader(root, "person.csv", columns=person_columns)
+
+        person_data_columns = list(
+            person_data_config_year["column_mappings"].keys()
+        )
+        persons_data = fuzzy_loader(
+            root, "person data.csv", columns=person_data_columns
+        )
+
+        trips_columns = list(trips_config_year["column_mappings"].keys())
+        trips = fuzzy_loader(root, "Trip.csv", columns=trips_columns)
+
+        stages_columns = list(stages_config_year["column_mappings"].keys())
+        stages = fuzzy_loader(root, "Stage.csv", columns=stages_columns)
+
+        zone_mapping = load_mapping(root / "HABORO_T.csv")
+
+        hhs = preprocess_households(hhs, hh_config_year, year, zone_mapping)
+        persons = preprocess_persons(persons, person_config_year)
+        persons_data = preprocess_persons_data(
+            persons_data, person_data_config_year, year
+        )
+        attributes = table_joiner(persons, persons_data.drop("hid"), on="pid")
+        attributes = table_joiner(attributes, hhs, on="hid")
+
+        trips = preprocess_trips(trips, trips_config_year, year, zone_mapping)
+        stages = preprocess_stages(stages, stages_config_year, year)
+
+        trips = table_joiner(trips, stages, on="tid")
+
+        attributes, trips = filter_time_consistent(attributes, trips, on="pid")
+
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    attributes = table_stacker(all_attributes)
+    trips = table_stacker(all_trips)
+
+    attributes = attributes.with_columns(
+        source=pl.lit("ltds"),
+        country=pl.lit("uk"),
+        education=pl.lit("unknown"),
+        ownership=pl.lit("unknown"),
+        dwelling=pl.lit("unknown"),
+        month=pl.lit("unknown"),
+        disability=pl.lit("unknown"),
+    )
+
+    return attributes, trips
 
 
 def preprocess_households(
     hhs: pl.DataFrame, config: dict, year: str, zone_mapping: dict
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    income_mapping = config_for_year(config["hh_income"], year)
-    struct_mapping = config_for_year(config["hh_structure"], year)
+    column_mapping = config["column_mappings"]
+    income_mapping = config["hh_income"]
+    struct_mapping = config["hh_structure"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
     hhs = hhs.with_columns(pl.col("year") + 2000)
 
     hhs = hhs.with_columns(
-        pl.col("hh_income")
-        .replace_strict(
-            income_mapping, default=pl.lit((0, 0)), return_dtype=pl.List
-        )
-        .map_elements(
-            lambda bounds: sample_scaled_range(bounds, 0.9),
-            return_dtype=pl.Float64,
+        hh_income=(
+            pl.col("hh_income")
+            .replace_strict(income_mapping, return_dtype=pl.List)
+            .map_elements(sample_uk_to_euro, return_dtype=pl.Int32)
         )
     )
 
@@ -59,19 +136,19 @@ def preprocess_households(
         pl.col("zone")
         .replace_strict(zone_mapping, default=pl.col("zone"))
         .fill_null("unknown")
-        .alias("urban/rural")
+        .alias("rurality")
     ).drop("zone")
 
     return hhs.drop_nulls()
 
 
 def preprocess_persons(
-    persons: pl.DataFrame, config: dict, year: str
+    persons: pl.DataFrame, persons_config: dict
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    sex_mapping = config_for_year(config["sex"], year)
-    relationship_mapping = config_for_year(config["relationship"], year)
-    race_mapping = config_for_year(config["race"], year)
+    column_mapping = persons_config["column_mappings"]
+    sex_mapping = persons_config["sex"]
+    relationship_mapping = persons_config["relationship"]
+    race_mapping = persons_config["race"]
 
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
@@ -80,8 +157,7 @@ def preprocess_persons(
         .replace_strict({"65+": "65-100"}, default=pl.col("age"))
         .str.split("-")
         .map_elements(
-            lambda bounds: sample_int_range(_bounds_from_list(bounds)),
-            pl.Float64,
+            lambda bounds: sample_int_range(_bounds_from_list(bounds)), pl.Int32
         )
     )
 
@@ -99,27 +175,36 @@ def preprocess_persons(
         .fill_null("unknown")
     )
 
+    if "employment" in column_mapping.values():
+        employment_mapping = persons_config["employment"]
+        persons = persons.with_columns(
+            pl.col("employment").replace_strict(employment_mapping)
+        )
+
     return persons
 
 
 def preprocess_persons_data(
     persons: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    has_license_mapping = config_for_year(config["has_licence"], year)
-    employment_mapping = config_for_year(config["employment_status"], year)
+    column_mapping = config["column_mappings"]
+    has_license_mapping = config["has_licence"]
+    can_wfh_mapping = config["can_wfh"]
+    occupation_mapping = config["occupation"]
 
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
     persons = persons.with_columns(
-        pl.col("has_license").replace_strict(
-            has_license_mapping, default=None, return_dtype=pl.String
-        )
+        pl.col("has_licence").replace_strict(has_license_mapping),
+        pl.col("can_wfh").replace_strict(can_wfh_mapping),
+        pl.col("occupation").replace_strict(occupation_mapping),
     )
 
-    persons = persons.with_columns(
-        pl.col("employment_status").replace_strict(employment_mapping)
-    )
+    if "employment" in column_mapping.values():
+        employment_mapping = config["employment"]
+        persons = persons.with_columns(
+            pl.col("employment").replace_strict(employment_mapping)
+        )
 
     persons = persons.with_columns((pl.col("no_trips") < 0).alias("no_trips"))
 
@@ -142,15 +227,20 @@ def sample_tst(row) -> int:
 def preprocess_trips(
     trips: pl.DataFrame, config: dict, year: str, zone_mapping: dict
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
+    column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    mode_map = config_for_year(config["mode"], year)
-    act_map = config_for_year(config["act"], year)
+    trips = trips.sort("hid", "pid", "tid").with_columns(
+        seq=pl.col("tid").rank(method="dense").over("hid", "pid")
+    )
+
+    mode_map = config["mode"]
+    act_map = config["act"]
+
     trips = trips.with_columns(
-        pl.col("mode").replace_strict(mode_map),
-        pl.col("oact").replace_strict(act_map),
-        pl.col("dact").replace_strict(act_map),
+        pl.col("mode").replace_strict(mode_map, default=pl.col("mode")),
+        pl.col("oact").replace_strict(act_map, default=pl.col("oact")),
+        pl.col("dact").replace_strict(act_map, default=pl.col("dact")),
     )
 
     trips = trips.with_columns(pl.col("duration").map_elements(sample_minute))
@@ -167,18 +257,10 @@ def preprocess_trips(
     )
 
     trips = trips.with_columns(
-        pl.col("ozone").replace_strict(zone_mapping),
-        pl.col("dzone").replace_strict(zone_mapping),
+        ozone=pl.col("ozone").replace_strict(zone_mapping),
+        dzone=pl.col("dzone").replace_strict(zone_mapping),
+        ltds_source=pl.lit(year),
     )
-
-    mask = pl.any_horizontal(pl.all().is_null())
-    keep = (
-        trips.group_by("pid")
-        .agg(mask.any().alias("flag"))
-        .filter(~pl.col("flag"))
-        .select("pid")
-    )
-    trips = trips.join(keep, on="pid")
 
     return trips
 
@@ -186,7 +268,7 @@ def preprocess_trips(
 def preprocess_stages(
     stages: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
+    column_mapping = config["column_mappings"]
     stages = stages.select(column_mapping.keys()).rename(column_mapping)
 
     stages = stages.group_by(["pid", "tid"]).agg(
@@ -194,88 +276,3 @@ def preprocess_stages(
     )
 
     return stages.drop("pid")
-
-
-def load_year(root: str | Path, year: str) -> dict[str, pl.DataFrame]:
-    root = _expand_root(root)
-    zone_mapping = load_mapping(root / "HABORO_T.csv", "HABORO", "TYPE")
-
-    hh_config = yaml.safe_load(
-        open(get_config_path("ltds", "hh_dictionary.yaml"))
-    )
-    hh_columns = list(
-        config_for_year(hh_config["column_mappings"], year).keys()
-    )
-    hhs = pl.read_csv(root / "Household.csv", columns=hh_columns)
-    hhs = preprocess_households(
-        hhs, hh_config, year=year, zone_mapping=zone_mapping
-    )
-
-    person_config = yaml.safe_load(
-        open(get_config_path("ltds", "person_dictionary.yaml"))
-    )
-    person_columns = list(
-        config_for_year(person_config["column_mappings"], year).keys()
-    )
-    persons = pl.read_csv(root / "person.csv", columns=person_columns)
-    persons = preprocess_persons(persons, person_config, year=year)
-
-    person_data_config = yaml.safe_load(
-        open(get_config_path("ltds", "person_data_dictionary.yaml"))
-    )
-    person_data_columns = list(
-        config_for_year(person_data_config["column_mappings"], year).keys()
-    )
-    persons_data = pl.read_csv(
-        root / "person data.csv", columns=person_data_columns
-    )
-    persons_data = preprocess_persons_data(
-        persons_data, person_data_config, year=year
-    )
-
-    trip_config = yaml.safe_load(
-        open(get_config_path("ltds", "trip_dictionary.yaml"))
-    )
-    trip_columns = list(
-        config_for_year(trip_config["column_mappings"], year).keys()
-    )
-    trips = pl.read_csv(root / "Trip.csv", columns=trip_columns)
-    trips = preprocess_trips(
-        trips, trip_config, year=year, zone_mapping=zone_mapping
-    )
-
-    stage_config = yaml.safe_load(
-        open(get_config_path("ltds", "stage_dictionary.yaml"))
-    )
-    stage_columns = list(
-        config_for_year(stage_config["column_mappings"], year).keys()
-    )
-    stages = pl.read_csv(root / "Stage.csv", columns=stage_columns)
-    stages = preprocess_stages(stages, stage_config, year=year)
-
-    return {
-        "households": hhs,
-        "persons": persons,
-        "persons_data": persons_data,
-        "trips": trips,
-        "stages": stages,
-    }
-
-
-def build_attributes(
-    persons: pl.DataFrame, persons_data: pl.DataFrame, households: pl.DataFrame
-) -> pl.DataFrame:
-    attributes = table_joiner(persons, persons_data.drop("hid"), on="pid")
-    return table_joiner(attributes, households, on="hid")
-
-
-def attach_stage_distances(
-    trips: pl.DataFrame, stages: pl.DataFrame
-) -> pl.DataFrame:
-    return table_joiner(trips, stages, on="tid")
-
-
-def check_person_trip_overlap(
-    attributes: pl.DataFrame, trips: pl.DataFrame
-) -> set:
-    return check_overlap(attributes, trips, on="pid")

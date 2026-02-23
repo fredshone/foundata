@@ -1,11 +1,45 @@
 column_mappings:
-    default:
+    LTDS2425:
         thid: hid
         tpid: pid
         ttid: tid
-        # tripno: seq
-        tdbmmode: mode
-        # cumdist: distance,
+        thmmode: mode
+        tshour: tst  # hour 0 - 23
+        tehour: tet  # hour 0 - 23
+        tdur5: duration
+        topurp: oact
+        tdpurp: dact
+        toaboro: ozone
+        tdaboro: dzone
+    LTDS2324:
+        thid: hid
+        tpid: pid
+        ttid: tid
+        thmmode: mode
+        tshour: tst  # hour 0 - 23
+        tehour: tet  # hour 0 - 23
+        tdur5: duration
+        topurp1: oact
+        tdpurp1: dact
+        toaboro: ozone
+        tdaboro: dzone
+    LTDS2223:
+        thid: hid
+        tpid: pid
+        ttid: tid
+        tdbmmode1: mode
+        tshour: tst  # hour 0 - 23
+        tehour: tet  # hour 0 - 23
+        tdur5: duration
+        topurp: oact
+        tdpurp: dact
+        toaboro: ozone
+        tdaboro: dzone
+    LTDS1920:
+        thid: hid
+        tpid: pid
+        ttid: tid
+        thmmode: mode
         tshour: tst  # hour 0 - 23
         tehour: tet  # hour 0 - 23
         tdur5: duration
@@ -16,22 +50,63 @@ column_mappings:
 
 mode:
     default:
-        Taxi/other: car
-        Motorcycle: car
-        Cycle: bike
-        Car driver: car
-        Walk: walk
-        National Rail/ Overground: rail
-        Car passenger: car
-        Bus/tram: bus
-        Underground/ DLR: rail
+        -2: unknown
+        -1: unknown
+        0: unknown
+        1: walk
+        2: bike
+        3: car
+        4: car
+        5: car
+        6: car
+        7: car
+        8: car
+        9: car
+        10: car
+        11: car
+        12: car
+        13: bus
+        14: bus
+        15: bus
+        16: bus
+        17: rail
+        18: rail
+        19: rail
+        20: bus
+        21: car
+        22: car
+        23: other
+        24: rail
+        25: rail
+        26: car
+        27: car
+
+    LTDS2223:
+        01 National Rail/ Overground: rail
+        02 Underground/ DLR: rail
+        03 Bus (+sch/ wk bus/coach & tram): bus
+        04 Taxi/other: car
+        05 Car (+van/lorry) driver: car
+        06 Car (+van/lorry) passenger: car
+        07 Motorcycle: car
+        08 Cycle: bike
+        09 Walk: walk
 
 act:
-    default:
+    LTDS2425:
         01 Usual/ other work: work
         02 Education (inc escort education): education
+        03 Leisure: leisure
+        04 Shopping and personal business: shop
         06 Other (inc Escort/ Worship): other
         06 Home: home
-        03 Leisure: leisure
-        04 Shopping and personal business: shopping
-            
+
+    default:
+        01 Usual workplace: work
+        02 Other work related: work
+        03 Education: education
+        04 Shopping and personal business: shop
+        05 Leisure: leisure
+        06 Other (inc Escort/ Worship): other
+        07 Home: home
+        98 Missing: unknown

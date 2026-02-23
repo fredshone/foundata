@@ -3,16 +3,13 @@ column_mappings:
         hhid: hid
         hyearid: year
         htdow: day
-        # travmonth: month
-        # dwelltype: dwelling_type
-        # owndwell: home_ownership
         hstruct: hh_structure
-        hpeoplen: hh_size  # ?
+        hpeoplen: hh_size
         hincome: hh_income
-        hcarnan: num_vehicles  # ?
+        hcarnan: vehicles
         hhaboro: zone
-        hcycles: num_bikes
-        hiwt: weight  # ?
+        # hcycles: num_bikes
+        hiwt: weight
 
 hh_income:
     default:
@@ -26,8 +23,8 @@ hh_income:
         8: [50000, 75000]
         9: [75000, 100000]
         10: [100000, 200000]
-        11: [0, 200000]  # unknown
-        12: [0, 200000]  # refused
+        11: None  # unknown
+        12: None  # refused
 
 hh_structure:
     default:

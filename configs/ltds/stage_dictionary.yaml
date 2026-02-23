@@ -4,3 +4,8 @@ column_mappings:
         spid: pid
         stid: tid
         slenn: distance # prob km?
+    LTDS1920:
+        # shid: hid
+        spid: pid
+        stid: tid
+        slen100m: distance # prob km?

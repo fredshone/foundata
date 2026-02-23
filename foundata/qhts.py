@@ -215,14 +215,14 @@ def load_trips(trips: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
     column_mapping = config_for_year(config["column_mappings"], year)
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    mask = pl.any_horizontal(pl.all().is_null())
-    keep = (
-        trips.group_by("pid")
-        .agg(mask.any().alias("flag"))
-        .filter(~pl.col("flag"))
-        .select("pid")
-    )
-    trips = trips.join(keep, on="pid")
+    # mask = pl.any_horizontal(pl.all().is_null())
+    # keep = (
+    #     trips.group_by("pid")
+    #     .agg(mask.any().alias("flag"))
+    #     .filter(~pl.col("flag"))
+    #     .select("pid")
+    # )
+    # trips = trips.join(keep, on="pid")
 
     mode_map = config_for_year(config["mode_mappings"], year)
     act_map = config_for_year(config["act_mappings"], year)
