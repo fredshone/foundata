@@ -3,7 +3,7 @@ from typing import Optional
 
 import polars as pl
 
-from .fix import fix_trips
+from .fix import day_wrap
 from .utils import (
     config_for_year,
     sample_aus_to_euro,
@@ -59,7 +59,7 @@ def load_years(
             null_values="Missing",
         )
         trips = load_trips(trips, trips_config, year=year)
-        trips = fix_trips(trips)
+        trips = day_wrap(trips)
 
         if zones_mapping is not None:
             trips = (

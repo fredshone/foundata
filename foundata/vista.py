@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from .fix import fix_trips
+from .fix import day_wrap
 from .utils import (
     config_for_year,
     sample_aus_to_euro,
@@ -249,7 +249,7 @@ def load_years(
             null_values="Missing",
         )
         trips = preprocess_trips(trips, trips_config, year=year)
-        trips = fix_trips(trips)
+        trips = day_wrap(trips)
 
         all_attributes.append(attributes)
         all_trips.append(trips)

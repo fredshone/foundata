@@ -3,7 +3,8 @@ from pathlib import Path
 
 import polars as pl
 
-from .utils import (
+from foundata import fix
+from foundata.utils import (
     config_for_year,
     fuzzy_loader,
     sample_int_range,
@@ -231,11 +232,19 @@ def preprocess_persons_data(
 
 
 def sample_minute(base: int) -> int:
-    return random.randint(int(base), int(base) + 5)
+    return random.randint(max(1, int(base)), int(base) + 4)
 
 
 def sample_tst(row) -> int:
-    print("===")
+    """
+    Sample a start time for a trip based on constraints;
+        must start within tst hour
+        must finish within tet hour
+        trip must have given duration
+        must start at least 30 minutes after previous tet hour if exists
+        must finish at least 30 minutes before next tst hour if exists
+    Note that this can return negative duration activities, for example if duration is too long or short.
+    """
     tst, tet, d, ptet, ntst = (
         row["tst"],
         row["tet"],
@@ -249,18 +258,140 @@ def sample_tst(row) -> int:
     ntst = ntst if not last_trip else tet + 30
     # if limited by previous trip, start after it ends + 30 minutes
     earliest = max(tst, tet - d, ptet + 30)
-    print(f"earliest: {earliest}, max: {tst}, {tet - d}, {ptet + 30}")
     # if limited by next trip, start at least 30 minutes before it starts
     latest = min(tst + 60, tet + 60 - d, ntst + 30 - d)
-    print(f"latest: {latest}, min: {tst + 60}, {tet + 60 - d}, {ntst + 30 -d}")
     if latest < earliest:
-        print("Squeeze")
         if first_trip:
-            return min([latest, earliest])
+            return latest
         if last_trip:
-            return max([latest, earliest])
+            return earliest
         return int((tst + tet + 60 - d) / 2)
     return random.randint(earliest, latest)
+
+
+def compute_base_intervals(tst, tet, dur):
+    """
+    For each trip, compute:
+      L = earliest possible start
+      U = latest possible start
+    using hour constraints only.
+    """
+    L = []
+    U = []
+    for s, e, d in zip(tst, tet, dur):
+        lo = max(s, e - d)
+        hi = min(s + 60, e + 60 - d)
+        L.append(lo)
+        U.append(hi)
+    return L, U
+
+
+def tighten_intervals(L, U, dur):
+    """
+    Enforce adjacency:
+        s[i] >= s[i-1] + dur[i-1]
+        s[i] + dur[i] <= s[i+1]
+    Returns tightened (L_new, U_new)
+    """
+    n = len(L)
+    L2 = L[:]  # copy
+    U2 = U[:]  # copy
+
+    # Forward pass
+    for i in range(1, n):
+        L2[i] = max(L2[i], L2[i - 1] + dur[i - 1])
+
+    # Backward pass
+    for i in range(n - 2, -1, -1):
+        U2[i] = min(U2[i], U2[i + 1] - dur[i])
+
+    return L2, U2
+
+
+def find_infeasible_indices(L, U):
+    """Return indices where L[i] > U[i]."""
+    return [i for i in range(len(L)) if L[i] > U[i]]
+
+
+def reduce_durations(dur, infeasible, amount=1):
+    """
+    Reduce durations for infeasible rows.
+    Simple policy: reduce by 'amount' minutes (default=1).
+    Ensures duration never goes below 0 minutes.
+    """
+    for i in infeasible:
+        dur[i] = max(0, dur[i] - amount)
+    return dur
+
+
+def sample_start_times(L, U, dur, seed):
+    """
+    Right-to-left sampling ensuring:
+        s[i] + dur[i] <= s[i+1]
+    """
+    rng = random.Random(seed)
+    n = len(L)
+    s = [None] * n
+
+    # last trip
+    s[n - 1] = rng.randint(L[n - 1], U[n - 1])
+
+    # right → left
+    for i in range(n - 2, -1, -1):
+        hi = min(U[i], s[i + 1] - dur[i])
+        lo = L[i]
+        if lo > hi:
+            raise RuntimeError(f"Unexpected sampling infeasibility at row {i}")
+        s[i] = rng.randint(lo, hi)
+
+    return s
+
+
+def compute_feasible_schedule(tst, tet, dur, max_iter=10):
+    """
+    Recompute constraints repeatedly.
+    If infeasible, reduce durations and try again.
+    """
+
+    for _ in range(max_iter):
+        L0, U0 = compute_base_intervals(tst, tet, dur)
+        L1, U1 = tighten_intervals(L0, U0, dur)
+        infeasible = find_infeasible_indices(L1, U1)
+
+        if not infeasible:
+            # success
+            return L1, U1, dur
+
+        # Otherwise repair durations
+        dur = reduce_durations(dur, infeasible, amount=5)
+
+    raise RuntimeError(
+        "Unable to compute feasible schedule even after duration reductions."
+    )
+
+
+def sample_plan_trip_start_times(trips: pl.DataFrame, seed=42) -> pl.DataFrame:
+    print(
+        f"Sampling start times for plan {trips['pid'][0]} with {len(trips)} trips..."
+    )
+    # pull columns
+    tst = trips["tst"].to_list()
+    tet = trips["tet"].to_list()
+    dur = trips["duration"].to_list()
+
+    # compute feasible constraints (auto-repairing durations)
+    L, U, dur = compute_feasible_schedule(tst, tet, dur)
+
+    # sample feasible start times
+    s = sample_start_times(L, U, dur, seed)
+    e = [s[i] + dur[i] for i in range(len(s))]
+
+    # return new DF
+    return trips.with_columns(
+        pl.Series("tst_new", s, dtype=pl.Int64),
+        pl.Series("tet_new", e, dtype=pl.Int64),
+        pl.Series("duration_new", dur, dtype=pl.Int64),
+    )
 
 
 def preprocess_trips(
@@ -282,20 +413,28 @@ def preprocess_trips(
         pl.col("dact").replace_strict(act_map, default=pl.col("dact")),
     )
 
-    trips = trips.with_columns(pl.col("duration").map_elements(sample_minute))
-
+    trips = trips.with_columns(
+        pl.col("duration").map_elements(sample_minute)
+    ).with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
+    trips = fix.day_wrap(trips)
+    # trips = (
+    #     trips.with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
+    #     .with_columns(
+    #         ptet=pl.col("tet").shift(1).over("pid"),
+    #         ntst=pl.col("tst").shift(-1).over("pid"),
+    #     )
+    #     .with_columns(
+    #         pl.struct("tst", "tet", "duration", "ptet", "ntst")
+    #         .map_elements(sample_tst, return_dtype=pl.Int32)
+    #         .alias("tst")
+    #     )
+    #     .with_columns((pl.col("tst") + pl.col("duration")).alias("tet"))
+    #     .drop(["ptet", "ntst"])
+    # )
     trips = (
-        trips.with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
-        .with_columns(
-            ptet=pl.col("tet").shift(1).over("pid"),
-            ntst=pl.col("tst").shift(-1).over("pid"),
-        )
-        .with_columns(
-            pl.struct("tst", "tet", "duration", "ptet", "ntst")
-            .map_elements(sample_tst, return_dtype=pl.Int32)
-            .alias("tst")
-        )
-        .with_columns((pl.col("tst") + pl.col("duration")).alias("tet"))
+        trips.group_by("pid", maintain_order=True)
+        .map_groups(lambda g: sample_plan_trip_start_times(g, seed=42))
+        .with_columns(tet=(pl.col("tst") + pl.col("duration")))
     )
 
     trips = trips.with_columns(
