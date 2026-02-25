@@ -126,14 +126,14 @@ def config_for_year(config: dict, year):
 
 def sample_int_range(bounds: tuple[int, int] | None) -> int | None:
     if len(bounds) == 1:
-        return pl.lit(None, pl.Int32)
+        return None
     a, b = bounds
     return random.randint(int(a), int(b))
 
 
 def sample_us_to_euro(bounds: tuple[int, int] | None) -> int | None:
     if len(bounds) == 1:
-        return pl.lit(None, pl.Int32)
+        return None
     a, b = bounds
     return int(random.randint(int(a), int(b)) * 0.85)
 
@@ -147,7 +147,7 @@ def sample_uk_to_euro(bounds: tuple[int, int] | None) -> int | None:
 
 def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
     if len(bounds) == 1:
-        return pl.lit(None, pl.Int32)
+        return None
     a, b = bounds
     return int(random.randint(int(a), int(b)) * 0.6)
 

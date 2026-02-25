@@ -129,7 +129,9 @@ def preprocess_households(
             .replace_strict(
                 income_mapping, default=pl.lit([0]), return_dtype=pl.List
             )
-            .map_elements(
+            .alias("hh_income_bounds")
+        ).with_columns(
+            hh_income=pl.col("hh_income_bounds").map_elements(
                 lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
             )
         )
