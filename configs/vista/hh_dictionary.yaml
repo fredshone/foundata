@@ -28,14 +28,6 @@ column_mappings:
         wdhhwgt_LGA: wd_weight
         wehhwgt_LGA: we_weight
 
-    #  URBRUR :  urban_rural
-    #  HBPPOPDN :  population_density
-    #  LIF_CYC :  life_cycle
-    #  WRKCOUNT :  num_workers
-    #  HH_RACE :  race
-    #  HHR_RACE :  race
-
-
 dwelling:
     default:
         "Flat or Apartment": flat
@@ -48,7 +40,7 @@ dwelling:
 
 hh_income:
     default:
-        "": [0,0]
+        "": [0]
         $1-$149 ($1-$7,799): [1, 7800]
         $150-$299 ($7,800-$15,599): [7800, 15600]
         $300-$399 ($15,600-$20,799): [15600, 20800]

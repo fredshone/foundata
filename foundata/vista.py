@@ -19,14 +19,88 @@ def _bounds_from_list(bounds: list[str]) -> tuple[int, int]:
     return int(bounds[0]), int(bounds[1])
 
 
+def load_years(
+    data_root: str | Path,
+    years: list[str],
+    hh_config: dict,
+    person_config: dict,
+    trips_config: dict,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+
+    hhs_names = [
+        "households_vista_2012_2020_lga_v1.csv",
+        "household_vista_2022_2023.csv",
+        "household_vista_2023_2024.csv",
+    ]
+    persons_names = [
+        "persons_vista_2012_2020_lga_v1.csv",
+        "person_vista_2022_2023.csv",
+        "person_vista_2023_2024.csv",
+    ]
+
+    trips_names = [
+        "trips_vista_2012_2020_lga_v1.csv",
+        "trips_vista_2022_2023.csv",
+        "trips_vista_2023_2024.csv",
+    ]
+
+    all_attributes = []
+    all_trips = []
+
+    print("Loading VISTA data...")
+
+    for year, hh_name, persons_name, trips_name in zip(
+        years, hhs_names, persons_names, trips_names
+    ):
+        print(year, ":")
+
+        hh_config_year = config_for_year(hh_config, year)
+        person_config_year = config_for_year(person_config, year)
+        trips_config_year = config_for_year(trips_config, year)
+
+        hh_columns = list(hh_config_year["column_mappings"].keys())
+        person_columns = list(person_config_year["column_mappings"].keys())
+        trips_columns = list(trips_config_year["column_mappings"].keys())
+
+        hhs = pl.read_csv(
+            data_root / year / hh_name,
+            columns=hh_columns,
+            null_values="Missing/Refused",
+        )
+        hhs = preprocess_households(hhs, hh_config_year, year=year)
+
+        persons = pl.read_csv(
+            data_root / year / persons_name, columns=person_columns
+        )
+        persons = preprocess_persons(persons, person_config_year, year=year)
+
+        attributes = table_joiner(hhs, persons, on="hid")
+
+        trips = pl.read_csv(
+            data_root / year / trips_name,
+            columns=trips_columns,
+            null_values="Missing",
+        )
+        trips = preprocess_trips(trips, trips_config_year, year=year)
+        trips = day_wrap(trips)
+
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    attributes = pl.concat(all_attributes)
+    trips = pl.concat(all_trips)
+    return attributes, trips
+
+
 def preprocess_households(
     hhs: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    income_mapping = config_for_year(config["hh_income"], year)
-    ownership_mapping = config_for_year(config["ownership"], year)
-    dwelling_mapping = config_for_year(config["dwelling"], year)
-    zone_mapping = config_for_year(config["rurality"], year)
+
+    column_mapping = config["column_mappings"]
+    income_mapping = config["hh_income"]
+    ownership_mapping = config["ownership"]
+    dwelling_mapping = config["dwelling"]
+    zone_mapping = config["rurality"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
     hhs = hhs.with_columns(
@@ -53,11 +127,10 @@ def preprocess_households(
         hhs = hhs.with_columns(
             pl.col("hh_income")
             .replace_strict(
-                income_mapping, default=pl.lit((0, 0)), return_dtype=pl.List
+                income_mapping, default=pl.lit([0]), return_dtype=pl.List
             )
             .map_elements(
-                lambda bounds: sample_aus_to_euro(bounds),
-                return_dtype=pl.Float64,
+                lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
             )
         )
 
@@ -96,11 +169,11 @@ def preprocess_households(
 def preprocess_persons(
     persons: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    sex_mapping = config_for_year(config["sex"], year)
-    relationship_mapping = config_for_year(config["relationship"], year)
-    has_license_mapping = config_for_year(config["has_licence"], year)
-    occupation_mapping = config_for_year(config["occupation"], year)
+    column_mapping = config["column_mappings"]
+    sex_mapping = config["sex"]
+    relationship_mapping = config["relationship"]
+    has_license_mapping = config["has_licence"]
+    occupation_mapping = config["occupation"]
 
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
@@ -159,21 +232,12 @@ def preprocess_persons(
 def preprocess_trips(
     trips: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
+    column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    # mask = pl.any_horizontal(pl.all().is_null())
-    # keep = (
-    #     trips.group_by("pid")
-    #     .agg(mask.any().alias("flag"))
-    #     .filter(~pl.col("flag"))
-    #     .select("pid")
-    # )
-    # trips = trips.join(keep, on="pid")
-
-    mode_map = config_for_year(config["mode_mappings"], year)
-    act_map = config_for_year(config["act_mappings"], year)
-    rurality_map = config_for_year(config["rurality"], year)
+    mode_map = config["mode_mappings"]
+    act_map = config["act_mappings"]
+    rurality_map = config["rurality"]
     trips = trips.with_columns(
         pl.col("mode").replace_strict(mode_map),
         pl.col("oact").replace_strict(act_map),
@@ -183,77 +247,3 @@ def preprocess_trips(
     )
 
     return trips
-
-
-def load_years(
-    data_root: str | Path,
-    years: list[str],
-    hh_config: dict,
-    person_config: dict,
-    trips_config: dict,
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-
-    hhs_names = [
-        "households_vista_2012_2020_lga_v1.csv",
-        "household_vista_2022_2023.csv",
-        "household_vista_2023_2024.csv",
-    ]
-    persons_names = [
-        "persons_vista_2012_2020_lga_v1.csv",
-        "person_vista_2022_2023.csv",
-        "person_vista_2023_2024.csv",
-    ]
-
-    trips_names = [
-        "trips_vista_2012_2020_lga_v1.csv",
-        "trips_vista_2022_2023.csv",
-        "trips_vista_2023_2024.csv",
-    ]
-
-    all_attributes = []
-    all_trips = []
-
-    for year, hh_name, persons_name, trips_name in zip(
-        years, hhs_names, persons_names, trips_names
-    ):
-
-        hh_columns = list(default(hh_config["column_mappings"], year).keys())
-
-        person_columns = list(
-            default(person_config["column_mappings"], year).keys()
-        )
-
-        trips_columns = list(
-            default(trips_config["column_mappings"], year).keys()
-        )
-
-        print(year, ":")
-
-        hhs = pl.read_csv(
-            data_root / year / hh_name,
-            columns=hh_columns,
-            null_values="Missing/Refused",
-        )
-        hhs = preprocess_households(hhs, hh_config, year=year)
-
-        persons = pl.read_csv(
-            data_root / year / persons_name, columns=person_columns
-        )
-        persons = preprocess_persons(persons, person_config, year=year)
-
-        attributes = table_joiner(hhs, persons, on="hid")
-
-        trips = pl.read_csv(
-            data_root / year / trips_name,
-            columns=trips_columns,
-            null_values="Missing",
-        )
-        trips = preprocess_trips(trips, trips_config, year=year)
-        trips = day_wrap(trips)
-
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    attributes = pl.concat(all_attributes)
-    trips = pl.concat(all_trips)
-    return attributes, trips

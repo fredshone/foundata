@@ -31,34 +31,34 @@ def load_years(
     for year in years:
         print(year, ":")
 
-        hh_columns = list(default(hh_config["column_mappings"], year).keys())
+        hh_config_year = config_for_year(hh_config, year)
+        person_config_year = config_for_year(person_config, year)
+        trips_config_year = config_for_year(trips_config, year)
+
+        hh_columns = list(hh_config_year["column_mappings"].keys())
+        person_columns = list(person_config_year["column_mappings"].keys())
+        trips_columns = list(trips_config_year["column_mappings"].keys())
+
         hhs = pl.read_csv(
             data_root / year / "1_QTS_HOUSEHOLDS.csv",
             columns=hh_columns,
             null_values="Missing/Refused",
         )
-        hhs = load_households(hhs, hh_config, year=year)
+        hhs = load_households(hhs, hh_config_year, year=year)
 
-        person_columns = list(
-            default(person_config["column_mappings"], year).keys()
-        )
         persons = pl.read_csv(
             data_root / year / "2_QTS_PERSONS.csv", columns=person_columns
         )
-        persons = load_persons(persons, person_config, year=year)
+        persons = load_persons(persons, person_config_year, year=year)
 
         attributes = table_joiner(hhs, persons, on="hid")
-
-        trips_columns = list(
-            default(trips_config["column_mappings"], year).keys()
-        )
 
         trips = pl.read_csv(
             data_root / year / "5_QTS_TRIPS.csv",
             columns=trips_columns,
             null_values="Missing",
         )
-        trips = load_trips(trips, trips_config, year=year)
+        trips = load_trips(trips, trips_config_year, year=year)
         trips = day_wrap(trips)
 
         if zones_mapping is not None:
@@ -96,9 +96,9 @@ def load_years(
 
 
 def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
-    dwell_mapping = config_for_year(config["dwelling"], year)
-    rurality_mapping = config_for_year(config["rurality"], year)
+    column_mapping = config["column_mappings"]
+    dwell_mapping = config["dwelling"]
+    rurality_mapping = config["rurality"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
@@ -118,16 +118,16 @@ def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
 def load_persons(
     persons: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
+    column_mapping = config["column_mappings"]
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
-    age_mapping = config_for_year(config["age"], year)
-    sex_mapping = config_for_year(config["sex"], year)
-    relationship_mapping = config_for_year(config["relationship"], year)
-    has_licence_mapping = config_for_year(config["has_licence"], year)
-    employment_mapping = config_for_year(config["employment"], year)
-    occupation_mapping = config_for_year(config["occupation"], year)
-    income_mapping = config_for_year(config["income"], year)
+    age_mapping = config["age"]
+    sex_mapping = config["sex"]
+    relationship_mapping = config["relationship"]
+    has_licence_mapping = config["has_licence"]
+    employment_mapping = config["employment"]
+    occupation_mapping = config["occupation"]
+    income_mapping = config["income"]
 
     persons = persons.with_columns(
         pl.col("age")
@@ -176,8 +176,10 @@ def load_persons(
     )
 
     persons = persons.with_columns(
-        pl.col("income")
-        .replace_strict(income_mapping, default=None)
+        income=pl.col("income")
+        .replace_strict(
+            income_mapping, default=pl.lit([0]), return_dtype=pl.List(pl.Int32)
+        )
         .map_elements(
             lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
         )
@@ -212,20 +214,11 @@ def load_zone_mapping(path: str | Path) -> pl.DataFrame:
 
 
 def load_trips(trips: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
-    column_mapping = config_for_year(config["column_mappings"], year)
+    column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
-    # mask = pl.any_horizontal(pl.all().is_null())
-    # keep = (
-    #     trips.group_by("pid")
-    #     .agg(mask.any().alias("flag"))
-    #     .filter(~pl.col("flag"))
-    #     .select("pid")
-    # )
-    # trips = trips.join(keep, on="pid")
-
-    mode_map = config_for_year(config["mode_mappings"], year)
-    act_map = config_for_year(config["act_mappings"], year)
+    mode_map = config["mode_mappings"]
+    act_map = config["act_mappings"]
     trips = trips.with_columns(
         pl.col("mode").replace_strict(mode_map),
         pl.col("oact").replace_strict(act_map),
