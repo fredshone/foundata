@@ -1,4 +1,8 @@
+from typing import Optional
+
 import polars as pl
+
+from foundata import utils
 
 
 def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
@@ -35,3 +39,31 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
     ).remove("flag")
 
     return trips
+
+
+def trip_dtypes(
+    all_trips: list[pl.DataFrame], template_cnfg: Optional[dict] = None
+) -> pl.DataFrame:
+    if not template_cnfg:
+        template_cnfg = utils.get_template_trips()
+
+    new = []
+    for trips in all_trips:
+        for col, cnfg in template_cnfg.items():
+            dtype = cnfg["dtype"]
+            if dtype in ["integer", "int"]:
+                trips = trips.with_columns(
+                    pl.col(col).cast(pl.Int32, strict=False)
+                )
+            elif dtype == "float":
+                trips = trips.with_columns(
+                    pl.col(col).cast(pl.Float32, strict=False)
+                )
+            elif dtype in ["string", "str"]:
+                trips = trips.with_columns(
+                    pl.col(col).cast(pl.String, strict=False)
+                )
+
+        new.append(trips)
+
+    return new

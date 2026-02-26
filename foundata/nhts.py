@@ -1,43 +1,63 @@
 from pathlib import Path
 
 import polars as pl
-import yaml
 
-from foundata.utils import load_yaml_config, sample_us_to_euro
+from foundata import fix, utils
+from foundata.utils import sample_us_to_euro, table_joiner
 
-from .utils import get_config_path
+SOURCE = "nhts"
 
 
 def _expand_root(root: str | Path) -> Path:
     return Path(root).expanduser()
 
 
+def load(
+    data_root: str | Path,
+    years: list[int],
+    hh_config: dict,
+    person_config: dict,
+    trips_config: dict,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+
+    hhs = load_households(data_root, hh_config, years=years)
+    persons = load_persons(data_root, person_config, years=years)
+    attributes = table_joiner(hhs, persons, on="hid")
+    trips = load_trips(data_root, trips_config, years=years)
+
+    attributes = attributes.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+    )
+    trips = trips.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+    )
+
+    return attributes, trips
+
+
 def load_households(
     root: str | Path,
-    config_path: str | Path | None = None,
+    hh_config: dict,
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
     root = _expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
-    names = names or ["hhv2pub.csv", "hhpub.csv", "HHV2PUB.CSV", "HHPUB.csv"]
-
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("nhts", "hh_dictionary.yaml")
-    )
-    config = load_yaml_config(config_path)
+    names = names or [
+        {
+            2022: "hhv2pub.csv",
+            2017: "hhpub.csv",
+            2009: "HHV2PUB.CSV",
+            2001: "HHPUB.csv",
+        }[y]
+        for y in years
+    ]
 
     hhs: list[pl.DataFrame] = []
     for year, name in zip(years, names):
 
-        year_config = {}
-        for k, v in config.items():
-            if year in v:
-                year_config[k] = v[year]
-            else:
-                year_config[k] = v["default"]
+        year_config = utils.config_for_year(hh_config, year)
 
         column_mapping = year_config["column_mappings"]
 
@@ -57,18 +77,22 @@ def load_households(
                 data["date"]
                 .cast(pl.String)
                 .str.slice(4)
-                .cast(pl.Int32)
+                .cast(pl.Int8)
                 .alias("month"),
             ).drop("date")
 
         # sample income within bounds
         data = data.with_columns(
-            pl.col("hh_income")
+            hh_income=pl.col("hh_income")
             .replace_strict(year_config["hh_income"])
             .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
-            # pl.col("rurality").replace_strict(config["rurality"]),
-            pl.col("ownership").replace_strict(year_config["ownership"]),
-            pl.col("day").replace_strict(year_config["day"]),
+            rurality=pl.col("rurality")
+            .cast(pl.String)
+            .replace_strict(year_config["rurality"]),
+            ownership=pl.col("ownership").replace_strict(
+                year_config["ownership"]
+            ),
+            day=pl.col("day").replace_strict(year_config["day"]),
         )
 
         if "race1" in data.columns:
@@ -99,33 +123,30 @@ def load_households(
 
 def load_persons(
     root: str | Path,
-    config_path: str | Path | None = None,
+    person_config: str | Path | None = None,
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
     root = _expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
     names = names or [
-        "perv2pub.csv",
-        "perpub.csv",
-        "PERV2PUB.CSV",
-        "PERPUB.csv",
+        {
+            2022: "perv2pub.csv",
+            2017: "perpub.csv",
+            2009: "PERV2PUB.CSV",
+            2001: "PERPUB.csv",
+        }[y]
+        for y in years
     ]
-
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("nhts", "person_dictionary.yaml")
-    )
-    with open(config_path) as handle:
-        config = yaml.safe_load(handle)
-
-    column_mapping = config["column_mappings"]
 
     persons: list[pl.DataFrame] = []
     for year, name in zip(years, names):
         path = root / str(year) / name
         data = pl.read_csv(path, ignore_errors=True)
+
+        year_config = utils.config_for_year(person_config, year)
+
+        column_mapping = year_config["column_mappings"]
 
         data = data.select(column_mapping.keys())
         data = data.rename(column_mapping)
@@ -133,16 +154,19 @@ def load_persons(
         data = data.with_columns(
             pl.col(col)
             .replace_strict(
-                config[col].get(year, config[col]["default"]), default=None
+                year_config[col].get(year, year_config[col]), default=None
             )
             .fill_null(pl.col(col))
             for col in column_mapping.values()
-            if col in config
+            if col in year_config
         )
         data = data.with_columns(
+            age=pl.when(pl.col("age") < 0)
+            .then(pl.lit(None, dtype=pl.Int32))
+            .otherwise(pl.col("age").cast(pl.Int32)),
             hid=(
                 pl.lit(year).cast(pl.String) + pl.col("hid").cast(pl.String)
-            ).cast(pl.Int64)
+            ).cast(pl.Int64),
         ).with_columns(
             pid=(
                 pl.col("hid").cast(pl.String) + pl.col("pid").cast(pl.String)
@@ -171,10 +195,10 @@ def _hhmm_to_minutes(value: int) -> int:
 def _preprocess_trips(
     trips: pl.DataFrame, year: int, config: dict
 ) -> pl.DataFrame:
-    column_mapping = config["column_mapping"][year]
-    mode_mapping = config["mode_mappings"][year]
-    act_mapping = config["act_mappings"][year]
-    rurality_mapping = config["rurality"][year]
+    column_mapping = config["column_mapping"]
+    mode_mapping = config["mode_mappings"]
+    act_mapping = config["act_mappings"]
+    rurality_mapping = config["rurality"]
 
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
@@ -183,9 +207,13 @@ def _preprocess_trips(
             str(year)
             + pl.col("hid").cast(pl.String)
             + pl.col("pid").cast(pl.String)
-        ).cast(pl.Int64)
+        ).cast(pl.Int64),
+        distance=pl.when(pl.col("distance") < 0)
+        .then(pl.lit(None))
+        .otherwise(pl.col("distance")),
     )
 
+    # todo: remove or also filter associated attributes
     trips = trips.filter(
         ~(
             ((pl.col("tst") < 0) | (pl.col("duration") < 0))
@@ -209,7 +237,9 @@ def _preprocess_trips(
     )
     if "ozone" in trips.columns:
         trips = trips.with_columns(
-            ozone=pl.col("ozone").replace_strict(
+            ozone=pl.col("ozone")
+            .cast(pl.String)
+            .replace_strict(
                 rurality_mapping,
                 return_dtype=pl.String,
                 default=pl.col("ozone"),
@@ -220,7 +250,9 @@ def _preprocess_trips(
 
     if "dzone" in trips.columns:
         trips = trips.with_columns(
-            dzone=pl.col("dzone").replace_strict(
+            dzone=pl.col("dzone")
+            .cast(pl.String)
+            .replace_strict(
                 rurality_mapping,
                 return_dtype=pl.String,
                 default=pl.col("dzone"),
@@ -231,49 +263,48 @@ def _preprocess_trips(
 
     trips = trips.with_columns(tet=pl.col("tst") + pl.col("duration"))
 
-    # fix trips that pass midnight
-    trips = (
-        trips.with_columns(
-            flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
-            .then(1)
-            .otherwise(0)
-        )
-        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
-        .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
-        .drop("flag")
-    )
+    # # fix trips that pass midnight
+    # trips = (
+    #     trips.with_columns(
+    #         flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
+    #         .then(1)
+    #         .otherwise(0)
+    #     )
+    #     .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
+    #     .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
+    #     .drop("flag")
+    # )
+    trips = fix.day_wrap(trips)
 
     return trips.with_columns(tet=(pl.col("tst") + pl.col("duration")))
 
 
 def load_trips(
     root: str | Path,
-    config_path: str | Path | None = None,
+    trips_config: dict,
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
     root = _expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
     names = names or [
-        "tripv2pub.csv",
-        "trippub.csv",
-        "DAYV2PUB.CSV",
-        "DAYPUB.csv",
+        {
+            2022: "tripv2pub.csv",
+            2017: "trippub.csv",
+            2009: "DAYV2PUB.CSV",
+            2001: "DAYPUB.csv",
+        }[y]
+        for y in years
     ]
-
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("nhts", "trip_dictionary.yaml")
-    )
-    with open(config_path) as handle:
-        config = yaml.safe_load(handle)
 
     trips_by_year: list[pl.DataFrame] = []
     for year, name in zip(years, names):
         path = root / str(year) / name
+        year_config = utils.config_for_year(trips_config, year)
         trips = pl.read_csv(path, ignore_errors=True)
-        trips_by_year.append(_preprocess_trips(trips, year=year, config=config))
+        trips_by_year.append(
+            _preprocess_trips(trips, year=year, config=year_config)
+        )
 
     trips = pl.concat(trips_by_year)
     return trips

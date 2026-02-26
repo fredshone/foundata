@@ -28,6 +28,21 @@ column_mappings:
         wdhhwgt_LGA: wd_weight
         wehhwgt_LGA: we_weight
 
+month:
+    default:
+        January: 1
+        February: 2
+        March: 3
+        April: 4
+        May: 5
+        June: 6
+        July: 7
+        August: 8
+        September: 9
+        October: 10
+        November: 11
+        December: 12
+
 dwelling:
     default:
         "Flat or Apartment": flat
@@ -74,6 +89,8 @@ ownership: {
 
 rurality:
     default:
+        "Campaspe (S)": rural # Predominantly rural shire in north-central Victoria. [1](https://www.campaspe.vic.gov.au/)
+        "Greater Shepparton (C)": suburban # Regional city with substantial urban population but also significant rural areas. [2](https://www.greatershepparton.com.au/)
         "Banyule (C)": suburban  # Metro middle-ring LGA wholly in Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
         "Bayside (C)": urban     # Inner–inner/middle bay-side municipality within metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
         "Boroondara (C)": urban  # Inner-eastern municipality (Camberwell/Hawthorn/Kew). [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)
@@ -118,3 +135,6 @@ rurality:
         Merri-bek (C): urban             # Inner-north metropolitan LGA (formerly Moreland) [1](https://en.wikipedia.org/wiki/City_of_Merri-bek)
         Moorabool (S): suburban          # Peri-urban interface with Bacchus Marsh growth/commuter role [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)[19](https://en.wikipedia.org/wiki/Bacchus_Marsh)
         Melton (S): suburban              # Outer-metropolitan growth area (same LGA as City of Melton) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
+        Mitchell (S): suburban            # Outer-metropolitan growth area (Wallan/ Kilmore) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
+        Moira (S): rural                 # Large rural shire in north-east Victoria [20](https://www.moira.vic.gov.au/Our-Region/Geographic-Profile)
+        Murrindindi (S): rural           # Rural shire in north-east Victoria with small towns (Alexandra, Yea) [21](https://www.murrindindi.vic.gov.au/Our-Region/Geographic-Profile)

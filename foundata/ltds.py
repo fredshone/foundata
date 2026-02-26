@@ -13,6 +13,8 @@ from foundata.utils import (
     table_stacker,
 )
 
+SOURCE = "ltds"
+
 
 def _expand_root(root: str | Path) -> Path:
     return Path(root).expanduser()
@@ -109,13 +111,21 @@ def load_years(
     trips = table_stacker(all_trips)
 
     attributes = attributes.with_columns(
-        source=pl.lit("ltds"),
+        source=pl.lit(SOURCE),
         country=pl.lit("uk"),
         education=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
         dwelling=pl.lit("unknown"),
-        month=pl.lit("unknown"),
+        month=pl.lit(None, dtype=pl.Int8),
         disability=pl.lit("unknown"),
+    )
+
+    attributes = attributes.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+    )
+    trips = trips.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
 
     return attributes, trips
@@ -131,7 +141,7 @@ def preprocess_hhs(
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
-    hhs = hhs.with_columns(pl.col("year") + 2000)
+    hhs = hhs.with_columns(year=(pl.col("year") + 2000).cast(pl.Int32))
 
     hhs = hhs.with_columns(
         hh_income=(
@@ -425,7 +435,7 @@ def preprocess_trips(
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
     trips = trips.sort(["hid", "pid", "tid"]).with_columns(
-        seq=pl.col("tid").rank(method="dense").over("hid", "pid")
+        seq=pl.col("tid").rank(method="dense").over("hid", "pid").cast(pl.Int64)
     )
 
     mode_map = config["mode"]
@@ -442,7 +452,7 @@ def preprocess_trips(
     ).with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
 
     trips = fix.day_wrap(trips)
-    trips = filter.bad_trips(trips)
+    # trips = filter.bad_trips(trips)
 
     # sample times
     trips = trips.group_by("pid", maintain_order=True).map_groups(
@@ -452,7 +462,6 @@ def preprocess_trips(
     trips = trips.with_columns(
         ozone=pl.col("ozone").replace_strict(zone_mapping),
         dzone=pl.col("dzone").replace_strict(zone_mapping),
-        ltds_source=pl.lit(year),
     )
 
     return trips
@@ -462,7 +471,15 @@ def preprocess_stages(
     stages: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
-    stages = stages.select(column_mapping.keys()).rename(column_mapping)
+    stages = (
+        stages.select(column_mapping.keys())
+        .rename(column_mapping)
+        .with_columns(
+            distance=pl.when(pl.col("distance") < 0)
+            .then(None)
+            .otherwise(pl.col("distance") * 1.6)
+        )
+    )
 
     stages = stages.group_by(["pid", "tid"]).agg(
         pl.col("distance").sum().alias("distance")

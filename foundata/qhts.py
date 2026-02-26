@@ -11,6 +11,8 @@ from .utils import (
     table_joiner,
 )
 
+SOURCE = "qhts"
+
 
 def default(config, year):
     return config.get(year, config["default"])
@@ -92,24 +94,37 @@ def load_years(
 
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
+
+    attributes = attributes.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+    )
+    trips = trips.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+    )
+
     return attributes, trips
 
 
 def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
+
+    day_mapping = config["day"]
     dwell_mapping = config["dwelling"]
     rurality_mapping = config["rurality"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
     hhs = hhs.with_columns(
-        pl.col("dwelling").replace_strict(dwell_mapping).fill_null("unknown")
-    )
-
-    hhs = hhs.with_columns(
-        pl.col("rurality")
+        day=pl.col("day").replace_strict(day_mapping).fill_null("unknown"),
+        month=pl.col("month").cast(pl.Int8),
+        year=pl.col("year").cast(pl.Int32),
+        dwelling=pl.col("dwelling")
+        .replace_strict(dwell_mapping)
+        .fill_null("unknown"),
+        rurality=pl.col("rurality")
         .replace_strict(rurality_mapping, default=pl.col("rurality"))
-        .fill_null("unknown")
+        .fill_null("unknown"),
     )
 
     return hhs
@@ -128,12 +143,12 @@ def load_persons(
     employment_mapping = config["employment"]
     occupation_mapping = config["occupation"]
     income_mapping = config["income"]
+    disability_mapping = config["disability"]
 
     persons = persons.with_columns(
-        pl.col("age")
+        age=pl.col("age")
         .replace_strict(age_mapping)
-        .map_elements(sample_int_range, pl.Float64)
-        .alias("age")
+        .map_elements(sample_int_range, return_dtype=pl.Int32)
     )
 
     persons = persons.with_columns(
@@ -163,7 +178,9 @@ def load_persons(
     )
 
     persons = persons.with_columns(
-        pl.col("disability").cast(pl.Boolean).fill_null(False)
+        pl.col("disability").replace_strict(
+            disability_mapping, default=pl.lit("unknown")
+        )
     )
 
     persons = persons.with_columns(

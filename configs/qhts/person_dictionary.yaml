@@ -64,8 +64,8 @@ relationship:
     }
 has_licence:
     default: {
-        1: yes,
-        0: no,   
+        1: "yes",
+        0: "no",   
     }
 employment:
     default:
@@ -116,4 +116,8 @@ income:
         $3,000 - $3,499 per week ($156,000 - $181,999 per year): [156000, 182000]
         $3,500 or more per week ($182,000 or more per year): [182000, 1000000]
  
-   
+disability:
+    default: {
+        1: "yes",
+        0: "no",   
+    }

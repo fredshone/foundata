@@ -1,14 +1,45 @@
 from pathlib import Path
 
 import polars as pl
-import yaml
 
-from .utils import (
-    expand_root,
-    get_config_path,
-    load_yaml_config,
-    sample_us_to_euro,
-)
+from .utils import expand_root, sample_us_to_euro, table_joiner
+
+SOURCE = "cmap"
+
+
+def load(
+    data_root: str | Path,
+    configs_root: str | Path,
+    hh_config: dict,
+    person_config: dict,
+    trips_config: dict,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    rurality = load_rurality(configs_root)
+
+    hhs = load_households(data_root, hh_config)
+    hh_locations = load_home_locations(data_root, rurality_table=rurality)
+    hhs = hhs.join(hh_locations, on="hid", how="left")
+
+    persons = load_persons(data_root, person_config)
+
+    attributes = table_joiner(hhs, persons, on="hid").with_columns(
+        country=pl.lit("usa"), source=pl.lit("cmap")
+    )
+
+    rurality_mapping = load_locations(data_root, rurality_table=rurality)
+    trips = load_trips(
+        data_root, trips_config, rurality_mapping=rurality_mapping
+    )
+
+    attributes = attributes.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+    )
+    trips = trips.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+    )
+
+    return attributes, trips
 
 
 def _cast_numeric_columns(frame: pl.DataFrame) -> pl.DataFrame:
@@ -25,16 +56,7 @@ def _cast_numeric_columns(frame: pl.DataFrame) -> pl.DataFrame:
     return frame
 
 
-def load_households(
-    root: str | Path, config_path: str | Path | None = None
-) -> pl.DataFrame:
-    root = expand_root(root)
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("cmap", "hh_dictionary.yaml")
-    )
-    config = load_yaml_config(config_path)
+def load_households(root: str | Path, config: dict) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
     hhs = pl.read_csv(root / "household.csv", ignore_errors=True)
 
@@ -43,8 +65,8 @@ def load_households(
     hhs = hhs.with_columns(date=pl.col("date").str.to_datetime("%Y-%m-%d"))
 
     hhs = hhs.with_columns(
-        year=pl.col("date").dt.year(),
-        month=pl.col("date").dt.month(),
+        year=pl.col("date").dt.year().cast(pl.Int32),
+        month=pl.col("date").dt.month().cast(pl.Int8),
         day=pl.col("date").dt.weekday().replace_strict(config["day"]),
     ).drop("date")
 
@@ -57,19 +79,11 @@ def load_households(
         pl.col("ownership").replace_strict(config["ownership"]),
     )
 
-    return _cast_numeric_columns(hhs)
+    return hhs
 
 
-def load_persons(
-    root: str | Path, config_path: str | Path | None = None
-) -> pl.DataFrame:
-    root = expand_root(root)
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("cmap", "person_dictionary.yaml")
-    )
-    config = load_yaml_config(config_path)
+def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
+
     column_mapping = config["column_mappings"]
     persons = pl.read_csv(root / "person.csv", ignore_errors=True)
 
@@ -79,14 +93,19 @@ def load_persons(
         pid=(
             pl.col("hid").cast(pl.String) + pl.col("pid").cast(pl.String)
         ).cast(pl.Int64),
+        age=pl.when(pl.col("age") < 0)
+        .then(pl.lit(None, dtype=pl.Int32))
+        .otherwise(pl.col("age").cast(pl.Int32)),
         sex=pl.col("sex").replace_strict(config["sex"]),
-        disability=(
+        disability=pl.when(
             pl.col("disability")
             .str.split(";")
-            .cast(pl.List(pl.Int64))
+            .cast(pl.List(pl.Int8))
             .list.sum()
             > 0
-        ),
+        )
+        .then(pl.lit("yes"))
+        .otherwise(pl.lit("no")),
         education=pl.col("education").replace_strict(config["education"]),
         can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
         employment=pl.when(pl.col("is_employed") == 1)
@@ -102,7 +121,7 @@ def load_persons(
 
     persons = persons.drop(["is_employed", "work_status"])
 
-    return _cast_numeric_columns(persons)
+    return persons
 
 
 def load_rurality(configs_root: Path) -> pl.DataFrame:
@@ -207,25 +226,15 @@ def load_home_locations(
 
 
 def load_trips(
-    root: str | Path,
-    config_path: str | Path | None = None,
-    rurality_mapping: pl.DataFrame | None = None,
+    root: str | Path, config: dict, rurality_mapping: pl.DataFrame | None = None
 ) -> pl.DataFrame:
-    root = expand_root(root)
-    config_path = (
-        Path(config_path)
-        if config_path is not None
-        else get_config_path("cmap", "trip_dictionary.yaml")
-    )
 
     trips = pl.read_csv(root / "place.csv", ignore_errors=True)
 
-    with open(config_path) as handle:
-        trip_mapper = yaml.safe_load(handle)
-    column_mapping = trip_mapper["column_mappings"]
-    day_mapping = trip_mapper["day"]
-    mode_mapping = trip_mapper["mode"]
-    act_mapping = trip_mapper["purpose"]
+    column_mapping = config["column_mappings"]
+    day_mapping = config["day"]
+    mode_mapping = config["mode"]
+    act_mapping = config["purpose"]
 
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
@@ -266,7 +275,7 @@ def load_trips(
 
     trips = trips.with_columns(
         year=pl.col("tst").dt.year(),
-        month=pl.col("tst").dt.month(),
+        month=pl.col("tst").dt.month().cast(pl.Int8),
         day=pl.col("tst").dt.weekday().replace_strict(day_mapping),
     )
 

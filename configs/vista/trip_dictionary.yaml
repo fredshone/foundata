@@ -114,3 +114,44 @@ rurality:
         Merri-bek (C): urban             # Inner-north metropolitan LGA (formerly Moreland) [1](https://en.wikipedia.org/wiki/City_of_Merri-bek)
         Moorabool (S): suburban          # Peri-urban interface with Bacchus Marsh growth/commuter role [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)[19](https://en.wikipedia.org/wiki/Bacchus_Marsh)
         Melton (S): suburban              # Outer-metropolitan growth area (same LGA as City of Melton) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
+        'Buloke (S)': 'rural'
+        'Surf Coast (S)': 'suburban'
+        'Colac-Otway (S)': 'rural'
+        'Bass Coast (S)': 'suburban'
+        'Swan Hill (RC)': 'rural'
+        'Strathbogie (S)': 'rural'
+        'Pyrenees (S)': 'rural'
+        'Alpine (S)': 'rural'
+        'Corangamite (S)': 'rural'
+        'Campaspe (S)': 'rural'
+        'Greater Shepparton (C)': 'urban'
+        'Wellington (S)': 'rural'
+        'Wangaratta (RC)': 'rural'
+        'Unincorporated Victoria': 'rural'
+        'Warrnambool (C)': 'urban'
+        'Moira (S)': 'rural'
+        'Yarriambiack (S)': 'rural'
+        'Latrobe (C)': 'urban'
+        'Mansfield (S)': 'rural'
+        'Mildura (RC)': 'urban'
+        'Mitchell (S)': 'suburban'
+        'Baw Baw (S)': 'suburban'
+        'South Gippsland (S)': 'rural'
+        'Murrindindi (S)': 'rural'
+        'Towong (S)': 'rural'
+        'Benalla (RC)': 'rural'
+        'Ararat (RC)': 'rural'
+        'Moyne (S)': 'rural'
+        'East Gippsland (S)': 'rural'
+        'Queenscliffe (B)': 'suburban'
+        'Wodonga (RC)': 'urban'
+        'Horsham (RC)': 'urban'
+        'Interstate': 'rural'
+        'Northern Grampians (S)': 'rural'
+        'Indigo (S)': 'rural'
+        Unincorporated Vic: rural
+        Glenelg (S): rural
+        Latrobe (C) (Vic.): urban
+        Southern Grampians (S): rural
+        West Wimmera (S): rural
+

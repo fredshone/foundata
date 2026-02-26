@@ -52,34 +52,18 @@ column_mapping:
     }
 
 rurality:
-    2022:
-        -9: unknown
-        1: rural
-        2: suburban
-        3: urban
-        4: suburban
-        5: urban
-    2017:
-        -9: unknown
-        1: rural
-        2: suburban
-        3: urban
-        4: suburban
-        5: urban
-    2009:
-        -9: unknown
-        1: rural
-        2: suburban
-        3: urban
-        4: suburban
-        5: urban
-    2001:
-        -9: unknown
-        1: rural
-        2: suburban
-        3: urban
-        4: suburban
-        5: urban
+    default:
+        "1": rural
+        "2": suburban
+        "3": urban
+        "4": suburban
+        "5": urban
+        R: rural
+        T: suburban
+        C: urban
+        S: suburban
+        U: urban
+        "-9": unknown
 
 mode_mappings:
   2022: {

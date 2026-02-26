@@ -1,5 +1,26 @@
 ### Data Status
 
+| source | n_attributes | n_trips |
+|--------|--------------|---------|
+| nts    | 1,728,067    | 5,106,905 |
+| vista  | 94,821       | 257,557 |
+| qhts   | 51,481       | 126,485 |
+| cmap   | 31,540       | 101,965 |
+| nhts   | 716,376      | 2,604,832 |
+| ltds   | 71,734       | 137,900 |
+| **total** | **2,694,019** | **8,465,280** |
+
+### Data Quality
+
+**Black** signifies missing or "unknown" data ->
+
+![Description of image](assets/attributes.png)
+
+
+### Data List
+
+
+
 |  source           |     | persons  | years     | label quality | data availability  |
 | ----------------- |---- | -------- |-----------|---------------|--------------------|
 | NTS               | UK  | 400k     | 02-23     | A             | [request](https://ukdataservice.ac.uk/)             |
@@ -25,204 +46,7 @@
 
 _________________________
 
-### Labels
+### Attributes
 
-Age:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | 0-4, 5-12, 13-15, 16-17, 18-44, 45-64, 65+|
-| Metropolitan      |           |
-| NHTS              | numeric   |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | numeric & interpolated |
-
-Sex:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | m,f,o     |
-| Metropolitan      |           |
-| NHTS              | m,f       |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | m,f       |
-
-Education:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | detailed |
-| Metropolitan      |           |
-| NHTS              | detailed  |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING   |
-
-Disability:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | visual, hearing, mobility, chair, mental |
-| Metropolitan      |           |
-| NHTS              | yes, no difficulty traveling or individual columns for each disability         |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING         |
-
-Can Wfh:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | yes, no |
-| Metropolitan      |           |
-| NHTS              | Days per week worked from home |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING   |
-
-Employmnet status:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | retired, volunteer, home, unemployed, student, etc |
-| Metropolitan      |           |
-| NHTS              | retired, volunteer, home, unemployed, student, etc |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | employed, unemployed, student  |
-
-Industry:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | agriculture, utilities, construction, etc |
-| Metropolitan      |           |
-| NHTS              | ---       |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | detailed  |
-
-Race:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | w, aab, asian, etc |
-| Metropolitan      |           |
-| NHTS              | w, b, asian, other, from respondent | 
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING   |
-
-Has license:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | y, n      |
-| Metropolitan      |           |
-| NHTS              | derived drives as y, n |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | y,n       |
-
-Relationship to respondent:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | spouse, father, child, self, etc|
-| Metropolitan      |           |
-| NHTS              | spouse, father, child, self, etc|
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | spouse, father, child, self, etc|
-
-
-HH num people:
-|                   | raw       |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | numeric   |
-| Metropolitan      |           |
-| NHTS              | numeric   |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | numeric   |
-
-HH income:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | $0-15k, 25, 30, 35, 50, 60, 75, 100, 150, +|
-| Metropolitan      |          |
-| NHTS              | $0-10k, 15, 25, 35, 50, 75, 100, 125, 150, 200, + |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | detailed  |
-
-HH type:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | detached, apartment, etc|
-| Metropolitan      |           |
-| NHTS              | None          |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING   |
-
-HH ownership:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | own, rent, etc|
-| Metropolitan      |           |
-| NHTS              | own, rent, other |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | own, rent, other |
-
-Num vehicles:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | numeric   |
-| Metropolitan      |           |
-| NHTS              | numeric   |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | numeric   |
-
-Urban rural:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              |           |
-| Metropolitan      |           |
-| NHTS              | urban, rural |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | urban, rural |
-
-HH composition:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              |           |
-| Metropolitan      |           |
-| NHTS              | 1a, 2+a, 1a1c, etc, also by age of child |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | MISSING   |
-
-___________________
-
-### Vehicles
-
-Type/body:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | car, van, suv, truck, etc |
-| Metropolitan      |           |
-| NHTS              |           |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | detailed for hh |
-
-___________________
-
-### Locations
-
-Type/body:
-|                   | raw    |
-| ----------------- | --------- |
-| NTS (UK)          |           |
-| CMAP              | tract, county, state FIPS codes and tract lat/lon |
-| Metropolitan      |           |
-| NHTS              |   ???     |
-| Queensland (AUS)  |           |
-| Melbourne (AUS)   | lgas      |
+### Trips
 

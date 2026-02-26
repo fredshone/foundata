@@ -1,37 +1,122 @@
-attribute_columns:
-  - hid
-  - pid
-  - age
-  - hh_size
-  - hh_income
-  - sex
-  - dwelling
-  - ownership
-  - vehicles
-  - disability
-  - education
-  - can_wfh
-  - occupation
-  - race
-  - has_licence
-  - relationship
-  - employment
-  - country
-  - source
-  - year
-  - month
-  - day
-  - rurality
+attributes:
+  hid:
+    dtype: string
+    default: False
+  pid:
+    dtype: string
+    default: False
+  age:
+    dtype: int
+    default: True
+    min: 0
+    max: 120
+  hh_size:
+    dtype: int
+    default: True
+    min: 1
+    max: 100
+  hh_income:
+    dtype: numeric
+    default: True
+    min: 0
+  sex:
+    dtype: str
+    default: True
+  dwelling:
+    dtype: str
+    default: True
+  ownership:
+    dtype: str
+    default: True
+  vehicles:
+    dtype: int
+    default: True
+    min: 0
+    max: 100
+  disability:
+    dtype: str
+    default: True
+  education:
+    dtype: str
+    default: True
+  can_wfh:
+    dtype: str
+    default: True
+  occupation:
+    dtype: str
+    default: True
+  race:
+    dtype: str
+    default: True
+  has_licence:
+    dtype: str
+    default: True
+  relationship:
+    dtype: str
+    default: True
+  employment:
+    dtype: str
+    default: True
+  country:
+    dtype: str
+    default: True
+  source:
+    dtype: str
+    default: True
+  year:
+    dtype: int
+    default: True
+  month:
+    dtype: int
+    default: True
+    min: 1
+    max: 12
+  day:
+    dtype: str
+    default: True
+    set: [monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown]
+  rurality:
+    dtype: str
+    default: True
+    set: [urban, suburban, rural, unknown]
+  weight:
+    dtype: float
+    default: True
 
-trip_columns:
-  - hid
-  - pid
-  - seq
-  - ozone
-  - dzone
-  - oact
-  - dact
-  - mode
-  - tst
-  - tet
-  - distance
+trips:
+  pid:
+    dtype: string
+    default: None
+  seq:
+    dtype: int
+    default: None
+    min: 0
+  ozone:
+    dtype: str
+    default: True
+    set: [urban, suburban, rural, unknown]
+  dzone:
+    dtype: str
+    default: True
+    set: [urban, suburban, rural, unknown]
+  oact:
+    dtype: str
+    default: True
+  dact:
+    dtype: str
+    default: True
+  mode:
+    dtype: str
+    default: True
+  tst:
+    dtype: int
+    default: None
+    min: 0
+  tet:
+    dtype: int
+    default: None
+    min: 0
+  distance:
+    dtype: float
+    default: None
+    min: 0

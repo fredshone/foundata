@@ -1,7 +1,7 @@
 column_mappings:
-    default:
+    2022:
         "HOUSEID": "hid"
-        # "URBRUR": "rurality"
+        "HBHUR": "rurality"
         # "HBPPOPDN": "population_density"
         "HHFAMINC": "hh_income"
         "HHSIZE": "hh_size"
@@ -13,8 +13,40 @@ column_mappings:
         # "WRKCOUNT": "num_workers"
         "HH_RACE": "race1"
         "HHR_RACE": "race2"
+        "WTHHFIN": "weight"
+    default:
+        "HOUSEID": "hid"
+        "HBHUR": "rurality"
+        # "HBPPOPDN": "population_density"
+        "HHFAMINC": "hh_income"
+        "HHSIZE": "hh_size"
+        "HHVEHCNT": "vehicles"
+        "HOMEOWN": "ownership"
+        # "LIF_CYC": "life_cycle"
+        "TDAYDATE": "date"
+        "TRAVDAY": "day"
+        # "WRKCOUNT": "num_workers"
+        "HH_RACE": "race1"
+        "HHR_RACE": "race2"
+        "WTHHFIN": "weight"
 
-rurality: {default: {1: 'urban', 2: 'rural'}}
+
+rurality:
+    default:
+        "1": rural
+        "2": suburban
+        "3": urban
+        "4": suburban
+        "5": urban
+        R: rural
+        T: suburban
+        C: urban
+        S: suburban
+        U: urban
+        "-9": unknown
+        TC: suburban
+        X: rural
+
 
 hh_income:
     default:

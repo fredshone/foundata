@@ -154,3 +154,21 @@ def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
 
 def get_config_path(*parts: str) -> Path:
     return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)
+
+
+def template() -> Path:
+    return Path(__file__).parent.parent / "configs" / "core" / "template.yaml"
+
+
+def get_template_attributes() -> set[str]:
+    # load yaml config and return set of expected columns
+    with open(template()) as f:
+        config = yaml.safe_load(f)
+    return config["attributes"]
+
+
+def get_template_trips() -> set[str]:
+    # load yaml config and return set of expected columns
+    with open(template()) as f:
+        config = yaml.safe_load(f)
+    return config["trips"]

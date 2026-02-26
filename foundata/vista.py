@@ -10,6 +10,8 @@ from .utils import (
     table_joiner,
 )
 
+SOURCE = "vista"
+
 
 def default(config, year):
     return config.get(year, config["default"])
@@ -89,6 +91,14 @@ def load_years(
 
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
+
+    attributes = attributes.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+    )
+    trips = trips.with_columns(
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+    )
     return attributes, trips
 
 
@@ -97,19 +107,24 @@ def preprocess_households(
 ) -> pl.DataFrame:
 
     column_mapping = config["column_mappings"]
+
+    month_mapping = config["month"]
     income_mapping = config["hh_income"]
     ownership_mapping = config["ownership"]
     dwelling_mapping = config["dwelling"]
     zone_mapping = config["rurality"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
+
     hhs = hhs.with_columns(
-        pl.col("year").str.slice(0, 4).cast(pl.Int32).alias("year")
+        day=pl.col("day").str.to_lowercase(),
+        month=pl.col("month").replace_strict(month_mapping).cast(pl.Int8),
+        year=pl.col("year").str.slice(0, 4).cast(pl.Int32),
     )
 
     if year == "2012-2020":
         hhs = hhs.with_columns(
-            pl.when(pl.col("hh_income").is_null())
+            hh_income=pl.when(pl.col("hh_income").is_null())
             .then(pl.lit(None, pl.Int32))
             .otherwise(
                 (
@@ -121,17 +136,15 @@ def preprocess_households(
                 * 52
                 * 0.6
             )
-            .alias("hh_income")
+            .cast(pl.Int32)
         )
     else:
         hhs = hhs.with_columns(
-            pl.col("hh_income")
+            hh_income=pl.col("hh_income")
             .replace_strict(
                 income_mapping, default=pl.lit([0]), return_dtype=pl.List
             )
-            .alias("hh_income_bounds")
-        ).with_columns(
-            hh_income=pl.col("hh_income_bounds").map_elements(
+            .map_elements(
                 lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
             )
         )
@@ -160,7 +173,7 @@ def preprocess_households(
     )
 
     hhs = hhs.with_columns(
-        source=pl.lit("vista"),
+        source=pl.lit(SOURCE),
         country=pl.lit("australia"),
         can_wfh=pl.lit("unknown"),
     )
@@ -181,18 +194,19 @@ def preprocess_persons(
 
     if year != "2012-2020":
         persons = persons.with_columns(
-            pl.col("age")
+            age=pl.col("age")
             .replace_strict({"100+": "100->100"}, default=pl.col("age"))
             .str.split("->")
             .map_elements(
                 lambda bounds: sample_int_range(_bounds_from_list(bounds)),
-                pl.Int64,
+                pl.Int32,
             )
-            .alias("age")
         )
+    else:
+        persons = persons.with_columns(age=pl.col("age").cast(pl.Int32))
 
     persons = persons.with_columns(
-        pl.col("sex").replace_strict(sex_mapping).alias("sex")
+        sex=pl.col("sex").replace_strict(sex_mapping)
     )
 
     persons = persons.with_columns(
@@ -241,11 +255,15 @@ def preprocess_trips(
     act_map = config["act_mappings"]
     rurality_map = config["rurality"]
     trips = trips.with_columns(
-        pl.col("mode").replace_strict(mode_map),
-        pl.col("oact").replace_strict(act_map),
-        pl.col("dact").replace_strict(act_map),
-        pl.col("ozone").replace_strict(rurality_map, default=pl.col("ozone")),
-        pl.col("dzone").replace_strict(rurality_map, default=pl.col("dzone")),
+        mode=pl.col("mode").replace_strict(mode_map),
+        oact=pl.col("oact").replace_strict(act_map),
+        dact=pl.col("dact").replace_strict(act_map),
+        ozone=pl.col("ozone").replace_strict(
+            rurality_map, default=pl.col("ozone")
+        ),
+        dzone=pl.col("dzone").replace_strict(
+            rurality_map, default=pl.col("dzone")
+        ),
     )
 
     return trips

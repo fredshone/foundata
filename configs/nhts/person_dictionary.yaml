@@ -1,15 +1,16 @@
-column_mappings: {
-    "PERSONID": "pid", # id within household
-    "HOUSEID": "hid",
-    "R_AGE": "age",
-    "EDUC": "education",
-    "MEDCOND": "disability",  # actually difficulty travelling
-    "PRMACT": "employment",
-    "R_RELAT": "relationship",
-    "R_SEX": "sex",
-    "DRIVER": "has_licence",  # actually derived
-    "HBHUR": "rurality",
-    }
+column_mappings:
+    default:
+        "PERSONID": "pid" # id within household
+        "HOUSEID": "hid"
+        "R_AGE": "age"
+        "EDUC": "education"
+        "MEDCOND": "disability"  # actually difficulty travelling
+        "PRMACT": "employment"
+        "R_RELAT": "relationship"
+        "R_SEX": "sex"
+        "DRIVER": "has_licence"  # actually derived
+        # "HBHUR": "rurality"
+        
 
 "education":
     "default": {

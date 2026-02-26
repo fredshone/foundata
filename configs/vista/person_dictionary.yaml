@@ -44,8 +44,8 @@ relationship:
     }
 has_licence:
     default: {
-        Some Licence: yes,
-        No Licence: no,   
+        Some Licence: "yes",
+        No Licence: "no",   
     }
 occupation:
     default: {

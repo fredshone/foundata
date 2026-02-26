@@ -1,4 +1,8 @@
+from typing import Optional
+
 import polars as pl
+
+from foundata import utils
 
 
 def negative_duration_plans(trips: pl.DataFrame) -> bool:
@@ -98,29 +102,18 @@ def time_consistent(
     return attributes, trips
 
 
-def bad_trips(trips: pl.DataFrame) -> pl.DataFrame:
-    """
-    Remove trips with negative duration or time inconsistencies (overlapping trips).
-    But only if plan location consistency is maintained.
-    Note that overlapping trip times are calculated based on the original tst and tet,
-    and previous tst and tet.
-    """
-    before = len(trips)
-    trips = trips.filter(
-        ~(
-            (
-                (pl.col("tst") < pl.col("tet").shift(1).over("pid"))
-                | (pl.col("tet") < pl.col("tet").shift(1).over("pid"))
-                | (pl.col("tet") < pl.col("tst"))
-            )
-            & (pl.col("ozone") == pl.col("dzone").shift(1).over("pid"))
-            & (pl.col("dzone") == pl.col("ozone").shift(-1).over("pid"))
-        )
-    )
-    after = len(trips)
-    removed = before - after
-    perc = 100 * removed / before if before > 0 else 0
-    print(
-        f"Removed {removed}/{before} trips due to time inconsistencies ({perc:.1f}%)"
-    )
-    return trips
+def columns(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    template: Optional[dict] = None,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    if template is None:
+        attributes_cnfg = utils.get_template_attributes()
+        trips_cnfg = utils.get_template_trips()
+    else:
+        attributes_cnfg = template["attributes"]
+        trips_cnfg = template["trips"]
+
+    attributes = attributes.select(attributes_cnfg.keys())
+    trips = trips.select(trips_cnfg.keys())
+    return attributes, trips

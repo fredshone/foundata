@@ -4,8 +4,8 @@ column_mappings:
     DayID: did
     IndividualID: pid
     HouseholdID: hid
-    TripOrigGOR_B02ID: ozone
-    TripDestGOR_B02ID: dzone
+    # TripOrigGOR_B02ID: ozone
+    # TripDestGOR_B02ID: dzone
     TripPurpFrom_B01ID: oact
     TripPurpTo_B01ID: dact
     MainMode_B04ID: mode
