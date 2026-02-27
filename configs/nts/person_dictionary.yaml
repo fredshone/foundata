@@ -41,18 +41,18 @@ relationship:
     -8: unknown
     -9: unknown
     -10: unknown
-
+    99: unknown
 
 occupation:
-    -8: unknown
+    -8: n/a
     -9: unknown
     -10: unknown
     1: professional
-    2: manager  # technical
-    3: skilled
-    4: skilled
-    5: unskilled
-    6: unskilled
+    2: managerial  # technical
+    3: professional
+    4: operator
+    5: operator
+    6: manual
     7: unknown
 
 age:
@@ -88,16 +88,16 @@ sex:
     2: female
 
 education:
-    -8: unknown
+    -8: n/a
     -9: unknown
     -10: unknown
-    1: "yes"
-    2: "no"
+    1: some
+    2: none
 
 has_licence:
-    -8: unknown
-    -9: unknown
-    -10: unknown
+    -8: "no"
+    -9: "unknown"
+    -10: "unknown"
     1: "yes"
     2: "yes"
     3: "yes"
@@ -106,15 +106,15 @@ has_licence:
     6: "no"
 
 employment: 
-    -8: unknown
+    -8: n/a
     -9: unknown
     -10: unknown
-    1: employed
-    2: employed
+    1: ft-employed
+    2: pt-employed
     3: unemployed
     4: retired
     5: student
-    6: unemployed
+    6: other
 
 
 race:
@@ -125,7 +125,7 @@ race:
     2: non-white
 
 can_wfh:
-    -8: unknown
+    -8: n/a
     -9: unknown
     -10: unknown
     1: "yes"
@@ -134,9 +134,9 @@ can_wfh:
     4: "no"
 
 disability: 
-    -8: unknown
-    -9: unknown
-    -10: unknown
+    -8: "no"
+    -9: "unknown"
+    -10: "unknown"
     1: "no"
     2: "yes"
     3: "yes"
@@ -147,7 +147,7 @@ disability:
     8: "yes"
 
 wheelchair_user:
-    -8: unknown
+    -8: no
     -9: unknown
     -10: unknown
     1: "yes"

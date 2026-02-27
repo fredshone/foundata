@@ -37,13 +37,13 @@ education:
   -9: unknown
   -8: unknown
   -7: unknown
-  1: none
+  1: school
   2: high-school
   3: high-school
-  4: undergraduate
-  5: undergraduate
-  6: graduate
-  97: graduate
+  4: degree
+  5: degree
+  6: degree
+  97: degree
 
 can_wfh:
   -9: unknown
@@ -71,34 +71,34 @@ occupation:
   "-8": unknown
   "-7": unknown
   "-1": n/a
-  "11": labourer # Agriculture, Forestry, Fishing and Hunting
-  "21": labourer # Mining, Quarrying, and Oil and Gas Extraction
+  "11": manual # Agriculture, Forestry, Fishing and Hunting
+  "21": manual # Mining, Quarrying, and Oil and Gas Extraction
   "22": operator
-  "23": labourer
-  "42": sales # trade
+  "23": manual
+  "42": service # trade
   "51": technical # Information
   "52": technical # Finance and Insurance
   "53": professional
   "54": technical # Professional, Scientific, and Technical Services
-  "55": manager # Management of Companies and Enterprises
-  "56": clerical_admin # Administrative and Support and Waste Management and Remediation Services
+  "55": managerial # Management of Companies and Enterprises
+  "56": clerical # Administrative and Support and Waste Management and Remediation Services
   "61": professional # Educational Services
   "62": professional # Health Care and Social Assistance
   "71": other # Arts, Entertainment, and Recreation
   "72": service #Accommodation and Food Services
   "81": other # Other Services (except Public Administration)
-  "92": clerical_admin
+  "92": clerical
   "97": other
   "48": operator
   "49": operator
   "31": operator
   "32": operator
   "33": operator
-  "44": sales
-  "45": sales
+  "44": service
+  "45": service
   "48-49": operator
   "31-33": operator
-  "44-45": sales
+  "44-45": service
 
 race:
   -8: unknown
@@ -126,8 +126,8 @@ relationship:
   3: child
   4: parent
   5: sibling
-  6: grandparent
-  7: grandchild
+  6: parent # grandparent
+  7: child # grandchild
   8: other
   9: other
   97: other

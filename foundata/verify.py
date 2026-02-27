@@ -153,7 +153,7 @@ def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
             good_set = check_set(expected_set, actual[col])
             if not good_set:
                 print(
-                    f"ERROR: Column '{col}' has values {set(actual[col].unique())} but expected set {expected_set}"
+                    f"ERROR: Column '{col}' expected set {expected_set} but found ^."
                 )
                 fails += 1
 

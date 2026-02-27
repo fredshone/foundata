@@ -216,19 +216,24 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
-        pl.col("has_licence").replace_strict(has_license_mapping, default=None)
+        pl.col("has_licence").replace_strict(
+            has_license_mapping, default="unknown"
+        )
     )
 
     persons = persons.with_columns(
-        pl.when(pl.col("anywork") == "Y")
-        .then(pl.lit("employed"))
-        .otherwise(
-            pl.when(pl.col("studying") == "No Study")
-            .then(pl.lit("unemployed"))
-            .otherwise(pl.lit("education"))
-        )
-        .alias("employment")
-    ).drop("anywork", "studying")
+        employment=pl.when(pl.col("ft") == "Y")
+        .then(pl.lit("ft-employed"))
+        .when(pl.col("pt") == "Y")
+        .then(pl.lit("pt-employed"))
+        .when(pl.col("studying") != "No Study")
+        .then(pl.lit("student"))
+        .when(pl.col("activity") == "Retired")
+        .then(pl.lit("retired"))
+        .when(pl.col("activity") == "Unemployed")
+        .then(pl.lit("unemployed"))
+        .otherwise(pl.lit("other"))
+    ).drop("ft", "pt", "studying", "activity")
 
     persons = persons.with_columns(
         pl.col("occupation")

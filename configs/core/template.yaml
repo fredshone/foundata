@@ -22,12 +22,15 @@ attributes:
   sex:
     dtype: str
     default: True
+    set: [male, female, other, unknown]
   dwelling:
     dtype: str
     default: True
+    set: [house, flat, other, unknown]
   ownership:
     dtype: str
     default: True
+    set: [owned, rented, other, unknown]
   vehicles:
     dtype: int
     default: True
@@ -36,27 +39,35 @@ attributes:
   disability:
     dtype: str
     default: True
+    set: ["yes", "no", unknown]
   education:
     dtype: str
     default: True
+    set: [n/a, some, none, school, high-school, degree, unknown]
   can_wfh:
     dtype: str
     default: True
+    set: ["yes", "no", unknown, n/a]
   occupation:
     dtype: str
     default: True
+    set: [n/a, clerical, manual, managerial, operator, professional, service, other, technical, unknown]
   race:
     dtype: str
     default: True
+    set: [white, black, asian, non-white, other, multiracial, unknown]
   has_licence:
     dtype: str
     default: True
+    set: [n/a, "yes", "no", unknown]
   relationship:
     dtype: str
     default: True
+    set: [self, partner, child, parent, sibling, unrelated, relative, other, unknown]
   employment:
     dtype: str
     default: True
+    set: [n/a, employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown]
   country:
     dtype: str
     default: True
@@ -82,6 +93,7 @@ attributes:
   weight:
     dtype: float
     default: True
+    min: 0
 
 trips:
   pid:
@@ -102,12 +114,15 @@ trips:
   oact:
     dtype: str
     default: True
+    set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
   dact:
     dtype: str
     default: True
+    set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
   mode:
     dtype: str
     default: True
+    set: [walk, bike, car, bus, rail, other, unknown]
   tst:
     dtype: int
     default: None

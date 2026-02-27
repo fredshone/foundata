@@ -1,23 +1,33 @@
-### Data Status
+Hello, we are combining as many travel survey data sources as possible and combining them in a somewhat consistent manner.
 
-| source | n_attributes | n_trips |
-|--------|--------------|---------|
-| nts    | 1,728,067    | 5,106,905 |
-| vista  | 94,821       | 257,557 |
-| qhts   | 51,481       | 126,485 |
-| cmap   | 31,540       | 101,965 |
-| nhts   | 716,376      | 2,604,832 |
-| ltds   | 71,734       | 137,900 |
-| **total** | **2,694,019** | **8,465,280** |
+### Progress
 
-### Data Quality
+| source | persons | missing data     | trips   | kms (millions) |
+|--------|---------|-----------|---------|-----------------|
+| London UK (LTDS)   | 71,734  | 27%      | 137,900 | 1.4        |
+| UK (NTS)    | 1,728,067 | 14%    | 5,106,905 | 65.2   |
+| US (NHTS)   | 716,376 | 16%      | 2,604,832 | 42.1     |
+| Chicago US (CMAP)   | 31,540  | ~0%       | 101,965 | 0.8        |
+| Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
+| Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
+| **total** | **2,694,019** | **15%** | **8,461,994** | **115.3** |
 
-**Black** signifies missing or "unknown" data ->
+### Person Attributes Status
+
+Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
 ![Description of image](assets/attributes.png)
 
+Numeric person attributes:
 
-### Data List
+![Description of image](assets/attributes_numeric.png)
+
+### Trips (As 24hr Plans) Status
+
+Good.
+
+
+### ToDo
 
 
 
@@ -44,9 +54,5 @@
 | Columbia          | US  | ~3k      | 07        | OK?           |
 | Anchorage         | US  | 3k       | 01        | OK?           |
 
-_________________________
 
-### Attributes
-
-### Trips
 

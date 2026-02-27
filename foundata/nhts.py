@@ -159,7 +159,12 @@ def load_persons(
             .fill_null(pl.col(col))
             for col in column_mapping.values()
             if col in year_config
+        ).with_columns(
+            employment=pl.when(pl.col("employed") == 1)
+            .then(pl.lit("employed"))
+            .otherwise(pl.col("employment"))
         )
+
         data = data.with_columns(
             age=pl.when(pl.col("age") < 0)
             .then(pl.lit(None, dtype=pl.Int32))

@@ -42,20 +42,6 @@ def load(
     return attributes, trips
 
 
-def _cast_numeric_columns(frame: pl.DataFrame) -> pl.DataFrame:
-    string_cols = [
-        col for col in frame.columns if frame[col].dtype == pl.String
-    ]
-    can_integer_cols = [
-        col
-        for col in string_cols
-        if frame[col].str.to_integer(strict=False).null_count() == 0
-    ]
-    if can_integer_cols:
-        frame = frame.with_columns([pl.col(can_integer_cols).cast(pl.Int32)])
-    return frame
-
-
 def load_households(root: str | Path, config: dict) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
     hhs = pl.read_csv(root / "household.csv", ignore_errors=True)

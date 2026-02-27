@@ -56,10 +56,10 @@ sex:
     }
 relationship:
     default: {
-        spouse: spouse/partner,
+        spouse: partner,
         child: child,
-        relative: other,
-        nonFamily: other,
+        relative: relative,
+        nonFamily: unrelated,
         parent: parent,
     }
 has_licence:
@@ -69,31 +69,31 @@ has_licence:
     }
 employment:
     default:
-        Full-time TAFE/Uni: education
-        Primary School: education
+        Full-time TAFE/Uni: student
+        Primary School: student
         Volunteer/Carer: unemployed
         Retired: retired
-        Part-time TAFE/Uni: education
-        Full-time Work: employed
-        Other Education: education
-        Part-time Work: employed
+        Part-time TAFE/Uni: student
+        Full-time Work: ft-employed
+        Other Education: student
+        Part-time Work: pt-employed
         Other Activity: other
         Illness: unemployed
-        Childcare/Kindergarten: unemployed
-        Secondary School: education
-        Under Five: unemployed
-        Other Study: education
+        Childcare/Kindergarten: student
+        Secondary School: student
+        Under Five: n/a
+        Other Study: student
 
 occupation:
     default:
-        1: manager
+        1: managerial
         2: professional
         3: technical
         4: service
-        5: clerical_admin
-        6: sales
+        5: clerical
+        6: service
         7: operator
-        8: labourer
+        8: manual
         9: other
 
 income:
@@ -117,7 +117,6 @@ income:
         $3,500 or more per week ($182,000 or more per year): [182000, 1000000]
  
 disability:
-    default: {
-        1: "yes",
-        0: "no",   
-    }
+    default:
+         1: "yes"
+         0: "no"

@@ -5,6 +5,7 @@ column_mappings:
         "R_AGE": "age"
         "EDUC": "education"
         "MEDCOND": "disability"  # actually difficulty travelling
+        "WORKER": "employed"
         "PRMACT": "employment"
         "R_RELAT": "relationship"
         "R_SEX": "sex"
@@ -17,37 +18,37 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "unknown",
-        1: "none",
-        2: "school",
-        3: "school",
-        4: "undergraduate",
-        5: "graduate",
+        -1: "n/a",
+        1: "school",
+        2: "high-school",
+        3: "high-school",
+        4: "degree",
+        5: "degree",
     }
     2022: {
-        -1: "unknown",
-        1: "none",
-        2: "none",
-        3: "school",
-        4: "undergraduate",
-        5: "undergraduate",
-        6: "undergraduate",
-        7: "graduate",
-        8: "graduate",
+        -1: "n/a",
+        1: "school",
+        2: "school",
+        3: "high-school",
+        4: "high-school",
+        5: "high-school",
+        6: "degree",
+        7: "degree",
+        8: "degree",
     }
     2001: {
         -8: "unknown",
         -7: "unknown",
-        -1: "unknown",
+        -1: "n/a",
         -9: "unknown",
-        1: "none",
+        1: "school",
         2: "school",
-        3: "school",
-        4: "school",
-        5: "undergraduate",
-        6: "undergraduate",
-        7: "undergraduate",
-        8: "graduate",
+        3: "high-school",
+        4: "high-school",
+        5: "high-school",
+        6: "degree",
+        7: "degree",
+        8: "degree",
     }
 "disability":
     "default": {
@@ -63,11 +64,11 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "employed",
+        -1: "n/a",
         1: "unemployed",
         2: "unemployed",
         3: "unemployed",
-        4: "education",
+        4: "student",
         5: "retired",
         97: "other",
     }
@@ -75,12 +76,12 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "unknown",
+        -1: "n/a",
         1: "employed",
-        2: "employed",
+        2: "unemployed",  # temporarily unemployed
         3: "unemployed",
-        4: "home",
-        5: "education",
+        4: "unemployed",  # home maker
+        5: "student",
         6: "retired",
         7: "other",
         97: "other",
@@ -104,12 +105,12 @@ column_mappings:
         -8: "unknown",
         -7: "unknown",
         1: "self",
-        2: "spouse/partner",
+        2: "partner",
         3: "child",
         4: "parent",
         5: "sibling",
         6: "other",
-        7: "spouse/partner",
+        7: "partner",
         8: "other",
     }
     2017: {
@@ -117,7 +118,7 @@ column_mappings:
         -8: "unknown",
         -7: "unknown",
         1: "self",
-        2: "spouse/partner",
+        2: "partner",
         3: "child",
         4: "parent",
         5: "sibling",
@@ -126,7 +127,7 @@ column_mappings:
     }
     2022: {
         -9: "unknown",
-        1: "spouse/partner",
+        1: "partner",
         2: "child",
         3: "parent",
         4: "sibling",

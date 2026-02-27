@@ -123,7 +123,7 @@ ownership:
     2022:
         1: owned #'Owned',
         2: owned #'Owned',
-        3: rented, # 'Rented',
+        3: rented # 'Rented',
         4: other
 
 day:
