@@ -4,6 +4,7 @@ import polars as pl
 
 from .fix import day_wrap
 from .utils import (
+    bounds_from_list,
     config_for_year,
     sample_aus_to_euro,
     sample_int_range,
@@ -11,14 +12,6 @@ from .utils import (
 )
 
 SOURCE = "vista"
-
-
-def default(config, year):
-    return config.get(year, config["default"])
-
-
-def _bounds_from_list(bounds: list[str]) -> tuple[int, int]:
-    return int(bounds[0]), int(bounds[1])
 
 
 def load_years(
@@ -49,12 +42,12 @@ def load_years(
     all_attributes = []
     all_trips = []
 
-    print("Loading VISTA data...")
+    print("Loading VISTA...")
 
     for year, hh_name, persons_name, trips_name in zip(
         years, hhs_names, persons_names, trips_names
     ):
-        print(year, ":")
+        print(f"Loading {year}...")
 
         hh_config_year = config_for_year(hh_config, year)
         person_config_year = config_for_year(person_config, year)
@@ -198,7 +191,7 @@ def preprocess_persons(
             .replace_strict({"100+": "100->100"}, default=pl.col("age"))
             .str.split("->")
             .map_elements(
-                lambda bounds: sample_int_range(_bounds_from_list(bounds)),
+                lambda bounds: sample_int_range(bounds_from_list(bounds)),
                 pl.Int32,
             )
         )

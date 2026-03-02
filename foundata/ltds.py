@@ -3,9 +3,11 @@ from pathlib import Path
 
 import polars as pl
 
-from foundata import filter, fix
+from foundata import fix
 from foundata.utils import (
+    bounds_from_list,
     config_for_year,
+    expand_root,
     fuzzy_loader,
     sample_int_range,
     sample_uk_to_euro,
@@ -14,14 +16,6 @@ from foundata.utils import (
 )
 
 SOURCE = "ltds"
-
-
-def _expand_root(root: str | Path) -> Path:
-    return Path(root).expanduser()
-
-
-def _bounds_from_list(bounds: list[str]) -> tuple[int, int]:
-    return int(bounds[0]), int(bounds[1])
 
 
 def load_mapping(path: Path) -> dict:
@@ -47,7 +41,7 @@ def load_years(
     print("Loading LTDS...")
     for year in years:
         print(f"Loading {year}...")
-        root = _expand_root(data_root) / year
+        root = expand_root(data_root) / year
 
         hh_config_year = config_for_year(hh_config, year)
         person_config_year = config_for_year(person_config, year)
@@ -192,7 +186,7 @@ def preprocess_persons(
         .replace_strict({"65+": "65-100"}, default=pl.col("age"))
         .str.split("-")
         .map_elements(
-            lambda bounds: sample_int_range(_bounds_from_list(bounds)), pl.Int32
+            lambda bounds: sample_int_range(bounds_from_list(bounds)), pl.Int32
         )
     )
 
@@ -358,7 +352,7 @@ def sample_start_times(earliest, latest, durations, pid, seed):
     hi = latest[n - 1]
     lo = earliest[n - 1]
     if lo > hi:
-        print(f"Warning: Infeasible sample found at pid: {pid} trip: {n-1}")
+        print(f"Warning: Infeasible sample found at pid: {pid} trip: {n - 1}")
         starts[n - 1] = rng.randint(hi, lo)
     else:
         starts[n - 1] = rng.randint(earliest[n - 1], latest[n - 1])

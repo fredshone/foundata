@@ -21,7 +21,7 @@ def load(
     days_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
 
-    print("Loading NTS data...")
+    print("Loading NTS...")
 
     hhs = load_households(data_root, hh_config)
     persons = load_persons(data_root, person_config)
@@ -54,7 +54,7 @@ def load_households(
     root: str | Path, config: dict | None = None
 ) -> pl.DataFrame:
 
-    print("Loading NTS households...")
+    print("loading households...")
 
     columns = config["column_mappings"]
 
@@ -88,7 +88,7 @@ def load_households(
 
 def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
-    print("Loading NTS persons...")
+    print("loading persons...")
 
     columns = config["column_mappings"]
 
@@ -121,7 +121,7 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
 def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
-    print("Loading NTS trips...")
+    print("loading trips...")
 
     columns = config["column_mappings"]
 
