@@ -94,8 +94,8 @@ column_mappings:
         1: "white",
         2: "black",
         3: "asian",
-        4: "american_native",
-        5: "american_native",
+        4: "other",
+        5: "other",
         6: "other",
         97: "other",
     }

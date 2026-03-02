@@ -124,6 +124,10 @@ def config_for_year(config: dict, year):
     return cnfg
 
 
+def bounds_from_list(bounds: list[str]) -> tuple[int, int]:
+    return int(bounds[0]), int(bounds[1])
+
+
 def sample_int_range(bounds: tuple[int, int] | None) -> int | None:
     if len(bounds) == 1:
         return None

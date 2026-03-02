@@ -14,10 +14,6 @@ from .utils import (
 SOURCE = "qhts"
 
 
-def default(config, year):
-    return config.get(year, config["default"])
-
-
 def load_years(
     data_root: str | Path,
     years: list[str],
@@ -30,8 +26,9 @@ def load_years(
     all_attributes = []
     all_trips = []
 
+    print("Loading QHTS...")
     for year in years:
-        print(year, ":")
+        print(f"Loading {year}...")
 
         hh_config_year = config_for_year(hh_config, year)
         person_config_year = config_for_year(person_config, year)
@@ -46,12 +43,12 @@ def load_years(
             columns=hh_columns,
             null_values="Missing/Refused",
         )
-        hhs = load_households(hhs, hh_config_year, year=year)
+        hhs = preprocess_households(hhs, hh_config_year, year=year)
 
         persons = pl.read_csv(
             data_root / year / "2_QTS_PERSONS.csv", columns=person_columns
         )
-        persons = load_persons(persons, person_config_year, year=year)
+        persons = preprocess_persons(persons, person_config_year, year=year)
 
         attributes = table_joiner(hhs, persons, on="hid")
 
@@ -60,7 +57,7 @@ def load_years(
             columns=trips_columns,
             null_values="Missing",
         )
-        trips = load_trips(trips, trips_config_year, year=year)
+        trips = preprocess_trips(trips, trips_config_year, year=year)
         trips = day_wrap(trips)
 
         if zones_mapping is not None:
@@ -106,7 +103,9 @@ def load_years(
     return attributes, trips
 
 
-def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
+def preprocess_households(
+    hhs: pl.DataFrame, config: dict, year: str
+) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
 
     day_mapping = config["day"]
@@ -130,7 +129,7 @@ def load_households(hhs: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
     return hhs
 
 
-def load_persons(
+def preprocess_persons(
     persons: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
@@ -230,7 +229,9 @@ def load_zone_mapping(path: str | Path) -> pl.DataFrame:
     return zones
 
 
-def load_trips(trips: pl.DataFrame, config: dict, year: str) -> pl.DataFrame:
+def preprocess_trips(
+    trips: pl.DataFrame, config: dict, year: str
+) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
