@@ -55,4 +55,41 @@ Good.
 | Anchorage         | US  | 3k       | 01        | OK?           |
 
 
+## Usage
 
+### Setup
+
+```bash
+uv sync          # install dependencies and register the CLI entry point
+foundata --help  # confirm two commands are available
+```
+
+### Adding a new source
+
+1. **Scaffold boilerplate** — generates empty YAML configs and a stub loader:
+   ```bash
+   python scripts/scaffold_source.py <source>
+   ```
+
+2. **Populate YAML configs** in `configs/<source>/`:
+   - `hh_dictionary.yaml` — household column mappings and value remappings
+   - `person_dictionary.yaml` — person column mappings and value remappings
+   - `trip_dictionary.yaml` — trip column mappings and value remappings
+
+3. **Validate YAML configs** against the template schema:
+   ```bash
+   foundata validate-config <source>
+   ```
+   Fix any reported ERRORs (value labels not in the template set). WARNs for
+   intermediate fields are expected and can be ignored.
+
+4. **Implement `load()`** in `foundata/<source>.py` following the pattern of
+   existing loaders (e.g. `nhts.py`). The function should return
+   `(attributes_df, trips_df)` normalised to the template schema.
+
+5. **Run the loader, write CSVs, then validate output**:
+   ```bash
+   foundata validate-table attributes.csv trips.csv
+   ```
+
+6. **Add the source to `run.ipynb`** so it is included in the full pipeline run.

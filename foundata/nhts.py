@@ -2,14 +2,15 @@ from pathlib import Path
 
 import polars as pl
 
-from foundata import fix, utils
-from foundata.utils import sample_us_to_euro, table_joiner
+from foundata import fix
+from foundata.utils import (
+    config_for_year,
+    expand_root,
+    sample_us_to_euro,
+    table_joiner,
+)
 
 SOURCE = "nhts"
-
-
-def _expand_root(root: str | Path) -> Path:
-    return Path(root).expanduser()
 
 
 def load(
@@ -20,6 +21,7 @@ def load(
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
 
+    print("Loading NHTS...")
     hhs = load_households(data_root, hh_config, years=years)
     persons = load_persons(data_root, person_config, years=years)
     attributes = table_joiner(hhs, persons, on="hid")
@@ -42,7 +44,7 @@ def load_households(
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
-    root = _expand_root(root)
+    root = expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
     names = names or [
         {
@@ -56,8 +58,8 @@ def load_households(
 
     hhs: list[pl.DataFrame] = []
     for year, name in zip(years, names):
-
-        year_config = utils.config_for_year(hh_config, year)
+        print(f"Loading {year}...")
+        year_config = config_for_year(hh_config, year)
 
         column_mapping = year_config["column_mappings"]
 
@@ -127,7 +129,7 @@ def load_persons(
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
-    root = _expand_root(root)
+    root = expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
     names = names or [
         {
@@ -144,7 +146,7 @@ def load_persons(
         path = root / str(year) / name
         data = pl.read_csv(path, ignore_errors=True)
 
-        year_config = utils.config_for_year(person_config, year)
+        year_config = config_for_year(person_config, year)
 
         column_mapping = year_config["column_mappings"]
 
@@ -268,17 +270,6 @@ def _preprocess_trips(
 
     trips = trips.with_columns(tet=pl.col("tst") + pl.col("duration"))
 
-    # # fix trips that pass midnight
-    # trips = (
-    #     trips.with_columns(
-    #         flag=pl.when(pl.col("tst") < pl.col("tet").shift(1).over("pid"))
-    #         .then(1)
-    #         .otherwise(0)
-    #     )
-    #     .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
-    #     .with_columns(tst=pl.col("tst") + pl.col("flag") * 1440)
-    #     .drop("flag")
-    # )
     trips = fix.day_wrap(trips)
 
     return trips.with_columns(tet=(pl.col("tst") + pl.col("duration")))
@@ -290,7 +281,7 @@ def load_trips(
     years: list[int] | None = None,
     names: list[str] | None = None,
 ) -> dict[int, pl.DataFrame]:
-    root = _expand_root(root)
+    root = expand_root(root)
     years = years or [2022, 2017, 2009, 2001]
     names = names or [
         {
@@ -305,7 +296,7 @@ def load_trips(
     trips_by_year: list[pl.DataFrame] = []
     for year, name in zip(years, names):
         path = root / str(year) / name
-        year_config = utils.config_for_year(trips_config, year)
+        year_config = config_for_year(trips_config, year)
         trips = pl.read_csv(path, ignore_errors=True)
         trips_by_year.append(
             _preprocess_trips(trips, year=year, config=year_config)

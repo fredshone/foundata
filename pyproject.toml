@@ -5,16 +5,33 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "click>=8.0",
     "cml-pam>=0.3.2",
     "fastexcel>=0.16.0",
     "ipykernel>=6.31.0",
     "ipython>=9.7.0",
+    "matplotlib>=3.0",
+    "numpy>=1.24",
     "pip>=25.3",
     "polars>=1.35.2",
     "pyarrow>=22.0.0",
     "pyyaml>=6.0.3",
     "rapidfuzz>=3.14.3",
 ]
+
+[project.scripts]
+foundata = "foundata.cli:cli"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "pytest-cov>=5.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "-v"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
 
 [tool.uv]
 find-links = ["https://girder.github.io/large_image_wheels"]

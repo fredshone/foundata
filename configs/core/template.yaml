@@ -1,137 +1,185 @@
+notes:
+  default: |
+    When default: True, "unknown" (for string fields) or null (for numeric fields)
+    are acceptable values — they indicate missing/inapplicable data.
+    When default: False or absent, every row must have a real value.
+  id_prefix: |
+    pid and hid must be prefixed with the source name to ensure global uniqueness
+    across all surveys. E.g. "nhts2022100012345" or "cmap123456".
+  time_format: |
+    tst (trip start time) and tet (trip end time) are integers: minutes since
+    midnight. Trips crossing midnight have values > 1440. Use fix.day_wrap() to
+    handle these after computing tst/tet.
+  distance_unit: km
+
 attributes:
   hid:
     dtype: string
     default: False
+    description: "Household ID. Must be unique within the dataset and prefixed with source name."
   pid:
     dtype: string
     default: False
+    description: "Person ID. Must be unique within the dataset and prefixed with source name."
   age:
     dtype: int
     default: True
     min: 0
     max: 120
+    description: "Age in years."
   hh_size:
     dtype: int
     default: True
     min: 1
     max: 100
+    description: "Number of persons in the household."
   hh_income:
     dtype: numeric
     default: True
     min: 0
+    description: "Annual household income in euros. Use sample_*_to_euro() for currency conversion from coded ranges."
   sex:
     dtype: str
     default: True
     set: [male, female, other, unknown]
+    description: "Respondent sex."
   dwelling:
     dtype: str
     default: True
     set: [house, flat, other, unknown]
+    description: "Type of dwelling the household lives in."
   ownership:
     dtype: str
     default: True
     set: [owned, rented, other, unknown]
+    description: "Housing tenure."
   vehicles:
     dtype: int
     default: True
     min: 0
     max: 100
+    description: "Number of motorised vehicles available to the household."
   disability:
     dtype: str
     default: True
     set: ["yes", "no", unknown]
+    description: "Whether the person has a disability affecting travel."
   education:
     dtype: str
     default: True
     set: [n/a, some, none, school, high-school, degree, unknown]
+    description: "Highest education level attained."
   can_wfh:
     dtype: str
     default: True
     set: ["yes", "no", unknown, n/a]
+    description: "Whether the person can work from home."
   occupation:
     dtype: str
     default: True
     set: [n/a, clerical, manual, managerial, operator, professional, service, other, technical, unknown]
+    description: "Occupation category."
   race:
     dtype: str
     default: True
     set: [white, black, asian, non-white, other, multiracial, unknown]
+    description: "Self-reported racial identity."
   has_licence:
     dtype: str
     default: True
     set: [n/a, "yes", "no", unknown]
+    description: "Whether the person holds a driving licence."
   relationship:
     dtype: str
     default: True
     set: [self, partner, child, parent, sibling, unrelated, relative, other, unknown]
+    description: "Relationship to the household reference person."
   employment:
     dtype: str
     default: True
     set: [n/a, employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown]
+    description: "Employment status."
   country:
     dtype: str
     default: True
+    description: "ISO country code (e.g. 'usa', 'gbr', 'aus'). Set programmatically per source."
   source:
     dtype: str
     default: True
+    description: "Survey source identifier (e.g. 'nhts', 'cmap'). Set programmatically per source."
   year:
     dtype: int
     default: True
+    description: "Survey year. Set programmatically from the data or config."
   month:
     dtype: int
     default: True
     min: 1
     max: 12
+    description: "Month of travel diary (1-12)."
   day:
     dtype: str
     default: True
     set: [monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown]
+    description: "Day of week for the travel diary."
   rurality:
     dtype: str
     default: True
     set: [urban, suburban, rural, unknown]
+    description: "Urban/rural classification of the household location."
   weight:
     dtype: float
     default: True
     min: 0
+    description: "Survey expansion weight for the person/household."
 
 trips:
   pid:
     dtype: string
     default: None
+    description: "Person ID, matching attributes.pid. Must be prefixed with source name."
   seq:
     dtype: int
     default: None
     min: 0
+    description: "Trip sequence number within the person's travel day (0-indexed)."
   ozone:
     dtype: str
     default: True
     set: [urban, suburban, rural, unknown]
+    description: "Urban/rural classification of the trip origin zone."
   dzone:
     dtype: str
     default: True
     set: [urban, suburban, rural, unknown]
+    description: "Urban/rural classification of the trip destination zone."
   oact:
     dtype: str
     default: True
     set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
+    description: "Activity at trip origin (what the person was doing before departing)."
   dact:
     dtype: str
     default: True
     set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
+    description: "Activity at trip destination (purpose of the trip)."
   mode:
     dtype: str
     default: True
     set: [walk, bike, car, bus, rail, other, unknown]
+    description: "Main transport mode used for this trip."
   tst:
     dtype: int
     default: None
     min: 0
+    description: "Trip start time in minutes since midnight. Values >1440 indicate next-day continuation."
   tet:
     dtype: int
     default: None
     min: 0
+    description: "Trip end time in minutes since midnight. Values >1440 indicate next-day continuation."
   distance:
     dtype: float
     default: None
     min: 0
+    description: "Trip distance in kilometres."
