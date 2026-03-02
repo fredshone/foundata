@@ -51,7 +51,7 @@ def check_dtype(expected_dtype: str, actual_dtype: pl.DataType) -> bool:
     elif expected_dtype in ["string", "str"]:
         return actual_dtype == pl.String
     elif expected_dtype in ["boolean", "bool"]:
-        return actual_dtype.is_boolean()
+        return actual_dtype == pl.Boolean
     elif expected_dtype == "numeric":
         return actual_dtype.is_numeric()
     elif expected_dtype == "any":
