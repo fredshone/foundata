@@ -119,6 +119,8 @@ def load_households(
 
         data = data.with_columns(source=pl.lit("nhts"), country=pl.lit("usa"))
 
+        data = data.filter(pl.col("hid").is_not_null())
+
         hhs.append(data)
 
     hhs = pl.concat(hhs)
@@ -182,6 +184,8 @@ def load_persons(
                 pl.col("hid").cast(pl.String) + pl.col("pid").cast(pl.String)
             ).cast(pl.Int64)
         )
+
+        data = data.filter(pl.col("pid").is_not_null())
 
         persons.append(data)
 

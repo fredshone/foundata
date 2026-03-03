@@ -3,16 +3,65 @@
 # Add value mappings for categorical fields below.
 
 column_mappings:
-  # RAW_COL_NAME: pid
-  # RAW_COL_NAME: seq
-  # RAW_COL_NAME: ozone
-  # RAW_COL_NAME: dzone
+  idx: pid
+  th_seq: seq
+  
+  sTP1_1_5: ozone
+  TP1_1_5: dzone
+  sTP1: origin
+  TP2: purpose
   # RAW_COL_NAME: oact
   # RAW_COL_NAME: dact
+  TP5_1: mode1
+  TP5_2: mode2
+  TP5_3: mode3
+  TP5_4: mode4
+  TP5_5: mode5
+  TP5_6: mode6
+  TP5_7: mode7
+  TP5_8: mode8
+  TP5_9: mode9
+  TP5_10: mode10
   # RAW_COL_NAME: mode
+  TP3_1: tst-hr
+  TP3_2: tst-min
+  TP4_1: tet-hr
+  TP4_2: tet-min
   # RAW_COL_NAME: tst
   # RAW_COL_NAME: tet
   # RAW_COL_NAME: distance
+  TP5_1_t1: duration1
+  TP5_2_t1: duration2
+  TP5_3_t1: duration3
+  TP5_4_t1: duration4
+  TP5_5_t1: duration5
+  TP5_6_t1: duration6
+  TP5_7_t1: duration7
+  TP5_8_t1: duration8
+  TP5_9_t1: duration9
+  TP5_10_t1: duration10
+
+
+origin:
+  1: home
+  2: work
+  3: education
+  97: other
+
+purpose:
+  1: home
+  2: work
+  3: work
+  4: education
+  5: education
+  6: work
+  7: shop
+  8: leisure
+  9: leisure
+  10: visit
+  11: medical
+  12: escort
+  97: other
 
 # ozone mapping
   # Valid values: urban, suburban, rural, unknown
@@ -61,10 +110,21 @@ dact:
 # mode mapping
   # Valid values: walk, bike, car, bus, rail, other, unknown
 mode:
-  # 1: walk
-  # 1: bike
-  # 1: car
-  # 1: bus
-  # 1: rail
-  # 1: other
-  # 1: unknown
+  1: walk
+  2: car
+  3: bus
+  4: bus
+  5: bus
+  6: unknown
+  7: rail
+  8: rail
+  9: rail
+  10: car
+  11: car
+  12: bike
+  13: car
+  14: bike
+  15: other
+  16: other
+  17: other
+  97: other

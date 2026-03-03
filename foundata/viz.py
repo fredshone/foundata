@@ -134,8 +134,8 @@ def summary_table(
             "source": pl.String,
             "persons": pl.UInt32,
             "trips": pl.UInt32,
-            "nulls": pl.Float64,
-            "kms (millions)": pl.Float64,
+            "nulls": attributes_summary["nulls"].dtype,
+            "kms (millions)": attributes_summary["kms (millions)"].dtype,
         },
     )
 

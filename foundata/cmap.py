@@ -2,7 +2,12 @@ from pathlib import Path
 
 import polars as pl
 
-from .utils import compute_avg_speed, expand_root, sample_us_to_euro, table_joiner
+from .utils import (
+    compute_avg_speed,
+    expand_root,
+    sample_us_to_euro,
+    table_joiner,
+)
 
 SOURCE = "cmap"
 
@@ -71,6 +76,8 @@ def load_households(root: str | Path, config: dict) -> pl.DataFrame:
         pl.col("ownership").replace_strict(config["ownership"]),
     )
 
+    hhs = hhs.filter(pl.col("hid").is_not_null())
+
     return hhs
 
 
@@ -80,6 +87,8 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     persons = pl.read_csv(root / "person.csv", ignore_errors=True)
 
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
+
+    persons = persons.filter(pl.col("hid").is_not_null() & pl.col("pid").is_not_null())
 
     persons = persons.with_columns(
         pid=(
@@ -112,6 +121,8 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     )
 
     persons = persons.drop(["is_employed", "work_status"])
+
+    persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
 

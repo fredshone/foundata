@@ -175,6 +175,8 @@ def preprocess_households(
         can_wfh=pl.lit("unknown"),
     )
 
+    hhs = hhs.filter(pl.col("hid").is_not_null())
+
     return hhs
 
 
@@ -243,6 +245,8 @@ def preprocess_persons(
         race=pl.lit("unknown"),
         disability=pl.lit("unknown"),
     )
+
+    persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
 

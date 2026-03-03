@@ -93,9 +93,24 @@ def null_times(
     return clean_attributes, clean_trips
 
 
+def null_pids(
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    n_attr = attributes[on].null_count()
+    n_trips = trips[on].null_count()
+    if n_attr:
+        print(f"Removed {n_attr} rows with null PIDs from attributes")
+        attributes = attributes.filter(pl.col(on).is_not_null())
+    if n_trips:
+        print(f"Removed {n_trips} rows with null PIDs from trips")
+        trips = trips.filter(pl.col(on).is_not_null())
+    return attributes, trips
+
+
 def time_consistent(
     attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes, trips = null_pids(attributes, trips, on)
     attributes, trips = negative_trips(attributes, trips, on)
     attributes, trips = negative_activities(attributes, trips, on)
     attributes, trips = null_times(attributes, trips, on)
