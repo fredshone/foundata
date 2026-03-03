@@ -129,6 +129,8 @@ def preprocess_households(
         .fill_null("unknown"),
     )
 
+    hhs = hhs.filter(pl.col("hid").is_not_null())
+
     return hhs
 
 
@@ -209,6 +211,8 @@ def preprocess_persons(
         ).drop("income")
     else:
         persons = persons.with_columns(hh_income=pl.lit(None, dtype=pl.Int32))
+
+    persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
 

@@ -1,5 +1,5 @@
 """
-Generate anonymised test fixtures for CMAP, NTS, VISTA, and QHTS.
+Generate anonymised test fixtures for CMAP, NTS, VISTA, QHTS, LTDS, and NHTS.
 
 Run once from the project root with real data available:
     uv run python scripts/generate_fixtures.py
@@ -11,6 +11,7 @@ correlations while preserving dtypes and value distributions.
 Writes fixture files to tests/fixtures/<source>/ preserving exact filenames.
 """
 
+import shutil
 from pathlib import Path
 
 import polars as pl
@@ -199,6 +200,115 @@ def generate_qhts():
 
 
 # ---------------------------------------------------------------------------
+# LTDS
+# ---------------------------------------------------------------------------
+
+
+def generate_ltds():
+    year_dir = "LTDS2425"
+    src = DATA_ROOT / "LTDS" / year_dir
+    dst = FIXTURE_ROOT / "ltds" / year_dir
+    dst.mkdir(parents=True, exist_ok=True)
+    print("Generating LTDS fixtures...")
+
+    hhs = pl.read_csv(src / "Household.csv", ignore_errors=True)
+    sampled_hh_ids = sample_hh_ids(hhs, "hhid", N_HOUSEHOLDS, SEED)
+    hhs = hhs.filter(pl.col("hhid").is_in(sampled_hh_ids))
+
+    persons = pl.read_csv(src / "person.csv", ignore_errors=True)
+    persons = persons.filter(pl.col("phid").is_in(sampled_hh_ids))
+    sampled_ppid = persons["ppid"].unique()
+
+    person_data = pl.read_csv(src / "person data.csv", ignore_errors=True)
+    person_data = person_data.filter(pl.col("ppid").is_in(sampled_ppid))
+
+    trips = pl.read_csv(src / "Trip.csv", ignore_errors=True)
+    trips = trips.filter(pl.col("thid").is_in(sampled_hh_ids))
+
+    stages = pl.read_csv(src / "Stage.csv", ignore_errors=True)
+    stages = stages.filter(pl.col("spid").is_in(sampled_ppid))
+
+    hhs = shuffle_non_keys(hhs, key_cols=["hhid"], seed=SEED)
+    persons = shuffle_non_keys(persons, key_cols=["phid", "ppid"], seed=SEED + 10)
+    person_data = shuffle_non_keys(person_data, key_cols=["phid", "ppid"], seed=SEED + 20)
+    trips = shuffle_non_keys(trips, key_cols=["thid", "tpid", "ttid"], seed=SEED + 30)
+    stages = shuffle_non_keys(stages, key_cols=["shid", "spid", "stid"], seed=SEED + 40)
+
+    hhs.write_csv(dst / "Household.csv")
+    persons.write_csv(dst / "person.csv")
+    person_data.write_csv(dst / "person data.csv")
+    trips.write_csv(dst / "Trip.csv")
+    stages.write_csv(dst / "Stage.csv")
+    shutil.copy(src / "HABORO_T.csv", dst / "HABORO_T.csv")
+    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}, stages: {len(stages)}")
+
+
+# ---------------------------------------------------------------------------
+# NHTS
+# ---------------------------------------------------------------------------
+
+
+def generate_nhts():
+    year_dir = "2022"
+    src = DATA_ROOT / "NHTS" / year_dir
+    dst = FIXTURE_ROOT / "nhts" / year_dir
+    dst.mkdir(parents=True, exist_ok=True)
+    print("Generating NHTS fixtures...")
+
+    hhs = pl.read_csv(src / "hhv2pub.csv", ignore_errors=True)
+    sampled_hh_ids = sample_hh_ids(hhs, "HOUSEID", N_HOUSEHOLDS, SEED)
+    hhs = hhs.filter(pl.col("HOUSEID").is_in(sampled_hh_ids))
+
+    persons = pl.read_csv(src / "perv2pub.csv", ignore_errors=True)
+    persons = persons.filter(pl.col("HOUSEID").is_in(sampled_hh_ids))
+
+    trips = pl.read_csv(src / "tripv2pub.csv", ignore_errors=True)
+    trips = trips.filter(pl.col("HOUSEID").is_in(sampled_hh_ids))
+
+    hhs = shuffle_non_keys(hhs, key_cols=["HOUSEID"], seed=SEED)
+    persons = shuffle_non_keys(persons, key_cols=["HOUSEID", "PERSONID"], seed=SEED + 10)
+    trips = shuffle_non_keys(trips, key_cols=["HOUSEID", "PERSONID", "TRIPID", "SEQ_TRIPID"], seed=SEED + 20)
+
+    hhs.write_csv(dst / "hhv2pub.csv")
+    persons.write_csv(dst / "perv2pub.csv")
+    trips.write_csv(dst / "tripv2pub.csv")
+    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}")
+
+
+# ---------------------------------------------------------------------------
+# Post-process
+# ---------------------------------------------------------------------------
+
+
+def generate_post_process():
+    src = Path.home() / "Data" / "all_trips.csv"
+    dst = FIXTURE_ROOT / "post_process"
+    dst.mkdir(parents=True, exist_ok=True)
+    print("Generating post_process fixtures...")
+
+    trips = pl.read_csv(src, infer_schema_length=1000)
+
+    sampled_pids = trips["pid"].unique().sample(n=30, seed=SEED)
+    trips = trips.filter(pl.col("pid").is_in(sampled_pids))
+
+    # Anonymise by shuffling PIDs: trips within each group stay intact so
+    # sequences remain valid, but the pid label no longer identifies anyone.
+    pids_sorted = trips["pid"].unique().sort()
+    shuffled_pids = pids_sorted.sample(fraction=1.0, shuffle=True, seed=SEED)
+    pid_map = pl.DataFrame({"pid": pids_sorted, "pid_new": shuffled_pids})
+    trips = (
+        trips
+        .join(pid_map, on="pid", how="left")
+        .drop("pid")
+        .rename({"pid_new": "pid"})
+        .select(["pid"] + [c for c in trips.columns if c != "pid"])
+    )
+
+    trips.write_csv(dst / "trips.csv")
+    print(f"  persons: {trips['pid'].n_unique()}, trips: {len(trips)}")
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -207,4 +317,7 @@ if __name__ == "__main__":
     generate_nts()
     generate_vista()
     generate_qhts()
+    generate_ltds()
+    generate_nhts()
+    generate_post_process()
     print("Done.")

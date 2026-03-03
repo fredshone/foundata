@@ -13,6 +13,7 @@ from foundata import (
     ltds,
     nhts,
     nts,
+    post_process,
     qhts,
     verify,
     vista,
@@ -76,6 +77,7 @@ def main(data_root: str, output: str):
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
     )
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -106,6 +108,7 @@ def main(data_root: str, output: str):
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     check_overlap(attributes, trips, on="pid")
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -140,6 +143,7 @@ def main(data_root: str, output: str):
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     check_overlap(attributes, trips, on="pid")
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -170,6 +174,7 @@ def main(data_root: str, output: str):
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     check_overlap(attributes, trips, on="pid")
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -200,6 +205,7 @@ def main(data_root: str, output: str):
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     check_overlap(attributes, trips, on="pid")
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -231,6 +237,7 @@ def main(data_root: str, output: str):
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     check_overlap(attributes, trips, on="pid")
     verify.columns(attributes, trips)
+    verify.null_pids(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
@@ -249,6 +256,13 @@ def main(data_root: str, output: str):
 
     all_attributes.write_csv(output / "all_attributes.csv")
     all_trips.write_csv(output / "all_trips.csv")
+
+    activities = post_process.trips_to_activities(all_attributes, all_trips)
+    activities.write_csv(output / "activities.csv")
+
+    trips_with_acts = post_process.trips_with_following_activity(all_attributes, all_trips)
+    trips_with_acts.write_csv(output / "trips_with_activities.csv")
+
     print(f"Written to {output}")
 
     # ------------------------------------------------------------------

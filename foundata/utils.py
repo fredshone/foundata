@@ -156,6 +156,13 @@ def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
     return int(random.randint(int(a), int(b)) * 0.6)
 
 
+def sample_krw_to_euro(bounds: tuple[int, int] | None) -> int | None:
+    if len(bounds) == 1:
+        return None
+    a, b = bounds
+    return int(random.randint(int(a), int(b)) * 0.00058)
+
+
 def get_config_path(*parts: str) -> Path:
     return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)
 

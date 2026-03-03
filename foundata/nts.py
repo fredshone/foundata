@@ -86,6 +86,8 @@ def load_households(
         pl.lit("uk").alias("country"),
     )
 
+    hhs = hhs.filter(pl.col("hid").is_not_null())
+
     return hhs
 
 
@@ -118,6 +120,8 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
         ),
         # pl.col("wheelchair_user").replace_strict(config["wheelchair_user"]),
     )
+
+    persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
 

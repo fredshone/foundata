@@ -37,7 +37,7 @@ attributes:
     dtype: numeric
     default: True
     min: 0
-    description: "Annual household income in euros. Use sample_*_to_euro() for currency conversion from coded ranges."
+    description: "Annual household income in euros. Use utils.sample_*_to_euro() for currency conversion from coded ranges."
   sex:
     dtype: str
     default: True

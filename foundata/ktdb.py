@@ -3,7 +3,6 @@ from pathlib import Path
 import polars as pl
 
 from foundata import fix, utils
-from foundata.utils import table_joiner
 
 SOURCE = "ktdb"
 
@@ -25,9 +24,7 @@ def load(
     Returns:
         (attributes, trips) DataFrames conforming to the template schema.
     """
-    hhs = load_households(data_root, hh_config)
-    persons = load_persons(data_root, person_config)
-    attributes = table_joiner(hhs, persons, on="hid")
+    attributes = load_persons(data_root, person_config)
     trips = load_trips(data_root, trips_config)
 
     # Prefix IDs with source name for global uniqueness
@@ -36,75 +33,83 @@ def load(
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
     )
     trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
-
-    attributes = utils.compute_avg_speed(attributes, trips)
 
     return attributes, trips
 
 
-def load_households(
-    root: str | Path,
-    config: dict,
-) -> pl.DataFrame:
-    """Load and normalise household records.
-
-    TODO: Update file name and path to match raw data layout.
-    TODO: Apply income range sampling via utils.sample_*_to_euro().
-    TODO: Parse survey date into year/month columns if needed.
-    """
+def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
+    """Load and normalise person records."""
     root = Path(root).expanduser()
     column_mapping = config["column_mappings"]
 
-    # TODO: Replace "households.csv" with the actual file name.
-    data = pl.read_csv(root / "households.csv", ignore_errors=True)
-    data = data.select(column_mapping.keys()).rename(column_mapping)
-
-    # TODO: Map coded values to canonical labels for each categorical field.
-    # Example:
-    # data = data.with_columns(
-    #     rurality=pl.col("rurality").replace_strict(config["rurality"]),
-    # )
-
-    data = data.with_columns(
-        source=pl.lit(SOURCE),
-        country=pl.lit("unknown"),  # TODO: set ISO country code, e.g. "aus"
-    )
-
-    return data
-
-
-def load_persons(
-    root: str | Path,
-    config: dict,
-) -> pl.DataFrame:
-    """Load and normalise person records.
-
-    TODO: Update file name and path to match raw data layout.
-    """
-    root = Path(root).expanduser()
-    column_mapping = config["column_mappings"]
-
-    # TODO: Replace "persons.csv" with the actual file name.
     data = pl.read_csv(root / "persons.csv", ignore_errors=True)
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    # TODO: Map coded values to canonical labels.
-    # TODO: Fill unmapped categorical fields with "unknown".
-    # Example:
-    # data = data.with_columns(
-    #     sex=pl.col("sex").replace_strict(config["sex"]),
-    #     occupation=pl.lit("unknown"),
-    # )
+    data = data.with_columns(
+        year=pl.lit(2021),
+        # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
+        date=(pl.lit(20210000) + pl.col("date")).cast(pl.Date, format="%Y%m%d"),
+        month=pl.col("date").dt.month(),
+        day=pl.col("date").dt.weekday().replace_strict(config["weekday"]),
+        sex=pl.col("sex").replace_strict(config["sex"]),
+        has_license=pl.col("has_license").replace_strict(config["has_license"]),
+        _student=pl.col("student").replace_strict(config["student"]),
+        _employed=pl.col("employed").replace_strict(config["employed"]),
+        employment=pl.when(pl.col("_student") == "yes")
+        .then("student")
+        .when(pl.col("_employed") == "yes")
+        .then("employed")
+        .otherwise("unemployed"),
+        occupation=pl.col("occupation").replace_strict(config["occupation"]),
+        can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
+        hh_income=pl.col("hh_income")
+        .replace_strict(config["hh_income"])
+        .map_elements(utils.sample_krw_to_euro)
+        * 1000000
+        * 12,
+        dwelling=pl.col("dwelling").replace_strict(config["dwelling"]),
+        vehicles=pl.col("cars") + pl.col("motorcycles") + pl.col("vans"),
+        weight=pl.lit(1, pl.Int32),
+    ).drop(["_student", "_employed"])
 
+    data = data.with_columns(
+        pl.lit("unknown").alias(col)
+        for col in [
+            "education",
+            "disability",
+            "relationship",
+            "race",
+            "ownership",
+        ]
+    )
     return data
 
 
-def load_trips(
-    root: str | Path,
-    config: dict,
-) -> pl.DataFrame:
+def load_zones() -> pl.DataFrame:
+    zones = pl.read_csv(utils.get_config_path("ktdb", "zones.csv"))
+    zones = (
+        zones.select("Administrative dong code", "town/village name")
+        .rename(
+            {"Administrative dong code": "zone", "town/village name": "name"}
+        )
+        .with_columns(
+            rurality=pl.when(pl.col("name").str.ends_with("동"))
+            .then(pl.lit("urban"))
+            .when(pl.col("name").str.ends_with("읍"))
+            .then(pl.lit("suburban"))
+            .when(pl.col("name").str.ends_with("면"))
+            .then(pl.lit("rural"))
+            .when(pl.col("name").str.ends_with("리"))
+            .then(pl.lit("rural"))
+            .otherwise(pl.lit("unknown"))
+        )
+    )
+    return zones
+
+
+def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
     """Load and normalise trip records.
 
     TODO: Update file name and path to match raw data layout.
@@ -114,13 +119,126 @@ def load_trips(
     root = Path(root).expanduser()
     column_mapping = config["column_mappings"]
 
-    # TODO: Replace "trips.csv" with the actual file name.
     data = pl.read_csv(root / "trips.csv", ignore_errors=True)
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    # TODO: Map mode, oact, dact, ozone, dzone to canonical values.
-    # TODO: Compute tst/tet in minutes since midnight.
-    # TODO: Convert distance to km (e.g. * 1.60934 for miles).
+    data = data.filter(pl.col("seq") > 0)
+
+    data = data.with_columns(
+        tst=pl.col("tst-hr").cast(pl.Int16, strict=False) * 60
+        + pl.col("tst-min").cast(pl.Int16, strict=False),
+        tet=pl.col("tet-hr").cast(pl.Int16, strict=False) * 60
+        + pl.col("tet-min").cast(pl.Int16, strict=False),
+    ).drop(["tst-hr", "tst-min", "tet-hr", "tet-min"])
+
+    data = data.with_columns(
+        origin=pl.col("origin").replace_strict(config["origin"]),
+        purpose=pl.col("purpose").replace_strict(config["purpose"]),
+    )
+
+    # access trip stages
+    stage_cols = ["pid", "seq"]
+    for i in range(1, 11):
+        stage_cols += [f"mode{i}", f"duration{i}"]
+
+    # modes
+    stage_modes = (
+        data.select(["pid", "seq"] + [f"mode{i}" for i in range(1, 11)])
+        .rename({f"mode{i}": str(i) for i in range(1, 11)})
+        .unpivot(index=["pid", "seq"], on=[str(i) for i in range(1, 11)])
+        .with_columns(
+            variable=pl.col("variable").cast(pl.Int8),
+            value=pl.col("value").cast(pl.Int8, strict=False),
+        )
+        .rename({"variable": "stage", "value": "mode"})
+        .filter(pl.col("mode").is_not_null())
+        .with_columns(mode=pl.col("mode").replace_strict(config["mode"]))
+        .sort(["pid", "seq", "stage"])
+    )
+
+    # durations
+    stage_durations = (
+        data.select(["pid", "seq"] + [f"duration{i}" for i in range(1, 11)])
+        .rename({f"duration{i}": str(i) for i in range(1, 11)})
+        .unpivot(index=["pid", "seq"], on=[str(i) for i in range(1, 11)])
+        .with_columns(
+            variable=pl.col("variable").cast(pl.Int8),
+            value=pl.col("value").cast(pl.Int16, strict=False),
+        )
+        .rename({"variable": "stage", "value": "duration"})
+        .filter(pl.col("duration").is_not_null())
+        .sort(["pid", "seq", "stage"])
+    )
+
+    stages = stage_modes.join(stage_durations, on=["pid", "seq", "stage"])
+
+    # filter for trips with pt stages
+    # pt_trips = stages.filter(pl.col("mode").is_in(["bus", "rail"])).select("pid", "seq").unique()
+    # pt_trips = stages.join(pt_trips, on=["pid", "seq"], how="inner")
+
+    # # get total duration of non pt modes for each trip
+    # ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
+    # ae_durations = ae_stages.group_by(["pid", "seq"]).agg(pl.col("duration").sum().alias("ae_duration"))
+    # pt_ae_durations = pt_trips.drop("duration").join(ae_durations, on=["pid", "seq"], how="left").fill_null(0)
+
+    # stages.join(pt_ae_durations, on=["pid", "seq"], how="left").sort(["pid", "seq", "stage"])
+
+    total_trip_durations = (
+        stages.drop("stage")
+        .group_by(["pid", "seq"])
+        .agg(pl.col("duration").sum())
+    )
+    # aggregate trip modes based on longest mode across all stages by pid
+    main_trip_modes = (
+        stages.group_by(["pid", "seq", "mode"])
+        .agg(pl.col("duration").sum())
+        .group_by(["pid", "seq"])
+        .agg(pl.all().sort_by("duration").last())
+    ).drop("duration")
+
+    data = (
+        data.select(
+            "pid", "seq", "ozone", "dzone", "origin", "purpose", "tst", "tet"
+        )
+        .join(total_trip_durations, on=["pid", "seq"])
+        .join(main_trip_modes, on=["pid", "seq"])
+    )
+
+    zones = load_zones()
+    zone_mapping = dict(zip(zones["zone"], zones["rurality"]))
+
+    data = data.with_columns(
+        ozone=pl.col("ozone").replace_strict(zone_mapping, default="unknown"),
+        dzone=pl.col("dzone").replace_strict(zone_mapping, default="unknown"),
+    )
+
+    data = (
+        data.sort(["pid", "seq"])
+        .with_columns(
+            oact=pl.when(pl.col("seq") > 1)
+            .then(pl.col("purpose").shift(1).over("pid"))
+            .otherwise(pl.col("origin")),
+            dact=pl.col("purpose"),
+        )
+        .drop(["origin", "purpose"])
+    )
+
+    # distance hack
+    speeds = {
+        "car": 60,
+        "bus": 40,
+        "rail": 50,
+        "walk": 5,
+        "bike": 15,
+        "other": 30,
+        "unknown": 30,
+    }
+    data = data.with_columns(
+        distance=(pl.col("duration") / 60)
+        * pl.col("mode").replace_strict(speeds)
+    )
+
+    data = data.sort(["pid", "seq"])
 
     # Handle midnight-crossing trips
     data = fix.day_wrap(data)

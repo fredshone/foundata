@@ -3,6 +3,16 @@ import polars as pl
 from foundata import utils
 
 
+def null_pids(attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid") -> bool:
+    n_attr = attributes[on].null_count()
+    n_trips = trips[on].null_count()
+    if n_attr:
+        print(f"ERROR: {n_attr} null PIDs in attributes")
+    if n_trips:
+        print(f"ERROR: {n_trips} null PIDs in trips")
+    return n_attr == 0 and n_trips == 0
+
+
 def columns(attributes: pl.DataFrame, trips: pl.DataFrame) -> bool:
     template_attributes = utils.get_template_attributes()
     template_trips = utils.get_template_trips()

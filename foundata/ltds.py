@@ -171,6 +171,8 @@ def preprocess_hhs(
         .alias("rurality")
     ).drop("zone")
 
+    hhs = hhs.filter(pl.col("hid").is_not_null())
+
     return hhs
 
 
@@ -212,6 +214,8 @@ def preprocess_persons(
         persons = persons.with_columns(
             pl.col("employment").replace_strict(employment_mapping)
         )
+
+    persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
 
