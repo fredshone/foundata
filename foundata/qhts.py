@@ -5,6 +5,7 @@ import polars as pl
 
 from .fix import day_wrap
 from .utils import (
+    compute_avg_speed,
     config_for_year,
     sample_aus_to_euro,
     sample_int_range,
@@ -100,6 +101,8 @@ def load_years(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
 
+    attributes = compute_avg_speed(attributes, trips)
+
     return attributes, trips
 
 
@@ -191,19 +194,21 @@ def preprocess_persons(
         education=pl.lit("unknown"),
     )
 
-    persons = persons.with_columns(
-        income=pl.col("income")
-        .replace_strict(
-            income_mapping, default=pl.lit([0]), return_dtype=pl.List(pl.Int32)
+    if "income" in persons.columns:
+        persons = persons.with_columns(
+            income=pl.col("income")
+            .replace_strict(
+                income_mapping, default=pl.lit([0]), return_dtype=pl.List(pl.Int32)
+            )
+            .map_elements(
+                lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
+            )
         )
-        .map_elements(
-            lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
-        )
-    )
-
-    persons = persons.with_columns(
-        hh_income=pl.col("income").sum().over("hid")
-    ).drop("income")
+        persons = persons.with_columns(
+            hh_income=pl.col("income").sum().over("hid")
+        ).drop("income")
+    else:
+        persons = persons.with_columns(hh_income=pl.lit(None, dtype=pl.Int32))
 
     return persons
 

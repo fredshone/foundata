@@ -21,6 +21,8 @@ mode_mappings:
         Charter/Courtesy/Other bus: bus
         Car driver: car
         Uber / Other Ride Share: car
+        Taxi or Uber: car
+        Taxi or ride share e.g. Uber: car
         Public Bus: bus
         Truck driver: car
         Mobility scooter: other
@@ -55,4 +57,6 @@ act_mappings:
         Recreation/leisure activity: leisure
         At Home: home
         Other Place: other
+        Transporting a passenger/s: escort
+        Other reason: other
 

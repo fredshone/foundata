@@ -4,6 +4,7 @@ import polars as pl
 
 from foundata import fix
 from foundata.utils import (
+    compute_avg_speed,
     config_for_year,
     expand_root,
     sample_us_to_euro,
@@ -34,6 +35,8 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
+
+    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

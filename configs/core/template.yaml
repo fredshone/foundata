@@ -132,6 +132,11 @@ attributes:
     default: True
     min: 0
     description: "Survey expansion weight for the person/household."
+  avg_speed:
+    dtype: float
+    default: True
+    min: 0
+    description: "Average trip speed in km/h. Total distance / total duration across all valid trips. Null for persons with no valid trips."
 
 trips:
   pid:

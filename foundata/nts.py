@@ -5,6 +5,7 @@ import polars as pl
 from foundata import fix
 from foundata.utils import (
     check_overlap,
+    compute_avg_speed,
     sample_int_range,
     sample_uk_to_euro,
     table_joiner,
@@ -46,6 +47,8 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
+
+    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

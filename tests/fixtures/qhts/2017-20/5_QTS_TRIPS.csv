@@ -1,0 +1,362 @@
+TRIPID,HHID,PERSID,STARTSTOP,ENDSTOP,STARTIME,ORIGPLACE,ORIGPURP,ORIGSA1_2021,DESTPLACE,DESTPURP,DESTSA1_2021,MAINMODE,MODE1,MODE2,MODE3,MODE4,MODE5,MODE6,MODE7,MODE8,ARRTIME,DURATION,TRAVTIME,CUMDIST,OVERALL_PURPOSE
+278531002007,2290,2290/1000,1,9,375,Shop or supermarket,At Home,31601141423,My home,Pick up or drop off a passenger,30501111112,Car passenger,Car driver,,,,,,,,285,410,25,1.05,Shopping
+249251001002,2290,2290/1000,2,2,690,Shop or supermarket,Education,31302136609,Shop or supermarket,Pick up or drop off a passenger,30203103603,Car driver,Car driver,,,,,,,,810,415,75,10.21,Recreation
+246791003002,2290,2290/1000,3,2,120,My home,Shopping,31305137809,My home,Work (my workplace),30103101824,Car driver,Car passenger,,,,,,,,805,1,20,0.89,Recreation
+617531001004,2290,2290/1001,1,6,615,My home,At Home,31102130916,Other place (please specify),Work (my workplace),30501111112,Car driver,Car driver,,,,,,,,300,,15,5.24,Direct Work Commute
+276811001001,2290,2290/1001,2,2,544,My home,Go home,30101100448,Shop or supermarket,Go home,31305137809,Walking,Walking,,,,,,,,275,,20,81.98,Accompany Someone
+246791003001,2290,2290/1001,3,1,195,My workplace,Recreation/leisure activity,31304137206,My workplace,Education,31605143711,School bus (private/chartered),Car driver,,,,,,,,520,180,65,0.59,Pickup/Dropoff Someone
+22901004007,2290,2290/1001,4,1,760,Primary or secondary school,At Home,31602142311,My home,Pickup/deliver something (not work-related),30501110536,Car driver,Car driver,,,,,,,,275,480,30,1.08,Education
+55291002004,2290,2290/1001,5,5,640,My home,Pick up or drop off a passenger,30302105531,My home,Go home,31605143822,Car passenger,Car driver,,,,,,,,660,,15,9.2,Pickup/Dropoff Someone
+623681003001,2290,2290/1001,6,3,735,My home,At Home,30501110536,My home,Personal business,30201102505,Car passenger,Car passenger,Train,,,,,,,405,80,20,6.42,Accompany Someone
+216211001002,2290,2290/1001,7,4,350,My home,At Home,31003128725,My home,Shopping,31601141428,Car driver,Car driver,,Walking,,,,,,300,,120,9.64,Work Related
+664751004001,2290,2290/1001,8,3,670,Shop or supermarket,Just accompanying someone,30905124509,My home,Go home,31403139308,Car driver,Car passenger,,,,,,,,205,,24,0.82,Accompany Someone
+278531003002,2290,2290/1001,9,2,390,My home,At Home,31004130226,My home,Shopping,31105132808,Car passenger,Car passenger,,,,,,,,225,,15,2.52,Work Related
+278531001004,2290,2290/1001,10,2,780,My workplace,Work (my workplace),31401138414,Someone else's home,Work (other work reason),30501111112,Car passenger,Walking,,,,,,,,760,410,80,7.62,Pickup/Deliver Something
+216211000001,2290,2290/1002,1,2,150,Primary or secondary school,At Home,31105132403,My workplace,Recreation/leisure activity,30910126810,Car driver,Car driver,,,,,,,,762,410,10,2.26,Personal Business
+278531000003,2290,2290/1002,2,1,855,Primary or secondary school,At Home,31305137919,"Restaurant, cafÃ©, or food outlet",Just accompanying someone,30501111014,Car driver,Car driver,,,,,,,,674,50,25,1.92,Direct Work Commute
+624711000001,2290,2290/1002,3,3,285,My home,Go home,31605154303,Primary or secondary school,Go home,30902123426,Car passenger,Car driver,,,,,,,,770,410,30,10.89,Pickup/Dropoff Someone
+641791001003,2290,2290/1003,1,1,685,Shop or supermarket,Work (my workplace),31002128230,My workplace,Pick up or drop off a passenger,31305137919,Car driver,Car driver,,,,,,,,270,,15,0.59,Education
+232101001002,2290,2290/1003,2,7,845,Primary or secondary school,Pickup/deliver something (not work-related),31102130910,Primary or secondary school,Work (my workplace),30201102505,Car driver,Car driver,,,,,,,,260,15,5,11.57,Shopping
+208631000001,2290,2290/1003,3,3,180,Primary or secondary school,Shopping,31003129311,Shop or supermarket,Go home,31302157235,Car passenger,Car driver,,Public bus,,,,,,280,65,10,2.9,Personal Business
+606481000003,2290,2290/1004,1,1,800,Primary or secondary school,Education,31605143704,My home,Shopping,30910126723,Walking,Car passenger,,,,,,,,720,1,20,7.72,Pickup/Dropoff Someone
+125941002001,2290,2290/1004,2,1,390,Shop or supermarket,At Home,30906124839,My home,Go home,31105132417,Car driver,Car driver,,,,,,,,675,,10,3.6,Personal Business
+84301000002,2290,2290/1004,3,3,480,Other place (please specify),Work (my workplace),30901122509,My home,Go home,31004130258,Car driver,Walking,,Car driver,,,,,,664,,45,1.47,Education
+635921000003,2290,2290/1004,4,2,580,Other place (please specify),Education,30302105309,My home,Pick up or drop off a passenger,31105132525,Charter/Courtesy/Other bus,Car driver,,,,,,,,750,76,10,4.45,Recreation
+664751004003,2290,2290/1004,5,2,430,Shop or supermarket,Recreation/leisure activity,31605154303,My home,Go home,30909126308,Car driver,Truck passenger,,,,,,,,795,70,75,21.37,Recreation
+775621000005,2290,2290/1004,6,9,930,Other place (please specify),At Home,31003128802,My home,Go home,30907125408,Car driver,Car driver,,,,,,,,557,,15,0.94,Education
+216211001004,2290,2290/1004,7,3,290,My home,Go home,31004129920,My workplace,Go home,31607154839,Car passenger,Uber / Other Ride Share,,,,,,,,400,8,60,4.07,Education
+183731000004,2290,2290/1004,8,7,720,My home,Pick up or drop off a passenger,30501111112,Primary or secondary school,Go home,31402157602,Car driver,Motorcycle driver,,,,,,,,160,570,10,1.47,Personal Business
+23871000006,2387,2387/1000,1,4,150,Shop or supermarket,Just accompanying someone,31004130219,My workplace,Work (other work reason),31004130219,Car driver,Car driver,,,,,,,,305,10,17,6.38,Recreation
+55291000007,2387,2387/1000,2,5,900,My home,At Home,30101100407,Other work-related place,Go home,31102130910,Car driver,Car driver,,,,,,,,285,102,15,3.54,Accompany Someone
+55291001001,2387,2387/1000,3,1,190,My home,At Home,31605143721,My home,Go home,31003128906,Truck driver,Car passenger,Public bus,,,,,,,981,,23,11.57,Recreation
+659341001001,2387,2387/1000,4,1,280,Someone else's home,At Home,31105132808,My home,Go home,30303106511,Walking,Car driver,,,,,,,,720,,20,7.62,Pickup/Dropoff Someone
+55291002002,2387,2387/1000,5,1,140,Other work-related place,At Home,30203103603,Childcare or kindergarten,Work (my workplace),30901122907,Uber / Other Ride Share,Car driver,,,,,,,,770,,25,2.81,Direct Work Commute
+623681000004,2387,2387/1000,6,3,950,Primary or secondary school,Work (my workplace),30101100407,My workplace,Go home,31401138414,Car driver,Car driver,,,,,,,,250,540,25,1.39,Direct Work Commute
+775621003005,2387,2387/1001,1,2,640,My home,Work (other work reason),31103131718,Other place (please specify),Recreation/leisure activity,31105132307,Car passenger,Car driver,,,,,,,,120,270,30,9.0,Direct Work Commute
+222421008001,2387,2387/1001,2,3,660,Other work-related place,Work (my workplace),30910126723,Other place (please specify),Go home,31603142728,Walking,Walking,,,,,,,,120,535,5,14.51,Direct Work Commute
+23871000002,2387,2387/1001,3,1,286,Other place (please specify),Just accompanying someone,31602142309,My home,Recreation/leisure activity,31305137809,Car driver,Walking,,,,,,,,650,,3,7.7,Recreation
+226331000006,2387,2387/1001,4,2,275,My workplace,Education,30302105315,My home,Go home,31103131417,Car passenger,Car driver,,,,,,,,541,525,10,8.82,Accompany Someone
+204231000001,2387,2387/1002,1,2,120,My home,Just accompanying someone,30303106511,My home,Work (my workplace),31605143721,Car passenger,Car passenger,,,,,,,,240,,25,22.18,Direct Work Commute
+659341002005,2387,2387/1002,2,1,660,My workplace,Eat/drink,31003129202,Shop or supermarket,Education,30302105531,School bus (private/chartered),Car passenger,,,,,,,,685,120,20,7.82,Recreation
+775621000003,2387,2387/1002,3,4,600,My workplace,At Home,31401138214,Primary or secondary school,Work (my workplace),30101100407,Walking,Car passenger,,,,,,,,520,,15,0.59,Personal Business
+125941002003,2387,2387/1002,4,2,220,Primary or secondary school,At Home,30204104510,My workplace,Personal business,31004130219,Car driver,Car driver,Public bus,,,,,,,630,35,30,3.9,Shopping
+635921000001,3220,3220/1000,1,2,250,My home,Work (my workplace),31003128740,Other place (please specify),Work (my workplace),30501111112,Light rail,Car driver,,,,,,,,400,75,13,1.39,Accompany Someone
+276811001003,3220,3220/1000,2,2,854,My workplace,Personal business,31003128906,My workplace,Personal business,31603142745,Car driver,Walking,,,,,,,,720,,5,12.45,Direct Work Commute
+232101009002,3220,3220/1001,1,3,650,My home,Shopping,30901122509,My workplace,Shopping,30201102228,Car driver,Walking,,,,,,,,630,,5,26.35,Recreation
+775621003001,3220,3220/1001,2,2,795,Shop or supermarket,Work (my workplace),30203103701,Shop or supermarket,Go home,30909154011,Car driver,Car passenger,,,,,,,,315,,30,29.07,Recreation
+161981000002,3842,3842/1000,1,1,635,Someone else's home,Go home,30201102228,My home,Personal business,30905124311,Car passenger,Car driver,,,,,,,,240,,15,5.66,Shopping
+617531001007,3842,3842/1000,2,3,810,Light rail stop,Personal business,30101100448,My home,Work (my workplace),31003128323,Walking,Truck passenger,,,,,,,,265,,2,65.36,Direct Work Commute
+223541002001,5529,5529/1000,1,4,330,My workplace,At Home,31605154305,Shop or supermarket,Shopping,30501110536,Car passenger,Car driver,,,,,,,,800,,5,82.65,Pickup/Dropoff Someone
+617531001008,5529,5529/1000,2,1,260,My home,At Home,30302105531,Someone else's home,Work (my workplace),31605143711,Car driver,Car passenger,,,,,,,,625,45,5,2.43,Direct Work Commute
+23871002004,5529,5529/1000,3,10,609,My home,Just accompanying someone,31004129921,My home,Education,31305137809,Car driver,Walking,,,,,,,,998,595,85,0.42,Accompany Someone
+183731000007,5529,5529/1000,4,5,430,Someone else's home,At Home,30501111108,Primary or secondary school,Pick up or drop off a passenger,31004129920,Car driver,Car driver,,,,,,,,960,,30,1.08,Education
+278531000008,5529,5529/1000,5,6,570,Other place (please specify),Shopping,31003128740,Primary or secondary school,Go home,30910126725,Car driver,Car passenger,,,,,,,,762,,20,1.99,Education
+278531004002,5529,5529/1000,6,2,550,My workplace,Work (my workplace),31601141438,Primary or secondary school,Work (my workplace),31401138414,Walking,Car driver,,,,,,,,275,,5,12.86,Accompany Someone
+641791000003,5529,5529/1000,7,1,974,My workplace,At Home,31302157235,Shop or supermarket,Go home,30204104111,Car driver,Car passenger,,,,,,,,705,,25,10.4,Direct Work Commute
+71131001002,5529,5529/1000,8,2,845,Shop or supermarket,Work (my workplace),31105132807,My workplace,Personal business,30901122509,Car passenger,Car driver,,,,,,,,515,685,15,13.23,Education
+208631000004,5529,5529/1001,1,1,720,Shop or supermarket,At Home,30103101824,My home,Pick up or drop off a passenger,30501110536,Walking,Car passenger,,,,,,,,765,,15,14.29,Work Related
+168701001002,5529,5529/1001,2,1,640,My home,Go home,31607154839,My home,Personal business,31605154305,Car driver,Car driver,,,,,,,,180,45,20,2.02,Direct Work Commute
+183291000002,5529,5529/1002,1,2,480,Childcare or kindergarten,Personal business,31607154514,Other place (please specify),Work (my workplace),30909154111,Car passenger,Car driver,,,,,,,,845,,10,3.35,Direct Work Commute
+659341002004,5529,5529/1002,2,1,650,My workplace,Pick up or drop off a passenger,30302105309,My workplace,Just accompanying someone,31403139308,Car driver,Car passenger,,,,,,,,265,,15,3.73,Direct Work Commute
+260961000001,5529,5529/1002,3,2,240,My home,At Home,31401138414,Shop or supermarket,Shopping,31003128725,Truck passenger,Car driver,,,,,,,,601,5,15,36.36,Recreation
+664751001003,5529,5529/1002,4,2,600,Primary or secondary school,At Home,31104157126,Primary or secondary school,Go home,31106133025,Car passenger,Car passenger,,,,,,,,960,510,9,10.4,Shopping
+55291002003,5529,5529/1003,1,3,370,Shop or supermarket,At Home,31305138023,My home,Go home,31001127511,Car driver,Walking,,,,,,,,245,5,5,14.93,Accompany Someone
+246791004002,5529,5529/1003,2,1,135,Shop or supermarket,Work (my workplace),31106133025,My home,Go home,31004130226,Car passenger,Walking,,,,,,,,660,,9,0.68,Personal Business
+168701002002,6148,6148/1001,1,1,671,My home,Just accompanying someone,31403139309,My home,Pick up or drop off a passenger,31102130913,Car driver,Car passenger,,,,,,,,728,130,5,11.49,Work Related
+32201000001,6148,6148/1001,2,2,150,Primary or secondary school,Personal business,30302105531,My home,Recreation/leisure activity,30901122501,Car driver,Car passenger,,,,,,,,770,16,15,1.78,Pickup/Dropoff Someone
+606481000001,6853,6853/1000,1,3,350,My home,Pick up or drop off a passenger,31004130219,Shop or supermarket,Just accompanying someone,31401138214,Car driver,Car passenger,,,,,,,,710,30,60,5.02,Recreation
+94321000001,6853,6853/1000,2,5,420,My campus,Education,30302105315,My workplace,Go home,30905124513,Car passenger,Car driver,,,,,,,,200,,25,7.92,Personal Business
+71131000001,7113,7113/1001,1,2,635,My home,Shopping,31003128323,Shop or supermarket,Recreation/leisure activity,31403139309,Car passenger,Car driver,,,,,,,,410,,15,1.47,Pickup/Dropoff Someone
+616701002003,7113,7113/1001,2,2,815,Primary or secondary school,Recreation/leisure activity,31607154839,My home,Go home,31302136905,Car driver,Car driver,,Walking,,,,,,800,1,15,7.57,Recreation
+223541002002,8292,8292/1001,1,2,936,My home,Shopping,30203103603,Shop or supermarket,Work (my workplace),31401138216,Car driver,Car driver,,,,,,,,660,,10,12.62,Pickup/Dropoff Someone
+68531000002,8292,8292/1001,2,2,780,My home,Go home,30302105309,Other place (please specify),Go home,30903123513,Car driver,Car passenger,,,,,,,,985,360,5,1.6,Pickup/Dropoff Someone
+624711000004,8292,8292/1002,1,1,720,Shop or supermarket,Personal business,30201102228,Other place (please specify),Go home,30302105309,Car driver,Car passenger,,,,,,,,170,0,30,4.85,Direct Work Commute
+94321002001,8292,8292/1002,2,3,760,Shop or supermarket,Recreation/leisure activity,31605143821,Primary or secondary school,Go home,31302136905,Car driver,Car driver,,,,,,,,840,,23,43.98,Shopping
+82921002002,8292,8292/1002,3,2,495,Primary or secondary school,Go home,31106133026,Other place (please specify),Pick up or drop off a passenger,31605154303,Car driver,Car driver,,,,,,,,760,10,20,9.81,Pickup/Dropoff Someone
+623681002001,8292,8292/1002,4,1,290,My home,At Home,31401138214,My home,Go home,31004129921,Car driver,Car passenger,,,,,,,,170,,25,1.27,Recreation
+94321001001,8292,8292/1003,1,4,165,Shop or supermarket,Go home,30501110531,My home,Pick up or drop off a passenger,31602142311,Car driver,Car passenger,,,,,,,,540,10,15,1.07,Direct Work Commute
+232101001001,8292,8292/1003,2,2,355,Train station,At Home,30902123426,Primary or secondary school,Shopping,30302105309,Walking,Car driver,,,,,,,,690,,20,0.82,Shopping
+211761000001,8430,8430/1000,1,5,800,Other place (please specify),At Home,31302157206,My home,Go home,30203103807,Car driver,Car driver,,,,,,,,800,645,20,2.43,Work Related
+82921001001,8430,8430/1000,2,3,225,My home,Pick up or drop off a passenger,31403139308,My workplace,Work (my workplace),31003128725,Car driver,Car driver,,Car driver,,,,,,713,95,5,213.45,Direct Work Commute
+664751001004,8430,8430/1002,1,6,840,Shop or supermarket,At Home,31605154310,Shop or supermarket,Go home,30404109804,Car driver,Car passenger,,,,,,,,370,,10,1.09,Direct Work Commute
+222421000001,8430,8430/1002,2,1,630,Other place (please specify),Pick up or drop off a passenger,30501110536,My home,Shopping,31003128740,Walking,Walking,,,,,,,,579,,72,6.5,Pickup/Dropoff Someone
+246791002001,9432,9432/1000,1,2,265,My home,Recreation/leisure activity,31606144426,Someone else's home,Go home,31002128207,Car driver,School bus (private/chartered),,,,,,,,540,,15,1.11,Personal Business
+635921001003,9432,9432/1000,2,1,800,Primary or secondary school,Shopping,30910126812,My home,Personal business,30302105309,Walking,Car driver,,,,,,,,670,150,15,3.57,Recreation
+222421000002,9432,9432/1001,1,2,695,My home,Go home,31102130913,My workplace,Shopping,31607154830,Bicycle,Walking,,,,,,,,630,525,210,22.34,Personal Business
+232101009003,9432,9432/1001,2,2,17,Shop or supermarket,At Home,31004130226,Other place (please specify),Recreation/leisure activity,31605143711,Walking,Car driver,,,,,,,,150,,10,0.58,Shopping
+94321000002,9432,9432/1002,1,3,635,Other place (please specify),At Home,31103131213,My home,Go home,31105132711,Car passenger,Car driver,,,,,,,,365,58,20,1.05,Shopping
+94321002002,9432,9432/1002,2,1,955,My home,Go home,30909126308,"Restaurant, cafÃ©, or food outlet",Go home,31605143721,Car driver,Car driver,,,,,,,,870,,30,2.99,Personal Business
+23871002002,9432,9432/1003,1,2,380,Someone else's home,Recreation/leisure activity,30404109804,Train station,Shopping,31003129202,Car passenger,Car driver,,,,,,,,625,,10,0.44,Recreation
+22901003002,9432,9432/1003,2,1,950,My campus,At Home,30203103603,My home,Go home,31401138414,Car driver,Car passenger,Walking,,,,,,,275,40,15,21.75,Pickup/Dropoff Someone
+23871000004,12594,12594/1000,1,1,870,My workplace,At Home,30905124513,My home,Go home,31403139308,Car driver,Car driver,,,,,,,,155,40,65,9.2,Direct Work Commute
+183731000002,12594,12594/1000,2,1,270,My workplace,At Home,31302136905,My home,Go home,30101100407,Car driver,Car passenger,,,,,,,,390,0,24,1.11,Recreation
+161981001001,12594,12594/1000,3,2,780,My home,At Home,31102130619,My workplace,Go home,31105132505,Uber / Other Ride Share,Car driver,,,,,,,,800,85,10,33.77,Education
+22901001002,12594,12594/1002,1,6,270,My home,Work (my workplace),31605143822,My home,Go home,31004130226,Walking,Car driver,,,,,,,,665,243,10,6.26,Recreation
+664751008001,12594,12594/1002,2,1,150,Other place (please specify),At Home,30501110536,Other place (please specify),Shopping,31003128704,Car driver,Car driver,Train,,,,,,,210,255,5,3.77,Recreation
+23871002003,12594,12594/1002,3,1,300,My workplace,Just accompanying someone,30902123307,My home,Go home,30101100407,Car passenger,Car driver,,,,,,,,820,35,15,0.93,Education
+775621001003,16019,16019/1000,1,1,670,My home,At Home,31605154310,My workplace,Education,30909154018,Walking,Motorcycle driver,,,,,,,,315,480,15,3.43,Pickup/Dropoff Someone
+278531001006,16019,16019/1000,2,2,200,Other place (please specify),Go home,31302136905,Shop or supermarket,Personal business,30909126308,Car driver,Car driver,,,,,,,,680,,10,8.95,Recreation
+161981001007,16019,16019/1001,1,1,545,My home,At Home,30302105309,Primary or secondary school,Work (my workplace),31605154303,Car driver,Car passenger,,,,,,,,825,,20,7.49,Education
+161981001002,16019,16019/1001,2,4,720,My home,At Home,31601141438,My home,Education,30501111112,Car driver,Car driver,,,,,,,,800,400,20,23.08,Direct Work Commute
+216211000002,16198,16198/1000,1,2,795,My workplace,Personal business,30910126810,My home,Go home,30909154011,Car passenger,Car driver,,,,,,,,155,,10,19.17,Personal Business
+775621000002,16198,16198/1000,2,5,555,My home,Just accompanying someone,30902123307,My home,Pick up or drop off a passenger,30302105315,Car passenger,Car passenger,,,,,,,,675,195,10,5.69,Work Related
+216211003001,16198,16198/1000,3,6,180,My home,At Home,30302105531,Shop or supermarket,Just accompanying someone,31003128802,Car driver,Car driver,,,,,,,,830,,15,12.86,Shopping
+160191000001,16198,16198/1000,4,4,765,My workplace,At Home,30404109804,Primary or secondary school,Go home,30901122724,Car driver,Car passenger,,,,,,,,825,50,10,30.03,Shopping
+278531002001,16198,16198/1000,5,1,690,My workplace,Work (my workplace),30101100121,My workplace,Recreation/leisure activity,31003128906,Car driver,Car driver,,,,,,,,345,,120,6.83,Work Related
+641791001001,16198,16198/1000,6,7,280,"Restaurant, cafÃ©, or food outlet",Work (my workplace),31002128207,Other place (please specify),Recreation/leisure activity,31004129922,Car driver,Car driver,,,,,,,,200,450,9,6.65,Pickup/Dropoff Someone
+278531001002,16198,16198/1000,7,4,285,My home,Education,31102130613,Other place (please specify),Go home,31003128740,Car driver,Car driver,,Walking,,,,,,690,120,7,1.55,Personal Business
+243711000002,16198,16198/1000,8,5,120,Primary or secondary school,Recreation/leisure activity,30501110517,My home,Go home,31003128740,Car driver,Car passenger,,,,,,,,270,150,15,2.84,Pickup/Dropoff Someone
+638171000002,16198,16198/1000,9,3,250,Other place (please specify),Work (my workplace),30501111112,My workplace,Work (my workplace),30501111013,Car passenger,Car driver,,,,,,,,285,315,6,8.95,Direct Work Commute
+278531000002,16198,16198/1000,10,2,250,My workplace,Go home,30901122501,Primary or secondary school,Go home,31302136618,Car driver,Car driver,,,,,,,,270,90,15,14.5,Education
+222421001001,16198,16198/1001,1,2,750,Other place (please specify),Go home,30501110536,Other place (please specify),Go home,31105132808,Car driver,Car driver,,,,,,,,445,120,5,10.61,Recreation
+617531001006,16198,16198/1001,2,8,696,My home,At Home,30501111112,Shop or supermarket,Go home,31102130916,Car driver,Car driver,,,,,,,,674,95,25,9.73,Shopping
+164811000004,16198,16198/1001,3,6,480,Other place (please specify),Education,30501111112,My home,Go home,30302105309,Car passenger,Car driver,,,,,,,,295,165,11,10.03,Shopping
+641791001004,16198,16198/1001,4,1,330,My home,Go home,31606144426,My home,Personal business,31607154839,Car driver,Car driver,,,,,,,,265,0,30,1.47,Personal Business
+161981000007,16198,16198/1001,5,1,150,My home,At Home,31105132505,My home,Eat/drink,31004129922,Car driver,Car driver,,,,,,,,840,95,5,4.07,Direct Work Commute
+71131001001,16198,16198/1001,6,1,950,My home,At Home,31602142309,My home,Work (my workplace),31003128740,Car driver,Car passenger,Train,Walking,,,,,,820,420,25,6.38,Accompany Someone
+216211004001,16198,16198/1001,7,5,360,My workplace,Work (my workplace),30907125408,Shop or supermarket,Recreation/leisure activity,30302105309,Car driver,Car driver,Train,,,,,,,540,72,5,1.55,Education
+168701000002,16481,16481/1000,1,4,480,Shop or supermarket,Go home,31603142745,My home,Education,30201102228,Car driver,Car passenger,,,,,,,,100,2,9,1.69,Education
+161981000004,16481,16481/1000,2,1,660,My home,Personal business,31004130219,My workplace,Recreation/leisure activity,31401138325,Car driver,Car driver,,,,,,,,41,340,5,12.27,Shopping
+226331000005,16481,16481/1000,3,1,655,My home,Recreation/leisure activity,31401138216,Other place (please specify),Recreation/leisure activity,31105132505,Walking,Car driver,,,,,,,,285,0,20,7.47,Shopping
+183291001001,16481,16481/1000,4,2,810,Primary or secondary school,Work (my workplace),31401138414,My home,Go home,31003128740,Car driver,Car driver,,,,,,,,170,,5,15.71,Personal Business
+232101000004,16481,16481/1001,1,3,490,Primary or secondary school,At Home,31002128230,Shop or supermarket,Personal business,31302157235,Car driver,Car driver,,,,,,,,520,,30,29.09,Recreation
+641791000002,16481,16481/1001,2,4,240,My home,Work (my workplace),30201102505,My workplace,Work (my workplace),30910126812,Car driver,Walking,,,Public bus,,,,,862,,10,2.2,Recreation
+203701000001,16481,16481/1001,3,1,225,My home,Personal business,30501111109,My home,Go home,31605154310,Walking,Car passenger,,,,,,,,235,242,34,1.05,Recreation
+160191000002,16481,16481/1001,4,3,360,Other place (please specify),Eat/drink,30909154111,My workplace,Go home,31102130619,Car driver,Car passenger,,,,,,,,675,365,10,3.71,Recreation
+82921002001,16870,16870/1000,1,3,725,Shop or supermarket,At Home,31401138325,My home,Go home,30103102031,Car driver,Car driver,,,,,,,,660,10,30,7.19,Direct Work Commute
+278531004003,16870,16870/1000,2,1,420,My home,Shopping,31102130913,My home,Social Visit,30302105315,Bicycle,Car passenger,Train,,,,,,,800,165,5,5.47,Direct Work Commute
+61481001001,16870,16870/1001,1,1,615,My workplace,Work (my workplace),31104156704,Other place (please specify),Eat/drink,30501111112,Car driver,Car passenger,,,,,,,,755,,10,7.62,Recreation
+22901000002,16870,16870/1001,2,2,615,Someone else's home,Education,31003128740,Shop or supermarket,Education,30302105315,Walking,Car passenger,,,,,,,,700,45,10,7.92,Direct Work Commute
+232101001003,16870,16870/1002,1,3,810,My home,Go home,31403139308,My home,Work (my workplace),30103102130,Car passenger,Car passenger,,,,,,,,748,,15,21.73,Pickup/Dropoff Someone
+278531002008,16870,16870/1002,2,1,810,My home,At Home,31102130619,My workplace,Work (my workplace),30901122501,Car driver,Car driver,,,,,,,,400,78,20,0.59,Shopping
+276811001002,16870,16870/1002,3,2,60,My workplace,At Home,30901122509,Shop or supermarket,Work (my workplace),31003129311,Train,Car driver,,,,,,,,165,80,10,1.78,Shopping
+22901001006,18329,18329/1000,1,4,180,My home,At Home,30302105309,My home,Pick up or drop off a passenger,30501111112,Car driver,Car driver,,Walking,,,,,,210,,15,3.35,Shopping
+22901001008,18329,18329/1000,2,3,280,Primary or secondary school,Work (my workplace),31004130226,My home,Just accompanying someone,30302105309,Car passenger,Car driver,,,,,,,,730,0,5,5.5,Pickup/Dropoff Someone
+71131000004,18329,18329/1000,3,4,545,My home,Personal business,31102130913,Someone else's home,Pick up or drop off a passenger,30302105315,Car driver,Walking,,,,,,,,566,95,15,6.83,Direct Work Commute
+55291000003,18329,18329/1001,1,3,725,Primary or secondary school,At Home,30302105315,Shop or supermarket,Go home,31102130622,Car passenger,Walking,,,,,,,,660,240,8,7.62,Accompany Someone
+22901002001,18329,18329/1001,2,1,250,My home,At Home,31402157602,Other place (please specify),Personal business,30302105309,Walking,Car driver,Train,Walking,,,,,,120,486,15,4.14,Social
+125941002002,18373,18373/1000,1,6,291,My home,Go home,31605154305,My home,Education,31105132505,Car driver,Car driver,,,,,,,,255,386,40,5.5,Shopping
+164811000001,18373,18373/1000,2,1,250,My home,Personal business,30503113111,Primary or secondary school,Shopping,31004130226,Walking,Walking,,,,,,,,630,,20,4.64,Direct Work Commute
+617531001001,18373,18373/1000,3,5,555,My home,Pick up or drop off a passenger,31607154839,Primary or secondary school,Just accompanying someone,30909126308,Car driver,Car passenger,,,,,,,,645,,25,8.3,Accompany Someone
+775621001001,18373,18373/1000,4,2,785,Shop or supermarket,Shopping,30906124631,My home,Go home,30302105315,Car driver,Car driver,,,,,,,,810,5,15,1.69,Education
+164811001004,18373,18373/1000,5,4,255,Primary or secondary school,Go home,31602142309,My home,Recreation/leisure activity,31302136905,Car driver,Car passenger,,,,,,,,200,,10,0.68,Shopping
+168701000001,18373,18373/1000,6,1,695,My home,Pick up or drop off a passenger,31003128704,My workplace,Go home,31607154841,Car driver,School bus (private/chartered),,,,,,,,490,8,3,4.47,Recreation
+641791000001,18373,18373/1000,7,1,840,My home,Work (my workplace),31605154303,My home,Go home,30905124509,Car passenger,Bicycle,,,,,,,,298,,9,11.24,Accompany Someone
+161981000009,20370,20370/1000,1,2,650,My home,At Home,30101100407,Other place (please specify),Go home,31003128906,Car passenger,Car driver,,,,,,,,800,77,15,14.17,Education
+775621000001,20370,20370/1000,2,5,795,My home,At Home,30204104510,Shop or supermarket,Go home,31401138414,Car driver,Car passenger,,,,,,,,862,,10,213.45,Accompany Someone
+227881000001,20423,20423/1000,1,1,390,Shop or supermarket,At Home,31003128906,Other place (please specify),Go home,30102100727,Car passenger,Bicycle,,,,,,,,345,0,15,3.57,Pickup/Dropoff Someone
+623681003002,20423,20423/1000,2,2,395,Childcare or kindergarten,Go home,31105132417,Other place (please specify),Go home,31401138414,Car passenger,Charter/Courtesy/Other bus,,,,,,,,610,5,30,8.75,Personal Business
+616701000003,21176,21176/1000,1,2,900,My home,Go home,31004130226,My home,Go home,30302105309,Car driver,Car passenger,,,,,,,,791,80,60,0.87,Shopping
+164811000003,21176,21176/1000,2,1,780,My home,Go home,31105132505,My home,Work (my workplace),30203103701,Car driver,Car driver,,,,,,,,285,,30,0.82,Work Related
+616701005001,21176,21176/1001,1,1,283,Other place (please specify),At Home,30501110513,Primary or secondary school,Personal business,31601141438,Car driver,Car driver,,Uber / Other Ride Share,,,,,,145,100,60,50.87,Shopping
+623681000002,21176,21176/1001,2,2,660,Shop or supermarket,At Home,31607154836,My home,Go home,30501110517,Car passenger,Taxi or ride share e.g. Uber,,,,,,,,495,16,20,12.32,Direct Work Commute
+160191001002,21621,21621/1000,1,2,810,Other work-related place,At Home,31602142309,Other place (please specify),Go home,30909126305,Walking,Car driver,,,,Car driver,,,,490,25,15,0.48,Direct Work Commute
+260961000002,21621,21621/1000,2,2,235,Other place (please specify),Personal business,30901122724,My home,Just accompanying someone,30905124513,Car driver,Walking,,,,,,,,510,0,27,64.59,Accompany Someone
+775621003003,21621,21621/1001,1,4,526,My home,At Home,30902123427,My home,Recreation/leisure activity,30204104510,Car passenger,Walking,,,,,,,,235,105,33,14.52,Personal Business
+84301002002,21621,21621/1001,2,4,330,Primary or secondary school,Pick up or drop off a passenger,30901122501,Someone else's home,Go home,31607154839,Train,Car driver,,,,,,,,815,10,20,0.24,Personal Business
+638171001002,21621,21621/1001,3,1,240,My home,Education,31605143711,My home,Work (my workplace),31602142309,Car passenger,Car driver,,,,,,,,390,,10,9.02,Shopping
+84301002001,21621,21621/1001,4,3,75,My campus,Shopping,30905124449,My home,Go home,31002128230,Car driver,Walking,,,,,,,,800,120,15,4.78,Education
+249251001001,21621,21621/1004,1,7,760,Other place (please specify),At Home,30102101211,Other place (please specify),Go home,31105132807,Train,Car driver,,,,,,,,713,10,5,0.87,Direct Work Commute
+623681000001,21621,21621/1004,2,4,270,Primary or secondary school,Shopping,31004130226,My workplace,Go home,30902123111,Car driver,Car driver,,,,,,,,855,435,10,21.79,Shopping
+38421000002,22242,22242/1000,1,6,720,My home,Go home,30302105315,My home,Education,31302157206,Car driver,Car driver,,,Walking,,,,,290,469,15,16.39,Shopping
+22901001010,22242,22242/1000,2,5,270,Primary or secondary school,Social Visit,31605154305,Other place (please specify),Just accompanying someone,31004129921,Car passenger,Car driver,,,,,,,,380,,10,1.39,Direct Work Commute
+55291000001,22242,22242/1001,1,7,795,My home,At Home,30201102205,My home,Recreation/leisure activity,31106133026,Train,Car driver,,,,,,,,165,0,20,2.87,Shopping
+246791004001,22242,22242/1008,1,3,60,My home,At Home,31003128906,Other place (please specify),Go home,31305138023,Car driver,Car driver,,,,,,,,730,30,25,0.59,Recreation
+246791000003,22242,22242/1008,2,3,900,Shop or supermarket,Shopping,30303106511,My home,Education,31004130226,Car driver,Car driver,,,,,,,,340,120,15,18.23,Accompany Someone
+94321001002,22354,22354/1002,1,2,785,Someone else's home,At Home,30302105309,My workplace,Pick up or drop off a passenger,30101100407,Public bus,Car passenger,,,,,,,,165,0,15,9.03,Accompany Someone
+223541003001,22354,22354/1002,2,3,750,My home,Work (my workplace),31401138414,Other place (please specify),Just accompanying someone,31103131718,Car driver,Car driver,,,,,,,,780,,30,43.52,Direct Work Commute
+22901004004,22354,22354/1003,1,1,207,My home,Education,30501111109,My home,Pick up or drop off a passenger,30901122907,Car driver,Walking,,,,,,,,810,0,3,0.82,Direct Work Commute
+664751004002,22354,22354/1003,2,1,190,Someone else's home,Go home,31102130910,Primary or secondary school,Recreation/leisure activity,31605143821,Car passenger,Car driver,,,,,,,,810,,5,82.13,Shopping
+183291001002,22633,22633/1000,1,6,260,My home,Go home,30909126305,My workplace,Work (my workplace),30501110536,Car driver,Car driver,,,,,,,,208,,15,5.24,Education
+38421000001,22633,22633/1000,2,2,270,My home,Shopping,31302136618,Other place (please specify),Go home,30403109615,Car passenger,Car driver,,,,,,,,915,15,15,2.36,Personal Business
+164811001002,22633,22633/1000,3,2,650,My home,At Home,31605143721,Train station,Work (my workplace),30901122509,Car driver,Car driver,,,,,,,,680,5,42,6.42,Direct Work Commute
+82921003002,22633,22633/1000,4,1,60,My workplace,Go home,31103131213,My home,Just accompanying someone,30901122907,Walking,Car driver,,,,,,,,805,70,30,2.02,Shopping
+216211001001,22633,22633/1000,5,3,250,Someone else's home,Education,31004129922,Other place (please specify),Recreation/leisure activity,30906124839,Car passenger,Car driver,,,,,,,,501,375,15,8.93,Direct Work Commute
+775621001005,22633,22633/1000,6,6,390,My home,At Home,30503112620,My home,Education,30303106511,Truck driver,Car driver,,,,,,,,595,,10,4.99,Recreation
+164811001003,22633,22633/1000,7,3,810,Other place (please specify),Just accompanying someone,31003129326,Shop or supermarket,Personal business,30901122501,Car passenger,Car passenger,,,,,,,,810,,20,5.22,Direct Work Commute
+22901004001,22788,22788/1000,1,1,661,Primary or secondary school,Recreation/leisure activity,30902123307,My home,Just accompanying someone,31605154305,Walking,Car passenger,,,Train,,,,,215,,20,1.04,Personal Business
+659341002006,22788,22788/1000,2,2,283,Other place (please specify),Work (my workplace),30204104111,Shop or supermarket,Pick up or drop off a passenger,30905124449,Walking,Car driver,,,,,,,,685,,15,15.31,Work Related
+659341002002,23210,23210/1000,1,3,330,Shop or supermarket,Recreation/leisure activity,30302105531,Primary or secondary school,Go home,30302105309,Car driver,Car driver,,,,,,,,845,5,10,3.64,Pickup/Dropoff Someone
+775621003002,23210,23210/1000,2,1,180,My workplace,Go home,31106133025,My home,Just accompanying someone,31601141438,School bus (private/chartered),Car driver,,,,,,,,551,,10,1.51,Direct Work Commute
+23871001003,23210,23210/1000,3,1,355,My workplace,Just accompanying someone,31106133025,Other place (please specify),Go home,30302105315,Car passenger,Walking,,,,,,,,570,615,45,9.23,Direct Work Commute
+160191001001,23210,23210/1000,4,2,705,My home,Work (my workplace),31305137809,My campus,Just accompanying someone,30101100407,Car passenger,Car driver,,,,,,,,645,30,15,1.27,Shopping
+246791000002,23210,23210/1001,1,1,630,My home,Pick up or drop off a passenger,31104157125,My workplace,Work (my workplace),30909154018,Walking,Car driver,,,,,,,,85,,20,6.26,Direct Work Commute
+623681000003,23210,23210/1001,2,7,660,My home,Work (my workplace),31607154839,Primary or secondary school,Work (my workplace),31102130916,Car driver,Car driver,,,,Car driver,,,,870,0,60,1.05,Direct Work Commute
+276811001004,23210,23210/1001,3,1,661,My home,At Home,31602141906,My home,Shopping,31102130913,Car driver,Car driver,,,,,,,,750,15,16,14.9,Pickup/Dropoff Someone
+161981001005,23210,23210/1001,4,5,855,My home,Recreation/leisure activity,31106133026,My home,Go home,31004130226,Car driver,Car driver,,,,,,,,147,40,5,10.89,Personal Business
+617531000002,23210,23210/1002,1,4,765,My workplace,At Home,31305137809,Other place (please specify),Work (my workplace),31003128725,Car driver,Car passenger,,,,,,,,630,,14,14.65,Accompany Someone
+22901001005,23210,23210/1002,2,1,780,My home,At Home,31105132514,My home,Go home,30201102205,Car passenger,Car passenger,,,,,,,,750,520,30,13.05,Recreation
+161981000010,23210,23210/1002,3,7,810,My home,Work (my workplace),31003128906,My home,Go home,31004130226,Car passenger,Car driver,,,,,,,,670,5,30,2.36,Direct Work Commute
+232101000003,23210,23210/1003,1,3,350,My workplace,Pick up or drop off a passenger,31302136905,Shop or supermarket,Go home,30404109804,Car driver,Car driver,,Walking,,,,,,1040,30,23,10.11,Shopping
+624711000003,23210,23210/1003,2,6,220,Shop or supermarket,Pick up or drop off a passenger,31402157602,Shop or supermarket,Work (my workplace),31102130910,Car driver,Car passenger,,,,,,,,690,75,5,30.84,Work Related
+22901001001,23210,23210/1003,3,1,690,Primary or secondary school,Shopping,30501110536,Primary or secondary school,Personal business,31004130219,Car driver,Car passenger,,,,,,,,130,152,20,14.29,Accompany Someone
+278531003001,23210,23210/1009,1,2,660,Shop or supermarket,Go home,31004130226,My home,Go home,31105132807,Car driver,Car driver,,,,,,,,670,120,10,76.66,Pickup/Dropoff Someone
+269621002001,23210,23210/1009,2,1,265,My home,Work (my workplace),31004130219,Shop or supermarket,Go home,31605154310,Car passenger,Car driver,,,,,,,,285,40,15,6.42,Recreation
+55291002001,23210,23210/1009,3,1,755,Shop or supermarket,Shopping,30101100407,My workplace,Go home,30501110531,Train,Charter/Courtesy/Other bus,,,,,,,,475,55,20,1.05,Social
+659341002001,24371,24371/1000,1,1,205,Other place (please specify),Personal business,30302105531,Primary or secondary school,Pick up or drop off a passenger,31605154310,Car driver,Car passenger,,,,,,,,685,,30,6.22,Direct Work Commute
+276811000003,24371,24371/1000,2,8,825,My home,Work (my workplace),31004130226,Childcare or kindergarten,Go home,31401138414,Car driver,Car passenger,,,,,,,,852,,10,21.73,Pickup/Dropoff Someone
+635921001001,24679,24679/1000,1,3,671,My home,Just accompanying someone,31605143704,My home,Work (my workplace),30302105531,Car passenger,Car driver,,,Public bus,,,,,290,,10,9.2,Personal Business
+232101002003,24679,24679/1000,2,1,720,My workplace,Pick up or drop off a passenger,30501111112,Primary or secondary school,Work (my workplace),31301136358,Car driver,Walking,,,,,,,,730,,10,5.43,Personal Business
+775621004002,24679,24679/1000,3,2,330,My home,Work (my workplace),30909154011,My workplace,Just accompanying someone,31003128740,Car driver,Car driver,,,,,,,,650,,25,30.46,Shopping
+624711000005,24679,24679/1000,4,2,517,My home,Go home,31401138229,Other place (please specify),Go home,31602142309,Car driver,Car driver,,,,,,,,755,551,25,12.48,Direct Work Commute
+278531000004,24679,24679/1002,1,1,120,Shop or supermarket,Personal business,30909126308,My home,Work (my workplace),30305107632,Car driver,Car driver,,,,,,,,870,,45,1.27,Pickup/Dropoff Someone
+617531001005,24679,24679/1002,2,10,670,My home,Shopping,30501110536,Other place (please specify),Recreation/leisure activity,30302105531,Car passenger,Car driver,,,,,,,,835,,5,1.76,Direct Work Commute
+659341002003,24679,24679/1003,1,5,690,My workplace,At Home,30501111112,My workplace,Recreation/leisure activity,30203103603,Car driver,Walking,,,,,,,,222,0,30,23.15,Pickup/Dropoff Someone
+161981000003,24679,24679/1003,2,1,719,My home,Work (my workplace),30902123307,My home,Work (my workplace),31305137919,Car passenger,Truck driver,,,,,,,,285,30,20,3.3,Shopping
+232101000001,24679,24679/1004,1,2,90,My workplace,Go home,30501110536,Other place (please specify),Go home,31103131213,Car driver,Car driver,Train,,,,,,,660,645,10,1.27,Shopping
+23871001004,24679,24679/1004,2,4,420,Primary or secondary school,Just accompanying someone,31605154310,My home,Go home,31003129122,Car driver,Car passenger,,,,,,,,220,,31,0.68,Pickup/Dropoff Someone
+664751001001,24925,24925/1000,1,8,330,My home,At Home,31607154503,My home,Go home,30501110513,Car driver,Walking,,,,,,,,510,0,30,4.08,Shopping
+32201000002,24925,24925/1000,2,10,800,My home,Work (my workplace),30305107632,My workplace,Work (my workplace),31401138325,Car passenger,Truck driver,,,,,,,,375,,3,13.16,Direct Work Commute
+211761000002,24925,24925/1001,1,1,735,My home,Pick up or drop off a passenger,30501111112,My home,Personal business,31605143721,Car driver,Car passenger,Train,,,,,,,285,2,15,1.09,Recreation
+82921001002,24925,24925/1001,2,2,120,Primary or secondary school,Work (my workplace),31403139435,Shop or supermarket,Shopping,31003128906,Car driver,Car driver,,,,,,,,645,,20,5.17,Direct Work Commute
+82921002004,26096,26096/1000,1,2,971,Shop or supermarket,Work (my workplace),31004130226,My home,Work (other work reason),31607154839,Car driver,Car driver,,,,,,,,630,695,6,5.15,Personal Business
+232101003001,26096,26096/1000,2,2,510,My home,Work (other work reason),31003128725,Other place (please specify),Go home,31102130913,Walking,Car driver,,Public bus,,,,,,415,5,25,0.3,Shopping
+243711000001,26096,26096/1001,1,2,905,My home,At Home,30901122501,My home,Work (my workplace),31003128704,Light rail,Car driver,,,,,,,,795,205,6,10.4,Pickup/Dropoff Someone
+616701002001,26096,26096/1001,2,4,60,Other work-related place,Go home,31003128740,My workplace,Shopping,30501111108,Car driver,Walking,,,,,,,,75,52,65,26.67,Education
+204231000002,26962,26962/1000,1,1,510,Primary or secondary school,Work (other work reason),31103131718,My home,Go home,31004130226,Train,Car driver,,,,,,,,720,,30,5.25,Direct Work Commute
+260961001002,26962,26962/1001,1,2,420,My home,Just accompanying someone,30909154018,Primary or secondary school,Education,30901122509,Car passenger,Car driver,,,,,,,,735,15,30,0.0,Pickup/Dropoff Someone
+183731000006,26962,26962/1002,1,2,200,My home,Work (my workplace),31601141428,My home,Education,31106133025,Car driver,Car driver,,,,,,,,285,10,10,10.15,Shopping
+775621005002,26962,26962/1003,1,6,800,My workplace,Eat/drink,31105132307,Shop or supermarket,Work (my workplace),31105132514,Car driver,Car driver,Light rail,,,,,,,755,555,15,1.11,Education
+278531002004,27681,27681/1000,1,2,690,Primary or secondary school,Shopping,31605143721,My home,Personal business,31103131718,Car passenger,Walking,,,,,,,,755,,5,10.18,Pickup/Dropoff Someone
+22901000003,27681,27681/1000,2,1,840,Other place (please specify),Shopping,31605143721,My home,Go home,31003129122,Car driver,Car driver,,,,,,,,805,,10,21.66,Shopping
+775621001002,27681,27681/1000,3,2,780,My workplace,At Home,30909126308,My home,Work (my workplace),31401138414,Car passenger,Walking,,,,,,,,395,0,30,6.65,Shopping
+276811000004,27681,27681/1000,4,2,240,My home,At Home,31105132505,My home,Go home,30102101211,Car driver,Car driver,,,,,,,,575,60,5,22.48,Direct Work Commute
+226331000004,27681,27681/1001,1,1,335,My workplace,Just accompanying someone,30302105309,Primary or secondary school,Go home,31001127512,Car driver,Car passenger,,,,,,,,795,0,20,18.79,Accompany Someone
+276811000001,27681,27681/1001,2,9,735,Primary or secondary school,Work (my workplace),30902123111,Primary or secondary school,Recreation/leisure activity,30204104101,Car driver,Walking,,,,,,,,740,52,5,15.64,Shopping
+226331000002,27681,27681/1001,3,2,515,My home,Recreation/leisure activity,30302105315,Other place (please specify),Go home,31102130619,Car driver,Walking,,,,,,,,165,,30,1.08,Pickup/Dropoff Someone
+246791000004,27681,27681/1001,4,6,430,Other place (please specify),Work (my workplace),31605143704,My workplace,Go home,30501110531,Car driver,Car passenger,,,,,,,,775,410,19,5.66,Pickup/Dropoff Someone
+22901004005,27853,27853/1000,1,2,950,My home,Recreation/leisure activity,30501111112,My home,Go home,31004129912,Motorcycle driver,Car driver,,,,,,,,541,470,5,8.0,Shopping
+641791001002,27853,27853/1000,2,1,345,My workplace,At Home,31003128704,Shop or supermarket,Go home,30501111112,Car driver,Car passenger,,,,,,,,585,150,5,1.76,Pickup/Dropoff Someone
+68531002001,27853,27853/1000,3,3,955,My home,At Home,30503112613,My home,Go home,31004130219,Car driver,Car driver,,,,,,,,770,30,30,6.5,Shopping
+55291000002,27853,27853/1000,4,1,375,My home,Work (other work reason),30103102130,My home,Go home,30302105315,Car driver,Car driver,,,,,,,,295,,3,2.36,Recreation
+278531003005,27853,27853/1000,5,1,240,My workplace,At Home,30203103807,"Restaurant, cafÃ©, or food outlet",Go home,31105132505,Car passenger,Car driver,,,,,,,,260,,45,22.18,Accompany Someone
+775621001004,27853,27853/1000,6,3,120,Primary or secondary school,Personal business,30204104101,Other place (please specify),Go home,30902123427,Truck passenger,Car driver,,,,,,,,70,780,40,7.29,Accompany Someone
+635921001002,27853,27853/1000,7,1,500,My home,Pick up or drop off a passenger,31601141423,Shop or supermarket,Go home,31004130226,Car driver,Car passenger,,,,,,,,395,,15,0.7,Direct Work Commute
+32201001001,27853,27853/1000,8,2,620,My home,Personal business,31106133026,My home,Go home,31104157034,Car passenger,Car passenger,,,,,,,,825,15,20,2.98,Accompany Someone
+94321003002,27853,27853/1000,9,2,840,My home,At Home,31102130910,My home,Work (my workplace),31003128906,Truck driver,Car driver,,,,,,,,795,210,30,2.44,Education
+278531000007,27853,27853/1001,1,1,735,Other place (please specify),At Home,31102130913,Other place (please specify),Eat/drink,30204104111,Car driver,Walking,,,,,,,,290,40,10,2.81,Personal Business
+616701002002,27853,27853/1001,2,2,180,My workplace,Shopping,30501110531,Other work-related place,Just accompanying someone,30501111109,Car driver,Car passenger,,,,,,,,370,,8,3.96,Accompany Someone
+216211004002,27853,27853/1001,3,3,742,My home,At Home,30302105309,My workplace,Pick up or drop off a passenger,30305107632,Walking,Walking,,,,,,,,415,40,5,1.08,Personal Business
+269621001001,27853,27853/1001,4,2,375,"Restaurant, cafÃ©, or food outlet",At Home,31401138325,My home,Go home,31004129922,Car driver,Car driver,,,,,,,,525,,10,12.48,Pickup/Dropoff Someone
+278531000005,27853,27853/1001,5,1,255,My workplace,Recreation/leisure activity,30901122501,Primary or secondary school,Shopping,30901122501,Car passenger,Car driver,,,,,,,,433,0,15,9.94,Personal Business
+22901004003,27853,27853/1001,6,4,420,Shop or supermarket,Recreation/leisure activity,31106133025,My home,Shopping,31004130226,Car driver,Walking,,,,,,,,345,621,30,2.27,Direct Work Commute
+222421008002,27853,27853/1002,7,1,330,My home,Work (my workplace),31003128906,My home,Shopping,30302105309,Car driver,Car driver,,,,,,,,675,,15,6.38,Recreation
+278531002009,27853,27853/1002,8,1,405,Shop or supermarket,At Home,31004130226,Shop or supermarket,Shopping,30902123307,Car passenger,Car driver,,,,,,,,360,5,15,1.11,Direct Work Commute
+664751001002,27853,27853/1002,9,3,750,Other place (please specify),At Home,31106133026,Other place (please specify),Education,30102101211,Car driver,Car passenger,,,,,,,,250,,20,14.9,Education
+125941000002,27853,27853/1003,1,1,765,Other place (please specify),At Home,31607154830,My home,Go home,31605143721,Car driver,Car driver,,,,,,,,355,30,20,14.72,Recreation
+161981000001,27853,27853/1003,2,3,190,My home,Personal business,31004129922,My home,Go home,30909154018,Taxi or ride share e.g. Uber,Car passenger,,,,,,,,335,550,5,11.24,Pickup/Dropoff Someone
+183291000003,27853,27853/1003,3,1,270,My home,Recreation/leisure activity,31603142728,My home,Work (other work reason),31605143721,Car driver,Car driver,,,,,,,,275,65,5,0.82,Education
+278531004001,27853,27853/1003,4,2,721,My home,Work (my workplace),30910126723,Other work-related place,Personal business,30906124631,Walking,Car driver,,,,,,,,805,,10,2.43,Direct Work Commute
+55291000004,27853,27853/1003,5,2,290,Other place (please specify),Shopping,31105132808,My home,Go home,31104156704,Car passenger,Car passenger,,,,,,,,265,,30,0.24,Shopping
+125941000001,27853,27853/1004,1,1,370,Other place (please specify),Work (my workplace),30501111112,Shop or supermarket,Recreation/leisure activity,30302105309,Train,Uber / Other Ride Share,,,,,,,,524,386,10,4.62,Personal Business
+55291000006,27853,27853/1004,2,2,510,Shop or supermarket,Education,30302105309,My home,Shopping,31305137910,Walking,Car passenger,,,,,,,,360,1,8,1.69,Direct Work Commute
+161981000006,27853,27853/1004,3,2,135,My home,At Home,30102101211,Other place (please specify),Go home,30501110536,Car driver,Car driver,,,,,,,,220,95,15,11.49,Pickup/Dropoff Someone
+68531000001,27853,27853/1004,4,2,780,Primary or secondary school,At Home,31605143711,Shop or supermarket,Shopping,31605154303,School bus (private/chartered),Car driver,,,,,,,,870,75,30,12.86,Personal Business
+260961001001,60648,60648/1000,1,2,650,Other place (please specify),Just accompanying someone,31401138414,My home,Pick up or drop off a passenger,31003128906,Car driver,Walking,,,,,,,,645,94,35,8.82,Direct Work Commute
+216211001003,60648,60648/1000,2,1,520,Shop or supermarket,Pick up or drop off a passenger,31003128740,Someone else's home,Just accompanying someone,31602142309,Car passenger,Car driver,,,,,,,,645,,10,3.95,Education
+775621002004,60648,60648/1000,3,3,730,My home,Just accompanying someone,31102130910,My home,Go home,30305107632,Car driver,Walking,,,,,,,,674,465,4,1.09,Social
+624711000002,61670,61670/1000,1,1,495,My home,Personal business,31105132711,My home,Go home,31102130613,Car passenger,Taxi or ride share e.g. Uber,Train,,,,,,,205,20,5,72.44,Direct Work Commute
+161981000008,61670,61670/1000,2,5,675,My home,At Home,30909126308,My workplace,Shopping,31102130913,Car driver,Car passenger,,,,,,,,290,540,10,7.95,Shopping
+616701000002,61670,61670/1000,3,2,430,My home,Pick up or drop off a passenger,31001127441,My home,Go home,30501110513,Car passenger,Car driver,,,,,,,,735,70,15,1.11,Education
+82921002003,61670,61670/1002,1,3,220,Other place (please specify),Pick up or drop off a passenger,31605143704,My home,Personal business,30503112620,Walking,Car driver,,,,,,,,645,,15,6.54,Work Related
+82921003001,61670,61670/1002,2,5,671,My home,Pick up or drop off a passenger,31602142314,Shop or supermarket,Go home,31003129326,Car driver,Car driver,,,,,,,,140,125,20,9.07,Direct Work Commute
+183731000005,61670,61670/1005,1,1,680,My home,At Home,31605154303,Other work-related place,Go home,30101100448,Walking,Car driver,,,,,,,,255,0,10,12.45,Education
+278531003004,61670,61670/1005,2,2,550,Other place (please specify),Personal business,31105132403,Shop or supermarket,Go home,31102130910,Car passenger,Walking,,,,,,,,640,,10,3.6,Shopping
+617531001002,61670,61670/1006,1,1,695,My home,Eat/drink,30501111109,My workplace,Pick up or drop off a passenger,31003129326,Car driver,Car passenger,,,,,,,,315,118,10,11.57,Education
+55291003002,61670,61670/1006,2,3,260,My home,Pick up or drop off a passenger,30909126305,My home,Education,31606144426,Car driver,Car driver,,,,,,,,950,,10,8.99,Shopping
+635921000002,61753,61753/1000,1,2,225,"Restaurant, cafÃ©, or food outlet",Eat/drink,30303106404,My home,Pick up or drop off a passenger,31106133026,Car passenger,Car passenger,,,,,,,,690,5,30,18.17,Education
+664751008002,61753,61753/1000,2,4,255,My home,Work (my workplace),31401138414,My home,Personal business,31607154514,Train,Car passenger,,,,,,,,425,14,70,9.63,Recreation
+22901004006,61753,61753/1001,1,4,520,My workplace,Pick up or drop off a passenger,31105132525,Other place (please specify),Work (my workplace),31401138325,Truck driver,Car driver,,,,Walking,,,,543,78,15,6.54,Shopping
+775621005001,61753,61753/1001,2,2,280,Childcare or kindergarten,At Home,31104157034,Other place (please specify),Go home,31602142309,Walking,Car driver,,,,,,,,235,,5,5.24,Recreation
+278531000006,61753,61753/1001,3,3,285,Primary or secondary school,At Home,31004129921,My home,Education,31105132807,Car driver,Car driver,,,,,,,,460,65,30,17.55,Pickup/Dropoff Someone
+125941000003,61753,61753/1001,4,1,260,Other work-related place,Pick up or drop off a passenger,31305137919,Other place (please specify),Just accompanying someone,31105132525,Car driver,Car driver,,,,,,,,355,,5,0.77,Shopping
+226331000007,61753,61753/1001,5,5,950,Other place (please specify),Shopping,31001127511,My home,Work (my workplace),31305137809,Car passenger,Car driver,,,,,,,,664,435,210,12.24,Shopping
+616701000001,61753,61753/1001,6,3,230,My home,Go home,30305107632,Primary or secondary school,Go home,30302105531,Car passenger,Car driver,,,,,,,,630,,10,1.53,Personal Business
+203701000002,61753,61753/1001,7,1,780,Primary or secondary school,Education,31001127512,Primary or secondary school,Work (my workplace),31004130219,Car driver,Car driver,Light rail,,,,,,,660,1,15,7.77,Direct Work Commute
+168701001001,61753,61753/1001,8,3,210,My home,Recreation/leisure activity,31003128323,Other place (please specify),Go home,31102130913,Car driver,Car driver,,,,,,,,712,,15,9.23,Education
+278531003003,61753,61753/1001,9,1,255,My workplace,Shopping,31003129122,My workplace,Pick up or drop off a passenger,30901122509,Public bus,Car driver,,,,,,,,345,242,20,10.89,Direct Work Commute
+84301000001,62368,62368/1000,1,1,690,My workplace,Work (my workplace),31102130622,My home,Go home,31003128323,Car passenger,Walking,,,,,,,,265,345,7,13.13,Recreation
+22901004002,62368,62368/1000,2,3,620,My home,At Home,30501111112,My home,Go home,31105132403,Car driver,Car driver,,,,,,,,300,65,25,10.64,Shopping
+23871000001,62368,62368/1000,3,1,480,Primary or secondary school,At Home,31305137809,Other place (please specify),Shopping,31102130910,Car passenger,Car driver,,,,,,,,135,60,9,19.85,Work Related
+606481000002,62368,62368/1000,4,6,675,My home,Personal business,31105132525,My home,Go home,31401138414,Walking,Car passenger,,,,,,,,165,535,10,4.54,Accompany Someone
+226331000003,62368,62368/1002,1,2,555,Someone else's home,At Home,30501111014,My home,Go home,31106133026,Car passenger,Car passenger,,,,,,,,425,,210,12.86,Personal Business
+775621003004,62368,62368/1002,2,2,155,My home,Education,31102130916,My home,Personal business,31106133026,Car driver,Walking,,,,,,,,385,150,30,1.27,Recreation
+61481001002,62368,62368/1003,1,2,670,Primary or secondary school,Personal business,31401138325,Light rail stop,Go home,30501111112,Car driver,Car driver,,,,,,,,777,540,30,7.7,Shopping
+22901002003,62368,62368/1003,2,2,650,My workplace,Work (other work reason),31003129122,"Restaurant, cafÃ©, or food outlet",Go home,30905124513,Car driver,Truck driver,,,,,,,,960,,15,1.07,Personal Business
+278531000009,62471,62471/1000,1,1,105,My workplace,Recreation/leisure activity,30501110513,Other place (please specify),Personal business,31606144426,Walking,Car passenger,,,,,,,,240,5,15,213.45,Shopping
+161981001003,62471,62471/1000,2,4,720,My home,Recreation/leisure activity,31004130219,My home,Go home,31403139308,Car passenger,Car driver,,,,,,,,815,,20,7.49,Shopping
+22901002002,62471,62471/1000,3,1,670,Train station,Education,30501111112,My home,Go home,31002128230,Car driver,Walking,,,,,,,,25,,15,12.24,Pickup/Dropoff Someone
+168701002003,62471,62471/1000,4,2,520,My home,Go home,30501111112,Someone else's home,Education,31103131213,Car driver,Car driver,,,,,,,,115,535,10,0.0,Direct Work Commute
+211761001002,62471,62471/1000,5,3,615,My home,Education,30101100407,My home,Pick up or drop off a passenger,30204104510,Train,Car driver,,,,,,,,260,180,30,4.47,Shopping
+164811000002,62471,62471/1000,6,3,510,My home,At Home,31004130226,My home,Shopping,31004129801,Car driver,Truck driver,,,,,,,,165,375,15,78.22,Pickup/Deliver Something
+775621001006,63592,63592/1000,1,1,645,Other place (please specify),At Home,31003129326,"Restaurant, cafÃ©, or food outlet",Eat/drink,31003128725,Car driver,Car driver,,,,,,,,510,500,15,14.5,Direct Work Commute
+232101002002,63592,63592/1000,2,2,840,"Restaurant, cafÃ©, or food outlet",At Home,30910126725,My home,Go home,30503113111,Car driver,Car driver,,Walking,,,,,,960,,30,1.05,Personal Business
+183291000001,63592,63592/1000,3,1,90,Primary or secondary school,Work (my workplace),30302105531,My home,Go home,31605154310,Train,Car passenger,,,,,,,,535,19,15,7.7,Accompany Someone
+22901001009,63592,63592/1001,1,1,150,My home,Go home,30305107632,My home,Go home,30203103603,Car driver,Car driver,,,,,,,,620,90,15,21.37,Shopping
+22901003003,63592,63592/1001,2,1,5,Other place (please specify),At Home,31605143721,My home,Pick up or drop off a passenger,31601141423,Car driver,Car driver,,,,,,,,255,5,10,23.15,Shopping
+641791000004,63592,63592/1001,3,4,360,Other place (please specify),At Home,31003128906,My home,Just accompanying someone,30902123307,Car passenger,Car driver,,,,,,,,375,27,15,6.42,Shopping
+278531001003,63817,63817/1000,1,4,205,My home,Go home,31302136618,My home,Go home,31302136905,Car driver,Car driver,,,,,,,,680,115,30,3.48,Direct Work Commute
+216211003006,63817,63817/1000,2,8,210,My home,Education,31403139308,My home,Work (my workplace),31001127114,Car driver,Car driver,,,,,,,,255,,15,10.04,Shopping
+55291000008,63817,63817/1001,1,3,1020,Other place (please specify),Education,31605154305,My home,Personal business,30302105531,Car driver,Car driver,,,,,,,,745,95,40,7.77,Recreation
+638171000001,63817,63817/1001,2,2,810,My home,Shopping,30901122509,My workplace,Recreation/leisure activity,31105132403,Car driver,Car driver,,,,,,,,410,315,10,48.9,Accompany Someone
+659341001002,64179,64179/1000,1,3,760,My home,Work (my workplace),31004129801,My home,Go home,30909126308,Train,Car driver,,,,,,,,270,0,15,11.58,Shopping
+623681002002,64179,64179/1000,2,1,150,Childcare or kindergarten,Go home,31102130913,My home,Go home,30501111109,Walking,Walking,,,,,,,,315,,15,2.21,Shopping
+94321003001,64179,64179/1000,3,4,795,Primary or secondary school,At Home,31004129801,Someone else's home,Go home,30101100121,Walking,Car driver,,,,,,,,265,,30,2.62,Recreation
+232101000002,64179,64179/1000,4,2,390,Shop or supermarket,Shopping,31605143711,My home,Education,31607154514,Car driver,Car driver,,,,,,,,738,240,7,9.44,Recreation
+68531002006,64179,64179/1001,1,7,773,Other place (please specify),Just accompanying someone,31401138414,My home,Pick up or drop off a passenger,31001127441,Car driver,Walking,,,,,,,,310,490,25,19.82,Accompany Someone
+775621000004,64179,64179/1001,2,2,180,My home,Pick up or drop off a passenger,30905124513,Shop or supermarket,Go home,31401138229,Car driver,Car driver,,,,,,,,570,530,20,10.89,Pickup/Dropoff Someone
+23871002001,64179,64179/1001,3,1,635,My home,At Home,31102130913,My home,Recreation/leisure activity,30302105531,Walking,Car passenger,,,,,,,,860,400,10,21.25,Direct Work Commute
+211761001001,64179,64179/1001,4,1,640,My workplace,At Home,30102100727,Shop or supermarket,Go home,30501111109,Car driver,Car driver,,,,,,,,915,360,25,1.53,Recreation
+249251000002,65934,65934/1001,1,2,705,My home,Go home,30102101211,Primary or secondary school,Recreation/leisure activity,31004130226,Car driver,Walking,,,,,,,,360,250,15,0.77,Personal Business
+775621002007,65934,65934/1001,2,6,180,My home,Work (my workplace),31003128725,Primary or secondary school,Go home,31605143711,Walking,Car driver,,,,,,,,940,45,20,3.73,Personal Business
+232101003003,65934,65934/1002,1,2,285,My home,Go home,30302105315,Other place (please specify),Recreation/leisure activity,31401138325,Car driver,Car driver,,,,,,,,815,520,45,1.53,Personal Business
+164811001001,65934,65934/1002,2,5,780,My home,Just accompanying someone,31004129912,Other place (please specify),Shopping,31602141906,Car driver,Car driver,,,,,,,,270,,20,56.48,Shopping
+617531001009,65934,65934/1002,3,2,660,Other place (please specify),Work (my workplace),30909154018,Primary or secondary school,Recreation/leisure activity,30101100448,Car driver,Car driver,,,,,,,,810,211,60,5.17,Direct Work Commute
+183731000003,65934,65934/1002,4,1,660,My home,Pick up or drop off a passenger,31102130913,My home,Work (my workplace),31105132403,Charter/Courtesy/Other bus,Car driver,,,,,,,,780,,15,8.74,Direct Work Commute
+664751002004,65934,65934/1002,5,7,510,My workplace,Personal business,31105132403,Shop or supermarket,Go home,31605154305,Taxi or ride share e.g. Uber,Car passenger,,,,,,,,335,16,35,23.82,Education
+278531001001,65934,65934/1002,6,9,555,My home,Go home,31004130258,Primary or secondary school,Go home,30501111109,Car driver,Car driver,,,,,,,,705,215,10,1.39,Work Related
+161981000005,66475,66475/1001,1,2,420,My home,Recreation/leisure activity,30204104111,Primary or secondary school,Go home,30501111112,Car passenger,Walking,,,,,,,,705,240,30,9.03,Education
+32201001002,66475,66475/1001,2,5,420,My workplace,At Home,31105132807,Primary or secondary school,Go home,31004129801,Car driver,Car driver,,,,,,,,355,40,7,5.17,Accompany Someone
+775621004001,66475,66475/1001,3,6,170,Primary or secondary school,Shopping,30905124513,Someone else's home,Pick up or drop off a passenger,30201102205,Car driver,Car driver,,,,,,,,270,540,6,0.85,Education
+638171001001,66475,66475/1001,4,4,250,Other place (please specify),Recreation/leisure activity,31607154841,My home,Work (my workplace),31605154303,Car passenger,Walking,,,,,,,,805,,30,1.04,Education
+269621003001,66475,66475/1004,1,4,150,My home,Go home,30501111109,My home,Go home,31106133025,Car driver,Car driver,,,,,,,,490,,5,38.08,Work Related
+269621000001,66475,66475/1004,2,3,740,Other place (please specify),At Home,30103102031,My workplace,Recreation/leisure activity,31605143711,Car driver,Car driver,,,,,,,,960,245,210,0.77,Recreation
+183731000001,66475,66475/1004,3,4,270,My home,At Home,31302157235,My workplace,Pick up or drop off a passenger,30102101211,Car driver,Car driver,,,,,,,,443,,7,3.9,Direct Work Commute
+276811000002,66475,66475/1008,1,9,661,Other place (please specify),Recreation/leisure activity,31605154303,My home,Go home,30302105309,Car driver,Uber / Other Ride Share,,,,,,,,670,,5,1.05,Personal Business
+775621002001,66475,66475/1008,2,1,735,Other place (please specify),Go home,31001127114,My workplace,Shopping,30501111112,Motorcycle driver,Car passenger,,,,,,,,840,150,10,3.57,Education
+22901003001,77562,77562/1000,1,3,760,My home,Go home,31004129922,Primary or secondary school,Go home,30902123307,Car driver,Car passenger,,,,,,,,690,415,35,20.62,Education
+664751002001,77562,77562/1000,2,2,355,My home,Shopping,31003128740,Shop or supermarket,Go home,31302136609,Walking,School bus (private/chartered),,,,,,,,580,15,31,1.69,Direct Work Commute
+624711000006,77562,77562/1000,3,4,735,My home,Personal business,30909154018,Primary or secondary school,Work (my workplace),31402157602,Car driver,Car driver,,,,,,,,575,660,30,17.75,Work Related
+22901004008,77562,77562/1000,4,4,0,My workplace,Shopping,30501110531,My home,Personal business,31605154305,Car driver,Car passenger,,,,,,,,690,,20,12.62,Work Related
+226331000001,77562,77562/1000,5,8,755,Shop or supermarket,Recreation/leisure activity,31003128725,Other place (please specify),Shopping,31607154836,Walking,Car driver,,,,,,,,433,55,18,72.52,Shopping
+232101003002,77562,77562/1001,1,2,670,My home,At Home,31302136612,Someone else's home,Work (my workplace),31004130248,Truck driver,Car driver,,,,,,,,225,25,10,1.11,Personal Business
+232101001004,77562,77562/1001,2,8,600,My home,At Home,30201102205,My home,Go home,30204104111,Car driver,Car driver,,,,,,,,150,97,30,2.02,Direct Work Commute
+617531000001,77562,77562/1001,3,1,720,My home,Work (my workplace),31607154514,My workplace,Shopping,31607154503,Car passenger,Car driver,Train,,,,,,,885,77,2,4.96,Pickup/Dropoff Someone
+23871000005,77562,77562/1001,4,3,810,My home,Work (my workplace),30503113111,Other place (please specify),Eat/drink,31607154839,Car passenger,Car driver,,,,,,,,425,,40,23.77,Shopping
+232101002001,77562,77562/1001,5,2,675,"Restaurant, cafÃ©, or food outlet",Education,30501111109,Childcare or kindergarten,Go home,30901122907,Car passenger,Walking,,,,,,,,515,,30,3.99,Work Related
+616701005002,77562,77562/1001,6,1,570,Shop or supermarket,At Home,31605143711,Shop or supermarket,Recreation/leisure activity,30503112613,Car driver,Car driver,,Car passenger,,,,,,298,,5,7.95,Personal Business
+616701006001,77562,77562/1003,1,3,240,Other place (please specify),At Home,31305137910,My home,Work (other work reason),30501110536,Car passenger,Car driver,,,,,,,,970,0,5,2.81,Direct Work Commute
+278531000001,77562,77562/1003,2,5,650,Other place (please specify),Go home,31301136358,Primary or secondary school,Go home,31104157125,Car driver,Walking,,,,,,,,460,120,45,0.82,Recreation
+22901001003,77562,77562/1003,3,2,250,Shop or supermarket,Work (my workplace),30302105315,My home,Go home,31004129921,Car passenger,Car driver,,,,,,,,565,,30,1.82,Personal Business
+249251000001,77562,77562/1003,4,1,405,My home,At Home,30201102505,My workplace,Social Visit,31102130913,Car driver,Car passenger,,,,,,,,685,0,30,1.53,Direct Work Commute
+616701006002,77562,77562/1003,5,4,470,Other place (please specify),At Home,31103131417,My workplace,Education,30910126723,Car driver,Car passenger,,,,,,,,745,90,20,5.22,Pickup/Dropoff Someone
+23871000003,77562,77562/1004,1,6,620,Shop or supermarket,At Home,30501111109,My home,Go home,31602142314,Car driver,Car passenger,,,,,,,,763,5,20,18.52,Recreation
+55291003001,77562,77562/1004,2,8,525,My workplace,Recreation/leisure activity,31401138414,Other work-related place,Go home,31104157126,Car passenger,Car passenger,,,,,,,,220,610,10,12.22,Shopping
+22901001007,77562,77562/1005,1,3,420,Primary or secondary school,Pick up or drop off a passenger,30905124311,My home,Recreation/leisure activity,31302136618,Car passenger,Car driver,,,,,,,,135,,5,2.02,Shopping
+22901001004,77562,77562/1005,2,4,285,My home,Go home,31605154310,Other place (please specify),Go home,30501110536,Car driver,Walking,,,,,,,,740,10,4,7.95,Direct Work Commute
+278531001005,61670,61670/1002,3,1,320,My home,Go home,30403109615,My home,Personal business,30909126305,Car passenger,Car driver,,,,,,,,825,150,5,6.38,Personal Business
+23871001001,7113,7113/1000,1,3,150,Shop or supermarket,Education,31004129921,My home,Go home,31401138214,Car driver,Car passenger,,,,,,,,940,0,30,10.4,Recreation
+23871001002,7113,7113/1000,4,9,825,My home,Pick up or drop off a passenger,30909154011,My campus,Go home,30503113111,Car passenger,Car passenger,,,,,,,,370,5,30,9.86,Work Related
+246791002002,20863,20863/1000,1,2,795,Other place (please specify),Recreation/leisure activity,30501111013,Primary or secondary school,Work (my workplace),30501111109,Car driver,Walking,,,,,,,,985,110,30,2.93,Pickup/Dropoff Someone
+168701002001,20863,20863/1000,4,6,845,My home,Shopping,30302105309,Train station,Recreation/leisure activity,31304137206,Walking,Car driver,,,,,,,,705,110,25,9.2,Recreation
+161981001006,27853,27853/1002,1,2,255,My home,Education,31403139308,Primary or secondary school,Shopping,31403139435,Car driver,Walking,,,,,,,,270,75,10,5.25,Personal Business
+232101009001,27853,27853/1002,4,7,260,Shop or supermarket,Go home,31401138325,Other place (please specify),Go home,31601141423,Car driver,Car driver,,,,,,,,300,94,14,7.49,Recreation
+55291000005,66475,66475/1002,1,1,595,Other place (please specify),Personal business,30905124311,My workplace,Go home,30501111109,Car driver,School bus (private/chartered),,,,,,,,617,114,10,7.49,Recreation
+278531004004,66475,66475/1002,4,2,480,My home,Pick up or drop off a passenger,30204104111,My home,Pick up or drop off a passenger,30501110531,Car driver,Walking,,,,,,,,855,200,40,3.16,Direct Work Commute
+223541003002,77562,77562/1002,1,4,660,Primary or secondary school,Shopping,31105132505,My home,Shopping,30501111112,Car passenger,Car driver,,,,,,,,860,535,20,8.75,Pickup/Dropoff Someone
+227881000002,77562,77562/1002,4,4,661,My home,At Home,31302136905,My home,Education,30302105531,Car driver,Car driver,,Walking,,,,,,225,70,10,213.45,Shopping
+617531001003,77562,77562/1002,7,1,750,My home,At Home,30302105309,Other place (please specify),Go home,31605154303,Car driver,Car driver,,,,,,,,735,70,15,1.27,Direct Work Commute
+22901000001,6853,6853/1002,1,2,280,My workplace,At Home,30302105309,Other place (please specify),Go home,31302136612,Car driver,Truck driver,,,,,,,,510,60,15,1.27,Direct Work Commute
+55291001002,6853,6853/1002,6,3,355,My home,At Home,31605143711,Primary or secondary school,Education,31106133025,Walking,Walking,,,,,,,,780,245,15,1.09,Direct Work Commute
+161981001004,21621,21621/1003,1,10,150,Other place (please specify),Work (my workplace),31004130248,My campus,Go home,30905124311,Car driver,Car passenger,Car driver,,,,,,,260,35,7,2.91,Accompany Someone
+246791000001,21621,21621/1003,6,6,510,Train station,Shopping,31607154839,Other place (please specify),Work (my workplace),31102130913,Car driver,Car passenger,,,,Walking,,,,360,0,5,1.27,Direct Work Commute

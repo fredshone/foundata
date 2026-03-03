@@ -164,6 +164,33 @@ def template() -> Path:
     return Path(__file__).parent.parent / "configs" / "core" / "template.yaml"
 
 
+def compute_avg_speed(
+    attributes: pl.DataFrame, trips: pl.DataFrame
+) -> pl.DataFrame:
+    """Add avg_speed (km/h) column to attributes.
+
+    Computed as total trip distance / total trip duration per person.
+    Null for persons with no valid trips or zero total duration.
+    """
+    speed = (
+        trips.with_columns(duration=pl.col("tet") - pl.col("tst"))
+        .filter(pl.col("duration") > 0)
+        .filter(pl.col("distance").is_not_null())
+        .group_by("pid")
+        .agg(
+            total_distance=pl.col("distance").sum(),
+            total_duration=pl.col("duration").sum(),
+        )
+        .with_columns(
+            avg_speed=(
+                pl.col("total_distance") / (pl.col("total_duration") / 60)
+            ).cast(pl.Float32)
+        )
+        .select("pid", "avg_speed")
+    )
+    return attributes.join(speed, on="pid", how="left")
+
+
 def get_template_attributes() -> set[str]:
     # load yaml config and return set of expected columns
     with open(template()) as f:

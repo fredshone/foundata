@@ -5,6 +5,7 @@ import polars as pl
 from .fix import day_wrap
 from .utils import (
     bounds_from_list,
+    compute_avg_speed,
     config_for_year,
     sample_aus_to_euro,
     sample_int_range,
@@ -92,6 +93,9 @@ def load_years(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
+
+    attributes = compute_avg_speed(attributes, trips)
+
     return attributes, trips
 
 

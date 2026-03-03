@@ -1,0 +1,51 @@
+hhid,surveyperiod,travdow,travmonth,daytype,dwelltype,owndwell,hhsize,hhinc,visitors,aveage,youngest,oldest,yearslived,monthslived,adultbikes,kidsbikes,totalbikes,cars,fourwds,utes,vans,trucks,mbikes,othervehs,totalvehs,wdhhwgt_LGA,wehhwgt_LGA,homeLGA,homesubregion_ASGC,homeregion_ASGC
+Y12H0070532,2018-19,Sunday,May,Weekday,Terrace/Townhouse,Fully Owned,2,"$1,875",0,59,56,45,55,4,0,0,2,1,1,0,0,0,0,0,0,,126.5,Glen Eira (C),MELB - Outer,MSD_31LGAs
+Y12H0210541,2014-15,Sunday,May,Weekday,Other,Being Purchased,2,"$2,100",0,78,32,65,2,2,0,0,2,0,1,0,0,0,0,0,1,52.91,174.79,Hume (C),MELB - Outer,MSD_31LGAs
+Y13H0250128,2019-20,Thursday,March,Weekday,Separate House,Fully Owned,4,$350,0,50,18,45,7,7,1,0,0,3,1,0,0,0,0,0,3,72.22,,Greater Geelong (C),MELB - Outer,MSD_31LGAs
+Y13H0310103,2015-16,Saturday,January,Weekday,Flat or Apartment,Fully Owned,3,"$4,625",0,16,0,57,0,5,2,0,0,2,0,1,0,0,0,0,0,83.4,,Melbourne (C),MELB - Outer,MSD_31LGAs
+Y13H0440423,2016-17,Saturday,January,Weekend,Separate House,Being Purchased,6,$75,0,62,5,41,0,4,2,0,4,2,0,0,0,0,0,0,5,,,Kingston (C) (Vic.),MELB - Outer,MSD_31LGAs
+Y13H0630236,2015-16,Sunday,April,Weekday,Separate House,Fully Owned,3,"$2,500",0,21,15,79,1,0,0,0,0,2,1,0,0,0,0,0,2,77.9,170.8,Moreland (C),MELB - Middle,MSD_31LGAs
+Y13H0730202,2017-18,Saturday,August,Weekday,Other,Being Purchased,4,"$2,750",5,38,0,60,4,7,0,2,1,1,0,0,0,0,0,0,2,,,Moonee Valley (C),MELB - Outer,MSD_31LGAs
+Y14H0760427,2013-14,Sunday,September,Weekday,Flat or Apartment,Fully Owned,4,"$1,375",0,40,22,76,0,1,0,0,2,1,1,0,0,0,0,0,1,,197.78,Banyule (C),MELB - Middle,GeelongLGA
+Y14H0780126,2013-14,Tuesday,June,Weekday,Separate House,Being Rented,2,"$3,950",0,45,28,50,54,8,2,0,0,2,1,0,0,0,0,0,2,93.7,,Wyndham (C),MELB - Middle,MSD_31LGAs
+Y14H0800139,2019-20,Tuesday,January,Weekday,Flat or Apartment,Fully Owned,1,"$1,800",0,74,29,50,2,0,1,0,0,3,0,0,0,0,0,0,2,108.85,785.09,Frankston (C),Geelong,MSD_31LGAs
+Y14H0870410,2013-14,Tuesday,December,Weekday,Separate House,Fully Owned,4,$725,0,61,37,78,2,5,1,0,0,1,0,0,0,0,0,0,1,65.16,370.84,Whitehorse (C),MELB - Outer,MSD_31LGAs
+Y14H0940318,2012-13,Sunday,March,Weekday,Separate House,Fully Owned,3,$900,0,20,2,24,37,11,0,0,0,1,0,0,0,0,0,0,0,,,Darebin (C),MELB - Middle,MSD_31LGAs
+Y14H0980103,2017-18,Saturday,March,Weekend,Separate House,Fully Owned,1,$250,0,44,29,41,0,0,0,0,0,2,1,0,0,0,0,0,2,91.6,,Casey (C),MELB - Outer,MSD_31LGAs
+Y14H1020421,2012-13,Thursday,September,Weekend,Separate House,Something Else,4,"$1,950",0,73,78,52,3,6,4,0,0,0,0,0,0,0,0,0,1,70.26,,Greater Geelong (C),MELB - Middle,MSD_31LGAs
+Y14H1020427,2016-17,Saturday,March,Weekday,Separate House,Being Purchased,2,$700,0,41,73,73,29,2,2,0,0,2,0,0,0,0,0,0,2,,284.19,Boroondara (C),MELB - Middle,MSD_31LGAs
+Y14H1030225,2013-14,Thursday,February,Weekday,Separate House,Fully Owned,2,$500,0,72,54,34,16,5,0,2,4,0,0,0,0,0,0,0,1,,,Brimbank (C),MELB - Inner,MSD_31LGAs
+Y14H1041003,2014-15,Friday,May,Weekend,Separate House,Being Rented,2,"$1,725",0,34,34,65,50,11,1,0,0,1,0,0,0,0,0,0,2,,,Moreland (C),MELB - Middle,MSD_31LGAs
+Y14H1060306,2014-15,Sunday,October,Weekend,Separate House,Being Rented,3,$700,0,37,3,58,7,0,0,0,1,1,1,0,0,0,0,0,1,,,Darebin (C),MELB - Middle,MSD_31LGAs
+Y14H1090211,2015-16,Sunday,September,Weekday,Separate House,Fully Owned,1,,0,63,5,68,1,0,0,0,0,1,0,0,0,0,0,0,3,79.58,210.6,Moreland (C),MELB - Outer,MSD_31LGAs
+Y14H1130232,2012-13,Tuesday,June,Weekend,Separate House,Fully Owned,3,$350,0,35,66,61,27,0,0,0,0,1,1,0,0,0,0,0,1,,262.23,Moreland (C),MELB - Middle,GeelongLGA
+Y15H1291027,2015-16,Thursday,January,Weekend,Flat or Apartment,Fully Owned,1,"$2,450",0,62,17,39,22,3,0,0,1,3,0,1,0,0,0,0,2,80.77,,Greater Dandenong (C),Geelong,MSD_31LGAs
+Y15H1300327,2013-14,Thursday,July,Weekday,Terrace/Townhouse,Being Purchased,2,"$1,725",0,64,62,77,28,6,0,0,2,0,1,0,0,0,0,0,3,109.14,,Casey (C),MELB - Middle,MSD_31LGAs
+Y15H1370139,2017-18,Monday,August,Weekday,Other,Being Rented,4,,0,30,43,39,20,0,2,0,0,1,0,0,0,0,0,0,1,,,Casey (C),MELB - Middle,MSD_31LGAs
+Y15H1390137,2013-14,Wednesday,July,Weekend,Separate House,Fully Owned,2,$700,0,28,37,37,5,4,1,0,2,2,0,0,0,0,0,0,2,104.22,,Knox (C),MELB - Middle,MSD_31LGAs
+Y15H1480416,2017-18,Thursday,September,Weekend,Separate House,Being Purchased,2,"$1,700",0,35,59,18,40,0,1,0,2,0,0,0,0,0,0,0,2,,611.95,Whitehorse (C),MELB - Outer,MSD_31LGAs
+Y15H1591015,2018-19,Friday,February,Weekend,Separate House,Being Purchased,3,"$1,624",1,60,6,72,5,5,0,0,1,1,0,0,0,0,0,0,3,,,Greater Geelong (C),MELB - Outer,MSD_31LGAs
+Y15H1690329,2019-20,Wednesday,February,Weekday,Flat or Apartment,Being Rented,2,$450,0,61,42,39,5,0,1,0,0,2,0,0,0,0,0,0,0,66.62,159.89,Wyndham (C),MELB - Outer,MSD_31LGAs
+Y16H1890123,2013-14,Tuesday,August,Weekday,Separate House,Being Rented,5,"$1,600",1,34,59,41,35,0,0,1,0,2,0,0,0,0,0,0,2,130.04,153.39,Darebin (C),MELB - Middle,MSD_31LGAs
+Y16H1990113,2019-20,Friday,July,Weekday,Separate House,Fully Owned,2,"$2,500",0,57,38,37,10,0,0,0,2,1,1,0,0,0,0,0,1,78.92,,Maribyrnong (C),MELB - Middle,MSD_31LGAs
+Y17H2330414,2013-14,Saturday,December,Weekend,Separate House,Fully Owned,2,$725,0,18,43,88,13,3,2,0,1,1,2,0,0,0,0,0,1,,,Boroondara (C),Geelong,MSD_31LGAs
+Y17H2380228,2013-14,Thursday,May,Weekday,Separate House,Being Purchased,4,"$3,400",0,65,63,62,21,1,0,0,2,1,1,0,0,0,0,0,2,143.64,235.81,Yarra Ranges (S),MELB - Outer,MSD_31LGAs
+Y17H2410504,2017-18,Friday,May,Weekday,Separate House,Being Purchased,2,"$2,250",0,63,18,68,1,0,0,0,2,2,0,0,0,0,0,0,0,70.68,,Boroondara (C),MELB - Middle,MSD_31LGAs
+Y17H2550142,2012-13,Thursday,September,Weekend,Separate House,Fully Owned,3,"$1,125",0,40,37,62,11,5,1,0,3,0,0,0,0,0,0,0,3,86.53,,Casey (C),MELB - Outer,MSD_31LGAs
+Y18H2940139,2013-14,Sunday,May,Weekday,Separate House,Fully Owned,1,"$1,950",0,38,79,75,30,2,1,0,1,1,0,0,0,0,0,0,1,,262.7,Moreland (C),MELB - Middle,MSD_31LGAs
+Y18H2960126,2018-19,Sunday,January,Weekday,Separate House,Fully Owned,2,$500,0,33,73,34,7,7,0,2,0,1,0,0,0,0,0,0,1,88.27,,Yarra Ranges (S),MELB - Middle,MSD_31LGAs
+Y18H3002113,2018-19,Sunday,September,Weekend,Other,Being Rented,2,$750,0,57,62,43,1,3,2,0,2,1,0,0,0,0,0,0,2,,255.53,Mornington Peninsula (S),MELB - Outer,MSD_31LGAs
+Y18H3030412,2016-17,Saturday,March,Weekday,Flat or Apartment,Fully Owned,3,"$1,475",0,30,33,33,7,7,0,2,0,1,0,0,0,0,0,0,2,51.03,,Monash (C),MELB - Outer,MSD_31LGAs
+Y18H3100227,2013-14,Wednesday,July,Weekend,Separate House,Fully Owned,1,$900,0,20,62,55,13,5,2,0,4,1,0,0,0,0,0,0,3,,261.57,Cardinia (S),MELB - Outer,MSD_31LGAs
+Y18H3100526,2014-15,Wednesday,January,Weekend,Separate House,Being Rented,2,$700,0,5,63,74,7,6,0,1,0,2,0,0,0,0,0,0,2,84.22,,Whittlesea (C),MELB - Middle,MSD_31LGAs
+Y18H3140142,2012-13,Tuesday,November,Weekday,Separate House,Fully Owned,2,"$2,750",0,22,50,63,3,1,2,1,3,4,0,0,0,0,0,0,2,61.37,,Moreland (C),MELB - Outer,MSD_31LGAs
+Y18H3200207,2017-18,Thursday,March,Weekday,Separate House,Being Purchased,5,"$1,175",0,22,13,72,8,8,0,0,0,1,1,0,0,0,0,0,4,481.41,206.92,Casey (C),MELB - Outer,GeelongLGA
+Y18H3350116,2013-14,Saturday,July,Weekend,Terrace/Townhouse,Fully Owned,2,,0,54,41,28,1,0,1,0,1,3,1,0,0,1,0,0,2,98.95,,Whitehorse (C),MELB - Middle,MSD_31LGAs
+Y19H3371014,2019-20,Friday,March,Weekend,Separate House,Fully Owned,4,"$3,400",0,67,14,50,10,0,2,0,2,0,0,0,0,0,0,0,1,86.71,,Manningham (C),MELB - Middle,MSD_31LGAs
+Y19H3572405,2016-17,Monday,February,Weekday,Separate House,Being Rented,4,"$1,800",0,39,70,34,14,1,0,2,2,0,1,0,0,0,0,0,1,,,Knox (C),MELB - Middle,MSD_31LGAs
+Y19H3700142,2014-15,Saturday,January,Weekday,Terrace/Townhouse,Fully Owned,2,"$2,425",0,74,3,49,46,4,1,0,1,1,0,0,0,0,0,0,4,63.72,142.97,Brimbank (C),MELB - Middle,MSD_31LGAs
+Y19H3710325,2019-20,Wednesday,December,Weekday,Terrace/Townhouse,Fully Owned,1,$450,2,88,72,69,1,5,2,0,4,4,0,0,0,0,0,0,1,80.19,,Greater Dandenong (C),MELB - Outer,MSD_31LGAs
+Y19H3740431,2014-15,Tuesday,July,Weekend,Separate House,Fully Owned,1,"$1,900",0,17,62,73,18,5,2,0,0,1,0,0,0,0,0,0,2,85.74,,Port Phillip (C),Geelong,GeelongLGA
+Y19H3800502,2014-15,Wednesday,March,Weekend,Other,Being Rented,1,"$1,625",0,27,88,54,0,1,2,0,0,0,0,0,0,0,0,0,2,,375.04,Monash (C),MELB - Inner,MSD_31LGAs
+Y20H3960524,2014-15,Thursday,October,Weekday,Separate House,Being Rented,3,"$1,375",0,34,12,32,1,1,1,0,1,1,0,0,0,0,0,0,1,109.54,,Casey (C),MELB - Outer,MSD_31LGAs
+Y20H3980242,2018-19,Monday,August,Weekday,Separate House,Being Purchased,1,"$1,225",0,79,37,57,0,0,0,0,0,1,0,0,1,0,0,0,3,81.45,,Greater Geelong (C),MELB - Middle,MSD_31LGAs
