@@ -45,6 +45,7 @@ def sample_attributes_df():
             "day": ["monday", "tuesday"],
             "rurality": ["urban", "suburban"],
             "weight": [1.0, 1.5],
+            "avg_speed": [30.0, 25.0],
         }
     )
 

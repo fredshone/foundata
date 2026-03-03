@@ -125,3 +125,63 @@ def test_columns_extra(sample_attributes_df, sample_trips_df, capsys):
     result = verify.columns(attrs, sample_trips_df)
     captured = capsys.readouterr()
     assert "extra_col" in captured.out
+
+
+# --- verify.activity_consistency ---
+
+def _make_trips(rows):
+    return pl.DataFrame(rows, schema={"pid": pl.String, "seq": pl.Int32, "oact": pl.String, "dact": pl.String, "ozone": pl.String, "dzone": pl.String})
+
+
+def test_activity_consistency_pass():
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2"},
+        {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1"},
+    ])
+    assert verify.activity_consistency(trips) is True
+
+
+def test_activity_consistency_fail(capsys):
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2"},
+        {"pid": "p1", "seq": 2, "oact": "shop", "dact": "home", "ozone": "z2", "dzone": "z1"},
+    ])
+    result = verify.activity_consistency(trips)
+    assert result is False
+    assert "inconsistencies" in capsys.readouterr().out
+
+
+def test_activity_consistency_skips_unknown():
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "unknown", "ozone": "z1", "dzone": "z2"},
+        {"pid": "p1", "seq": 2, "oact": "shop", "dact": "home", "ozone": "z2", "dzone": "z1"},
+    ])
+    assert verify.activity_consistency(trips) is True
+
+
+# --- verify.location_consistency ---
+
+def test_location_consistency_pass():
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2"},
+        {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1"},
+    ])
+    assert verify.location_consistency(trips) is True
+
+
+def test_location_consistency_fail(capsys):
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2"},
+        {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z9", "dzone": "z1"},
+    ])
+    result = verify.location_consistency(trips)
+    assert result is False
+    assert "inconsistencies" in capsys.readouterr().out
+
+
+def test_location_consistency_skips_unknown():
+    trips = _make_trips([
+        {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "unknown"},
+        {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z9", "dzone": "z1"},
+    ])
+    assert verify.location_consistency(trips) is True

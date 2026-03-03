@@ -1,0 +1,143 @@
+HHID,PERSID,AGEGROUP,SEX,RELATIONSHIP,CARLICENCE,CARLICTYPE,MCLICENCE,MCLICTYPE,OTHERLICENCE,WORKSTATUS,ANZSCO_1-digit,ANZSCO_3-digit,INDUSTRY,STUDYING,ED_TYPE,MAINACT,STARTPLACE,ANYSTOPS,REASON,LASTLEFT,ASSISTAGE,ASSISTLTHC,ASSISTSTHC,ASSISTDISABILITY,ASSISTENGLISH,ASSISTOTHER,ASSISTANY,RIDESHARETRIPS,RIDESHARENT,RIDESHAREHC,RIDESHAREED,RIDESHARESHOP,RIDESHAREWORK,RIDESHAREOTHER,TAXITRIPS,TAXIENT,TAXIHC,TAXIED,TAXISHOP,TAXIWORK,TAXIOTHER,DEMOGWGT19,PERSWGT19
+11104,11104/1000,14,female,,0,,0,,0,retired,8,,,tertiaryPartTime,,Secondary School,home,1,,,,,,1,,,0,0,,,,,,,,,,,,,,1.0568715,125.77333
+12594,12594/1000,16,female,,1,fullLicence,0,,0,,,,construction,tertiaryPartTime,,Other Activity,home,1,,,,,,,,,0,2,,,,,,,0,,,,,,,1.7570382,61.456593
+12594,12594/1002,12,male,,1,fullLicence,0,,0,,1,,,,-1,Part-time Work,home,1,No need to go out,,,,,,,,0,0,,,,,,,0,,,,,,,1.4008909,32.857178
+16019,16019/1000,5,female,child,0,fullLicence,0,fullLicence,0,otherReason,2,,,,,Secondary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.90349126,83.673737
+16019,16019/1001,15,male,spouse,1,fullLicence,0,,0,workFullTime,,711,health,,,Volunteer/Carer,home,1,,,,,,,,,0,0,,,,,,,,,,,,,,0.88066697,27.150192
+16198,16198/1000,14,male,,0,,0,,0,carer,,,,,,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,1.5110884,97.302605
+16198,16198/1001,15,male,,1,fullLicence,0,,0,retired,,,manufacturing,,1,Secondary School,home,1,No need to go out,,,,,,,,0,0,,,,,,,0,,,,,,,0.25549752,163.74535
+16481,16481/1000,12,female,spouse,0,,0,,0,otherReason,,,,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,,,,,,,,0.25549752,48.076031
+16481,16481/1001,12,female,,1,,0,,0,,6,,retail,,,Full-time TAFE/Uni,home,1,,,,,,,,,,0,,,,,,,0,,,,,,,0.96312314,25.955933
+16870,16870/1000,2,female,,1,fullLicence,0,,0,retired,7,100,,,,Secondary School,other,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.96312314,51.422184
+16870,16870/1001,10,male,spouse,1,,0,,0,workPartTime,6,733,admin,,,Full-time Work,outsideqld,1,,,,,,,,,1,0,,,,,,,0,,,,,,,1.3661337,135.68066
+16870,16870/1002,4,female,,1,fullLicence,0,,0,workFullTime,2,,,,,Part-time Work,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0114914,173.87112
+18329,18329/1000,16,male,spouse,1,fullLicence,0,,0,,5,,,,,Full-time Work,home,1,,11/13/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,0.75386697,114.66544
+18329,18329/1001,20,female,child,1,fullLicence,0,,0,workFullTime,7,,,,,Retired,home,1,,,1,,,,,,0,,,,,,,,,,,,,,,0.98643905,32.604664
+18373,18373/1000,7,male,parent,1,p1Licence,0,,0,otherReason,,,,,,Full-time Work,home,1,Not stated,,,,,,,,0,,,,,,,,0,,,,,,,1.0339358,153.73204
+20370,20370/1000,8,male,,1,,0,,0,workFullTime,,610,,,1,Primary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1369122,56.303875
+20370,20370/1001,2,female,spouse,1,,0,,0,workFullTime,2,732,,secondary,,Part-time Work,home,0,No need to go out,,,,,,,,0,0,,,,,,,0,,,,,,,1.0568715,71.616089
+20423,20423/1000,1,male,spouse,1,,0,,0,workFullTime,3,241,,,,Full-time Work,work,1,,05/08/18 00:00:00,,,,,,,1,0,1,,,,,,0,,,,,,,0.95111287,112.26733
+20863,20863/1000,12,male,spouse,1,,0,,0,retired,,,,secondary,1,Retired,outsideqld,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1369122,62.226311
+20863,20863/1001,15,female,relative,1,fullLicence,0,,0,carer,,100,,,,Retired,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,0.95237744,59.964352
+20863,20863/1003,4,female,spouse,1,fullLicence,0,,0,,5,,manufacturing,secondary,,Part-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.3069905,50.850189
+21176,21176/1000,10,male,child,1,fullLicence,0,,0,longTermIllness,5,,construction,,,Illness,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.5495329,145.09966
+21176,21176/1001,16,female,nonFamily,0,fullLicence,0,,0,,,,transport,primary,-1,Primary School,home,1,,,1,,,,,,0,0,,,,,,,0,,,,,,,1.0622985,28.708567
+21621,21621/1000,13,female,child,0,,0,,0,otherReason,,,,,,Retired,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.73924613,68.053314
+21621,21621/1001,5,female,,1,,0,,0,otherReason,,241,,,,Full-time Work,home,0,No need to go out,,1,,,,,,0,8,,,,,,,0,,,,,,,0.87780035,81.881042
+21621,21621/1003,11,female,,1,fullLicence,0,,0,otherReason,1,,other,,,Retired,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,1.0463727,69.446564
+21621,21621/1004,3,female,spouse,0,fullLicence,0,,0,workFullTime,8,222,,,-1,Full-time Work,,1,,,,,,,,,0,,,,,,,,0,,,,,,,1.754234,171.82011
+22242,22242/1000,1,female,child,1,,0,,0,retired,2,,transport,primary,,Part-time Work,outsideqld,1,,,,,,,,,0,,,,,,,,0,,,,,,,0.86082518,39.214527
+22242,22242/1001,10,female,,1,fullLicence,0,,0,workPartTime,,100,,,,Full-time Work,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,1.0224348,118.03028
+22242,22242/1007,12,male,,1,fullLicence,0,fullLicence,1,workFullTime,,800,,,,Part-time Work,home,1,"Illness, injury or poor health",,,,,,,,1,0,,,,,,,6,,,,,,,1.420791,28.708567
+22242,22242/1008,5,male,,1,,0,,0,workPartTime,,,retail,primary,,Part-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0428389,16.673191
+22242,22242/1009,10,male,child,1,p2Licence,0,,0,retired,7,621,,,,Retired,home,0,,02/21/18 00:00:00,,,,,,,0,0,,,,,1,,0,,,,,,,1.3135777,25.65736
+22242,22242/1010,15,female,child,1,,0,,0,workFullTime,5,,,,,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0485995,67.463493
+22354,22354/1000,7,female,nonFamily,0,fullLicence,0,,0,retired,5,800,,,-1,Full-time Work,home,1,,,,,,,,,1,0,,,,,,,0,,,,,,,0.7959758,123.15691
+22354,22354/1001,12,female,spouse,0,fullLicence,0,,0,retired,6,139,other,,,Secondary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1106435,39.178337
+22354,22354/1002,11,female,child,0,fullLicence,0,,0,retired,,423,,,,Retired,home,1,,05/01/19 00:00:00,,,,,,,0,2,,,,,,,0,,,,,,,0.98769099,161.44801
+22354,22354/1003,5,male,spouse,0,fullLicence,0,,1,retired,8,441,education,tertiaryFullTime,,Full-time Work,home,0,Not stated,,,,,,,,1,,1,,,,,,0,,,,,,,1.3069905,29.989241
+22633,22633/1000,3,male,child,1,,0,,0,,4,,,tertiaryPartTime,,Retired,other,1,,,,,,,,,1,0,,,,,,,0,,,,,,,0.95214474,48.28294
+22633,22633/1001,9,female,spouse,1,fullLicence,0,,1,,,400,,,,Full-time Work,outsideqld,1,,,,,,,,,1,6,,,,,,,0,,,,,,,1.0469651,114.47734
+22788,22788/1000,1,female,child,1,,0,,0,workFullTime,,621,construction,,,Retired,home,1,No need to go out,,,,,,,,1,0,,,,,,,0,,,,,,,1.054366,77.948364
+2290,2290/1000,5,male,spouse,1,,0,,0,otherReason,,,education,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1273534,38.396011
+2290,2290/1001,9,female,child,1,fullLicence,0,,0,workPartTime,4,,,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.2547331,78.419624
+2290,2290/1002,4,female,spouse,1,fullLicence,0,,1,otherReason,,511,,,,Full-time TAFE/Uni,home,1,,,,,,,,,0,,,,,1,,,0,,,,,,,0.98882252,206.82799
+2290,2290/1003,5,male,spouse,1,fullLicence,0,,0,workFullTime,,,,,,Full-time Work,home,1,,,1,,,,,,0,0,,,,,,,0,,,,,,,0.96312314,71.10051
+2290,2290/1004,4,male,child,1,fullLicence,0,,0,workPartTime,7,134,,,1,Retired,home,1,,,1,,,,,,0,0,,,,,,,,,,,,,,1.6824114,53.624985
+23210,23210/1000,9,male,spouse,1,fullLicence,0,,0,workFullTime,,,other,secondary,1,Primary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0317054,154.17648
+23210,23210/1001,11,female,,0,fullLicence,0,,0,workPartTime,8,730,retail,,,Other Activity,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.3909141,77.934303
+23210,23210/1002,2,female,spouse,1,fullLicence,0,,0,workFullTime,6,,,other,,Full-time Work,home,1,No need to go out,08/08/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,0.98298013,56.817398
+23210,23210/1003,7,male,spouse,1,,0,,0,workFullTime,,,construction,primary,,Primary School,home,1,,,,,,,,,0,6,,,,,,,0,,,,,,,1.0301338,88.39431
+23210,23210/1009,12,female,,1,fullLicence,0,,0,workFullTime,,251,health,,,Full-time Work,home,0,,,,,,,,,0,0,,,,,1,,0,,,,,,,0.91212606,83.685341
+2387,2387/1000,3,female,,0,fullLicence,0,,0,retired,,,,tertiaryPartTime,,Other Activity,home,1,,,1,,,,,,0,0,,,,,,,0,,,,,,,1.0533818,158.47487
+2387,2387/1001,10,male,,1,p2Licence,1,,0,,2,,other,,,Retired,home,1,Weather,,,,,,,,0,0,,,,,,,0,,,,,,,0.92486858,34.800346
+2387,2387/1002,3,male,child,0,fullLicence,0,,0,longTermIllness,,,other,,1,Other Activity,home,0,Elderly or retired,,,,,,,,0,,,,,,,,0,,,,,,,0.89698684,172.41449
+24371,24371/1000,13,female,,0,,0,,0,,,552,,,,Primary School,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0020655,75.153084
+24371,24371/1001,13,female,,1,fullLicence,0,,0,workFullTime,2,551,,other,,Full-time Work,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,0.9960354,86.013329
+24679,24679/1000,3,female,child,1,fullLicence,0,,0,workFullTime,5,,,,-1,Full-time Work,home,1,No need to go out,,,,,,,,0,,,,,,,,,,,,,,,1.2548448,59.455887
+24679,24679/1001,5,male,,0,,0,,0,workFullTime,,,,,2,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,1.515669,104.13176
+24679,24679/1002,6,female,,1,fullLicence,0,,0,retired,,,arts,,,Primary School,home,1,,,,,,,,,0,,1,,,,,,0,,,,,,,0.94225091,99.933952
+24679,24679/1003,8,male,spouse,1,fullLicence,0,,0,,7,451,education,,,Retired,outsideqld,1,,,,,,,,,0,,,,,,,1,0,,,,,,,1.4552553,91.92334
+24679,24679/1004,9,female,child,1,fullLicence,0,,0,otherReason,4,,transport,primary,-1,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,1.1447728,118.79742
+24925,24925/1000,4,female,child,1,,0,,0,retired,,,,secondary,,Retired,home,1,,,,,,,,,0,3,,,,,,,,,,,,,,0.95088124,174.75606
+24925,24925/1001,13,female,spouse,1,,0,,0,,,249,,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.5495329,78.419624
+26096,26096/1000,9,male,child,1,fullLicence,0,,0,workPartTime,,500,publicAdmin,,1,Other Activity,home,1,,,,,,,,,0,3,,,,,,,,,,,,,,0.96665531,136.04126
+26096,26096/1001,12,male,,1,,0,,0,volunteer,8,,other,secondary,,Retired,home,1,,,,,,,,,0,0,,,,,,,,,,,,,,1.0490661,63.846581
+26962,26962/1000,8,female,,1,fullLicence,0,,0,workFullTime,,,,,,Full-time Work,home,1,,,,,,,,,0,,,,,,,,,,,,,,,1.560006,82.513382
+26962,26962/1001,3,female,child,1,fullLicence,0,,0,workFullTime,7,800,,,2,Full-time TAFE/Uni,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1203197,88.675308
+26962,26962/1002,17,male,,1,fullLicence,0,,1,workFullTime,,,admin,,,Full-time Work,other,1,,,,,,,,,1,0,,,,,,,,,,,,,,1.2548448,250.08078
+26962,26962/1003,6,female,child,1,,0,,0,workFullTime,,,health,,,Primary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.4552553,94.00576
+27681,27681/1000,17,female,child,1,fullLicence,0,,0,retired,,631,transport,tertiaryFullTime,,Other Activity,home,1,,10/22/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,1.1203197,89.438133
+27681,27681/1001,8,male,spouse,1,fullLicence,0,,0,workPartTime,,100,other,,,Other Study,home,1,,,,,,,,,0,0,,,,,,,,,,,,,,1.1343199,77.240036
+27853,27853/1000,3,male,relative,0,fullLicence,0,,0,workPartTime,,,,,,Volunteer/Carer,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1671121,99.933952
+27853,27853/1001,3,female,,0,fullLicence,0,,0,retired,8,,,tertiaryPartTime,,Secondary School,outsideqld,1,,03/14/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,1.0637407,116.32581
+27853,27853/1002,9,female,child,1,fullLicence,0,,0,,6,500,,tertiaryFullTime,,Primary School,home,1,No need to go out,,,,,,,,0,,,,,,,,0,,,,,,,1.0208125,66.100754
+27853,27853/1003,4,male,spouse,1,fullLicence,0,p2Licence,0,,,,,primary,-1,Retired,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.329075,122.03748
+27853,27853/1004,11,female,spouse,1,fullLicence,0,,0,retired,,254,,,,Other Activity,home,1,,,,,,,,,0,,,,,,,,,,,,,,,1.560006,43.612583
+3220,3220/1000,14,female,,1,fullLicence,0,,0,workFullTime,,,,,1,Full-time Work,home,1,,10/24/17 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,0.96822345,65.002396
+3220,3220/1001,12,male,,1,fullLicence,1,,0,retired,,,other,,,Primary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0634766,72.936852
+3842,3842/1000,2,female,,0,,0,,0,,2,,,,,Retired,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.89156234,28.357891
+3842,3842/1001,8,male,child,1,fullLicence,0,,0,,,,,,1,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,0.92486858,30.782665
+5529,5529/1000,9,male,child,1,fullLicence,0,,0,,,351,,secondary,,Primary School,home,1,,,,,,,,,1,0,,,,,,,0,,,,,,,1.0444916,193.41138
+5529,5529/1001,11,male,spouse,0,fullLicence,0,fullLicence,0,workFullTime,,234,health,,,Retired,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1369122,111.50692
+5529,5529/1002,15,female,,1,fullLicence,0,,0,workFullTime,,,,other,,Other Activity,home,1,,,1,,,,,,0,0,,,,,,,,,,,,,,1.1283299,52.891376
+5529,5529/1003,15,male,child,1,fullLicence,0,,0,workFullTime,,512,,,,Full-time Work,home,1,,,,,,1,,,0,,,,,,1,,0,,,,,,,1.1484848,16.673191
+60648,60648/1000,17,male,child,1,fullLicence,0,fullLicence,1,retired,1,254,,other,,Volunteer/Carer,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.98464149,37.163208
+60648,60648/1001,2,male,child,1,,0,,0,retired,3,800,financial,,1,Primary School,home,1,,,,1,,,,,0,,,,,,,1,0,,,,,,,0.60262585,59.759335
+6148,6148/1000,9,male,child,1,,0,,0,retired,,,education,,,Full-time Work,home,1,,05/01/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,1.2878344,145.09966
+6148,6148/1001,15,male,child,1,fullLicence,0,,0,workFullTime,,733,,,,Full-time Work,home,1,,04/29/19 00:00:00,,,,,,,0,0,1,,1,,,,0,,,,,,,1.0733798,85.938858
+61670,61670/1000,3,male,child,1,,0,,0,retired,,,,,,Retired,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,1.1063538,193.12865
+61670,61670/1002,10,male,child,0,,0,,0,workPartTime,,721,manufacturing,,,Other Activity,outsideqld,1,,,,,,,,,0,1,,,,,,,0,,,,,,,0.92015374,136.04126
+61670,61670/1005,13,female,child,1,fullLicence,0,,0,workFullTime,6,800,,,,Primary School,outsideqld,1,No need to go out,,,,,,,,0,0,,,,,,,0,,,,,,,1.6824114,172.98143
+61670,61670/1006,16,male,child,1,fullLicence,0,,0,workFullTime,,,retail,primary,2,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.99300873,74.35614
+61753,61753/1000,1,male,child,1,fullLicence,0,,0,,5,,transport,,2,Full-time Work,,1,,,,,,,,,0,1,,,,,,,0,,,,,,,1.0575671,50.191029
+61753,61753/1001,5,female,relative,1,fullLicence,0,,0,,,,education,,,Part-time Work,home,1,,,,,,,,,0,6,,,,,,,0,,,,,,,1.0052687,124.78405
+61753,61753/1002,9,male,nonFamily,1,,0,,0,carer,4,,other,,,Other Activity,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0469651,116.85778
+61994,61994/1000,11,male,,1,,0,,0,workFullTime,,,,,,Full-time Work,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,0.93551517,71.150055
+61994,61994/1002,12,female,,1,fullLicence,0,,0,workFullTime,,,financial,primary,,Retired,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,1.0469651,71.150055
+62368,62368/1000,12,male,,1,fullLicence,0,,0,,,100,,primary,,Illness,home,1,,,,,,,,,0,,,,,,,,0,,,,,,,0.9960354,114.39964
+62368,62368/1002,11,female,spouse,1,fullLicence,0,,0,workFullTime,,600,publicAdmin,,,Part-time Work,home,1,,,,,,,,,0,0,1,,,,,,0,,,,,,,1.3131096,105.35038
+62368,62368/1003,9,male,,0,fullLicence,1,,0,retired,7,721,retail,,,Retired,home,1,,,,,,,,,0,0,,,,,,1,0,,,,,,,1.1173464,74.358284
+62471,62471/1000,14,male,spouse,0,fullLicence,0,,0,retired,,551,,,,Other Education,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1106714,77.934303
+62471,62471/1001,12,male,,1,,0,,0,workFullTime,,,retail,,,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0557541,35.57803
+63445,63445/1000,9,male,spouse,1,fullLicence,0,,0,workFullTime,5,341,,,,Retired,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,0.91100049,65.955246
+63445,63445/1001,14,male,,0,fullLicence,0,,1,,,422,utilities,,,Part-time Work,home,1,,,,,,,,,0,0,,,,,1,,0,,,,,,,1.329075,39.888996
+63592,63592/1000,17,male,child,0,fullLicence,1,,0,,,500,construction,,,Other Activity,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1079735,23.305353
+63592,63592/1001,10,male,,1,p2Licence,0,,0,retired,2,,,,,Retired,home,1,Not stated,,,,,,,,0,,,,,,,1,0,,,,,,,1.0437167,98.348869
+63817,63817/1000,2,male,,1,,0,,0,volunteer,,591,,,,Volunteer/Carer,home,1,,,,,,,,,0,,,,,,,,,,,,,,,0.82310373,203.73482
+63817,63817/1001,5,female,,1,fullLicence,0,,0,,1,551,construction,,,Retired,home,0,,03/04/20 00:00:00,,,,,,,1,0,,,,,,,0,,,,,,,0.97081566,27.189821
+64179,64179/1000,15,female,child,0,,0,,0,retired,1,500,,secondary,,Other Activity,home,1,,,,,,,,,1,1,,,,,,,0,,,,,,,0.93942851,65.757683
+64179,64179/1001,9,female,,1,p1Licence,0,,0,workFullTime,,,other,,,Retired,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1848316,96.136032
+65934,65934/1000,13,female,,0,fullLicence,0,,0,longTermIllness,,,,secondary,,Full-time Work,home,1,,09/07/19 00:00:00,,,,,,,0,0,,,,,,,,,,,,,,0.95354682,68.922485
+65934,65934/1001,16,male,spouse,1,fullLicence,0,,0,retired,,,education,,,Full-time Work,home,1,,,,,,,,,0,,1,,,,,,0,,,,,,,1.0752782,30.471292
+65934,65934/1002,18,male,,1,fullLicence,0,,0,workPartTime,5,731,,primary,2,Part-time TAFE/Uni,home,1,,,,,,,,,1,0,,,,,,,0,,,,,,,1.2248011,85.938858
+66475,66475/1000,3,female,,1,,0,,0,workFullTime,1,,transport,secondary,,Secondary School,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.4637887,91.035728
+66475,66475/1001,8,male,spouse,0,fullLicence,0,,0,,,,mining,,,Retired,home,1,,,1,,,,,,0,0,,,,,,,0,,,,,,,0.9033283,173.87112
+66475,66475/1002,3,female,parent,0,,0,,0,otherReason,6,,,primary,,Full-time Work,home,1,,,1,,,,,,0,0,,,,,,,0,,,,,,,1.0752782,181.97734
+66475,66475/1003,5,male,,1,,0,,0,retired,,731,admin,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.0338006,52.38932
+66475,66475/1004,4,female,child,1,fullLicence,0,,0,workPartTime,,600,retail,,,Retired,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,1.4326088,102.61402
+66475,66475/1008,11,male,spouse,1,fullLicence,0,,0,otherReason,4,,,,,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.329075,92.717613
+6853,6853/1000,12,female,child,1,fullLicence,0,,0,otherReason,7,610,,,,Retired,,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.7870433,34.737091
+6853,6853/1002,12,male,spouse,0,fullLicence,0,,0,workFullTime,1,,,,,Secondary School,home,1,Working from home,,,,,,,,0,0,,,,,,,0,,,,,,,0.88066697,64.096336
+7113,7113/1000,6,female,child,1,,0,,0,workPartTime,,,other,,,Primary School,,0,,,,,,,,,0,3,,,,,,,0,,,,,,,1.040988,28.357891
+7113,7113/1001,18,male,spouse,1,fullLicence,0,,1,workFullTime,,,,,,Part-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.90349126,34.737091
+77562,77562/1000,2,female,nonFamily,1,fullLicence,0,,0,,,,,,,Other Activity,home,1,Studying at home,,,,,,,,0,2,,,,,,,0,,,,,,,1.515669,34.737091
+77562,77562/1001,8,male,nonFamily,0,fullLicence,0,,0,longTermIllness,,133,transport,,,Retired,home,1,No need to go out,04/28/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,0.89698684,60.693386
+77562,77562/1002,3,female,spouse,0,fullLicence,0,,0,retired,,272,education,,,Full-time TAFE/Uni,home,1,,,,,,1,,,0,0,1,,,,,,0,,,,,,,0.89979178,83.673737
+77562,77562/1003,5,male,child,0,fullLicence,0,,0,retired,6,,,,,Secondary School,home,1,,,,,,,,,,0,,,,,,1,0,,,,,,,1.3135777,171.82011
+77562,77562/1004,5,male,spouse,1,fullLicence,0,,0,workFullTime,,,other,primary,,Other Activity,home,1,,11/13/19 00:00:00,,,,,,,0,2,,1,,,,,0,,,,,,,1.524312,23.252382
+77562,77562/1005,5,male,,1,fullLicence,0,,0,workFullTime,,,,,,Full-time Work,home,1,,03/14/19 00:00:00,,,,,,,0,0,,,,,,,0,,,,,,,1.4282166,96.747101
+77805,77805/1000,5,female,relative,1,fullLicence,0,,0,workFullTime,,,,primary,,Primary School,home,1,,,,,,,,,1,0,,,,,,,0,,,,,,,1.078227,97.990425
+77805,77805/1001,2,male,,1,,0,,0,retired,,,,primary,,Full-time TAFE/Uni,home,0,,,,,,,,,0,0,,,,,,,,,,,,,,0.73924613,39.516506
+77805,77805/1002,9,female,,1,fullLicence,0,,0,,2,,,,,Retired,home,1,,,,,,,,,0,6,,,,,,,0,,,,,,,0.96822345,44.521671
+77805,77805/1003,8,male,,0,fullLicence,0,,0,otherReason,,,,,,Retired,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,1.3084021,82.513382
+8292,8292/1000,1,female,spouse,1,fullLicence,0,,0,workFullTime,1,241,,,,Part-time Work,home,1,,,,,,,,,0,,,,,,,,,,,,,,,1.6824114,32.642937
+8292,8292/1001,13,female,child,0,fullLicence,0,,0,longTermIllness,,,,,,Part-time Work,home,0,No need to go out,,,,,,,,0,0,,,,,,,0,,,,,,,1.4637887,112.76011
+8292,8292/1002,5,female,child,1,fullLicence,0,,0,workPartTime,,,construction,,1,Volunteer/Carer,home,0,,09/08/19 00:00:00,,,,,,,0,3,,,,,,,0,,,,,,,1.3032966,81.580811
+8292,8292/1003,10,male,child,1,fullLicence,0,,0,workPartTime,2,,,tertiaryFullTime,,Full-time Work,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1079735,118.03028
+8430,8430/1000,18,female,child,0,p2Licence,0,,0,workFullTime,5,800,construction,tertiaryFullTime,1,Full-time Work,home,1,,,,,,,,,0,0,,,,,,,0,,,,,,,0.92486858,97.302605
+8430,8430/1002,16,male,nonFamily,0,,0,,0,otherReason,7,621,retail,,,Full-time Work,home,1,,11/23/17 00:00:00,1,,,,,,0,,,,,,,,0,,,,,,,0.7959758,97.767776
+9432,9432/1000,6,male,,1,fullLicence,0,,0,,,133,transport,,,Part-time Work,,1,,,,,1,,,,0,0,,,,,,,0,,,,,,,0.86707884,172.98143
+9432,9432/1001,14,male,nonFamily,1,,1,,0,workPartTime,5,,,tertiaryFullTime,,Full-time Work,home,1,Caring for children,,,,,,,,0,0,,,,,,,,,,,,,,0.9033283,133.35793
+9432,9432/1002,3,male,spouse,1,,0,,0,otherReason,1,411,other,,,Other Study,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,0.85373479,66.559349
+9432,9432/1003,7,female,,0,fullLicence,1,,0,workFullTime,4,,,,,Secondary School,home,0,,,,,,,,,0,0,,,,,,,0,,,,,,,1.1016865,138.48624

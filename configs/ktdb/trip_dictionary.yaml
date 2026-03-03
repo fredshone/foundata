@@ -1,0 +1,70 @@
+# Trip-level dictionary for <source>
+# Map raw CSV column names to template field names under column_mappings.
+# Add value mappings for categorical fields below.
+
+column_mappings:
+  # RAW_COL_NAME: pid
+  # RAW_COL_NAME: seq
+  # RAW_COL_NAME: ozone
+  # RAW_COL_NAME: dzone
+  # RAW_COL_NAME: oact
+  # RAW_COL_NAME: dact
+  # RAW_COL_NAME: mode
+  # RAW_COL_NAME: tst
+  # RAW_COL_NAME: tet
+  # RAW_COL_NAME: distance
+
+# ozone mapping
+  # Valid values: urban, suburban, rural, unknown
+ozone:
+  # 1: urban
+  # 1: suburban
+  # 1: rural
+  # 1: unknown
+
+# dzone mapping
+  # Valid values: urban, suburban, rural, unknown
+dzone:
+  # 1: urban
+  # 1: suburban
+  # 1: rural
+  # 1: unknown
+
+# oact mapping
+  # Valid values: home, work, education, shop, leisure, medical, visit, escort, other, unknown
+oact:
+  # 1: home
+  # 1: work
+  # 1: education
+  # 1: shop
+  # 1: leisure
+  # 1: medical
+  # 1: visit
+  # 1: escort
+  # 1: other
+  # 1: unknown
+
+# dact mapping
+  # Valid values: home, work, education, shop, leisure, medical, visit, escort, other, unknown
+dact:
+  # 1: home
+  # 1: work
+  # 1: education
+  # 1: shop
+  # 1: leisure
+  # 1: medical
+  # 1: visit
+  # 1: escort
+  # 1: other
+  # 1: unknown
+
+# mode mapping
+  # Valid values: walk, bike, car, bus, rail, other, unknown
+mode:
+  # 1: walk
+  # 1: bike
+  # 1: car
+  # 1: bus
+  # 1: rail
+  # 1: other
+  # 1: unknown

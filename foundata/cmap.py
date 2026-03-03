@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from .utils import expand_root, sample_us_to_euro, table_joiner
+from .utils import compute_avg_speed, expand_root, sample_us_to_euro, table_joiner
 
 SOURCE = "cmap"
 
@@ -42,6 +42,8 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
+
+    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

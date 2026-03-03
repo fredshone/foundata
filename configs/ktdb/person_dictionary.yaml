@@ -1,0 +1,110 @@
+# Person-level dictionary for <source>
+# Map raw CSV column names to template field names under column_mappings.
+# Add value mappings for categorical fields below.
+
+column_mappings:
+  # RAW_COL_NAME: pid
+  # RAW_COL_NAME: hid
+  # RAW_COL_NAME: age
+  # RAW_COL_NAME: sex
+  # RAW_COL_NAME: employment
+  # RAW_COL_NAME: occupation
+  # RAW_COL_NAME: education
+  # RAW_COL_NAME: has_licence
+  # RAW_COL_NAME: disability
+  # RAW_COL_NAME: can_wfh
+  # RAW_COL_NAME: relationship
+  # RAW_COL_NAME: race
+
+# sex mapping
+  # Valid values: male, female, other, unknown
+sex:
+  # 1: male
+  # 1: female
+  # 1: other
+  # 1: unknown
+
+# employment mapping
+  # Valid values: n/a, employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown
+employment:
+  # 1: n/a
+  # 1: employed
+  # 1: ft-employed
+  # 1: pt-employed
+  # 1: unemployed
+  # 1: retired
+  # 1: student
+  # 1: other
+  # 1: unknown
+
+# occupation mapping
+  # Valid values: n/a, clerical, manual, managerial, operator, professional, service, other, technical, unknown
+occupation:
+  # 1: n/a
+  # 1: clerical
+  # 1: manual
+  # 1: managerial
+  # 1: operator
+  # 1: professional
+  # 1: service
+  # 1: other
+  # 1: technical
+  # 1: unknown
+
+# education mapping
+  # Valid values: n/a, some, none, school, high-school, degree, unknown
+education:
+  # 1: n/a
+  # 1: some
+  # 1: none
+  # 1: school
+  # 1: high-school
+  # 1: degree
+  # 1: unknown
+
+# has_licence mapping
+  # Valid values: n/a, yes, no, unknown
+has_licence:
+  # 1: n/a
+  # 1: yes
+  # 1: no
+  # 1: unknown
+
+# disability mapping
+  # Valid values: yes, no, unknown
+disability:
+  # 1: yes
+  # 1: no
+  # 1: unknown
+
+# can_wfh mapping
+  # Valid values: yes, no, unknown, n/a
+can_wfh:
+  # 1: yes
+  # 1: no
+  # 1: unknown
+  # 1: n/a
+
+# relationship mapping
+  # Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+relationship:
+  # 1: self
+  # 1: partner
+  # 1: child
+  # 1: parent
+  # 1: sibling
+  # 1: unrelated
+  # 1: relative
+  # 1: other
+  # 1: unknown
+
+# race mapping
+  # Valid values: white, black, asian, non-white, other, multiracial, unknown
+race:
+  # 1: white
+  # 1: black
+  # 1: asian
+  # 1: non-white
+  # 1: other
+  # 1: multiracial
+  # 1: unknown

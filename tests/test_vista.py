@@ -1,23 +1,22 @@
 import os
-
-import pytest
+from pathlib import Path
 
 from foundata import vista, verify
 from foundata.utils import get_config_path, load_yaml_config
 
-DATA_ROOT = os.getenv("FOUNDATA_VISTA_DATA")
+FIXTURE_ROOT = Path(__file__).parent / "fixtures"
+DATA_ROOT = os.getenv("FOUNDATA_VISTA_DATA", str(FIXTURE_ROOT / "vista"))
 CONFIGS_ROOT = get_config_path()
 
 
-@pytest.mark.skipif(not DATA_ROOT, reason="FOUNDATA_VISTA_DATA not set")
 def test_vista_load():
     hh_cfg = load_yaml_config(CONFIGS_ROOT / "vista" / "hh_dictionary.yaml")
     person_cfg = load_yaml_config(CONFIGS_ROOT / "vista" / "person_dictionary.yaml")
     trips_cfg = load_yaml_config(CONFIGS_ROOT / "vista" / "trip_dictionary.yaml")
 
     attrs, trips = vista.load_years(
-        DATA_ROOT,
-        years=["2012_2020"],
+        Path(DATA_ROOT),
+        years=["2012-2020"],
         hh_config=hh_cfg,
         person_config=person_cfg,
         trips_config=trips_cfg,

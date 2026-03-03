@@ -105,6 +105,42 @@ def check_set(expected_set: set, actual_series: pl.Series) -> bool:
     return True
 
 
+def activity_consistency(trips: pl.DataFrame) -> bool:
+    inconsistent = (
+        trips.sort("pid", "seq")
+        .with_columns(next_oact=pl.col("oact").shift(-1).over("pid"))
+        .filter(pl.col("next_oact").is_not_null())
+        .filter(pl.col("dact") != "unknown")
+        .filter(pl.col("next_oact") != "unknown")
+        .filter(pl.col("dact") != pl.col("next_oact"))
+        .select("pid").unique()
+    )
+    n = len(inconsistent)
+    total = trips.select("pid").n_unique()
+    if n:
+        print(f"Warning: {n}/{total} persons have activity chain inconsistencies ({100*n/total:.1f}%)")
+        return False
+    return True
+
+
+def location_consistency(trips: pl.DataFrame) -> bool:
+    inconsistent = (
+        trips.sort("pid", "seq")
+        .with_columns(next_ozone=pl.col("ozone").shift(-1).over("pid"))
+        .filter(pl.col("next_ozone").is_not_null())
+        .filter(pl.col("dzone") != "unknown")
+        .filter(pl.col("next_ozone") != "unknown")
+        .filter(pl.col("dzone") != pl.col("next_ozone"))
+        .select("pid").unique()
+    )
+    n = len(inconsistent)
+    total = trips.select("pid").n_unique()
+    if n:
+        print(f"Warning: {n}/{total} persons have location chain inconsistencies ({100*n/total:.1f}%)")
+        return False
+    return True
+
+
 def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
     actual_cols = set(actual.columns)
     template_cols = set(template.keys())
