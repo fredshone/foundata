@@ -4,7 +4,6 @@
 
 column_mappings:
   idx: pid
-  idx: hid  # to hhs in this dataset
   Q1_1: age
   SQ2: sex
   R1: has_licence
@@ -49,16 +48,17 @@ sex:
 has_licence:
   1: "yes"
   2: "no"
+  99: "unknown"
 
 # student mapping
 student:
-  0: n/a
-  1: yes
-  2: yes
-  3: yes
-  4: yes
-  98: n/a
-  99: unknown
+  0: "n/a"
+  1: "yes"
+  2: "yes"
+  3: "yes"
+  4: "yes"
+  98: "n/a"
+  99: "unknown"
 
 employed:
   1: "yes"
@@ -90,6 +90,7 @@ can_wfh:
   4: "yes"
   97: "n/a"
   98: "no"
+  99: "unknown"
 
 hh_income:
   1: [0,1]  # million KRW

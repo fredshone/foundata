@@ -8,16 +8,12 @@ SOURCE = "ktdb"
 
 
 def load(
-    data_root: str | Path,
-    hh_config: dict,
-    person_config: dict,
-    trips_config: dict,
+    data_root: str | Path, person_config: dict, trips_config: dict
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     """Load and normalise ktdb survey data.
 
     Args:
         data_root: Path to the raw data directory for this source.
-        hh_config: Parsed hh_dictionary.yaml config.
         person_config: Parsed person_dictionary.yaml config.
         trips_config: Parsed trip_dictionary.yaml config.
 
@@ -30,7 +26,7 @@ def load(
     # Prefix IDs with source name for global uniqueness
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        # hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -47,32 +43,54 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     data = pl.read_csv(root / "persons.csv", ignore_errors=True)
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    data = data.with_columns(
-        year=pl.lit(2021),
-        # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
-        date=(pl.lit(20210000) + pl.col("date")).cast(pl.Date, format="%Y%m%d"),
-        month=pl.col("date").dt.month(),
-        day=pl.col("date").dt.weekday().replace_strict(config["weekday"]),
-        sex=pl.col("sex").replace_strict(config["sex"]),
-        has_license=pl.col("has_license").replace_strict(config["has_license"]),
-        _student=pl.col("student").replace_strict(config["student"]),
-        _employed=pl.col("employed").replace_strict(config["employed"]),
-        employment=pl.when(pl.col("_student") == "yes")
-        .then("student")
-        .when(pl.col("_employed") == "yes")
-        .then("employed")
-        .otherwise("unemployed"),
-        occupation=pl.col("occupation").replace_strict(config["occupation"]),
-        can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
-        hh_income=pl.col("hh_income")
-        .replace_strict(config["hh_income"])
-        .map_elements(utils.sample_krw_to_euro)
-        * 1000000
-        * 12,
-        dwelling=pl.col("dwelling").replace_strict(config["dwelling"]),
-        vehicles=pl.col("cars") + pl.col("motorcycles") + pl.col("vans"),
-        weight=pl.lit(1, pl.Int32),
-    ).drop(["_student", "_employed"])
+    data = (
+        data.with_columns(
+            year=pl.lit(2021),
+            # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
+            date=(pl.lit(20210000) + pl.col("date"))
+            .cast(pl.String)
+            .str.to_date(format="%Y%m%d"),
+        )
+        .with_columns(sex=pl.col("sex").replace_strict(config["sex"]))
+        .with_columns(
+            has_licence=pl.col("has_licence")
+            .fill_null(99)
+            .replace_strict(
+                config["has_licence"],
+                default=pl.col("has_licence").cast(pl.String),
+            )
+        )
+        # .with_columns(
+        #     _student=pl.col("student").replace_strict(config["student"])
+        # )
+        # .with_columns(
+        #     _employed=pl.col("employed").replace_strict(config["employed"]),
+        #     employment=pl.when(pl.col("student") == "yes")
+        #     .then("student")
+        #     .when(pl.col("employed") == "yes")
+        #     .then("employed")
+        #     .otherwise(pl.lit("unemployed")),
+        #     occupation=pl.col("occupation").replace_strict(
+        #         config["occupation"]
+        #     ),
+        #     can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
+        #     hh_income=pl.col("hh_income")
+        #     .replace_strict(config["hh_income"])
+        #     .map_elements(utils.sample_krw_to_euro)
+        #     * 1000000
+        #     * 12,
+        #     dwelling=pl.col("dwelling").replace_strict(config["dwelling"]),
+        #     vehicles=pl.col("cars") + pl.col("motorcycles") + pl.col("vans"),
+        #     weight=pl.lit(1, pl.Int32),
+        # )
+        # .with_columns(
+        #     month=pl.col("date").dt.month(),
+        #     day=pl.col("date").dt.weekday().replace_strict(config["weekday"]),
+        # )
+        # .drop(["_student", "_employed"])
+    )
+
+    print(data.select(pl.col("has_licence").unique()).to_series().to_list())
 
     data = data.with_columns(
         pl.lit("unknown").alias(col)
