@@ -43,54 +43,78 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     data = pl.read_csv(root / "persons.csv", ignore_errors=True)
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    data = (
-        data.with_columns(
-            year=pl.lit(2021),
-            # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
-            date=(pl.lit(20210000) + pl.col("date"))
-            .cast(pl.String)
-            .str.to_date(format="%Y%m%d"),
-        )
-        .with_columns(sex=pl.col("sex").replace_strict(config["sex"]))
-        .with_columns(
-            has_licence=pl.col("has_licence")
-            .fill_null(99)
-            .replace_strict(
-                config["has_licence"],
-                default=pl.col("has_licence").cast(pl.String),
-            )
-        )
-        # .with_columns(
-        #     _student=pl.col("student").replace_strict(config["student"])
-        # )
-        # .with_columns(
-        #     _employed=pl.col("employed").replace_strict(config["employed"]),
-        #     employment=pl.when(pl.col("student") == "yes")
-        #     .then("student")
-        #     .when(pl.col("employed") == "yes")
-        #     .then("employed")
-        #     .otherwise(pl.lit("unemployed")),
-        #     occupation=pl.col("occupation").replace_strict(
-        #         config["occupation"]
-        #     ),
-        #     can_wfh=pl.col("can_wfh").replace_strict(config["can_wfh"]),
-        #     hh_income=pl.col("hh_income")
-        #     .replace_strict(config["hh_income"])
-        #     .map_elements(utils.sample_krw_to_euro)
-        #     * 1000000
-        #     * 12,
-        #     dwelling=pl.col("dwelling").replace_strict(config["dwelling"]),
-        #     vehicles=pl.col("cars") + pl.col("motorcycles") + pl.col("vans"),
-        #     weight=pl.lit(1, pl.Int32),
-        # )
-        # .with_columns(
-        #     month=pl.col("date").dt.month(),
-        #     day=pl.col("date").dt.weekday().replace_strict(config["weekday"]),
-        # )
-        # .drop(["_student", "_employed"])
+    # Cast coded columns to Int64 so replace_strict can match integer YAML keys;
+    # strict=False turns non-numeric values (blanks, spaces) into nulls.
+    int_cols = [
+        "age",
+        "hh_size",
+        "cars",
+        "vans",
+        "motorcycles",
+        "sex",
+        "has_licence",
+        "student",
+        "employed",
+        "occupation",
+        "can_wfh",
+        "hh_income",
+        "dwelling",
+    ]
+    data = data.with_columns(
+        [pl.col(c).cast(pl.Int64, strict=False) for c in int_cols]
     )
 
-    print(data.select(pl.col("has_licence").unique()).to_series().to_list())
+    data = data.with_columns(
+        hid=pl.col("pid"),
+        year=pl.lit(2021),
+        source=pl.lit(SOURCE),
+        country=pl.lit("south korea"),
+        avg_speed=pl.lit(None).cast(pl.Float64),
+        # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
+        date=(pl.lit(20210000) + pl.col("date"))
+        .cast(pl.String)
+        .str.to_date(format="%Y%m%d"),
+        sex=pl.col("sex").replace_strict(config["sex"], default="unknown"),
+        has_licence=pl.col("has_licence").replace_strict(
+            config["has_licence"], default="unknown"
+        ),
+        _student=pl.col("student").replace_strict(
+            config["student"], default="unknown"
+        ),
+        _employed=pl.col("employed").replace_strict(
+            config["employed"], default="unknown"
+        ),
+        occupation=pl.col("occupation").replace_strict(
+            config["occupation"], default="unknown"
+        ),
+        can_wfh=pl.col("can_wfh").replace_strict(
+            config["can_wfh"], default="unknown"
+        ),
+        hh_income=pl.col("hh_income")
+        .replace_strict(config["hh_income"], default=None)
+        .map_elements(utils.sample_krw_to_euro)
+        * 1000000
+        * 12,
+        dwelling=pl.col("dwelling").replace_strict(
+            config["dwelling"], default="unknown"
+        ),
+        vehicles=pl.col("cars").cast(pl.Int64, strict=False).fill_null(0)
+        + pl.col("motorcycles").cast(pl.Int64, strict=False).fill_null(0)
+        + pl.col("vans").cast(pl.Int64, strict=False).fill_null(0),
+        weight=pl.lit(1.0),
+    )
+
+    data = data.with_columns(
+        month=pl.col("date").dt.month(),
+        day=pl.col("date")
+        .dt.weekday()
+        .replace_strict(config["weekday"], default="unknown"),
+        employment=pl.when(pl.col("_student") == "yes")
+        .then(pl.lit("student"))
+        .when(pl.col("_employed") == "yes")
+        .then(pl.lit("employed"))
+        .otherwise(pl.lit("unemployed")),
+    ).drop(["_student", "_employed"])
 
     data = data.with_columns(
         pl.lit("unknown").alias(col)
@@ -100,6 +124,7 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
             "relationship",
             "race",
             "ownership",
+            "rurality",
         ]
     )
     return data
@@ -150,8 +175,12 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
     ).drop(["tst-hr", "tst-min", "tet-hr", "tet-min"])
 
     data = data.with_columns(
-        origin=pl.col("origin").replace_strict(config["origin"]),
-        purpose=pl.col("purpose").replace_strict(config["purpose"]),
+        origin=pl.col("origin")
+        .cast(pl.Int64, strict=False)
+        .replace_strict(config["origin"], default="unknown"),
+        purpose=pl.col("purpose")
+        .cast(pl.Int64, strict=False)
+        .replace_strict(config["purpose"], default="unknown"),
     )
 
     # access trip stages
