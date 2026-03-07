@@ -276,6 +276,32 @@ def generate_nhts():
 
 
 # ---------------------------------------------------------------------------
+# KTDB
+# ---------------------------------------------------------------------------
+
+
+def generate_ktdb():
+    src = DATA_ROOT / "KTDB"
+    dst = FIXTURE_ROOT / "ktdb"
+    dst.mkdir(parents=True, exist_ok=True)
+    print("Generating KTDB fixtures...")
+
+    persons = pl.read_csv(src / "persons.csv", ignore_errors=True, encoding="utf8-lossy")
+    trips = pl.read_csv(src / "trips.csv", ignore_errors=True, encoding="utf8-lossy")
+
+    sampled_ids = persons["idx"].unique().sample(n=min(N_HOUSEHOLDS, persons["idx"].n_unique()), seed=SEED)
+    persons = persons.filter(pl.col("idx").is_in(sampled_ids))
+    trips = trips.filter(pl.col("idx").is_in(sampled_ids))
+
+    persons = shuffle_non_keys(persons, key_cols=["idx"], seed=SEED)
+    trips = shuffle_non_keys(trips, key_cols=["idx", "th_seq"], seed=SEED + 10)
+
+    persons.write_csv(dst / "persons.csv")
+    trips.write_csv(dst / "trips.csv")
+    print(f"  persons: {len(persons)}, trips: {len(trips)}")
+
+
+# ---------------------------------------------------------------------------
 # Post-process
 # ---------------------------------------------------------------------------
 
@@ -319,5 +345,6 @@ if __name__ == "__main__":
     generate_qhts()
     generate_ltds()
     generate_nhts()
+    generate_ktdb()
     generate_post_process()
     print("Done.")

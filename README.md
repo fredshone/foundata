@@ -10,7 +10,8 @@ Hello, we are combining as many travel survey data sources as possible and combi
 | Chicago US (CMAP)   | 31,540  | ~0%       | 101,965 | 0.8        |
 | Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
 | Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
-| **total** | **2,694,019** | **15%** | **8,461,994** | **115.3** |
+| South Korea (KTDB)      | TBD     | TBD      | TBD     | TBD        |
+| **total** | **2,694,019+** | **15%** | **8,461,994+** | **115.3+** |
 
 ### Person Attributes Status
 
@@ -93,3 +94,17 @@ foundata --help  # confirm two commands are available
    ```
 
 6. **Add the source to `run.ipynb`** so it is included in the full pipeline run.
+
+### Running specific sources
+
+Use `--source` / `-s` to run only a subset of sources (can be repeated):
+
+```bash
+# Run KTDB only
+uv run python scripts/run.py --data-root ~/Data/foundata --source ktdb --output /tmp/out
+
+# Run KTDB and NTS
+uv run python scripts/run.py --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
+```
+
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`.
