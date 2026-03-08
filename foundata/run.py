@@ -60,10 +60,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        check_overlap(
+            attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
+        )
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons and {len(trips)} trips from KTDB"
         )
@@ -106,6 +109,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -140,6 +144,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -178,6 +183,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -212,6 +218,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -246,6 +253,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -283,6 +291,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
+        attributes, trips = fix.fix_types(attributes, trips)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -294,8 +303,16 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # ------------------------------------------------------------------
     # Concat and write
     # ------------------------------------------------------------------
+
+    for df in all_attributes:
+        print(df.columns)
+        print(df.dtypes)
+
+    for df in all_trips:
+        print(df.columns)
+        print(df.dtypes)
+
     all_attributes = pl.concat(all_attributes, how="vertical")
-    all_trips = fix.trip_dtypes(all_trips)
     all_trips = pl.concat(all_trips, how="vertical")
 
     all_attributes.write_csv(output / "all_attributes.csv")

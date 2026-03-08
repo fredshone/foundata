@@ -20,13 +20,14 @@ def load(
     Returns:
         (attributes, trips) DataFrames conforming to the template schema.
     """
+    print(f"Loading {SOURCE} data...")
     attributes = load_persons(data_root, person_config)
     trips = load_trips(data_root, trips_config)
 
     # Prefix IDs with source name for global uniqueness
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        # hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),  # duplicate of pid
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -40,10 +41,12 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     root = Path(root).expanduser()
     column_mapping = config["column_mappings"]
 
-    data = pl.read_csv(root / "persons.csv", ignore_errors=True)
+    data = pl.read_csv(
+        root / "persons.csv", ignore_errors=True, encoding="euc-kr"
+    )
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    # Cast coded columns to Int64 so replace_strict can match integer YAML keys;
+    # Cast coded columns to Int32 so replace_strict can match integer YAML keys;
     # strict=False turns non-numeric values (blanks, spaces) into nulls.
     int_cols = [
         "age",
@@ -61,15 +64,15 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         "dwelling",
     ]
     data = data.with_columns(
-        [pl.col(c).cast(pl.Int64, strict=False) for c in int_cols]
+        [pl.col(c).cast(pl.Int32, strict=False) for c in int_cols]
     )
 
     data = data.with_columns(
         hid=pl.col("pid"),
-        year=pl.lit(2021),
+        year=pl.lit(2021, dtype=pl.Int32),
         source=pl.lit(SOURCE),
         country=pl.lit("south korea"),
-        avg_speed=pl.lit(None).cast(pl.Float64),
+        avg_speed=pl.lit(None, dtype=pl.Float64),
         # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
         date=(pl.lit(20210000) + pl.col("date"))
         .cast(pl.String)
@@ -92,16 +95,16 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         ),
         hh_income=pl.col("hh_income")
         .replace_strict(config["hh_income"], default=None)
-        .map_elements(utils.sample_krw_to_euro)
+        .map_elements(utils.sample_krw_to_euro, return_dtype=pl.Int32)
         * 1000000
         * 12,
         dwelling=pl.col("dwelling").replace_strict(
             config["dwelling"], default="unknown"
         ),
-        vehicles=pl.col("cars").cast(pl.Int64, strict=False).fill_null(0)
-        + pl.col("motorcycles").cast(pl.Int64, strict=False).fill_null(0)
-        + pl.col("vans").cast(pl.Int64, strict=False).fill_null(0),
-        weight=pl.lit(1.0),
+        vehicles=pl.col("cars").cast(pl.Int32, strict=False).fill_null(0)
+        + pl.col("motorcycles").cast(pl.Int32, strict=False).fill_null(0)
+        + pl.col("vans").cast(pl.Int32, strict=False).fill_null(0),
+        weight=pl.lit(1.0, dtype=pl.Float64),
     )
 
     data = data.with_columns(
@@ -162,7 +165,9 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
     root = Path(root).expanduser()
     column_mapping = config["column_mappings"]
 
-    data = pl.read_csv(root / "trips.csv", ignore_errors=True)
+    data = pl.read_csv(
+        root / "trips.csv", ignore_errors=True, encoding="euc-kr"
+    )
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
     data = data.filter(pl.col("seq") > 0)

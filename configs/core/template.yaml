@@ -22,19 +22,19 @@ attributes:
     default: False
     description: "Person ID. Must be unique within the dataset and prefixed with source name."
   age:
-    dtype: int
+    dtype: int32
     default: True
     min: 0
     max: 120
     description: "Age in years."
   hh_size:
-    dtype: int
+    dtype: int32
     default: True
     min: 1
     max: 100
     description: "Number of persons in the household."
   hh_income:
-    dtype: numeric
+    dtype: int32
     default: True
     min: 0
     description: "Annual household income in euros. Use utils.sample_*_to_euro() for currency conversion from coded ranges."
@@ -54,7 +54,7 @@ attributes:
     set: [owned, rented, other, unknown]
     description: "Housing tenure."
   vehicles:
-    dtype: int
+    dtype: int32
     default: True
     min: 0
     max: 100
@@ -128,12 +128,12 @@ attributes:
     set: [urban, suburban, rural, unknown]
     description: "Urban/rural classification of the household location."
   weight:
-    dtype: float
+    dtype: float32
     default: True
     min: 0
     description: "Survey expansion weight for the person/household."
   avg_speed:
-    dtype: float
+    dtype: float32
     default: True
     min: 0
     description: "Average trip speed in km/h. Total distance / total duration across all valid trips. Null for persons with no valid trips."
@@ -144,7 +144,7 @@ trips:
     default: None
     description: "Person ID, matching attributes.pid. Must be prefixed with source name."
   seq:
-    dtype: int
+    dtype: int8
     default: None
     min: 0
     description: "Trip sequence number within the person's travel day (0-indexed)."
@@ -184,7 +184,7 @@ trips:
     min: 0
     description: "Trip end time in minutes since midnight. Values >1440 indicate next-day continuation."
   distance:
-    dtype: float
+    dtype: float32
     default: None
     min: 0
     description: "Trip distance in kilometres."
