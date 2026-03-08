@@ -54,6 +54,13 @@ def columns(attributes: pl.DataFrame, trips: pl.DataFrame) -> bool:
 
 
 def check_dtype(expected_dtype: str, actual_dtype: pl.DataType) -> bool:
+    exact = {
+        "int8": pl.Int8, "int16": pl.Int16,
+        "int32": pl.Int32, "int64": pl.Int64,
+        "float32": pl.Float32, "float64": pl.Float64,
+    }
+    if expected_dtype in exact:
+        return actual_dtype == exact[expected_dtype]
     if expected_dtype in ["integer", "int"]:
         return actual_dtype.is_integer()
     elif expected_dtype == "float":

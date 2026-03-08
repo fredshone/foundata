@@ -155,9 +155,11 @@ def preprocess_hhs(
     )
 
     hhs = hhs.with_columns(
-        pl.col("hh_structure")
+        hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
+        vehicles=pl.col("vehicles").cast(pl.Int32, strict=False),
+        hh_structure=pl.col("hh_structure")
         .replace_strict(struct_mapping)
-        .fill_null("unknown")
+        .fill_null("unknown"),
     )
 
     hhs = hhs.with_columns(
@@ -453,7 +455,6 @@ def preprocess_trips(
     ).with_columns(tst=pl.col("tst") * 60, tet=pl.col("tet") * 60)
 
     trips = fix.day_wrap(trips)
-    # trips = filter.bad_trips(trips)
 
     # sample times
     trips = trips.group_by("pid", maintain_order=True).map_groups(

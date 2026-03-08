@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from foundata import nhts, verify
+from foundata import filter, fix, nhts, verify
 from foundata.utils import get_config_path, load_yaml_config
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
@@ -26,4 +26,6 @@ def test_nhts_load():
     assert len(trips) > 0
     assert "nhts" in attrs["source"].unique().to_list()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
+    attrs, trips = filter.columns(attrs, trips)
+    attrs, trips = fix.fix_types(attrs, trips)
     assert verify.columns(attrs, trips)

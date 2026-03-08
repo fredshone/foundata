@@ -10,8 +10,9 @@ Hello, we are combining as many travel survey data sources as possible and combi
 | Chicago US (CMAP)   | 31,540  | ~0%       | 101,965 | 0.8        |
 | Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
 | Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
-| South Korea (KTDB)      | TBD     | TBD      | TBD     | TBD        |
+| South Korea (KTDB)      | 133,326     | 42%      | 334,049 | 1.6        |
 | **total** | **2,694,019+** | **15%** | **8,461,994+** | **115.3+** |
+
 
 ### Person Attributes Status
 
