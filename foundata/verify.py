@@ -3,7 +3,9 @@ import polars as pl
 from foundata import utils
 
 
-def null_pids(attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid") -> bool:
+def null_pids(
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
+) -> bool:
     n_attr = attributes[on].null_count()
     n_trips = trips[on].null_count()
     if n_attr:
@@ -13,9 +15,16 @@ def null_pids(attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid") ->
     return n_attr == 0 and n_trips == 0
 
 
-def columns(attributes: pl.DataFrame, trips: pl.DataFrame) -> bool:
-    template_attributes = utils.get_template_attributes()
-    template_trips = utils.get_template_trips()
+def columns(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    template_attributes: dict | None = None,
+    template_trips: dict | None = None,
+) -> bool:
+    if template_attributes is None:
+        template_attributes = utils.get_template_attributes()
+    if template_trips is None:
+        template_trips = utils.get_template_trips()
 
     expected_attributes = template_attributes.keys()
     expected_trips = template_trips.keys()
@@ -55,9 +64,12 @@ def columns(attributes: pl.DataFrame, trips: pl.DataFrame) -> bool:
 
 def check_dtype(expected_dtype: str, actual_dtype: pl.DataType) -> bool:
     exact = {
-        "int8": pl.Int8, "int16": pl.Int16,
-        "int32": pl.Int32, "int64": pl.Int64,
-        "float32": pl.Float32, "float64": pl.Float64,
+        "int8": pl.Int8,
+        "int16": pl.Int16,
+        "int32": pl.Int32,
+        "int64": pl.Int64,
+        "float32": pl.Float32,
+        "float64": pl.Float64,
     }
     if expected_dtype in exact:
         return actual_dtype == exact[expected_dtype]
@@ -130,12 +142,15 @@ def activity_consistency(trips: pl.DataFrame) -> bool:
         .filter(pl.col("dact") != "unknown")
         .filter(pl.col("next_oact") != "unknown")
         .filter(pl.col("dact") != pl.col("next_oact"))
-        .select("pid").unique()
+        .select("pid")
+        .unique()
     )
     n = len(inconsistent)
     total = trips.select("pid").n_unique()
     if n:
-        print(f"Warning: {n}/{total} persons have activity chain inconsistencies ({100*n/total:.1f}%)")
+        print(
+            f"Warning: {n}/{total} persons have activity chain inconsistencies ({100*n/total:.1f}%)"
+        )
         return False
     return True
 
@@ -148,17 +163,22 @@ def location_consistency(trips: pl.DataFrame) -> bool:
         .filter(pl.col("dzone") != "unknown")
         .filter(pl.col("next_ozone") != "unknown")
         .filter(pl.col("dzone") != pl.col("next_ozone"))
-        .select("pid").unique()
+        .select("pid")
+        .unique()
     )
     n = len(inconsistent)
     total = trips.select("pid").n_unique()
     if n:
-        print(f"Warning: {n}/{total} persons have location chain inconsistencies ({100*n/total:.1f}%)")
+        print(
+            f"Warning: {n}/{total} persons have location chain inconsistencies ({100*n/total:.1f}%)"
+        )
         return False
     return True
 
 
-def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
+def check_col_cnfg(
+    actual: pl.DataFrame, template: dict, auto_cast: bool = True
+) -> None:
     actual_cols = set(actual.columns)
     template_cols = set(template.keys())
 
@@ -169,7 +189,19 @@ def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
         expected_dtype = cnfg["dtype"]
         actual_dtype = actual[col].dtype
         good_dtype = check_dtype(expected_dtype, actual_dtype)
-        if not good_dtype:
+        if auto_cast and not good_dtype:
+            print(
+                f"Auto-casting column '{col}' from {actual_dtype} to expected {expected_dtype}"
+            )
+            polars_type = utils.DTYPE_MAP.get(expected_dtype)
+            if polars_type is not None:
+                actual = actual.with_columns(
+                    pl.col(col).cast(polars_type, strict=True)
+                )
+                actual_dtype = actual[col].dtype
+                good_dtype = check_dtype(expected_dtype, actual_dtype)
+
+        elif not good_dtype:
             print(
                 f"ERROR: Column '{col}' has dtype {actual_dtype} but expected {expected_dtype}"
             )

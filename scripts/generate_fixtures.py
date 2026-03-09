@@ -286,8 +286,8 @@ def generate_ktdb():
     dst.mkdir(parents=True, exist_ok=True)
     print("Generating KTDB fixtures...")
 
-    persons = pl.read_csv(src / "persons.csv", ignore_errors=True, encoding="utf8-lossy")
-    trips = pl.read_csv(src / "trips.csv", ignore_errors=True, encoding="utf8-lossy")
+    persons = pl.read_csv(src / "persons.csv", ignore_errors=True, encoding="euc-kr")
+    trips = pl.read_csv(src / "trips.csv", ignore_errors=True, encoding="euc-kr")
 
     sampled_ids = persons["idx"].unique().sample(n=min(N_HOUSEHOLDS, persons["idx"].n_unique()), seed=SEED)
     persons = persons.filter(pl.col("idx").is_in(sampled_ids))
@@ -296,8 +296,8 @@ def generate_ktdb():
     persons = shuffle_non_keys(persons, key_cols=["idx"], seed=SEED)
     trips = shuffle_non_keys(trips, key_cols=["idx", "th_seq"], seed=SEED + 10)
 
-    persons.write_csv(dst / "persons.csv")
-    trips.write_csv(dst / "trips.csv")
+    (dst / "persons.csv").write_bytes(persons.write_csv().encode("euc-kr", errors="replace"))
+    (dst / "trips.csv").write_bytes(trips.write_csv().encode("euc-kr", errors="replace"))
     print(f"  persons: {len(persons)}, trips: {len(trips)}")
 
 

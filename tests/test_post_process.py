@@ -1,6 +1,25 @@
+from pathlib import Path
+
 import polars as pl
+import pytest
 
 from foundata import post_process
+
+FIXTURE_DIR = Path(__file__).parent / "fixtures" / "post_process"
+TRIPS_CSV = FIXTURE_DIR / "trips.csv"
+
+TRIPS_SCHEMA = {
+    "pid": pl.String,
+    "seq": pl.Int32,
+    "ozone": pl.String,
+    "dzone": pl.String,
+    "oact": pl.String,
+    "dact": pl.String,
+    "mode": pl.String,
+    "tst": pl.Int32,
+    "tet": pl.Int32,
+    "distance": pl.Float32,
+}
 
 
 def _make_trips(rows):
@@ -147,6 +166,61 @@ def test_trips_with_following_activity_columns():
     ])
     result = post_process.trips_with_following_activity(attrs, trips)
     assert set(result.columns) == set(trips.columns) | {"aet"}
+
+
+@pytest.fixture
+def fixture_trips():
+    return pl.read_csv(TRIPS_CSV, schema_overrides=TRIPS_SCHEMA)
+
+
+@pytest.fixture
+def fixture_attrs(fixture_trips):
+    return fixture_trips.select("pid", "ozone").unique("pid").rename({"ozone": "rurality"})
+
+
+def test_trips_to_activities_fixture(fixture_attrs, fixture_trips):
+    acts = post_process.trips_to_activities(fixture_attrs, fixture_trips)
+
+    assert set(acts.columns) == {"pid", "seq", "act", "zone", "ast", "aet"}
+    assert (acts["ast"] >= 0).all()
+    assert (acts["aet"] <= 1440).all()
+    assert (acts["ast"] <= acts["aet"]).all()  # zero-duration activities are valid (tet[i]==tst[i+1])
+
+    # Each person with N trips produces N+1 activities
+    trip_counts = fixture_trips.group_by("pid").len()
+    act_counts = acts.group_by("pid").len()
+    joined = trip_counts.join(act_counts, on="pid", suffix="_acts")
+    for row in joined.iter_rows(named=True):
+        assert row["len_acts"] == row["len"] + 1, f"pid={row['pid']}: {row['len']} trips → expected {row['len'] + 1} activities, got {row['len_acts']}"
+
+    # Activities sorted by ast within each person
+    for pid in fixture_trips["pid"].unique():
+        person_acts = acts.filter(pl.col("pid") == pid).sort("ast")
+        ast_vals = person_acts["ast"].to_list()
+        assert ast_vals == sorted(ast_vals), f"pid={pid} activities not sorted by ast"
+
+
+def test_trips_with_following_activity_fixture(fixture_attrs, fixture_trips):
+    result = post_process.trips_with_following_activity(fixture_attrs, fixture_trips)
+
+    # All input columns preserved plus aet
+    assert set(fixture_trips.columns) | {"aet"} == set(result.columns)
+
+    # All valid trips (tet < 1440) are included
+    valid_trip_count = fixture_trips.filter(pl.col("tet") < 1440).shape[0]
+    assert len(result) == valid_trip_count
+
+    # Last trip per person has aet == 1440
+    last_trips = result.sort("pid", "seq").group_by("pid").last()
+    assert (last_trips["aet"] == 1440).all()
+
+    # For non-last trips: aet == next trip's tst
+    sorted_result = result.sort("pid", "seq")
+    next_tst = sorted_result.with_columns(
+        next_tst=pl.col("tst").shift(-1).over("pid")
+    ).filter(pl.col("aet") != 1440)
+    mismatches = next_tst.filter(pl.col("aet") != pl.col("next_tst"))
+    assert len(mismatches) == 0, f"{len(mismatches)} non-last trips have aet != next trip's tst"
 
 
 def test_trips_to_activities_no_trips_person():

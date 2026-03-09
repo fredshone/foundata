@@ -6,6 +6,24 @@ import polars as pl
 import yaml
 from rapidfuzz import fuzz, process
 
+DTYPE_MAP = {
+    "int8": pl.Int8,
+    "int16": pl.Int16,
+    "int32": pl.Int32,
+    "int64": pl.Int64,
+    "float32": pl.Float32,
+    "float64": pl.Float64,
+    "int": pl.Int32,
+    "integer": pl.Int32,
+    "float": pl.Float32,
+    "string": pl.String,
+    "str": pl.String,
+    "bool": pl.Boolean,
+    "boolean": pl.Boolean,
+    "date": pl.Date,
+    "datetime": pl.Datetime,
+}
+
 
 def fuzzy_loader(path: str | Path, target: str, **kwargs) -> pl.DataFrame:
     # look in given path for closest math to target
