@@ -1,7 +1,7 @@
 column_mappings:
     2022:
         "HOUSEID": "hid"
-        "HBHUR": "rurality"
+        "HBHUR": "hh_zone"
         # "HBPPOPDN": "population_density"
         "HHFAMINC": "hh_income"
         "HHSIZE": "hh_size"
@@ -16,7 +16,7 @@ column_mappings:
         "WTHHFIN": "weight"
     default:
         "HOUSEID": "hid"
-        "HBHUR": "rurality"
+        "HBHUR": "hh_zone"
         # "HBPPOPDN": "population_density"
         "HHFAMINC": "hh_income"
         "HHSIZE": "hh_size"
@@ -31,7 +31,7 @@ column_mappings:
         "WTHHFIN": "weight"
 
 
-rurality:
+hh_zone:
     default:
         "1": rural
         "2": suburban

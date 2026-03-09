@@ -41,7 +41,7 @@ def trips_to_activities(
         pl.col("pid"),
         pl.lit(0, dtype=pl.Int8).alias("seq"),
         pl.lit("home").alias("act"),
-        pl.col("rurality").alias("zone"),
+        pl.col("hh_zone").alias("zone"),
         pl.lit(0, dtype=pl.Int32).alias("ast"),
         pl.lit(1440, dtype=pl.Int32).alias("aet"),
     )

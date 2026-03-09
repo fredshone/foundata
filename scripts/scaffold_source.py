@@ -43,7 +43,7 @@ def build_hh_yaml(template_attributes: dict) -> str:
     # List all hh-relevant attribute fields as commented stubs
     hh_fields = [
         "hid", "hh_size", "hh_income", "dwelling", "ownership",
-        "vehicles", "rurality", "weight",
+        "vehicles", "hh_zone", "weight",
     ]
     for field in hh_fields:
         if field in template_attributes:
@@ -198,7 +198,7 @@ def load_households(
     # TODO: Map coded values to canonical labels for each categorical field.
     # Example:
     # data = data.with_columns(
-    #     rurality=pl.col("rurality").replace_strict(config["rurality"]),
+    #     hh_zone=pl.col("hh_zone").replace_strict(config["hh_zone"]),
     # )
 
     data = data.with_columns(

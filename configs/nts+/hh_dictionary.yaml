@@ -1,0 +1,249 @@
+column_mappings:
+    HouseholdID: hid
+    TWSMonth: month
+    SurveyYear: year
+    Settlement2011EW_B04ID: hh_zone
+    HHIncQISEngTS_B01ID: hh_income
+    Ten1_B02ID: ownership
+    AddressType_B01ID: dwelling
+    HHoldNumPeople: hh_size
+    HHoldStruct_B02ID: hh_composition
+    HHoldNumAdults: hh_adults
+    HHoldNumChildren: hh_children
+    NumLicHolders: num_license_holders
+    HHoldEmploy_B01ID: hh_employment
+    NumCar: vehicles
+    NumBike: hh_bikes
+    NumMCycle: hh_motorcycles
+    W3: weight
+
+    # bus access variables
+    WalkBus_B01ID: walk_bus_duration
+    Getbus_B01ID: bus_frequency
+    ReliaBus_B01ID: bus_reliability
+
+    # rail access variables
+    WalkRail_B01ID: walk_rail_duration
+    BusRail_B01ID: bus_rail_duration
+    DescTa_B01ID: rail_frequency
+    RelMetro_B01ID: rail_reliability
+
+    # access to services
+    JTimeGP_B01ID: access_gp_duration
+    JTimeChem_B01ID: access_chemist_duration
+    JTimeHosp_B01ID: access_hospital_duration
+    JTimeShopC_B01ID: access_shopping_duration
+    JTimeGroc_B01ID: access_grocery_duration
+    JTimePost_B01ID: access_post_duration
+    JTimePrimSch_B01ID: access_primary_school_duration
+    JTimeSecSch_B01ID: access_secondary_school_duration
+    JTimeColl_B01ID: access_college_duration
+    Deliv_B01ID: delivery_frequency
+
+
+delivery_frequency:
+    1: "144+/yr"
+    2: "96+/yr"
+    3: "48+/yr"
+    4: "24+/yr"
+    5: "2+/yr"
+    6: "1+/yr"
+    7: "0+/yr"
+    -8: "NA"
+    -9: "DNA"
+    -10: "DEAD"
+
+journey_times:
+    1: "0-15"
+    2: "16-20"
+    3: "21-30"
+    4: "31-40"
+    5: "41-60"
+    6: "60+"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+
+walk_rail_duration:
+    1: "0-6"
+    2: "7-13"
+    3: "14-26"
+    4: "27-43"
+    5: "44+"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+bus_rail_duration:
+    1: "unknown"
+    2: "0-6"
+    3: "7-13"
+    4: "14-26"
+    5: "27-43"
+    6: "44+"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+rail_frequency:
+    1: "all_day"
+    2: "rush_hour_only"
+    3: "less_freq_service"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+rail_reliability:
+    1: "very_reliable"
+    2: "reliable"
+    3: "neutral"
+    4: "unreliable"
+    5: "very_unreliable"
+    6: "n/a"
+    7: "unknown"
+    8 : "unknown"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+walk_bus_duration:
+    1: "0-6"
+    2: "7-13"
+    3: "14-26"
+    4: "27-43"
+    5: "44+"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+bus_frequency:
+    1: "none"
+    2: ">daily"
+    3: ">hourly"
+    4: ">half_hourly"
+    5: ">quarter_hourly"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+bus_reliability:
+    1: "very_reliable"
+    2: "reliable"
+    3: "neutral"
+    4: "unreliable"
+    5: "very_unreliable"
+    6: "n/a"
+    7: "unknown"
+    8 : "unknown"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+hh_employment:
+    1: "0"
+    2: "0.5"
+    3: "1"
+    4: "1"
+    5: "1.5"
+    6: "2"
+    7: "2"
+    8: "2.5"
+    9: "1.5"
+    10: "3"
+    11: "3.5"
+    -8: "unknown"
+    -9: "unknown"
+    -10: "unknown"
+
+hh_composition:
+    1: 1adult
+    2: 2adults
+    3: 3+adults
+    4: single_parent
+    5: 2adult_1+child
+    6: 3+adult_1+child
+    -8: unknown
+    -10: unknown
+
+dwelling:
+    1: house
+    2: house
+    3: house
+    4: house
+    5: flat
+    6: flat
+    7: flat
+    8: other
+    -8: unknown
+    -9: unknown
+    -10: unknown
+
+hh_income:
+    1: [0,18000]
+    2: [18000,26000]
+    3: [26000,36000]
+    4: [36000,55000]
+    5: [55000,200000]
+    -8: [0]
+    -9: [0]
+    -10: [0]
+
+ownership:
+    1: owned
+    2: rented
+    3: other
+    -8: unknown
+    -9: unknown
+    -10: unknown
+
+hh_zone:
+    1: suburban
+    2: urban
+    3: rural
+    4: rural
+    5: rural
+    -8: unknown
+    -10: unknown
+
+hh_composition:
+    -8: unknown
+    -10: unknown
+    1: 1adult
+    2: 2adults
+    3: 3+adults
+    4: single_parent
+    5: 2adult_1+child
+    6: 3+adult_1+child
+
+disabled:
+    1: yes
+    2: no
+    -8: unknown
+    -9: unknown
+    -10: unknown
+
+# month:
+#     1: january
+#     2: february
+#     3: march
+#     4: april
+#     5: may
+#     6: june
+#     7: july
+#     8: august
+#     9: september
+#     10: october
+#     11: november
+#     12: december
+#     -10: unknown
+
+# day:
+#     1: monday
+#     2: tuesday
+#     3: wednesday
+#     4: thursday
+#     5: friday
+#     6: saturday
+#     7: sunday
+#     -10: unknown

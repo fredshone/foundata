@@ -68,7 +68,7 @@ act_mappings:
     }
 
 
-rurality:
+hh_zone:
     default:
         "Banyule (C)": suburban  # Metro middle-ring LGA wholly in Greater Melbourne. [1](https://sro.vic.gov.au/owning-property/land-tax/exemptions-and-concessions-land-tax/primary-production-land/greater-melbourne-and-urban-zones)
         "Bayside (C)": urban     # Inner–inner/middle bay-side municipality within metro core. [3](https://en.wikipedia.org/wiki/Category:Local_government_areas_in_Melbourne)

@@ -113,6 +113,7 @@ def load_years(
         dwelling=pl.lit("unknown"),
         month=pl.lit(None, dtype=pl.Int8),
         disability=pl.lit("unknown"),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
 
     attributes = attributes.with_columns(
@@ -170,7 +171,7 @@ def preprocess_hhs(
         pl.col("zone")
         .replace_strict(zone_mapping, default=pl.col("zone"))
         .fill_null("unknown")
-        .alias("rurality")
+        .alias("hh_zone")
     ).drop("zone")
 
     hhs = hhs.filter(pl.col("hid").is_not_null())

@@ -152,7 +152,7 @@ column_mappings:
         1: "yes",
         2: "no",
     }
-rurality:
+hh_zone:
     default:
         -9: unknown
         1: rural

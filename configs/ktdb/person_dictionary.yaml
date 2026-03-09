@@ -118,9 +118,9 @@ ownership:
   # 1: other
   # 1: unknown
 
-# rurality mapping
+# hh_zone mapping
   # Valid values: urban, suburban, rural, unknown
-rurality:
+hh_zone:
   # 1: urban
   # 1: suburban
   # 1: rural

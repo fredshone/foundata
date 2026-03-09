@@ -43,9 +43,10 @@ def sample_attributes_df():
             "year": [2022, 2022],
             "month": [6, 7],
             "day": ["monday", "tuesday"],
-            "rurality": ["urban", "suburban"],
+            "hh_zone": ["urban", "suburban"],
             "weight": [1.0, 1.5],
             "avg_speed": [30.0, 25.0],
+            "access_egress_distance": [None, None],
         }
     )
     trips = pl.DataFrame(
@@ -93,9 +94,10 @@ def sample_trips_df():
             "year": [2022, 2022],
             "month": [6, 7],
             "day": ["monday", "tuesday"],
-            "rurality": ["urban", "suburban"],
+            "hh_zone": ["urban", "suburban"],
             "weight": [1.0, 1.5],
             "avg_speed": [30.0, 25.0],
+            "access_egress_distance": [None, None],
         }
     )
     trips = pl.DataFrame(

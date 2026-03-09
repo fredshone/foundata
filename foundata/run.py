@@ -275,6 +275,9 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         trips_config = load_yaml_config(
             CONFIGS_ROOT / "nts" / "trip_dictionary.yaml"
         )
+        stages_config = load_yaml_config(
+            CONFIGS_ROOT / "nts" / "stage_dictionary.yaml"
+        )
         days_config = load_yaml_config(
             CONFIGS_ROOT / "nts" / "day_dictionary.yaml"
         )
@@ -284,6 +287,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
+            stages_config=stages_config,
             days_config=days_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")

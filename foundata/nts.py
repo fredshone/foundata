@@ -19,6 +19,7 @@ def load(
     hh_config: dict,
     person_config: dict,
     trips_config: dict,
+    stages_config: dict,
     days_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
 
@@ -30,15 +31,14 @@ def load(
         hhs, persons, on="hid", lhs_name="households", rhs_name="persons"
     )
 
-    trips = load_trips(data_root, trips_config)
-    days = load_days(data_root, days_config)
-    trips = table_joiner(
-        trips, days, on="did", lhs_name="trips", rhs_name="days"
-    )
+    # add transit access/egress distance using stages
+    stages = load_stages(data_root, stages_config)
+    attributes = calc_transit_access_egress_distance(attributes, stages)
 
-    trips, attributes = split_days(
-        trips, attributes, on_split="pdid", on_base="pid"
-    )
+    trips = load_trips(data_root, trips_config)
+
+    days = load_days(data_root, days_config)
+    trips, attributes = split_days(days, trips, attributes)
 
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
@@ -81,7 +81,7 @@ def load_households(
         pl.col("year").cast(pl.Int32),
         pl.col("ownership").replace_strict(config["ownership"]),
         pl.col("dwelling").replace_strict(config["dwelling"]),
-        pl.col("rurality").replace_strict(config["rurality"]),
+        pl.col("hh_zone").replace_strict(config["hh_zone"]),
         pl.lit("nts").alias("source"),
         pl.lit("uk").alias("country"),
     )
@@ -138,12 +138,6 @@ def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
         columns=list(columns.keys()),
     ).rename(columns)
 
-    trips = (
-        trips.with_columns(day=pl.col("did").rank(method="dense").over("pid"))
-        .with_columns((pl.col("pid") * 100 + pl.col("day")).alias("pdid"))
-        .drop("day")
-    )
-
     trips = trips.with_columns(
         mode=pl.col("mode").replace_strict(config["mode"]),
         oact=pl.col("oact").replace_strict(config["act"]),
@@ -168,26 +162,136 @@ def load_days(root: str | Path, config: dict | None = None) -> pl.DataFrame:
         columns=list(columns.keys()),
     ).rename(columns)
 
-    return days.with_columns(pl.col("day").replace_strict(config["day"]))
+    return days.sort("pid", "did").with_columns(
+        day=pl.col("day").replace_strict(config["day"])
+    )
+
+
+def load_stages(root: str | Path, config: dict | None = None) -> pl.DataFrame:
+
+    columns = config["column_mappings"]
+
+    stages = pl.read_csv(
+        root / "tab" / "stage_eul_2002-2023.tab",
+        separator="\t",
+        columns=list(columns.keys()),
+    ).rename(columns)
+
+    stages = stages.with_columns(
+        mode=pl.col("mode").replace_strict(config["mode"]),
+        distance=pl.col("distance") * 1.6,
+        main_stage=pl.when(pl.col("main_stage") == 1)
+        .then(True)
+        .otherwise(False),
+    )
+
+    return stages
+
+
+def calc_transit_access_egress_distance(
+    attributes: pl.DataFrame, stages: pl.DataFrame
+) -> pl.DataFrame:
+
+    n_trips = stages.select("pid", "tid").unique().shape[0]
+
+    # main stages with at least one transit stage (either bus or rail)
+    main_transit_stages = stages.filter(
+        pl.col("main_stage") & pl.col("mode").is_in(["bus", "rail"])
+    )
+
+    n_main_transit_trips = (
+        main_transit_stages.select("pid", "tid").unique().shape[0]
+    )
+    perc = n_main_transit_trips / n_trips * 100
+    print(
+        f"{n_main_transit_trips} out of {n_trips} ({perc:.2f}%) trips have a main transit stage."
+    )
+
+    # join to get all stages of trips with a main transit stage
+    transit_stages = stages.join(
+        main_transit_stages.select("pid", "tid"), on=["pid", "tid"], how="left"
+    )
+
+    # anti-join to get non-transit stages of those trips, which are by definition access/egress stages
+    access_egress_stages = transit_stages.join(
+        main_transit_stages.select("pid", "tid", "sid"),
+        on=["pid", "tid", "sid"],
+        how="anti",
+    )
+
+    # sum stage distances to get total access/egress distance per trip
+    trip_distance = access_egress_stages.group_by("pid", "tid").agg(
+        pl.col("distance")
+        .cast(pl.Float32)
+        .sum()
+        .alias("access_egress_distance")
+    )
+
+    # average per person
+    person_distance = (
+        trip_distance.group_by("pid")
+        .agg(pl.col("access_egress_distance").mean())
+        .select("pid", "access_egress_distance")
+    )
+
+    attributes = attributes.join(person_distance, on="pid", how="left")
+
+    access_egress_distance_nulls = attributes.filter(
+        pl.col("access_egress_distance").is_null()
+    ).shape[0]
+    perc = access_egress_distance_nulls / attributes.shape[0] * 100
+    print(
+        f"{access_egress_distance_nulls} out of {attributes.shape[0]} ({perc:.2f}%) persons have null access_egress_distance."
+    )
+
+    return attributes
 
 
 def split_days(
-    trips: pl.DataFrame,
-    attributes: pl.DataFrame,
-    on_split: str,
-    on_base: str = "pid",
+    days: pl.DataFrame, trips: pl.DataFrame, attributes: pl.DataFrame
 ) -> pl.DataFrame:
-    mapping = trips.select(on_base, on_split, "day").unique(maintain_order=True)
-    trips_split = trips.drop(on_base).rename({on_split: on_base})
-    attributes_expanded = (
-        mapping.join(attributes, on=on_base, how="left")
-        .drop(on_base)
-        .rename({on_split: on_base})
+
+    # add pdid to days
+    days = (
+        days.sort("pid", "did")
+        .with_columns(seq_in_day=pl.col("did").rank(method="dense").over("pid"))
+        .with_columns(
+            (pl.col("pid") * 100 + pl.col("seq_in_day")).alias("pdid")
+        )
+        .drop("seq_in_day")
     )
-    check_overlap(attributes_expanded, trips_split, on=on_base)
+
+    # add pdid to trips
+    trips = (
+        trips.sort("pid", "tid")
+        .with_columns(seq_in_day=pl.col("did").rank(method="dense").over("pid"))
+        .with_columns(
+            (pl.col("pid") * 100 + pl.col("seq_in_day")).alias("pdid")
+        )
+        .drop("seq_in_day")
+    )
+    # split using a rename
+    trips = trips.drop("pid").rename({"pdid": "pid"})
+
+    # add pdid and dow to attributes via days (split using right join)
+    attributes = (
+        attributes.join(
+            days.select("pid", "pdid", "day"), on="pid", how="right"
+        )
+        .drop("pid")
+        .rename({"pdid": "pid"})
+    )
+
+    check_overlap(
+        attributes,
+        trips,
+        on="pid",
+        lhs_name="split attributes",
+        rhs_name="split trips",
+    )
 
     # also
-    trips_split = trips_split.drop(["tid", "did", "day"])
-    trips_split = fix.day_wrap(trips_split)
+    trips = trips.drop(["tid", "did"])
+    trips = fix.day_wrap(trips)
 
-    return trips_split, attributes_expanded
+    return trips, attributes

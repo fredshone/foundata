@@ -1,0 +1,37 @@
+column_mappings:
+    StageID: sid
+    StageSeq: sseq
+    TripID: tid
+    DayID: did
+    JourSeq: seq
+    IndividualID: pid
+    HouseholdID: hid
+    StageDistance: distance  # miles
+    StageTime: duration  # minutes
+    StageMode_B04ID: mode
+    StageMain_B01ID: main_stage
+
+
+mode:
+    1: walk
+    2: bike
+    3: car  # Car/van driver
+    4: car  # Car/van driver
+    5: car  # Motorcycle
+    6: car  # Other private transport
+    7: bus  #  Bus in London
+    8: bus  # Other local bus
+    9: bus  # Non-local bus
+    10: rail  # London Underground
+    11: rail  # Surface Rail
+    12: car  # Taxi/minicab
+    13: rail  # Other public transport
+    -10: unknown
+    -8: unknown
+
+# main_stage:
+#     1: true
+#     2: false
+#     -8: false
+#     -9: false
+#     -10: false

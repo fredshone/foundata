@@ -43,6 +43,7 @@ def load(
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -88,7 +89,9 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
 
     persons = persons.select(column_mapping.keys()).rename(column_mapping)
 
-    persons = persons.filter(pl.col("hid").is_not_null() & pl.col("pid").is_not_null())
+    persons = persons.filter(
+        pl.col("hid").is_not_null() & pl.col("pid").is_not_null()
+    )
 
     persons = persons.with_columns(
         pid=(
@@ -131,7 +134,7 @@ def load_rurality(configs_root: Path) -> pl.DataFrame:
     # https://github.com/spaykin/rural-urban-classification/blob/main/data_final/RuralSubUrban_T.csv
     mapping = pl.read_csv(
         configs_root / "cmap" / "RuralSubUrban_T.csv",
-        columns=["tractFIPS", "rurality"],
+        columns=["tractFIPS", "hh_zone"],
     ).with_columns(pl.col("tractFIPS").cast(pl.Utf8).str.zfill(11))
     return mapping
 
@@ -174,7 +177,7 @@ def load_locations(
             how="left",
             maintain_order="left_right",
         )
-        .with_columns(rurality=pl.col("rurality").fill_null("unknown"))
+        .with_columns(hh_zone=pl.col("hh_zone").fill_null("unknown"))
         .drop("fips")
     )
 
@@ -221,7 +224,7 @@ def load_home_locations(
             how="left",
             maintain_order="left_right",
         )
-        .with_columns(rurality=pl.col("rurality").fill_null("unknown"))
+        .with_columns(hh_zone=pl.col("hh_zone").fill_null("unknown"))
         .drop("fips")
     ).rename({"sampno": "hid"})
 
@@ -322,7 +325,7 @@ def load_trips(
             trips.rename({"ozone": "ozone_code", "dzone": "dzone_code"})
             .join(
                 rurality_mapping.select(
-                    ["sampno", "locno", pl.col("rurality").alias("ozone")]
+                    ["sampno", "locno", pl.col("hh_zone").alias("ozone")]
                 ),
                 left_on=["hid", "ozone_code"],
                 right_on=["sampno", "locno"],
@@ -331,7 +334,7 @@ def load_trips(
             )
             .join(
                 rurality_mapping.select(
-                    ["sampno", "locno", pl.col("rurality").alias("dzone")]
+                    ["sampno", "locno", pl.col("hh_zone").alias("dzone")]
                 ),
                 left_on=["hid", "dzone_code"],
                 right_on=["sampno", "locno"],
