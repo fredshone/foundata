@@ -4,7 +4,7 @@
 
 column_mappings:
   idx: pid
-  Q1_1: age
+  SQ3_1: age
   SQ2: sex
   R1: has_licence
   R2: student
