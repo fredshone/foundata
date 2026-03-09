@@ -13,9 +13,10 @@ def test_nts_load():
     hh_cfg = load_yaml_config(CONFIGS_ROOT / "nts" / "hh_dictionary.yaml")
     person_cfg = load_yaml_config(CONFIGS_ROOT / "nts" / "person_dictionary.yaml")
     trips_cfg = load_yaml_config(CONFIGS_ROOT / "nts" / "trip_dictionary.yaml")
+    stages_cfg = load_yaml_config(CONFIGS_ROOT / "nts" / "stage_dictionary.yaml")
     days_cfg = load_yaml_config(CONFIGS_ROOT / "nts" / "day_dictionary.yaml")
 
-    attrs, trips = nts.load(Path(DATA_ROOT), hh_cfg, person_cfg, trips_cfg, days_cfg)
+    attrs, trips = nts.load(Path(DATA_ROOT), hh_cfg, person_cfg, trips_cfg, stages_cfg, days_cfg)
 
     assert len(attrs) > 0
     assert len(trips) > 0

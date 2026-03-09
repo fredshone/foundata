@@ -43,13 +43,13 @@ def _make_attributes(rows):
         rows,
         schema={
             "pid": pl.String,
-            "rurality": pl.String,
+            "hh_zone": pl.String,
         },
     )
 
 
 def test_trips_to_activities_basic():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "shop", "ozone": "z2", "dzone": "z3", "tst": 900, "tet": 920},
@@ -84,7 +84,7 @@ def test_trips_to_activities_basic():
 
 
 def test_trips_to_activities_single_trip():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
     ])
@@ -93,7 +93,7 @@ def test_trips_to_activities_single_trip():
 
 
 def test_trips_to_activities_multi_person():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}, {"pid": "p2", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}, {"pid": "p2", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1", "tst": 1020, "tet": 1080},
@@ -108,7 +108,7 @@ def test_trips_to_activities_multi_person():
 
 
 def test_trips_to_activities_columns():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1", "tst": 1020, "tet": 1080},
@@ -118,7 +118,7 @@ def test_trips_to_activities_columns():
 
 
 def test_trips_to_activities_includes_start_of_day():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1", "tst": 1020, "tet": 1080},
@@ -132,7 +132,7 @@ def test_trips_to_activities_includes_start_of_day():
 
 
 def test_trips_to_activities_includes_end_of_day():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1", "tst": 1020, "tet": 1080},
@@ -146,7 +146,7 @@ def test_trips_to_activities_includes_end_of_day():
 
 
 def test_trips_with_following_activity_basic():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "shop", "ozone": "z2", "dzone": "z3", "tst": 900, "tet": 920},
@@ -159,7 +159,7 @@ def test_trips_with_following_activity_basic():
 
 
 def test_trips_with_following_activity_columns():
-    attrs = _make_attributes([{"pid": "p1", "rurality": "urban"}])
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},
         {"pid": "p1", "seq": 2, "oact": "work", "dact": "home", "ozone": "z2", "dzone": "z1", "tst": 1020, "tet": 1080},
@@ -175,7 +175,7 @@ def fixture_trips():
 
 @pytest.fixture
 def fixture_attrs(fixture_trips):
-    return fixture_trips.select("pid", "ozone").unique("pid").rename({"ozone": "rurality"})
+    return fixture_trips.select("pid", "ozone").unique("pid").rename({"ozone": "hh_zone"})
 
 
 def test_trips_to_activities_fixture(fixture_attrs, fixture_trips):
@@ -225,8 +225,8 @@ def test_trips_with_following_activity_fixture(fixture_attrs, fixture_trips):
 
 def test_trips_to_activities_no_trips_person():
     attrs = _make_attributes([
-        {"pid": "p1", "rurality": "urban"},
-        {"pid": "p2", "rurality": "suburban"},
+        {"pid": "p1", "hh_zone": "urban"},
+        {"pid": "p2", "hh_zone": "suburban"},
     ])
     trips = _make_trips([
         {"pid": "p1", "seq": 1, "oact": "home", "dact": "work", "ozone": "z1", "dzone": "z2", "tst": 480, "tet": 540},

@@ -73,6 +73,7 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         source=pl.lit(SOURCE),
         country=pl.lit("south korea"),
         avg_speed=pl.lit(None, dtype=pl.Float64),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
         # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
         date=(pl.lit(20210000) + pl.col("date"))
         .cast(pl.String)
@@ -127,7 +128,7 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
             "relationship",
             "race",
             "ownership",
-            "rurality",
+            "hh_zone",
         ]
     )
     return data
@@ -141,7 +142,7 @@ def load_zones() -> pl.DataFrame:
             {"Administrative dong code": "zone", "town/village name": "name"}
         )
         .with_columns(
-            rurality=pl.when(pl.col("name").str.ends_with("동"))
+            hh_zone=pl.when(pl.col("name").str.ends_with("동"))
             .then(pl.lit("urban"))
             .when(pl.col("name").str.ends_with("읍"))
             .then(pl.lit("suburban"))
@@ -257,7 +258,7 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
     )
 
     zones = load_zones()
-    zone_mapping = dict(zip(zones["zone"], zones["rurality"]))
+    zone_mapping = dict(zip(zones["zone"], zones["hh_zone"]))
 
     data = data.with_columns(
         ozone=pl.col("ozone").replace_strict(zone_mapping, default="unknown"),

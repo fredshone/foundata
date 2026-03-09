@@ -89,6 +89,7 @@ def load_years(
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -109,7 +110,7 @@ def preprocess_households(
     income_mapping = config["hh_income"]
     ownership_mapping = config["ownership"]
     dwelling_mapping = config["dwelling"]
-    zone_mapping = config["rurality"]
+    zone_mapping = config["hh_zone"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
@@ -164,8 +165,8 @@ def preprocess_households(
         ).drop("wd_weight", "we_weight")
 
     hhs = hhs.with_columns(
-        pl.col("rurality")
-        .replace_strict(zone_mapping, default=pl.col("rurality"))
+        pl.col("hh_zone")
+        .replace_strict(zone_mapping, default=pl.col("hh_zone"))
         .fill_null("unknown")
     )
 
@@ -259,7 +260,7 @@ def preprocess_trips(
 
     mode_map = config["mode_mappings"]
     act_map = config["act_mappings"]
-    rurality_map = config["rurality"]
+    rurality_map = config["hh_zone"]
     trips = trips.with_columns(
         mode=pl.col("mode").replace_strict(mode_map),
         oact=pl.col("oact").replace_strict(act_map),

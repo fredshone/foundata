@@ -1,5 +1,4 @@
 column_mappings:
-    IndividualID: pid
     DayID: did
     TravelWeekDay_B01ID: day
 

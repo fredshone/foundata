@@ -70,7 +70,7 @@ def load_years(
                     how="left",
                 )
                 .drop("ozone")
-                .rename({"rurality": "ozone"})
+                .rename({"hh_zone": "ozone"})
             )
             trips = (
                 trips.join(
@@ -80,7 +80,7 @@ def load_years(
                     how="left",
                 )
                 .drop("dzone")
-                .rename({"rurality": "dzone"})
+                .rename({"hh_zone": "dzone"})
             )
             trips = trips.with_columns(
                 ozone=pl.col("ozone").fill_null("unknown"),
@@ -96,6 +96,7 @@ def load_years(
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -113,7 +114,7 @@ def preprocess_households(
 
     day_mapping = config["day"]
     dwell_mapping = config["dwelling"]
-    rurality_mapping = config["rurality"]
+    rurality_mapping = config["hh_zone"]
 
     hhs = hhs.select(column_mapping.keys()).rename(column_mapping)
 
@@ -124,8 +125,8 @@ def preprocess_households(
         dwelling=pl.col("dwelling")
         .replace_strict(dwell_mapping)
         .fill_null("unknown"),
-        rurality=pl.col("rurality")
-        .replace_strict(rurality_mapping, default=pl.col("rurality"))
+        hh_zone=pl.col("hh_zone")
+        .replace_strict(rurality_mapping, default=pl.col("hh_zone"))
         .fill_null("unknown"),
     )
 
@@ -200,7 +201,9 @@ def preprocess_persons(
         persons = persons.with_columns(
             income=pl.col("income")
             .replace_strict(
-                income_mapping, default=pl.lit([0]), return_dtype=pl.List(pl.Int32)
+                income_mapping,
+                default=pl.lit([0]),
+                return_dtype=pl.List(pl.Int32),
             )
             .map_elements(
                 lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
@@ -228,7 +231,7 @@ def load_zone_mapping(path: str | Path) -> pl.DataFrame:
     zones = (
         pl.read_csv(path, columns=["SA1_MAINCODE_2021", "SOS_NAME_2021"])
         .with_columns(
-            rurality=pl.col("SOS_NAME_2021")
+            hh_zone=pl.col("SOS_NAME_2021")
             .replace_strict(mapping, default="unknown")
             .fill_null("unknown")
         )

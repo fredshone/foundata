@@ -9,7 +9,7 @@ column_mappings:
         hhsize: hh_size
         hhinc_group: hh_income
         totalvehs: vehicles
-        homelga: rurality
+        homelga: hh_zone
         totalbikes: num_bikes
         hhpoststratweight: weight
 
@@ -23,7 +23,7 @@ column_mappings:
         hhsize: hh_size
         hhinc: hh_income
         totalvehs: vehicles
-        homeLGA: rurality
+        homeLGA: hh_zone
         totalbikes: num_bikes
         wdhhwgt_LGA: wd_weight
         wehhwgt_LGA: we_weight
@@ -87,7 +87,7 @@ ownership: {
     }
 }
 
-rurality:
+hh_zone:
     default:
         "Campaspe (S)": rural # Predominantly rural shire in north-central Victoria. [1](https://www.campaspe.vic.gov.au/)
         "Greater Shepparton (C)": suburban # Regional city with substantial urban population but also significant rural areas. [2](https://www.greatershepparton.com.au/)

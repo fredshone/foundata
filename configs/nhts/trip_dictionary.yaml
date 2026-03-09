@@ -51,7 +51,7 @@ column_mapping:
         "WHYTO": "dact",
     }
 
-rurality:
+hh_zone:
     default:
         "1": rural
         "2": suburban

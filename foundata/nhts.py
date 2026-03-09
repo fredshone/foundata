@@ -31,6 +31,7 @@ def load(
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
@@ -91,9 +92,9 @@ def load_households(
             hh_income=pl.col("hh_income")
             .replace_strict(year_config["hh_income"])
             .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
-            rurality=pl.col("rurality")
+            hh_zone=pl.col("hh_zone")
             .cast(pl.String)
-            .replace_strict(year_config["rurality"]),
+            .replace_strict(year_config["hh_zone"]),
             ownership=pl.col("ownership").replace_strict(
                 year_config["ownership"]
             ),
@@ -212,7 +213,7 @@ def _preprocess_trips(
     column_mapping = config["column_mapping"]
     mode_mapping = config["mode_mappings"]
     act_mapping = config["act_mappings"]
-    rurality_mapping = config["rurality"]
+    rurality_mapping = config["hh_zone"]
 
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 

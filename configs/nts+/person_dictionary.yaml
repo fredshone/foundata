@@ -1,0 +1,154 @@
+column_mappings:
+    # SurveyYear: year
+    IndividualID: pid
+    HouseholdID: hid
+    Age_B01ID: age
+    Sex_B01ID: sex
+    EdAttn1_B01ID: education  # certification
+    DrivLic_B02ID: has_licence
+    CarAccess_B01ID: car_access
+    EcoStat_B02ID: employment
+    EthGroupTS_B02ID: race
+    PossHmN_B01ID: can_wfh
+    MobDiffSum_B01ID: disability
+    SC_B01ID: occupation
+    HRPRelation_B01ID: relationship
+    # PowWhl_B01ID: wheelchair_user
+    # TicketHolding_B01ID: ticket_holder
+    # GenHeal_B01ID: health
+
+
+relationship:
+    1: self
+    2: partner
+    3: child
+    4: child
+    5: child
+    6: child
+    7: parent
+    8: parent
+    9: parent
+    10: parent
+    11: sibling
+    12: sibling
+    13: sibling
+    14: sibling
+    15: child
+    16: parent
+    17: other
+    18: other
+    19: partner
+    -8: unknown
+    -9: unknown
+    -10: unknown
+    99: unknown
+
+occupation:
+    -8: n/a
+    -9: unknown
+    -10: unknown
+    1: professional
+    2: managerial  # technical
+    3: professional
+    4: operator
+    5: operator
+    6: manual
+    7: unknown
+
+age:
+    -8: [0]
+    -10: [0]
+    1: [0,1]
+    2: [1,2]
+    3: [3,4]
+    4: [5,10]
+    5: [11,15]
+    6: [16,16]
+    7: [17,17]
+    8: [18,18]
+    9: [19,19]
+    10: [20,20]
+    11: [21,25]
+    12: [26,29]
+    13: [30,39]
+    14: [40,49]
+    15: [50,59]
+    16: [60,64]
+    17: [65,69]
+    18: [70,74]
+    19: [75,79]
+    20: [80,84]
+    21: [85,100]
+
+sex:
+    -8: unknown
+    -9: unknown
+    -10: unknown
+    1: male
+    2: female
+
+education:
+    -8: n/a
+    -9: unknown
+    -10: unknown
+    1: some
+    2: none
+
+has_licence:
+    -8: "no"
+    -9: "unknown"
+    -10: "unknown"
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    5: "no"
+    6: "no"
+
+employment: 
+    -8: n/a
+    -9: unknown
+    -10: unknown
+    1: ft-employed
+    2: pt-employed
+    3: unemployed
+    4: retired
+    5: student
+    6: other
+
+
+race:
+    -8: unknown
+    -9: unknown
+    -10: unknown
+    1: white
+    2: non-white
+
+can_wfh:
+    -8: n/a
+    -9: unknown
+    -10: unknown
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "no"
+
+disability: 
+    -8: "no"
+    -9: "unknown"
+    -10: "unknown"
+    1: "no"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    5: "yes"
+    6: "yes"
+    7: "yes"
+    8: "yes"
+
+wheelchair_user:
+    -8: no
+    -9: unknown
+    -10: unknown
+    1: "yes"
+    2: "no"

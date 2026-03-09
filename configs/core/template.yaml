@@ -1,6 +1,6 @@
 notes:
   default: |
-    When default: True, "unknown" (for string fields) or null (for numeric fields)
+    When default: True, "unknown" or null (for string fields) or null (for numeric fields)
     are acceptable values — they indicate missing/inapplicable data.
     When default: False or absent, every row must have a real value.
   id_prefix: |
@@ -122,7 +122,7 @@ attributes:
     default: True
     set: [monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown]
     description: "Day of week for the travel diary."
-  rurality:
+  hh_zone:
     dtype: str
     default: True
     set: [urban, suburban, rural, unknown]
@@ -132,6 +132,11 @@ attributes:
     default: True
     min: 0
     description: "Survey expansion weight for the person/household."
+  access_egress_distance:
+    dtype: float32
+    default: True
+    min: 0
+    description: "Expected distance (kms) of access egress for transit trips. Null for persons with no valid trips."
   avg_speed:
     dtype: float32
     default: True

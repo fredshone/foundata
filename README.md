@@ -7,13 +7,13 @@ Foundata is an effort towards building a dataset for enabling *foundational* or 
 | source | persons | missing data     | trips   | kms (millions) |
 |--------|---------|-----------|---------|-----------------|
 | London UK (LTDS)   | 71,734  | 27%      | 137,900 | 1.4        |
-| UK (NTS)    | 1,728,067 | 14%    | 5,106,905 | 65.2   |
+| UK (NTS)    | 2,560,548 | 15%    | 5,106,905 | 65.2   |
 | US (NHTS)   | 716,376 | 16%      | 2,604,832 | 42.1     |
 | Chicago US (CMAP)   | 31,540  | ~0%       | 101,965 | 0.8        |
 | Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
 | Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
 | South Korea (KTDB)      | 133,326     | 42%      | 334,049 | 1.6        |
-| **total** | **2,827,345** | **16%** | **8,666,499** | **114.9** |
+| **total** | **3,659,826** | **17%** | **8,666,499** | **114.9** |
 
 
 ### Person Attributes Status
