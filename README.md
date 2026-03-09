@@ -1,6 +1,6 @@
-Foundata is a pipeline for creating a reconciled household travel surveys.
+Foundata is a pipeline for creating reconciled household travel surveys.
 
-Foundata is an effort towards building a dataset for enabling *foundational* or *world* models of human behaviour. But it is also a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of 1 million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
+Foundata is an effort towards building a dataset for enabling *foundational* or *world* models of human behaviour. But it is also a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
 
 ### Progress
 
@@ -38,19 +38,20 @@ We currently map all transport models to the following types: {car, walk, bike, 
 ### ToDo
 
 - Collect additional features, such as weather conditions and accessibility.
+- We currently combine all plan attributes as *person* attributes, but infact we use *household*, *person*, *day*, and *plan* attributes. We could distinguish these better.
 - More data, see below: 
 
 
 |  source           |     | persons  | years     | label availability | source  |
 | ----------------- |---- | -------- |-----------|---------------|--------------------|
-| KTDB              | S.Korea | 100k | 21        | C             | [request](https://www.ktdb.go.kr/www/index.do)      |
-| NTS               | UK  | 1.7m     | 02-23     | A             | [request](https://ukdataservice.ac.uk/)             |
-| CMAP              | US  | 30k      | 17-19     | A-            | [data](https://github.com/CMAP-REPOS/mydailytravel) |
-| NHTS              | US  | 700k       | 01,09,17,22 | A           | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
-| QHTS        | AUS | 50k     | 12-24     | A-            | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
-| VISTA         | AUS | 100k     | 12 -> 25  | B+            | [here](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
-| LTDS              | UK  | 70k     | 19 -> 24  | B+            | request from TfL |
-| **Metropolitan (US datasets)** :   ||||                        | [data](https://www.nrel.gov/transportation/secure-transportation-data/tsdc-metropolitan-travel-survey-archive) |
+| KTDB              | S.Korea | 100k | 21        | C             | [request](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
+| NTS               | UK  | 1.7m     | 02-23     | A             | [request](https://ukdataservice.ac.uk/) (not open)            |
+| CMAP              | US  | 30k      | 17-19     | A-            | [data](https://github.com/CMAP-REPOS/mydailytravel) (open) |
+| NHTS              | US  | 700k       | 01,09,17,22 | A           | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) (open) |
+| QHTS        | AUS | 50k     | 12-24     | A-            | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) (open) |
+| VISTA         | AUS | 100k     | 12 -> 25  | B+            | [here](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) (open) |
+| LTDS              | UK  | 70k     | 19 -> 24  | B+            | request from TfL (open) |
+| **Metropolitan (US datasets)** :   ||||                        | [data](https://www.nrel.gov/transportation/secure-transportation-data/tsdc-metropolitan-travel-survey-archive) (open) |
 | California        | US  | 40k      | 01        | OK?           |
 | LA                | US  | ?        | 01        | BAD?          |
 | Seattle           | US  | 37k      | 00/02     | OK?           |
