@@ -281,7 +281,7 @@ def plot_numeric_hist_grid(
             message + " Check thresholds or disable tail_handling."
         )
 
-    n_plots = len(to_plot)
+    n_plots = len(to_plot) + 1  # +1 for legend
     n_rows = math.ceil(n_plots / n_cols)
 
     fig, axes = plt.subplots(
@@ -337,26 +337,32 @@ def plot_numeric_hist_grid(
         ax.set_title(col.title(), fontsize="large")
         ax.fontsize = "large"
 
-    for i in range(n_plots, n_rows * n_cols):
-        r = i // n_cols
-        c = i % n_cols
-        axes[r][c].axis("off")
-
     handles = [
         Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
         for g in groups
     ]
 
-    fig.subplots_adjust(right=0.84)
-    fig.legend(
+    # repeat for empty legend plot
+    idx = len(to_plot)
+    r = idx // n_cols
+    c = idx % n_cols
+    ax = axes[r][c]
+    ax.set_facecolor(ax_bg)
+
+    ax.legend(
         handles=handles,
-        loc="upper right",
+        loc="center",
         bbox_to_anchor=(0.86, 0.5),
         borderaxespad=0.0,
         frameon=False,
         title=None,
         fontsize="large",
     )
+
+    for i in range(n_plots - 1, n_rows * n_cols):
+        r = i // n_cols
+        c = i % n_cols
+        axes[r][c].axis("off")
 
     plt.tight_layout()
     if save_path is not None:

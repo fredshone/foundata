@@ -7,10 +7,11 @@ def trips_to_activities(
     sorted_trips = trips.sort("pid", "seq")
 
     first_acts = (
-        sorted_trips.group_by("pid").agg(pl.all().first())
+        sorted_trips.group_by("pid")
+        .agg(pl.all().first())
         .select(
             pl.col("pid"),
-            pl.col("seq"),
+            pl.col("seq").cast(pl.Int8).alias("seq"),
             pl.col("oact").alias("act"),
             pl.col("ozone").alias("zone"),
             pl.lit(0, dtype=pl.Int32).alias("ast"),
@@ -22,11 +23,11 @@ def trips_to_activities(
         sorted_trips.filter(pl.col("tet") < 1440)
         .with_columns(
             aet=pl.col("tst").shift(-1).over("pid").fill_null(1440),
-            seq=pl.col("seq") + 1,
+            seq=pl.col("seq").cast(pl.Int8) + 1,
         )
         .select(
             pl.col("pid"),
-            pl.col("seq"),
+            pl.col("seq").cast(pl.Int8).alias("seq"),
             pl.col("dact").alias("act"),
             pl.col("dzone").alias("zone"),
             pl.col("tet").alias("ast"),
