@@ -41,23 +41,11 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
     return trips
 
 
-_DTYPE_MAP = {
-    "int8": pl.Int8, "int16": pl.Int16,
-    "int32": pl.Int32, "int64": pl.Int64,
-    "float32": pl.Float32, "float64": pl.Float64,
-    "int": pl.Int32, "integer": pl.Int32,
-    "float": pl.Float32,
-    "string": pl.String, "str": pl.String,
-    "bool": pl.Boolean, "boolean": pl.Boolean,
-    "date": pl.Date, "datetime": pl.Datetime,
-}
-
-
 def _cast_df(df: pl.DataFrame, template: dict) -> pl.DataFrame:
     for col, cnfg in template.items():
         if col not in df.columns:
             continue
-        polars_type = _DTYPE_MAP.get(cnfg["dtype"])
+        polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
         if polars_type is None:
             continue
         df = df.with_columns(pl.col(col).cast(polars_type, strict=False))
@@ -65,11 +53,19 @@ def _cast_df(df: pl.DataFrame, template: dict) -> pl.DataFrame:
 
 
 def fix_types(
-    attributes: pl.DataFrame, trips: pl.DataFrame
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    template_attributes: Optional[dict] = None,
+    template_trips: Optional[dict] = None,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     """Cast attributes and trips columns to the exact Polars dtypes defined in the template."""
-    attributes = _cast_df(attributes, utils.get_template_attributes())
-    trips = _cast_df(trips, utils.get_template_trips())
+    if template_attributes is None:
+        template_attributes = utils.get_template_attributes()
+    if template_trips is None:
+        template_trips = utils.get_template_trips()
+
+    attributes = _cast_df(attributes, template_attributes)
+    trips = _cast_df(trips, template_trips)
     return attributes, trips
 
 

@@ -11,14 +11,14 @@ Hello, we are combining as many travel survey data sources as possible and combi
 | Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
 | Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
 | South Korea (KTDB)      | 133,326     | 42%      | 334,049 | 1.6        |
-| **total** | **2,694,019+** | **15%** | **8,461,994+** | **115.3+** |
+| **total** | **2,827,345** | **16%** | **8,666,499** | **114.9** |
 
 
 ### Person Attributes Status
 
 Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
-![Description of image](assets/attributes.png)
+![Description of image](assets/attributes_categorical.png)
 
 Numeric person attributes:
 

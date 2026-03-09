@@ -304,14 +304,6 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # Concat and write
     # ------------------------------------------------------------------
 
-    for df in all_attributes:
-        print(df.columns)
-        print(df.dtypes)
-
-    for df in all_trips:
-        print(df.columns)
-        print(df.dtypes)
-
     all_attributes = pl.concat(all_attributes, how="vertical")
     all_trips = pl.concat(all_trips, how="vertical")
 
