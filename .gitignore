@@ -1,5 +1,7 @@
 ss
 data
+*~lock*
+
 
 # OS-specific
 .DS_Store

@@ -459,6 +459,138 @@ def _plot_categorical_column(ax, df: pl.DataFrame, col: str, on: str):
     ax.set_facecolor("lightgray")
 
 
+def plot_summary_trends(
+    df: pl.DataFrame,
+    on: str = "source",
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    save_path: str | Path | None = None,
+):
+    MONTH_LABELS = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ]
+
+    groups = sorted(
+        df.select(pl.col(on)).drop_nulls().unique().to_series().to_list()
+    )
+    cmap = plt.get_cmap(cmap_name)
+    palette = (
+        list(cmap.colors)
+        if hasattr(cmap, "colors") and cmap.colors is not None
+        else [cmap(i / 20) for i in range(20)]
+    )
+    color_map = {g: c for g, c in zip(groups, cycle(palette))}
+
+    fig, axes = plt.subplots(1, 3, figsize=(16.5, 4.5))
+    fig.patch.set_facecolor(fig_bg)
+    for ax in axes:
+        ax.set_facecolor(ax_bg)
+
+    # Panel 1 — avg max_temp by month
+    ax = axes[0]
+    for g in groups:
+        sub = df.filter(pl.col(on) == g).filter(
+            pl.col("month").is_not_null() & pl.col("max_temp_c").is_not_null()
+        )
+        if sub.is_empty():
+            continue
+        agg = (
+            sub.group_by("month").agg(pl.col("max_temp_c").mean()).sort("month")
+        )
+        ax.plot(
+            agg["month"].to_list(),
+            agg["max_temp_c"].to_list(),
+            color=color_map[g],
+            label=g,
+            linewidth=2,
+        )
+    ax.set_xticks(range(1, 13))
+    ax.set_xticklabels(MONTH_LABELS, rotation=45, ha="right")
+    ax.set_title("Avg Max Temp by Month", fontsize="large")
+    ax.set_ylabel("max_temp_c")
+
+    # Panel 2 — avg hh_income by race
+    ax = axes[1]
+    races = sorted(
+        df.select(pl.col("race")).drop_nulls().unique().to_series().to_list()
+    )
+    for g in groups:
+        sub = df.filter(pl.col(on) == g).filter(
+            pl.col("race").is_not_null() & pl.col("hh_income").is_not_null()
+        )
+        if sub.is_empty():
+            continue
+        agg = sub.group_by("race").agg(pl.col("hh_income").mean())
+        race_list = agg["race"].to_list()
+        x_positions = [races.index(r) for r in race_list if r in races]
+        y_values = [v / 1000 for v in agg["hh_income"].to_list()]
+        ax.plot(
+            x_positions,
+            y_values,
+            color=color_map[g],
+            label=g,
+            marker="_",
+            markersize=16,
+            linewidth=0,
+            markeredgewidth=4,
+        )
+    ax.set_xticks(range(len(races)))
+    ax.set_xticklabels(races, rotation=45, ha="right")
+    ax.yaxis.set_major_formatter(plt.FuncFormatter(lambda x, _: f"{x:.0f}k"))
+    ax.set_title("Avg HH Income by Race", fontsize="large")
+    ax.set_ylabel("hh_income")
+
+    # Panel 3 — avg avg_speed by year
+    ax = axes[2]
+    for g in groups:
+        sub = df.filter(pl.col(on) == g).filter(
+            pl.col("year").is_not_null() & pl.col("avg_speed").is_not_null()
+        )
+        if sub.is_empty():
+            continue
+        agg = sub.group_by("year").agg(pl.col("avg_speed").mean()).sort("year")
+        xs = agg["year"].to_list()
+        ys = agg["avg_speed"].to_list()
+        if len(xs) == 1:
+            ax.scatter(xs, ys, color=color_map[g], label=g, s=80, zorder=3)
+        else:
+            ax.plot(xs, ys, color=color_map[g], label=g, linewidth=2)
+    ax.set_title("Avg Speed by Year", fontsize="large")
+    ax.set_ylabel("avg_speed")
+    ax.set_xlabel("year")
+
+    handles = [
+        Line2D([0], [0], color=color_map[g], lw=2, label=g) for g in groups
+    ]
+    axes[2].legend(
+        handles=handles,
+        loc="upper left",
+        bbox_to_anchor=(1.05, 1),
+        borderaxespad=0,
+        frameon=False,
+        fontsize="large",
+    )
+
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
 def plot_categorical_bar_grid(
     df: pl.DataFrame,
     on: str = "source",
@@ -472,7 +604,9 @@ def plot_categorical_bar_grid(
         ignore_cols = {"source", "pid", "hid", "country"}
 
     cat_cols = {
-        col for col in df.columns if df[col].dtype == pl.String
+        col
+        for col in df.columns
+        if df[col].dtype in [pl.String, pl.Categorical, pl.Boolean]
     } - ignore_cols
 
     n_plots = len(cat_cols)

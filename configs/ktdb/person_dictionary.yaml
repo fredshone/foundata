@@ -47,7 +47,7 @@ sex:
 has_licence:
   1: "yes"
   2: "no"
-  99: "unknown"
+  99: "no"
 
 # student mapping
 student:

@@ -84,14 +84,22 @@ def missing_columns(
     for col, cnfg in template_attributes.items():
         if cnfg.get("default") and col not in attributes.columns:
             polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
-            print(f"WARNING: Optional attributes column '{col}' missing — adding as null {cnfg['dtype']}")
-            attributes = attributes.with_columns(pl.lit(None).cast(polars_type).alias(col))
+            print(
+                f"WARNING: Optional attributes column '{col}' missing — adding as null {cnfg['dtype']}"
+            )
+            attributes = attributes.with_columns(
+                pl.lit(None).cast(polars_type).alias(col)
+            )
 
     for col, cnfg in template_trips.items():
         if cnfg.get("default") and col not in trips.columns:
             polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
-            print(f"WARNING: Optional trips column '{col}' missing — adding as null {cnfg['dtype']}")
-            trips = trips.with_columns(pl.lit(None).cast(polars_type).alias(col))
+            print(
+                f"WARNING: Optional trips column '{col}' missing — adding as null {cnfg['dtype']}"
+            )
+            trips = trips.with_columns(
+                pl.lit(None).cast(polars_type).alias(col)
+            )
 
     return attributes, trips
 
@@ -103,3 +111,16 @@ def trip_dtypes(
         template_cnfg = utils.get_template_trips()
 
     return [_cast_df(trips, template_cnfg) for trips in all_trips]
+
+
+def unknown_to_null(df: pl.DataFrame) -> pl.DataFrame:
+    """Convert 'unknown' values in string columns to null."""
+    for col in df.columns:
+        if df.schema[col] == pl.String:
+            df = df.with_columns(
+                pl.when(pl.col(col) == "unknown")
+                .then(None)
+                .otherwise(pl.col(col))
+                .alias(col)
+            )
+    return df

@@ -245,3 +245,43 @@ def test_trips_to_activities_no_trips_person():
     assert row["aet"] == 1440
     assert row["act"] == "home"
     assert row["zone"] == "suburban"
+
+
+def test_discretise_numeric_quantile_basic():
+    df = pl.DataFrame({"pid": ["a","b","c","d","e"], "age": [10, 20, 30, 40, 50]})
+    result = post_process.discretise_numeric(df, n_bins=2, method="quantile")
+    assert result["age"].dtype == pl.String
+    assert result["pid"].dtype == pl.String  # non-numeric untouched
+
+
+def test_discretise_numeric_uniform_basic():
+    df = pl.DataFrame({"age": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]})
+    result = post_process.discretise_numeric(df, n_bins=5, method="uniform")
+    assert result["age"].dtype == pl.String
+    assert result["age"].null_count() == 0
+
+
+def test_discretise_numeric_preserves_nulls():
+    df = pl.DataFrame({"age": pl.Series([10, None, 30, None, 50], dtype=pl.Int32)})
+    result = post_process.discretise_numeric(df, n_bins=2, method="quantile")
+    assert result["age"].null_count() == 2
+
+
+def test_discretise_numeric_cols_subset():
+    df = pl.DataFrame({"age": [10,20,30], "vehicles": [0, 1, 2], "pid": ["a","b","c"]})
+    result = post_process.discretise_numeric(df, cols=["age"])
+    assert result["age"].dtype == pl.String
+    assert result["vehicles"].dtype != pl.String  # vehicles unchanged
+
+
+def test_discretise_numeric_label_format():
+    df = pl.DataFrame({"age": [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]})
+    result = post_process.discretise_numeric(df, n_bins=3, method="uniform")
+    labels = set(result["age"].drop_nulls().to_list())
+    assert all("-" in l or l.startswith("≤") or l.startswith(">") for l in labels)
+
+
+def test_discretise_numeric_invalid_method():
+    df = pl.DataFrame({"age": [10, 20, 30]})
+    with pytest.raises(ValueError, match="method must be"):
+        post_process.discretise_numeric(df, method="bad")

@@ -197,6 +197,16 @@ def compute_avg_speed(
     Computed as total trip distance / total trip duration per person.
     Null for persons with no valid trips or zero total duration.
     """
+    # check distances are not null and durations are positive to avoid skewing avg_speed
+    if not trips.select(pl.col("distance").is_not_null()).to_series().all():
+        print(
+            "Warning: Some trips have null distance — these will be excluded from avg_speed calculation"
+        )
+    if not trips.select(pl.col("tet") > pl.col("tst")).to_series().all():
+        print(
+            "Warning: Some trips have non-positive duration (tet <= tst) — these will be excluded from avg_speed calculation"
+        )
+
     speed = (
         trips.with_columns(duration=pl.col("tet") - pl.col("tst"))
         .filter(pl.col("duration") > 0)
@@ -228,3 +238,34 @@ def get_template_trips() -> set[str]:
     with open(template()) as f:
         config = yaml.safe_load(f)
     return config["trips"]
+
+
+def norm_weights(
+    attributes: pl.DataFrame, weight_col: str = "weight"
+) -> pl.DataFrame:
+    # norm weights to average 1
+    if weight_col not in attributes.columns:
+        raise ValueError(
+            f"Weight column '{weight_col}' not found in attributes"
+        )
+    if not pl.col(weight_col).is_not_null().to_series().all():
+        print(
+            "Warning: Some weights are null — these will be treated as zero in normalization"
+        )
+    # check for non-positive weights to avoid skewing normalization
+    if not pl.col(weight_col).fill_null(0).gt(0).to_series().all():
+        print(
+            "Warning: Some weights are non-positive (<= 0) — these will be treated as zero in normalization"
+        )
+        attributes = attributes.with_columns(
+            weight_col=pl.col(weight_col).fill_null(0).clip(lower=0)
+        )
+    avg_weight = attributes[weight_col].fill_null(0).mean()
+    if avg_weight == 0:
+        print("Warning: Total weight is zero — returning all weights as 1")
+        return attributes.with_columns(weight_col=pl.lit(1, dtype=pl.Float32))
+    return attributes.with_columns(
+        weight_col=(pl.col(weight_col).fill_null(0) / avg_weight).cast(
+            pl.Float32
+        )
+    )
