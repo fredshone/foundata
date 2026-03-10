@@ -478,6 +478,11 @@ dev = [
     { name = "pytest-cov" },
 ]
 
+[package.dev-dependencies]
+scripts = [
+    { name = "geopandas" },
+]
+
 [package.metadata]
 requires-dist = [
     { name = "click", specifier = ">=8.0" },
@@ -496,6 +501,9 @@ requires-dist = [
     { name = "rapidfuzz", specifier = ">=3.14.3" },
 ]
 provides-extras = ["dev"]
+
+[package.metadata.requires-dev]
+scripts = [{ name = "geopandas", specifier = ">=0.14" }]
 
 [[package]]
 name = "future"

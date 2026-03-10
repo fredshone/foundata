@@ -69,6 +69,33 @@ def fix_types(
     return attributes, trips
 
 
+def missing_columns(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    template_attributes: Optional[dict] = None,
+    template_trips: Optional[dict] = None,
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Add null columns for optional (default=True) template fields absent from data."""
+    if template_attributes is None:
+        template_attributes = utils.get_template_attributes()
+    if template_trips is None:
+        template_trips = utils.get_template_trips()
+
+    for col, cnfg in template_attributes.items():
+        if cnfg.get("default") and col not in attributes.columns:
+            polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
+            print(f"WARNING: Optional attributes column '{col}' missing — adding as null {cnfg['dtype']}")
+            attributes = attributes.with_columns(pl.lit(None).cast(polars_type).alias(col))
+
+    for col, cnfg in template_trips.items():
+        if cnfg.get("default") and col not in trips.columns:
+            polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
+            print(f"WARNING: Optional trips column '{col}' missing — adding as null {cnfg['dtype']}")
+            trips = trips.with_columns(pl.lit(None).cast(polars_type).alias(col))
+
+    return attributes, trips
+
+
 def trip_dtypes(
     all_trips: list[pl.DataFrame], template_cnfg: Optional[dict] = None
 ) -> pl.DataFrame:

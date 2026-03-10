@@ -63,6 +63,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         check_overlap(
             attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
         )
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -106,6 +107,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         check_overlap(
             attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
         )
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -141,6 +143,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
         check_overlap(attributes, trips, on="pid")
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -180,6 +183,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
         check_overlap(attributes, trips, on="pid")
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -215,6 +219,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
         check_overlap(attributes, trips, on="pid")
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -250,6 +255,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
         check_overlap(attributes, trips, on="pid")
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
@@ -292,6 +298,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
         check_overlap(attributes, trips, on="pid")
+        attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)

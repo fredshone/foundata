@@ -64,6 +64,7 @@ def sample_attributes_df():
         }
     )
     attrs, _ = fix.fix_types(attrs, trips)
+    attrs, _ = fix.missing_columns(attrs, trips)
     return attrs
 
 
@@ -115,6 +116,7 @@ def sample_trips_df():
         }
     )
     _, trips = fix.fix_types(attrs, trips)
+    _, trips = fix.missing_columns(attrs, trips)
     return trips
 
 
