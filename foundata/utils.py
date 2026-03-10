@@ -248,24 +248,22 @@ def norm_weights(
         raise ValueError(
             f"Weight column '{weight_col}' not found in attributes"
         )
-    if not pl.col(weight_col).is_not_null().to_series().all():
+    if not attributes.select(pl.col(weight_col).is_not_null()).to_series().all():
         print(
             "Warning: Some weights are null — these will be treated as zero in normalization"
         )
     # check for non-positive weights to avoid skewing normalization
-    if not pl.col(weight_col).fill_null(0).gt(0).to_series().all():
+    if not attributes.select(pl.col(weight_col).fill_null(0).gt(0)).to_series().all():
         print(
             "Warning: Some weights are non-positive (<= 0) — these will be treated as zero in normalization"
         )
         attributes = attributes.with_columns(
-            weight_col=pl.col(weight_col).fill_null(0).clip(lower=0)
+            pl.col(weight_col).fill_null(0).clip(lower_bound=0).alias(weight_col)
         )
     avg_weight = attributes[weight_col].fill_null(0).mean()
     if avg_weight == 0:
         print("Warning: Total weight is zero — returning all weights as 1")
-        return attributes.with_columns(weight_col=pl.lit(1, dtype=pl.Float32))
+        return attributes.with_columns(pl.lit(1, dtype=pl.Float32).alias(weight_col))
     return attributes.with_columns(
-        weight_col=(pl.col(weight_col).fill_null(0) / avg_weight).cast(
-            pl.Float32
-        )
+        (pl.col(weight_col).fill_null(0) / avg_weight).cast(pl.Float32).alias(weight_col)
     )
