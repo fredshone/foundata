@@ -5,6 +5,7 @@ import polars as pl
 from .utils import (
     compute_avg_speed,
     expand_root,
+    get_config_path,
     sample_us_to_euro,
     table_joiner,
 )
@@ -40,6 +41,11 @@ def load(
         data_root, trips_config, rurality_mapping=rurality_mapping
     )
 
+    weather = load_weather()
+    attributes = attributes.join(
+        weather, left_on="survey_date", right_on="date", how="left"
+    ).drop("survey_date")
+
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
@@ -63,6 +69,7 @@ def load_households(root: str | Path, config: dict) -> pl.DataFrame:
     hhs = hhs.with_columns(date=pl.col("date").str.to_datetime("%Y-%m-%d"))
 
     hhs = hhs.with_columns(
+        survey_date=pl.col("date").dt.strftime("%Y-%m-%d"),
         year=pl.col("date").dt.year().cast(pl.Int32),
         month=pl.col("date").dt.month().cast(pl.Int8),
         day=pl.col("date").dt.weekday().replace_strict(config["day"]),
@@ -128,6 +135,12 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     persons = persons.filter(pl.col("pid").is_not_null())
 
     return persons
+
+
+def load_weather() -> pl.DataFrame:
+    """Load daily weather data for Chicago."""
+    csv = get_config_path("cmap", "weather_chicago.csv")
+    return pl.read_csv(csv).with_columns(rain=pl.col("precipitation_mm") > 0).drop("precipitation_mm")
 
 
 def load_rurality(configs_root: Path) -> pl.DataFrame:

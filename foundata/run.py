@@ -15,11 +15,11 @@ from foundata import (
     nts,
     post_process,
     qhts,
+    utils,
     verify,
     vista,
     viz,
 )
-from foundata.utils import check_overlap, load_yaml_config
 
 CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
 
@@ -47,10 +47,10 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # KTDB
     # ------------------------------------------------------------------
     if "ktdb" in sources:
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ktdb" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ktdb" / "trip_dictionary.yaml"
         )
 
@@ -60,7 +60,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(
+        utils.check_overlap(
             attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
         )
         attributes, trips = fix.missing_columns(attributes, trips)
@@ -68,6 +68,8 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons and {len(trips)} trips from KTDB"
         )
@@ -78,19 +80,19 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # LTDS
     # ------------------------------------------------------------------
     if "ltds" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ltds" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ltds" / "person_dictionary.yaml"
         )
-        person_data_config = load_yaml_config(
+        person_data_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ltds" / "person_data_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ltds" / "trip_dictionary.yaml"
         )
-        stages_config = load_yaml_config(
+        stages_config = utils.load_yaml_config(
             CONFIGS_ROOT / "ltds" / "stage_dictionary.yaml"
         )
 
@@ -104,7 +106,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             stages_config=stages_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(
+        utils.check_overlap(
             attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
         )
         attributes, trips = fix.missing_columns(attributes, trips)
@@ -112,6 +114,8 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -124,13 +128,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # VISTA
     # ------------------------------------------------------------------
     if "vista" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "vista" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "vista" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "vista" / "trip_dictionary.yaml"
         )
 
@@ -142,12 +146,14 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        utils.check_overlap(attributes, trips, on="pid")
         attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -160,13 +166,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # QHTS
     # ------------------------------------------------------------------
     if "qhts" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "qhts" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "qhts" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "qhts" / "trip_dictionary.yaml"
         )
         zone_mapping = qhts.load_zone_mapping(
@@ -182,12 +188,14 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             zones_mapping=zone_mapping,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        utils.check_overlap(attributes, trips, on="pid")
         attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -200,13 +208,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # CMAP
     # ------------------------------------------------------------------
     if "cmap" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "cmap" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "cmap" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "cmap" / "trip_dictionary.yaml"
         )
 
@@ -218,12 +226,14 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        utils.check_overlap(attributes, trips, on="pid")
         attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -236,13 +246,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # NHTS
     # ------------------------------------------------------------------
     if "nhts" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nhts" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nhts" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nhts" / "trip_dictionary.yaml"
         )
 
@@ -254,12 +264,14 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        utils.check_overlap(attributes, trips, on="pid")
         attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -272,19 +284,19 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     # NTS
     # ------------------------------------------------------------------
     if "nts" in sources:
-        hh_config = load_yaml_config(
+        hh_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nts" / "hh_dictionary.yaml"
         )
-        person_config = load_yaml_config(
+        person_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nts" / "person_dictionary.yaml"
         )
-        trips_config = load_yaml_config(
+        trips_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nts" / "trip_dictionary.yaml"
         )
-        stages_config = load_yaml_config(
+        stages_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nts" / "stage_dictionary.yaml"
         )
-        days_config = load_yaml_config(
+        days_config = utils.load_yaml_config(
             CONFIGS_ROOT / "nts" / "day_dictionary.yaml"
         )
 
@@ -297,12 +309,14 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             days_config=days_config,
         )
         attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        check_overlap(attributes, trips, on="pid")
+        utils.check_overlap(attributes, trips, on="pid")
         attributes, trips = fix.missing_columns(attributes, trips)
         verify.columns(attributes, trips)
         verify.null_pids(attributes, trips)
         attributes, trips = filter.columns(attributes, trips)
         attributes, trips = fix.fix_types(attributes, trips)
+        attributes = fix.unknown_to_null(attributes)
+        attributes = utils.norm_weights(attributes)
         print(
             f"Loaded {len(attributes)} persons, "
             f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -318,16 +332,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     all_attributes = pl.concat(all_attributes, how="vertical")
     all_trips = pl.concat(all_trips, how="vertical")
 
-    all_attributes.write_csv(output / "all_attributes.csv")
-    all_trips.write_csv(output / "all_trips.csv")
+    all_attributes.write_csv(output / "attributes.csv")
+    binned_attributes = post_process.discretise_numeric(all_attributes)
+    binned_attributes.write_csv(output / "binned_attributes.csv")
+    all_trips.write_csv(output / "trips.csv")
 
     activities = post_process.trips_to_activities(all_attributes, all_trips)
     activities.write_csv(output / "activities.csv")
-
-    trips_with_acts = post_process.trips_with_following_activity(
-        all_attributes, all_trips
-    )
-    trips_with_acts.write_csv(output / "trips_with_activities.csv")
 
     print(f"Written to {output}")
 
@@ -359,6 +370,13 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
         all_attributes,
         on="source",
         save_path=output / "attributes_categorical.png",
+    )
+
+    viz.plot_summary_trends(
+        all_attributes,
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "attributes_trends.png",
     )
 
     print(f"Figures saved to {output}")

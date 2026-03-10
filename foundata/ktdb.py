@@ -1,11 +1,20 @@
 from pathlib import Path
 
-import numpy as np
 import polars as pl
 
 from foundata import fix, utils
 
 SOURCE = "ktdb"
+
+SPEEDS = {
+    "car": 60,
+    "bus": 40,
+    "rail": 50,
+    "walk": 5,
+    "bike": 15,
+    "other": 30,
+    "unknown": 30,
+}
 
 
 def load(
@@ -25,15 +34,46 @@ def load(
     attributes = load_persons(data_root, person_config)
     trips = load_trips(data_root, trips_config)
 
-    # Derive per-person region from first trip's origin zone prefix
-    person_region = trips.group_by("pid").agg(
-        region_code=pl.col("_region_code").first()
+    # transfer access egress distances from trips to attributes
+    ae_distances = (
+        trips.select(["pid", "access_egress_distance"])
+        .unique()
+        .filter(pl.col("access_egress_distance").is_not_null())
     )
-    trips = trips.drop("_region_code")
 
+    attributes = attributes.join(ae_distances, on="pid", how="left")
+    trips = trips.drop("access_egress_distance")
+
+    # check for missing access-egress distances and warn
+    missing_ae = attributes.filter(pl.col("access_egress_distance").is_null())
+    if missing_ae.height > 0:
+        perc = missing_ae.height / attributes.height * 100
+        print(
+            f"WARNING: {missing_ae.height} ({perc:.2f}%) records missing access-egress distance"
+        )
+
+    # Derive per-person region from first trip's origin zone prefix
+    # todo: specifically find home location from trips based on trip purpose
+    person_region = trips.group_by("pid").agg(
+        region_code=pl.col("region_code").first()
+    )
+    trips = trips.drop("region_code")
     attributes = attributes.join(person_region, on="pid", how="left")
 
     weather = load_weather()
+
+    # check for missing regions in weather data
+    weather_regions = set(
+        pl.Series(weather.select("region_code").unique()).to_list()
+    )
+    attribute_regions = set(
+        pl.Series(person_region.select("region_code").unique()).to_list()
+    )
+    missing_regions = attribute_regions - weather_regions
+    if missing_regions:
+        raise ValueError(f"Missing weather data for regions: {missing_regions}")
+
+    # join weather
     attributes = attributes.join(
         weather,
         left_on=["survey_date", "region_code"],
@@ -49,6 +89,8 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
+
+    attributes = utils.compute_avg_speed(attributes, trips)
 
     return attributes, trips
 
@@ -89,8 +131,6 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         year=pl.lit(2021, dtype=pl.Int32),
         source=pl.lit(SOURCE),
         country=pl.lit("south korea"),
-        avg_speed=pl.lit(None, dtype=pl.Float64),
-        access_egress_distance=pl.lit(None, dtype=pl.Float32),
         # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
         date=(pl.lit(20210000) + pl.col("date"))
         .cast(pl.String)
@@ -153,9 +193,18 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
 
 
 def load_zones() -> pl.DataFrame:
-    zones = pl.read_csv(utils.get_config_path("ktdb", "zones.csv"))
+    zones = pl.read_csv(
+        utils.get_config_path("ktdb", "zones.csv")
+    ).with_columns(
+        region_code=pl.col("Administrative dong code")
+        .cast(pl.String)
+        .str.slice(0, 2)
+    )
+
     zones = (
-        zones.select("Administrative dong code", "town/village name")
+        zones.select(
+            "Administrative dong code", "region_code", "town/village name"
+        )
         .rename(
             {"Administrative dong code": "zone", "town/village name": "name"}
         )
@@ -178,32 +227,36 @@ def load_centroids() -> dict[str, tuple[float, float]]:
     """Return {zone_code: (lat, lon)} for all known zones."""
     csv = utils.get_config_path("ktdb", "zone_centroids.csv")
     df = pl.read_csv(csv, schema_overrides={"zone": pl.String})
-    return {row["zone"]: (row["lat"], row["lon"]) for row in df.iter_rows(named=True)}
+    return {
+        row["zone"]: (row["lat"], row["lon"])
+        for row in df.iter_rows(named=True)
+    }
+
+
+def load_distances() -> pl.DataFrame:
+    """Load precomputed zone-to-zone haversine distances (km)."""
+    path = (
+        Path(__file__).resolve().parent.parent
+        / "configs"
+        / "ktdb"
+        / "zone_distances.csv"
+    )
+    return pl.read_csv(
+        path,
+        schema={
+            "ozone": pl.String,
+            "dzone": pl.String,
+            "distance_km": pl.Float32,
+        },
+    )
 
 
 def load_weather() -> pl.DataFrame:
     csv = utils.get_config_path("ktdb", "weather_regions.csv")
     weather = pl.read_csv(csv, schema_overrides={"region_code": pl.String})
-    return weather.with_columns(rain=pl.col("precipitation_mm") > 0).drop(
+    return weather.with_columns(rain=pl.col("precipitation_mm") > 1).drop(
         "precipitation_mm"
     )
-
-
-def _haversine(
-    lat1: np.ndarray,
-    lon1: np.ndarray,
-    lat2: np.ndarray,
-    lon2: np.ndarray,
-) -> np.ndarray:
-    """Vectorised Haversine distance in kilometres."""
-    R = 6371.0
-    dlat = np.radians(lat2 - lat1)
-    dlon = np.radians(lon2 - lon1)
-    a = (
-        np.sin(dlat / 2) ** 2
-        + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon / 2) ** 2
-    )
-    return 2 * R * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
 
 
 def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
@@ -275,28 +328,36 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     stages = stage_modes.join(stage_durations, on=["pid", "seq", "stage"])
 
-    # # access egress for transit
-    # # filter for trips with pt stages
-    # pt_trips = (
-    #     stages.filter(pl.col("mode").is_in(["bus", "rail"]))
-    #     .select("pid", "seq")
-    #     .unique()
-    # )
-    # # pt_trips = stages.join(pt_trips, on=["pid", "seq"], how="inner")
+    # access egress for transit
+    pt_trips = (
+        stages.filter(pl.col("mode").is_in(["bus", "rail"]))
+        .select("pid", "seq")
+        .unique()
+    )
+    # pt_trips = stages.join(pt_trips, on=["pid", "seq"], how="inner")
 
-    # # get total duration of non pt modes for each trip
-    # potential_ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
+    potential_ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
+    ae_stages = (
+        potential_ae_stages.join(pt_trips, on=["pid", "seq"], how="inner")
+        .with_columns(
+            access_egress_distance=(pl.col("duration") / 60)
+            * pl.col("mode").replace_strict(SPEEDS)
+        )
+        .select("pid", "seq", "access_egress_distance")
+    )
 
-    # # filter to trips with pt stages using join
-    # ae_stages = potential_ae_stages.join(
-    #     pt_trips, on=["pid", "seq"], how="inner"
-    # )
-
-    # ae_durations = ae_stages.group_by(["pid", "seq"]).agg(
-    #     pl.col("duration").sum().alias("ae_duration")
-    # )
-
-    # stages = stages.join(ae_durations, on=["pid", "seq"], how="left")
+    ae_distances = (
+        (
+            ae_stages.group_by(["pid", "seq"]).agg(
+                pl.col("access_egress_distance")
+                .sum()
+                .alias("access_egress_distance")
+            )
+        )
+        .group_by("pid")
+        .agg(pl.col("access_egress_distance").mean())
+        .select(["pid", "access_egress_distance"])
+    )
 
     total_trip_durations = (
         stages.drop("stage")
@@ -317,40 +378,22 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
         )
         .join(total_trip_durations, on=["pid", "seq"])
         .join(main_trip_modes, on=["pid", "seq"])
+        .join(ae_distances, on="pid", how="left")
     )
 
-    # Compute geodesic distances BEFORE zone codes are overwritten to urbality strings
-    centroids = load_centroids()
-    lat_map = {z: v[0] for z, v in centroids.items()}
-    lon_map = {z: v[1] for z, v in centroids.items()}
+    # Distances
+    dist_df = load_distances()
+
+    data = data.join(
+        dist_df,
+        left_on=["ozone", "dzone"],
+        right_on=["ozone", "dzone"],
+        how="left",
+    ).rename({"distance_km": "distance"})
 
     data = data.with_columns(
-        olat=pl.col("ozone").cast(pl.String).replace(lat_map),
-        olon=pl.col("ozone").cast(pl.String).replace(lon_map),
-        dlat=pl.col("dzone").cast(pl.String).replace(lat_map),
-        dlon=pl.col("dzone").cast(pl.String).replace(lon_map),
-    )
-
-    olat = data["olat"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
-    olon = data["olon"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
-    dlat_arr = data["dlat"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
-    dlon_arr = data["dlon"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
-
-    speeds = {
-        "car": 60,
-        "bus": 40,
-        "rail": 50,
-        "walk": 5,
-        "bike": 15,
-        "other": 30,
-        "unknown": 30,
-    }
-
-    data = data.with_columns(
-        distance=pl.Series(_haversine(olat, olon, dlat_arr, dlon_arr))
-    ).drop(["olat", "olon", "dlat", "dlon"]).with_columns(
         distance=pl.when(pl.col("distance") == 0)
-        .then((pl.col("duration") / 60) * pl.col("mode").replace_strict(speeds))
+        .then((pl.col("duration") / 60) * pl.col("mode").replace_strict(SPEEDS))
         .otherwise(pl.col("distance") * 1.3)
         .cast(pl.Float32)
     )
@@ -360,7 +403,7 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
     data = data.with_columns(
-        _region_code=pl.col("ozone").cast(pl.String).str.slice(0, 2)
+        region_code=pl.col("ozone").cast(pl.String).str.slice(0, 2)
     )
 
     data = data.with_columns(
@@ -383,5 +426,16 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     # Handle midnight-crossing trips
     data = fix.day_wrap(data)
+
+    # calc % of pids with access_egress_distance not null
+    perc = (
+        data.filter(pl.col("access_egress_distance").is_not_null())
+        .select("pid")
+        .unique()
+        .height
+        / data.select("pid").unique().height
+        * 100
+    )
+    print(f"Access-egress distance available for {perc:.2f}% of persons")
 
     return data
