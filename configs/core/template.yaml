@@ -137,6 +137,14 @@ attributes:
     default: True
     min: 0
     description: "Expected distance (kms) of access egress for transit trips. Null for persons with no valid trips."
+  max_temp_c:
+    dtype: float
+    default: True
+    description: "Daily maximum temperature (°C) for the travel day. Null if unavailable."
+  rain:
+    dtype: bool
+    default: True
+    description: "Whether precipitation > 0 mm was recorded on the travel day. Null if unavailable."
   avg_speed:
     dtype: float32
     default: True

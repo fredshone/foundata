@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import numpy as np
 import polars as pl
 
 from foundata import fix, utils
@@ -23,6 +24,22 @@ def load(
     print(f"Loading {SOURCE} data...")
     attributes = load_persons(data_root, person_config)
     trips = load_trips(data_root, trips_config)
+
+    # Derive per-person region from first trip's origin zone prefix
+    person_region = trips.group_by("pid").agg(
+        region_code=pl.col("_region_code").first()
+    )
+    trips = trips.drop("_region_code")
+
+    attributes = attributes.join(person_region, on="pid", how="left")
+
+    weather = load_weather()
+    attributes = attributes.join(
+        weather,
+        left_on=["survey_date", "region_code"],
+        right_on=["date", "region_code"],
+        how="left",
+    ).drop(["survey_date", "region_code"])
 
     # Prefix IDs with source name for global uniqueness
     attributes = attributes.with_columns(
@@ -109,6 +126,7 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     )
 
     data = data.with_columns(
+        survey_date=pl.col("date").dt.strftime("%Y-%m-%d"),
         month=pl.col("date").dt.month(),
         day=pl.col("date")
         .dt.weekday()
@@ -118,7 +136,7 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         .when(pl.col("_employed") == "yes")
         .then(pl.lit("employed"))
         .otherwise(pl.lit("unemployed")),
-    ).drop(["_student", "_employed"])
+    ).drop(["_student", "_employed", "date"])
 
     data = data.with_columns(
         pl.lit("unknown").alias(col)
@@ -154,6 +172,38 @@ def load_zones() -> pl.DataFrame:
         )
     )
     return zones
+
+
+def load_centroids() -> dict[str, tuple[float, float]]:
+    """Return {zone_code: (lat, lon)} for all known zones."""
+    csv = utils.get_config_path("ktdb", "zone_centroids.csv")
+    df = pl.read_csv(csv, schema_overrides={"zone": pl.String})
+    return {row["zone"]: (row["lat"], row["lon"]) for row in df.iter_rows(named=True)}
+
+
+def load_weather() -> pl.DataFrame:
+    csv = utils.get_config_path("ktdb", "weather_regions.csv")
+    weather = pl.read_csv(csv, schema_overrides={"region_code": pl.String})
+    return weather.with_columns(rain=pl.col("precipitation_mm") > 0).drop(
+        "precipitation_mm"
+    )
+
+
+def _haversine(
+    lat1: np.ndarray,
+    lon1: np.ndarray,
+    lat2: np.ndarray,
+    lon2: np.ndarray,
+) -> np.ndarray:
+    """Vectorised Haversine distance in kilometres."""
+    R = 6371.0
+    dlat = np.radians(lat2 - lat1)
+    dlon = np.radians(lon2 - lon1)
+    a = (
+        np.sin(dlat / 2) ** 2
+        + np.cos(np.radians(lat1)) * np.cos(np.radians(lat2)) * np.sin(dlon / 2) ** 2
+    )
+    return 2 * R * np.arcsin(np.sqrt(np.clip(a, 0, 1)))
 
 
 def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
@@ -225,16 +275,28 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     stages = stage_modes.join(stage_durations, on=["pid", "seq", "stage"])
 
-    # filter for trips with pt stages
-    # pt_trips = stages.filter(pl.col("mode").is_in(["bus", "rail"])).select("pid", "seq").unique()
-    # pt_trips = stages.join(pt_trips, on=["pid", "seq"], how="inner")
+    # # access egress for transit
+    # # filter for trips with pt stages
+    # pt_trips = (
+    #     stages.filter(pl.col("mode").is_in(["bus", "rail"]))
+    #     .select("pid", "seq")
+    #     .unique()
+    # )
+    # # pt_trips = stages.join(pt_trips, on=["pid", "seq"], how="inner")
 
     # # get total duration of non pt modes for each trip
-    # ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
-    # ae_durations = ae_stages.group_by(["pid", "seq"]).agg(pl.col("duration").sum().alias("ae_duration"))
-    # pt_ae_durations = pt_trips.drop("duration").join(ae_durations, on=["pid", "seq"], how="left").fill_null(0)
+    # potential_ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
 
-    # stages.join(pt_ae_durations, on=["pid", "seq"], how="left").sort(["pid", "seq", "stage"])
+    # # filter to trips with pt stages using join
+    # ae_stages = potential_ae_stages.join(
+    #     pt_trips, on=["pid", "seq"], how="inner"
+    # )
+
+    # ae_durations = ae_stages.group_by(["pid", "seq"]).agg(
+    #     pl.col("duration").sum().alias("ae_duration")
+    # )
+
+    # stages = stages.join(ae_durations, on=["pid", "seq"], how="left")
 
     total_trip_durations = (
         stages.drop("stage")
@@ -257,8 +319,49 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
         .join(main_trip_modes, on=["pid", "seq"])
     )
 
+    # Compute geodesic distances BEFORE zone codes are overwritten to urbality strings
+    centroids = load_centroids()
+    lat_map = {z: v[0] for z, v in centroids.items()}
+    lon_map = {z: v[1] for z, v in centroids.items()}
+
+    data = data.with_columns(
+        olat=pl.col("ozone").cast(pl.String).replace(lat_map),
+        olon=pl.col("ozone").cast(pl.String).replace(lon_map),
+        dlat=pl.col("dzone").cast(pl.String).replace(lat_map),
+        dlon=pl.col("dzone").cast(pl.String).replace(lon_map),
+    )
+
+    olat = data["olat"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
+    olon = data["olon"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
+    dlat_arr = data["dlat"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
+    dlon_arr = data["dlon"].cast(pl.Float64, strict=False).to_numpy(allow_copy=True)
+
+    speeds = {
+        "car": 60,
+        "bus": 40,
+        "rail": 50,
+        "walk": 5,
+        "bike": 15,
+        "other": 30,
+        "unknown": 30,
+    }
+
+    data = data.with_columns(
+        distance=pl.Series(_haversine(olat, olon, dlat_arr, dlon_arr))
+    ).drop(["olat", "olon", "dlat", "dlon"]).with_columns(
+        distance=pl.when(pl.col("distance") == 0)
+        .then((pl.col("duration") / 60) * pl.col("mode").replace_strict(speeds))
+        .otherwise(pl.col("distance") * 1.3)
+        .cast(pl.Float32)
+    )
+
     zones = load_zones()
     zone_mapping = dict(zip(zones["zone"], zones["hh_zone"]))
+
+    # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
+    data = data.with_columns(
+        _region_code=pl.col("ozone").cast(pl.String).str.slice(0, 2)
+    )
 
     data = data.with_columns(
         ozone=pl.col("ozone").replace_strict(zone_mapping, default="unknown"),
@@ -274,21 +377,6 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
             dact=pl.col("purpose"),
         )
         .drop(["origin", "purpose"])
-    )
-
-    # distance hack
-    speeds = {
-        "car": 60,
-        "bus": 40,
-        "rail": 50,
-        "walk": 5,
-        "bike": 15,
-        "other": 30,
-        "unknown": 30,
-    }
-    data = data.with_columns(
-        distance=(pl.col("duration") / 60)
-        * pl.col("mode").replace_strict(speeds)
     )
 
     data = data.sort(["pid", "seq"])

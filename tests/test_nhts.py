@@ -26,6 +26,7 @@ def test_nhts_load():
     assert len(trips) > 0
     assert "nhts" in attrs["source"].unique().to_list()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
+    attrs, trips = fix.missing_columns(attrs, trips)
     attrs, trips = filter.columns(attrs, trips)
     attrs, trips = fix.fix_types(attrs, trips)
     assert verify.columns(attrs, trips)
