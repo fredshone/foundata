@@ -1,7 +1,7 @@
 ss
 data
 *~lock*
-
+configs/ktdb/zone_distances.csv
 
 # OS-specific
 .DS_Store
