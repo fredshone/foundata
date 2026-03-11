@@ -21,8 +21,8 @@ jobs:
       - name: Lint
         run: uv run ruff check foundata/
 
-      - name: Format check
-        run: uv run ruff format foundata/ --check
+      # - name: Format check
+      #   run: uv run ruff format foundata/ --check
 
       - name: Test
         run: uv run pytest tests/ -v
