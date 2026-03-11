@@ -10,11 +10,12 @@ from foundata.utils import (
     config_for_year,
     expand_root,
     fuzzy_loader,
-    sample_int_range,
-    sample_uk_to_euro,
+    sample_to_euro,
     table_joiner,
     table_stacker,
 )
+
+GBP_TO_EURO = 1.14
 
 SOURCE = "ltds"
 
@@ -151,7 +152,7 @@ def preprocess_hhs(
     ).with_columns(
         hh_income=(
             pl.col("hh_income").map_elements(
-                sample_uk_to_euro, return_dtype=pl.Int32
+                lambda b: sample_to_euro(b, GBP_TO_EURO), return_dtype=pl.Int32
             )
         )
     )
@@ -195,7 +196,7 @@ def preprocess_persons(
         .replace_strict({"65+": "65-100"}, default=pl.col("age"))
         .str.split("-")
         .map_elements(
-            lambda bounds: sample_int_range(bounds_from_list(bounds)), pl.Int32
+            lambda bounds: sample_to_euro(bounds_from_list(bounds)), pl.Int32
         )
     )
 

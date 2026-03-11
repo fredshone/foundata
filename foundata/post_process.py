@@ -66,7 +66,7 @@ def _bin_labels(breaks: list[float]) -> list[str]:
 
     result = [f"≤{fmt(breaks[0])}"]
     for i in range(1, len(breaks)):
-        result.append(f"{fmt(breaks[i-1])}-{fmt(breaks[i])}")
+        result.append(f"{fmt(breaks[i - 1])}-{fmt(breaks[i])}")
     result.append(f">{fmt(breaks[-1])}")
     return result
 

@@ -63,34 +63,18 @@ def columns(
 
 
 def check_dtype(expected_dtype: str, actual_dtype: pl.DataType) -> bool:
-    exact = {
-        "int8": pl.Int8,
-        "int16": pl.Int16,
-        "int32": pl.Int32,
-        "int64": pl.Int64,
-        "float32": pl.Float32,
-        "float64": pl.Float64,
-    }
-    if expected_dtype in exact:
-        return actual_dtype == exact[expected_dtype]
+    if expected_dtype == "any":
+        return True
+    if expected_dtype == "numeric":
+        return actual_dtype.is_numeric()
     if expected_dtype in ["integer", "int"]:
         return actual_dtype.is_integer()
-    elif expected_dtype == "float":
+    if expected_dtype == "float":
         return actual_dtype.is_float()
-    elif expected_dtype in ["string", "str"]:
-        return actual_dtype == pl.String
-    elif expected_dtype in ["boolean", "bool"]:
-        return actual_dtype == pl.Boolean
-    elif expected_dtype == "numeric":
-        return actual_dtype.is_numeric()
-    elif expected_dtype == "any":
-        return True
-    elif expected_dtype == "date":
-        return actual_dtype == pl.Date
-    elif expected_dtype == "datetime":
-        return actual_dtype == pl.Datetime
-    else:
-        raise ValueError(f"Unknown expected dtype: {expected_dtype}")
+    polars_type = utils.DTYPE_MAP.get(expected_dtype)
+    if polars_type is not None:
+        return actual_dtype == polars_type
+    raise ValueError(f"Unknown expected dtype: {expected_dtype}")
 
 
 def check_no_default(actual: pl.Series) -> bool:
@@ -149,7 +133,7 @@ def activity_consistency(trips: pl.DataFrame) -> bool:
     total = trips.select("pid").n_unique()
     if n:
         print(
-            f"Warning: {n}/{total} persons have activity chain inconsistencies ({100*n/total:.1f}%)"
+            f"Warning: {n}/{total} persons have activity chain inconsistencies ({100 * n / total:.1f}%)"
         )
         return False
     return True
@@ -170,15 +154,13 @@ def location_consistency(trips: pl.DataFrame) -> bool:
     total = trips.select("pid").n_unique()
     if n:
         print(
-            f"Warning: {n}/{total} persons have location chain inconsistencies ({100*n/total:.1f}%)"
+            f"Warning: {n}/{total} persons have location chain inconsistencies ({100 * n / total:.1f}%)"
         )
         return False
     return True
 
 
-def check_col_cnfg(
-    actual: pl.DataFrame, template: dict, auto_cast: bool = True
-) -> None:
+def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
     actual_cols = set(actual.columns)
     template_cols = set(template.keys())
 
@@ -189,19 +171,7 @@ def check_col_cnfg(
         expected_dtype = cnfg["dtype"]
         actual_dtype = actual[col].dtype
         good_dtype = check_dtype(expected_dtype, actual_dtype)
-        if auto_cast and not good_dtype:
-            print(
-                f"Auto-casting column '{col}' from {actual_dtype} to expected {expected_dtype}"
-            )
-            polars_type = utils.DTYPE_MAP.get(expected_dtype)
-            if polars_type is not None:
-                actual = actual.with_columns(
-                    pl.col(col).cast(polars_type, strict=True)
-                )
-                actual_dtype = actual[col].dtype
-                good_dtype = check_dtype(expected_dtype, actual_dtype)
-
-        elif not good_dtype:
+        if not good_dtype:
             print(
                 f"ERROR: Column '{col}' has dtype {actual_dtype} but expected {expected_dtype}"
             )

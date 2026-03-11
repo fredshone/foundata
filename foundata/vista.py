@@ -7,10 +7,11 @@ from .utils import (
     bounds_from_list,
     compute_avg_speed,
     config_for_year,
-    sample_aus_to_euro,
-    sample_int_range,
+    sample_to_euro,
     table_joiner,
 )
+
+AUD_TO_EURO = 0.6
 
 SOURCE = "vista"
 
@@ -143,7 +144,8 @@ def preprocess_households(
                 income_mapping, default=pl.lit([0]), return_dtype=pl.List
             )
             .map_elements(
-                lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
+                lambda bounds: sample_to_euro(bounds, AUD_TO_EURO),
+                return_dtype=pl.Int32,
             )
         )
 
@@ -198,7 +200,7 @@ def preprocess_persons(
             .replace_strict({"100+": "100->100"}, default=pl.col("age"))
             .str.split("->")
             .map_elements(
-                lambda bounds: sample_int_range(bounds_from_list(bounds)),
+                lambda bounds: sample_to_euro(bounds_from_list(bounds)),
                 pl.Int32,
             )
         )

@@ -6,9 +6,11 @@ from .utils import (
     compute_avg_speed,
     expand_root,
     get_config_path,
-    sample_us_to_euro,
+    sample_to_euro,
     table_joiner,
 )
+
+USD_TO_EURO = 0.85
 
 SOURCE = "cmap"
 
@@ -79,7 +81,9 @@ def load_households(root: str | Path, config: dict) -> pl.DataFrame:
     hhs = hhs.with_columns(
         pl.col("hh_income")
         .replace_strict(config["hh_income"])
-        .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
+        .map_elements(
+            lambda b: sample_to_euro(b, USD_TO_EURO), return_dtype=pl.Int32
+        ),
         pl.col("dwelling").replace_strict(config["dwelling"]),
         pl.col("ownership").replace_strict(config["ownership"]),
     )
@@ -140,7 +144,11 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
 def load_weather() -> pl.DataFrame:
     """Load daily weather data for Chicago."""
     csv = get_config_path("cmap", "weather_chicago.csv")
-    return pl.read_csv(csv).with_columns(rain=pl.col("precipitation_mm") > 0).drop("precipitation_mm")
+    return (
+        pl.read_csv(csv)
+        .with_columns(rain=pl.col("precipitation_mm") > 0)
+        .drop("precipitation_mm")
+    )
 
 
 def load_rurality(configs_root: Path) -> pl.DataFrame:

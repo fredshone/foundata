@@ -7,10 +7,11 @@ from .fix import day_wrap
 from .utils import (
     compute_avg_speed,
     config_for_year,
-    sample_aus_to_euro,
-    sample_int_range,
+    sample_to_euro,
     table_joiner,
 )
+
+AUD_TO_EURO = 0.6
 
 SOURCE = "qhts"
 
@@ -153,7 +154,7 @@ def preprocess_persons(
     persons = persons.with_columns(
         age=pl.col("age")
         .replace_strict(age_mapping)
-        .map_elements(sample_int_range, return_dtype=pl.Int32)
+        .map_elements(sample_to_euro, return_dtype=pl.Int32)
     )
 
     persons = persons.with_columns(
@@ -206,7 +207,8 @@ def preprocess_persons(
                 return_dtype=pl.List(pl.Int32),
             )
             .map_elements(
-                lambda bounds: sample_aus_to_euro(bounds), return_dtype=pl.Int32
+                lambda bounds: sample_to_euro(bounds, AUD_TO_EURO),
+                return_dtype=pl.Int32,
             )
         )
         persons = persons.with_columns(

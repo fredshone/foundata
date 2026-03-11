@@ -7,9 +7,11 @@ from foundata.utils import (
     compute_avg_speed,
     config_for_year,
     expand_root,
-    sample_us_to_euro,
+    sample_to_euro,
     table_joiner,
 )
+
+USD_TO_EURO = 0.85
 
 SOURCE = "nhts"
 
@@ -91,7 +93,9 @@ def load_households(
         data = data.with_columns(
             hh_income=pl.col("hh_income")
             .replace_strict(year_config["hh_income"])
-            .map_elements(sample_us_to_euro, return_dtype=pl.Int32),
+            .map_elements(
+                lambda b: sample_to_euro(b, USD_TO_EURO), return_dtype=pl.Int32
+            ),
             hh_zone=pl.col("hh_zone")
             .cast(pl.String)
             .replace_strict(year_config["hh_zone"]),

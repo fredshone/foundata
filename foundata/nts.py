@@ -6,10 +6,11 @@ from foundata import fix
 from foundata.utils import (
     check_overlap,
     compute_avg_speed,
-    sample_int_range,
-    sample_uk_to_euro,
+    sample_to_euro,
     table_joiner,
 )
+
+GBP_TO_EURO = 1.14
 
 SOURCE = "nts"
 
@@ -72,7 +73,8 @@ def load_households(
         pl.col("hh_income")
         .replace_strict(income_config)
         .map_elements(
-            lambda bounds: sample_uk_to_euro(bounds), return_dtype=pl.Int32
+            lambda bounds: sample_to_euro(bounds, GBP_TO_EURO),
+            return_dtype=pl.Int32,
         )
     )
 
@@ -106,7 +108,7 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
     persons = persons.with_columns(
         pl.col("age")
         .replace_strict(config["age"])
-        .map_elements(sample_int_range, return_dtype=pl.Int32),
+        .map_elements(sample_to_euro, return_dtype=pl.Int32),
         pl.col("sex").replace_strict(config["sex"]),
         pl.col("education").replace_strict(config["education"]),
         pl.col("has_licence").replace_strict(config["has_licence"]),

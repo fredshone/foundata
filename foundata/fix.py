@@ -104,15 +104,6 @@ def missing_columns(
     return attributes, trips
 
 
-def trip_dtypes(
-    all_trips: list[pl.DataFrame], template_cnfg: Optional[dict] = None
-) -> pl.DataFrame:
-    if not template_cnfg:
-        template_cnfg = utils.get_template_trips()
-
-    return [_cast_df(trips, template_cnfg) for trips in all_trips]
-
-
 def unknown_to_null(df: pl.DataFrame) -> pl.DataFrame:
     """Convert 'unknown' values in string columns to null."""
     for col in df.columns:

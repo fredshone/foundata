@@ -24,6 +24,25 @@ from foundata import (
 CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
 
 
+def process_source(attributes, trips, source_name):
+    attributes, trips = filter.time_consistent(attributes, trips, on="pid")
+    utils.check_overlap(
+        attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
+    )
+    attributes, trips = fix.missing_columns(attributes, trips)
+    verify.columns(attributes, trips)
+    attributes, trips = filter.columns(attributes, trips)
+    attributes, trips = fix.fix_types(attributes, trips)
+    attributes = fix.unknown_to_null(attributes)
+    attributes = utils.norm_weights(attributes)
+    print(
+        f"Loaded {len(attributes)} persons, "
+        f"{len(trips.select(pl.col('pid').unique()))} plans, "
+        f"{len(trips)} trips from {source_name}"
+    )
+    return attributes, trips
+
+
 def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     data_root = Path(data_root).expanduser()
     output = Path(output).expanduser()
@@ -59,20 +78,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(
-            attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
-        )
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons and {len(trips)} trips from KTDB"
-        )
+        attributes, trips = process_source(attributes, trips, "KTDB")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -105,22 +111,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
             stages_config=stages_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(
-            attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
-        )
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "LTDS")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -145,20 +136,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(attributes, trips, on="pid")
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "VISTA")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -187,20 +165,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             trips_config=trips_config,
             zones_mapping=zone_mapping,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(attributes, trips, on="pid")
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "QHTS")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -225,20 +190,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(attributes, trips, on="pid")
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "CMAP")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -263,20 +215,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(attributes, trips, on="pid")
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "NHTS")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -308,20 +247,7 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
             stages_config=stages_config,
             days_config=days_config,
         )
-        attributes, trips = filter.time_consistent(attributes, trips, on="pid")
-        utils.check_overlap(attributes, trips, on="pid")
-        attributes, trips = fix.missing_columns(attributes, trips)
-        verify.columns(attributes, trips)
-        verify.null_pids(attributes, trips)
-        attributes, trips = filter.columns(attributes, trips)
-        attributes, trips = fix.fix_types(attributes, trips)
-        attributes = fix.unknown_to_null(attributes)
-        attributes = utils.norm_weights(attributes)
-        print(
-            f"Loaded {len(attributes)} persons, "
-            f"{len(trips.select(pl.col('pid').unique()))} plans, "
-            f"{len(trips)} trips"
-        )
+        attributes, trips = process_source(attributes, trips, "NTS")
         all_attributes.append(attributes)
         all_trips.append(trips)
 

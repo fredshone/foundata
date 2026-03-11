@@ -5,28 +5,6 @@ import polars as pl
 from foundata import utils
 
 
-def negative_duration_plans(trips: pl.DataFrame) -> bool:
-    bad_trips = trips.filter(pl.col("tst") > pl.col("tet"))
-    return trips.join(
-        bad_trips.select("pid").unique(),
-        on="pid",
-        how="inner",
-        maintain_order="left_right",
-    )
-
-
-def time_inconsistent_plans(trips: pl.DataFrame) -> bool:
-    bad_trips = trips.filter(
-        (pl.col("tst") < (pl.col("tet").shift(1)).over("pid"))
-    )
-    return trips.join(
-        bad_trips.select("pid").unique(),
-        on="pid",
-        how="inner",
-        maintain_order="left_right",
-    )
-
-
 def negative_trips(
     attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
@@ -45,7 +23,7 @@ def negative_trips(
     )
 
     print(
-        f"Removed {nn}/{n} plans due to negative trip durations ({100*nn/n:.1f}%)"
+        f"Removed {nn}/{n} plans due to negative trip durations ({100 * nn / n:.1f}%)"
     )
     return clean_attributes, clean_trips
 
@@ -69,7 +47,7 @@ def negative_activities(
     )
 
     print(
-        f"Removed {nn}/{n} plans due to negative activity durations ({100*nn/n:.1f}%)"
+        f"Removed {nn}/{n} plans due to negative activity durations ({100 * nn / n:.1f}%)"
     )
     return clean_attributes, clean_trips
 
@@ -89,7 +67,9 @@ def null_times(
         null_trips.select(on).unique(), on=on, how="anti", maintain_order="left"
     )
 
-    print(f"Removed {nn}/{n} plans due to null trip times ({100*nn/n:.1f}%)")
+    print(
+        f"Removed {nn}/{n} plans due to null trip times ({100 * nn / n:.1f}%)"
+    )
     return clean_attributes, clean_trips
 
 

@@ -1,6 +1,7 @@
 """Precompute pairwise haversine distances between all ktdb zone centroids.
 
-Writes the upper triangle (including diagonal) as a long-format CSV:
+Writes the upper triangle (including diagonal) as a long-format Parquet file
+(zstd compressed):
     ozone, dzone, distance_km
 
 where ozone <= dzone (string comparison).  dist(a,b) == dist(b,a), so callers
@@ -8,7 +9,7 @@ normalise the zone pair before lookup.
 
 Usage:
     uv run python scripts/precompute_zone_distances.py
-    uv run python scripts/precompute_zone_distances.py --centroids path/to/centroids.csv --out path/to/out.csv
+    uv run python scripts/precompute_zone_distances.py --centroids path/to/centroids.csv --out path/to/out.parquet
 """
 
 import argparse
@@ -21,7 +22,7 @@ DEFAULT_CENTROIDS = (
     Path(__file__).resolve().parent.parent / "configs" / "ktdb" / "zone_centroids.csv"
 )
 DEFAULT_OUT = (
-    Path(__file__).resolve().parent.parent / "configs" / "ktdb" / "zone_distances.csv"
+    Path(__file__).resolve().parent.parent / "configs" / "ktdb" / "zone_distances.parquet"
 )
 
 
@@ -66,7 +67,7 @@ def main(centroids_path: Path, out_path: Path) -> None:
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_df.write_csv(out_path)
+    out_df.write_parquet(out_path, compression="zstd")
     print(f"Written {len(out_df):,} rows to {out_path}")
 
 

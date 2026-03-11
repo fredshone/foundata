@@ -5,6 +5,7 @@ import polars as pl
 from foundata import fix, utils
 
 SOURCE = "ktdb"
+KRW_TO_EURO = 0.00058
 
 SPEEDS = {
     "car": 60,
@@ -68,7 +69,7 @@ def load(
     )
     attribute_regions = set(
         pl.Series(person_region.select("region_code").unique()).to_list()
-    )
+    ) - {None}
     missing_regions = attribute_regions - weather_regions
     if missing_regions:
         raise ValueError(f"Missing weather data for regions: {missing_regions}")
@@ -153,7 +154,10 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         ),
         hh_income=pl.col("hh_income")
         .replace_strict(config["hh_income"], default=None)
-        .map_elements(utils.sample_krw_to_euro, return_dtype=pl.Int32)
+        .map_elements(
+            lambda b: utils.sample_to_euro(b, KRW_TO_EURO),
+            return_dtype=pl.Int32,
+        )
         * 1000000
         * 12,
         dwelling=pl.col("dwelling").replace_strict(
@@ -235,20 +239,8 @@ def load_centroids() -> dict[str, tuple[float, float]]:
 
 def load_distances() -> pl.DataFrame:
     """Load precomputed zone-to-zone haversine distances (km)."""
-    path = (
-        Path(__file__).resolve().parent.parent
-        / "configs"
-        / "ktdb"
-        / "zone_distances.csv"
-    )
-    return pl.read_csv(
-        path,
-        schema={
-            "ozone": pl.String,
-            "dzone": pl.String,
-            "distance_km": pl.Float32,
-        },
-    )
+    path = utils.get_config_path("ktdb", "zone_distances.parquet")
+    return pl.read_parquet(path)
 
 
 def load_weather() -> pl.DataFrame:
@@ -403,7 +395,9 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
     data = data.with_columns(
-        region_code=pl.col("ozone").cast(pl.String).str.slice(0, 2)
+        region_code=pl.when(pl.col("ozone").cast(pl.String).str.strip_chars() != "")
+        .then(pl.col("ozone").cast(pl.String).str.slice(0, 2))
+        .otherwise(None)
     )
 
     data = data.with_columns(

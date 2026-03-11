@@ -1,6 +1,7 @@
+import functools
 import random
 from pathlib import Path
-from typing import Iterable, Mapping
+from typing import Iterable
 
 import polars as pl
 import yaml
@@ -107,17 +108,6 @@ def table_joiner(
     return lhs.join(rhs, on=on, maintain_order=maintain_order)
 
 
-def tables_joiner(tables: Mapping[int, pl.DataFrame], on: str) -> pl.DataFrame:
-    if not tables:
-        raise ValueError("No tables to join")
-
-    result = tables[0]
-    for table in tables[1:]:
-        result = table_joiner(result, table, on)
-
-    return result
-
-
 def table_stacker(tables: Iterable[pl.DataFrame]) -> pl.DataFrame:
     all_columns = set()
     for table in tables:
@@ -146,39 +136,11 @@ def bounds_from_list(bounds: list[str]) -> tuple[int, int]:
     return int(bounds[0]), int(bounds[1])
 
 
-def sample_int_range(bounds: tuple[int, int] | None) -> int | None:
+def sample_to_euro(bounds, rate=1.0):
     if len(bounds) == 1:
         return None
     a, b = bounds
-    return random.randint(int(a), int(b))
-
-
-def sample_us_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if len(bounds) == 1:
-        return None
-    a, b = bounds
-    return int(random.randint(int(a), int(b)) * 0.85)
-
-
-def sample_uk_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if len(bounds) == 1:
-        return None
-    a, b = bounds
-    return int(random.randint(int(a), int(b)) * 1.14)
-
-
-def sample_aus_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if len(bounds) == 1:
-        return None
-    a, b = bounds
-    return int(random.randint(int(a), int(b)) * 0.6)
-
-
-def sample_krw_to_euro(bounds: tuple[int, int] | None) -> int | None:
-    if len(bounds) == 1:
-        return None
-    a, b = bounds
-    return int(random.randint(int(a), int(b)) * 0.00058)
+    return int(random.randint(int(a), int(b)) * rate)
 
 
 def get_config_path(*parts: str) -> Path:
@@ -226,18 +188,18 @@ def compute_avg_speed(
     return attributes.join(speed, on="pid", how="left")
 
 
-def get_template_attributes() -> set[str]:
-    # load yaml config and return set of expected columns
+@functools.lru_cache(maxsize=1)
+def _load_template() -> dict:
     with open(template()) as f:
-        config = yaml.safe_load(f)
-    return config["attributes"]
+        return yaml.safe_load(f)
 
 
-def get_template_trips() -> set[str]:
-    # load yaml config and return set of expected columns
-    with open(template()) as f:
-        config = yaml.safe_load(f)
-    return config["trips"]
+def get_template_attributes() -> dict:
+    return _load_template()["attributes"]
+
+
+def get_template_trips() -> dict:
+    return _load_template()["trips"]
 
 
 def norm_weights(
@@ -248,22 +210,37 @@ def norm_weights(
         raise ValueError(
             f"Weight column '{weight_col}' not found in attributes"
         )
-    if not attributes.select(pl.col(weight_col).is_not_null()).to_series().all():
+    if (
+        not attributes.select(pl.col(weight_col).is_not_null())
+        .to_series()
+        .all()
+    ):
         print(
             "Warning: Some weights are null — these will be treated as zero in normalization"
         )
     # check for non-positive weights to avoid skewing normalization
-    if not attributes.select(pl.col(weight_col).fill_null(0).gt(0)).to_series().all():
+    if (
+        not attributes.select(pl.col(weight_col).fill_null(0).gt(0))
+        .to_series()
+        .all()
+    ):
         print(
             "Warning: Some weights are non-positive (<= 0) — these will be treated as zero in normalization"
         )
         attributes = attributes.with_columns(
-            pl.col(weight_col).fill_null(0).clip(lower_bound=0).alias(weight_col)
+            pl.col(weight_col)
+            .fill_null(0)
+            .clip(lower_bound=0)
+            .alias(weight_col)
         )
     avg_weight = attributes[weight_col].fill_null(0).mean()
     if avg_weight == 0:
         print("Warning: Total weight is zero — returning all weights as 1")
-        return attributes.with_columns(pl.lit(1, dtype=pl.Float32).alias(weight_col))
+        return attributes.with_columns(
+            pl.lit(1, dtype=pl.Float32).alias(weight_col)
+        )
     return attributes.with_columns(
-        (pl.col(weight_col).fill_null(0) / avg_weight).cast(pl.Float32).alias(weight_col)
+        (pl.col(weight_col).fill_null(0) / avg_weight)
+        .cast(pl.Float32)
+        .alias(weight_col)
     )
