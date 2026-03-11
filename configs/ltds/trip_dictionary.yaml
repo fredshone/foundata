@@ -78,8 +78,8 @@ mode:
         23: other
         24: rail
         25: rail
-        26: car
-        27: car
+        26: rail
+        27: other
 
     LTDS2223:
         01 National Rail/ Overground: rail

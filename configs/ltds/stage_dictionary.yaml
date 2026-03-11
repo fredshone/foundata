@@ -3,9 +3,45 @@ column_mappings:
         # shid: hid
         spid: pid
         stid: tid
+        smode: mode
         slenn: distance # prob km?
     LTDS1920:
         # shid: hid
         spid: pid
         stid: tid
+        smode: mode
         slen100m: distance # prob km?
+
+
+mode:
+    default:
+        -2: unknown
+        -1: unknown
+        0: unknown
+        1: walk
+        2: bike
+        3: car
+        4: car
+        5: car
+        6: car
+        7: car
+        8: car
+        9: car
+        10: car
+        11: car
+        12: car
+        13: bus
+        14: bus
+        15: bus
+        16: bus
+        17: rail
+        18: rail
+        19: rail
+        20: bus
+        21: car
+        22: car
+        23: other
+        24: rail
+        25: rail
+        26: rail
+        27: other

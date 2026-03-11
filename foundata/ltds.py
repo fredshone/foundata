@@ -68,6 +68,7 @@ def load_years(
 
         stages_columns = list(stages_config_year["column_mappings"].keys())
         stages = fuzzy_loader(root, "Stage.csv", columns=stages_columns)
+        stages = preprocess_stages(stages, stages_config_year)
 
         zone_mapping = load_mapping(root / "HABORO_T.csv")
 
@@ -94,9 +95,10 @@ def load_years(
 
         print("processing trips and stages...")
         trips = preprocess_trips(trips, trips_config_year, year, zone_mapping)
-        stages = preprocess_stages(stages, stages_config_year, year)
-        trips = table_joiner(
-            trips, stages, on="tid", lhs_name="trips", rhs_name="stages"
+        trip_distances = extract_trip_distances(stages)
+        access_egress_distances = extract_pid_access_egress_distance(stages)
+        trips = trips.join(trip_distances, on="tid", how="left").join(
+            access_egress_distances, on="pid", how="left"
         )
 
         all_attributes.append(attributes)
@@ -113,7 +115,6 @@ def load_years(
         dwelling=pl.lit("unknown"),
         month=pl.lit(None, dtype=pl.Int8),
         disability=pl.lit("unknown"),
-        access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
 
     attributes = attributes.with_columns(
@@ -470,22 +471,51 @@ def preprocess_trips(
     return trips
 
 
-def preprocess_stages(
-    stages: pl.DataFrame, config: dict, year: str
-) -> pl.DataFrame:
+def preprocess_stages(stages: pl.DataFrame, config: dict) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
-    stages = (
+    return (
         stages.select(column_mapping.keys())
         .rename(column_mapping)
         .with_columns(
+            mode=pl.col("mode").replace_strict(config["mode"]),
             distance=pl.when(pl.col("distance") < 0)
             .then(None)
-            .otherwise(pl.col("distance") * 1.6)
+            .otherwise(pl.col("distance") * 1.6),
         )
     )
 
-    stages = stages.group_by(["pid", "tid"]).agg(
-        pl.col("distance").sum().alias("distance")
+
+def extract_trip_distances(stages: pl.DataFrame) -> pl.DataFrame:
+
+    return (
+        stages.group_by(["pid", "tid"])
+        .agg(pl.col("distance").sum().alias("distance"))
+        .select(["tid", "distance"])
     )
 
-    return stages.drop("pid")
+
+def extract_pid_access_egress_distance(stages: pl.DataFrame) -> pl.DataFrame:
+
+    pt_trips = (
+        stages.filter(pl.col("mode").is_in(["bus", "rail"]))
+        .select("tid")
+        .unique()
+    )
+
+    access_egress = (
+        stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
+        .join(pt_trips, on="tid", how="inner")
+        .group_by(["pid", "tid"])
+        .agg(pl.col("distance").sum().alias("access_egress_distance"))
+        .group_by("pid")
+        .agg(pl.col("access_egress_distance").mean())
+    )
+
+    n = access_egress.height
+    pop = stages.select("pid").unique().height
+    perc = 100 * n / pop
+    print(
+        f"Computed access/egress distance for {n} trips, covering {perc:.1f}% of the population."
+    )
+
+    return access_egress.select(["pid", "access_egress_distance"])
