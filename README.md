@@ -1,3 +1,5 @@
+[![Weekly](https://github.com/fredshone/foundata/actions/workflows/weekly.yml/badge.svg)](https://github.com/fredshone/foundata/actions/workflows/weekly.yml)
+
 Foundata is a pipeline for creating reconciled household travel surveys.
 
 Foundata is an effort towards building a dataset for enabling *foundational* or *world* models of human behaviour. But it is also a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
