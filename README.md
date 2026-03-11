@@ -6,14 +6,14 @@ Foundata is an effort towards building a dataset for enabling *foundational* or 
 
 | source | persons | missing data     | trips   | kms (millions) |
 |--------|---------|-----------|---------|-----------------|
-| London UK (LTDS)   | 71,734  | 27%      | 137,900 | 1.4        |
-| UK (NTS)    | 2,560,548 | 15%    | 5,106,905 | 65.2   |
-| US (NHTS)   | 716,376 | 16%      | 2,604,832 | 42.1     |
-| Chicago US (CMAP)   | 31,540  | ~0%       | 101,965 | 0.8        |
-| Victoria AUS (VISTA)  | 94,821  | 20%      | 257,557 | 2.5        |
-| Queensland AUS (QHTS)   | 51,481  | 25%      | 126,485 | 1.4        |
-| South Korea (KTDB)      | 133,326     | 42%      | 334,049 | 1.6        |
-| **total** | **3,659,826** | **17%** | **8,666,499** | **114.9** |
+| London UK (LTDS)   | 71,725  | 35%      | 138,735 | 1.4        |
+| UK (NTS)    | 2,560,548 | 22%    | 5,106,905 | 65.2   |
+| US (NHTS)   | 693,535 | 26%      | 2,412,825 | 37.7     |
+| Chicago US (CMAP)   | 31,540  | 5%       | 101,965 | 0.8        |
+| Victoria AUS (VISTA)  | 94,821  | 30%      | 257,557 | 2.5        |
+| Queensland AUS (QHTS)   | 51,481  | 34%      | 126,485 | 1.4        |
+| South Korea (KTDB)      | 133,326     | 38%      | 334,049 | 1.6        |
+| **total** | **3,636,976** | **23.5%** | **8,575,327** | **110.8** |
 
 
 ### Person Attributes Status
@@ -22,9 +22,15 @@ Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
 ![Description of image](assets/attributes_categorical.png)
 
+There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (nulls), and (ii) in some cases we allow "overlapping" categories, such as `employed` and `ft-employed`.
+
 Numeric person attributes:
 
 ![Description of image](assets/attributes_numeric.png)
+
+A sample of some trends:
+
+![Description of image](assets/attributes_trends.png)
 
 ### Trips (As 24hr Plans) Status
 
@@ -73,7 +79,7 @@ We currently map all transport models to the following types: {car, walk, bike, 
 
 ```bash
 uv sync          # install dependencies and register the CLI entry point
-foundata --help  # confirm two commands are available
+foundata --help
 ```
 
 ### Adding a new source

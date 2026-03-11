@@ -6,6 +6,7 @@ import polars as pl
 from foundata import fix
 from foundata.utils import (
     bounds_from_list,
+    check_overlap,
     compute_avg_speed,
     config_for_year,
     expand_root,
@@ -16,7 +17,6 @@ from foundata.utils import (
 )
 
 GBP_TO_EURO = 1.14
-
 SOURCE = "ltds"
 
 
@@ -95,11 +95,29 @@ def load_years(
         )
 
         print("processing trips and stages...")
-        trips = preprocess_trips(trips, trips_config_year, year, zone_mapping)
+        trips = preprocess_trips(trips, trips_config_year, zone_mapping)
         trip_distances = extract_trip_distances(stages)
+        trips = trips.join(trip_distances, on="tid", how="left")
+
         access_egress_distances = extract_pid_access_egress_distance(stages)
-        trips = trips.join(trip_distances, on="tid", how="left").join(
+        check_overlap(
+            attributes,
+            access_egress_distances,
+            on="pid",
+            lhs_name="attributes",
+            rhs_name="access_egress_distances",
+        )
+        attributes = attributes.join(
             access_egress_distances, on="pid", how="left"
+        )
+
+        yr = year[-4:]
+        attributes = attributes.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+        )
+        trips = trips.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String)
         )
 
         all_attributes.append(attributes)
@@ -116,14 +134,6 @@ def load_years(
         dwelling=pl.lit("unknown"),
         month=pl.lit(None, dtype=pl.Int8),
         disability=pl.lit("unknown"),
-    )
-
-    attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
-    )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
 
     attributes = compute_avg_speed(attributes, trips)
@@ -435,7 +445,7 @@ def sample_plan_trip_start_times(trips: pl.DataFrame, seed=42) -> pl.DataFrame:
 
 
 def preprocess_trips(
-    trips: pl.DataFrame, config: dict, year: str, zone_mapping: dict
+    trips: pl.DataFrame, config: dict, zone_mapping: dict
 ) -> pl.DataFrame:
     column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
@@ -448,9 +458,15 @@ def preprocess_trips(
     act_map = config["act"]
 
     trips = trips.with_columns(
-        pl.col("mode").replace_strict(mode_map, default=pl.col("mode")),
-        pl.col("oact").replace_strict(act_map, default=pl.col("oact")),
-        pl.col("dact").replace_strict(act_map, default=pl.col("dact")),
+        pl.col("mode")
+        .fill_null(pl.lit("unknown"))
+        .replace_strict(mode_map, default=pl.lit("unknown")),
+        pl.col("oact")
+        .fill_null(pl.lit("unknown"))
+        .replace_strict(act_map, default=pl.lit("unknown")),
+        pl.col("dact")
+        .fill_null(pl.lit("unknown"))
+        .replace_strict(act_map, default=pl.lit("unknown")),
     )
 
     trips = trips.with_columns(

@@ -29,6 +29,7 @@ def process_source(attributes, trips, source_name):
     utils.check_overlap(
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
     )
+    attributes, trips = filter.missing_acts_or_modes(attributes, trips)
     attributes, trips = fix.missing_columns(attributes, trips)
     verify.columns(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)

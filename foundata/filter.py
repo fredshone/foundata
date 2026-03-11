@@ -5,6 +5,37 @@ import polars as pl
 from foundata import utils
 
 
+def missing_acts_or_modes(
+    attributes: pl.DataFrame, trips: pl.DataFrame
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    n = len(trips.select("pid").unique())
+    missing_acts_or_modes = (
+        trips.filter(
+            pl.col("oact").is_null()
+            | pl.col("dact").is_null()
+            | pl.col("mode").is_null()
+            | (pl.col("oact") == "unknown")
+            | (pl.col("dact") == "unknown")
+            | (pl.col("mode") == "unknown")
+        )
+        .select("pid")
+        .unique()
+    )
+    nn = len(missing_acts_or_modes)
+
+    clean_trips = trips.join(
+        missing_acts_or_modes, on="pid", how="anti", maintain_order="left"
+    )
+    clean_attributes = attributes.join(
+        missing_acts_or_modes, on="pid", how="anti", maintain_order="left"
+    )
+
+    print(
+        f"Removed {nn}/{n} plans due to missing activities or modes ({100 * nn / n:.1f}%)"
+    )
+    return clean_attributes, clean_trips
+
+
 def negative_trips(
     attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
