@@ -45,12 +45,19 @@ def cli():
     help="Comma-separated list of sources to omit (e.g. --omit nhts --omit ktdb). ",
     show_default=True,
 )
-def run(data_root, output, select, omit):
+@click.option(
+    "--home-based/--no-home-based",
+    "-hb/-no-hb",
+    default=False,
+    show_default=True,
+    help="Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).",
+)
+def run(data_root, output, select, omit, home_based):
     """Run the data processing pipeline end-to-end."""
     if select and omit:
         click.echo("Cannot use both --select and --omit options.", err=True)
         sys.exit(1)
-    runner(data_root, output, select, omit)
+    runner(data_root, output, select, omit, home_based)
 
 
 @cli.command("validate-config")

@@ -15,15 +15,15 @@ def trips_to_activities(
             pl.col("seq").cast(pl.Int8).alias("seq"),
             pl.col("oact").alias("act"),
             pl.col("ozone").alias("zone"),
-            pl.lit(0, dtype=pl.Int32).alias("ast"),
-            pl.col("tst").alias("aet"),
+            pl.lit(0, dtype=pl.Int32).alias("start"),
+            pl.col("tst").alias("end"),
         )
     )
 
     dest_acts = (
         sorted_trips.filter(pl.col("tet") < 1440)
         .with_columns(
-            aet=pl.col("tst").shift(-1).over("pid").fill_null(1440),
+            end=pl.col("tst").shift(-1).over("pid").fill_null(1440),
             seq=pl.col("seq").cast(pl.Int8) + 1,
         )
         .select(
@@ -31,8 +31,8 @@ def trips_to_activities(
             pl.col("seq").cast(pl.Int8).alias("seq"),
             pl.col("dact").alias("act"),
             pl.col("dzone").alias("zone"),
-            pl.col("tet").alias("ast"),
-            pl.col("aet"),
+            pl.col("tst").alias("start"),
+            pl.col("end").alias("end"),
         )
     )
 
@@ -43,11 +43,11 @@ def trips_to_activities(
         pl.lit(0, dtype=pl.Int8).alias("seq"),
         pl.lit("home").alias("act"),
         pl.col("hh_zone").alias("zone"),
-        pl.lit(0, dtype=pl.Int32).alias("ast"),
-        pl.lit(1440, dtype=pl.Int32).alias("aet"),
+        pl.lit(0, dtype=pl.Int32).alias("start"),
+        pl.lit(1440, dtype=pl.Int32).alias("end"),
     )
 
-    return pl.concat([first_acts, dest_acts, no_trip_acts]).sort("pid", "ast")
+    return pl.concat([first_acts, dest_acts, no_trip_acts]).sort("pid", "seq")
 
 
 def trips_with_following_activity(
@@ -71,11 +71,18 @@ def _bin_labels(breaks: list[float]) -> list[str]:
     return result
 
 
+def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
+    return df.with_columns(
+        [pl.col(col).fill_null(fill_value).alias(col) for col in df.columns]
+    )
+
+
 def discretise_numeric(
     df: pl.DataFrame,
     n_bins: int = 5,
     method: str = "quantile",
     cols: list[str] | None = None,
+    exclude_cols: list[str] | None = None,
 ) -> pl.DataFrame:
     """Discretise numeric columns into labelled string bins.
 
@@ -84,7 +91,7 @@ def discretise_numeric(
         n_bins: Number of bins.
         method: "quantile" (equal-frequency) or "uniform" (equal-width).
         cols: Columns to discretise. If None, all numeric columns are used.
-
+        exclude_cols: Columns to exclude from discretisation.
     Returns:
         DataFrame with selected numeric columns replaced by string bin labels.
         Null values are preserved as null.
@@ -94,8 +101,12 @@ def discretise_numeric(
             f"method must be 'quantile' or 'uniform', got {method!r}"
         )
 
+    if cols is not None and exclude_cols is not None:
+        raise ValueError("Cannot specify both cols and exclude_cols")
     if cols is None:
         cols = df.select(cs.numeric()).columns
+    if exclude_cols is not None:
+        cols = [col for col in cols if col not in exclude_cols]
 
     exprs = []
     for col in cols:

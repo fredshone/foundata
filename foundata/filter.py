@@ -5,6 +5,47 @@ import polars as pl
 from foundata import utils
 
 
+def home_based(
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """
+    Filter out non-home-based plans, where the first and last activity are not home.
+
+    Args:
+        attributes: DataFrame of plan attributes, must contain a column matching `on`.
+        trips: DataFrame of trips, must contain columns matching `on`, "seq", "oact", and "dact".
+        on: Column name to join on (default "pid").
+    """
+    trips = trips.sort(on, "seq")
+
+    n = len(attributes)
+
+    home_based_plans = (
+        trips.group_by(on)
+        .agg(
+            pl.col("oact").first().alias("first_act"),
+            pl.col("dact").last().alias("last_act"),
+        )
+        .filter(
+            (pl.col("first_act") == "home") & (pl.col("last_act") == "home")
+        )
+        .select(on)
+    )
+
+    trips = trips.join(
+        home_based_plans, on=on, how="inner", maintain_order="left"
+    )
+    attributes = attributes.join(
+        home_based_plans, on=on, how="inner", maintain_order="left"
+    )
+    nn = len(attributes)
+
+    print(
+        f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"
+    )
+    return attributes, trips
+
+
 def missing_acts_or_modes(
     attributes: pl.DataFrame, trips: pl.DataFrame
 ) -> tuple[pl.DataFrame, pl.DataFrame]:

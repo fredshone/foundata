@@ -44,7 +44,13 @@ def process_source(attributes, trips, source_name):
     return attributes, trips
 
 
-def runner(data_root: str, output: str, select: list[str], omit: list[str]):
+def runner(
+    data_root: str,
+    output: str,
+    select: list[str],
+    omit: list[str],
+    home_based: bool = False,
+):
     data_root = Path(data_root).expanduser()
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
@@ -260,12 +266,47 @@ def runner(data_root: str, output: str, select: list[str], omit: list[str]):
     all_trips = pl.concat(all_trips, how="vertical")
 
     all_attributes.write_csv(output / "attributes.csv")
-    binned_attributes = post_process.discretise_numeric(all_attributes)
+    binned_attributes = post_process.discretise_numeric(
+        all_attributes,
+        n_bins=5,
+        method="quantile",
+        exclude_cols=["year", "month", "weight", "vehicles", "hh_size"],
+    )
+    binned_attributes = post_process.fill_nulls(binned_attributes)
     binned_attributes.write_csv(output / "binned_attributes.csv")
     all_trips.write_csv(output / "trips.csv")
 
     activities = post_process.trips_to_activities(all_attributes, all_trips)
     activities.write_csv(output / "activities.csv")
+
+    # home based variations
+    if home_based:
+        hb_output = output / "home_based"
+        hb_output.mkdir(exist_ok=True, parents=True)
+
+        home_based_attributes, home_based_trips = filter.home_based(
+            all_attributes, all_trips
+        )
+        home_based_attributes.write_csv(hb_output / "attributes.csv")
+        home_based_trips.write_csv(hb_output / "trips.csv")
+
+        binned_home_based_attributes = post_process.discretise_numeric(
+            home_based_attributes,
+            n_bins=5,
+            method="quantile",
+            exclude_cols=["year", "month", "weight", "vehicles", "hh_size"],
+        )
+        binned_home_based_attributes = post_process.fill_nulls(
+            binned_home_based_attributes
+        )
+        binned_home_based_attributes.write_csv(
+            hb_output / "binned_attributes.csv"
+        )
+
+        home_based_activities = post_process.trips_to_activities(
+            home_based_attributes, home_based_trips
+        )
+        home_based_activities.write_csv(hb_output / "activities.csv")
 
     print(f"Written to {output}")
 
