@@ -72,9 +72,19 @@ def _bin_labels(breaks: list[float]) -> list[str]:
 
 
 def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
-    return df.with_columns(
+    df = df.with_columns(
         [pl.col(col).fill_null(fill_value).alias(col) for col in df.columns]
     )
+    # fill empty string cells as well
+    for col in df.columns:
+        if df[col].dtype == pl.String:
+            df = df.with_columns(
+                pl.when(pl.col(col) == "")
+                .then(pl.lit(fill_value))
+                .otherwise(pl.col(col))
+                .alias(col)
+            )
+    return df
 
 
 def discretise_numeric(
