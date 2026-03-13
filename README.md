@@ -1,8 +1,6 @@
 [![Weekly](https://github.com/fredshone/foundata/actions/workflows/weekly.yml/badge.svg)](https://github.com/fredshone/foundata/actions/workflows/weekly.yml)
 
-Foundata is a pipeline for creating reconciled household travel surveys.
-
-Foundata is an effort towards building a dataset for enabling *foundational* or *world* models of human behaviour. But it is also a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
+Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* or *world* models of human behaviour — and a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
 
 ### Progress
 
@@ -22,17 +20,17 @@ Foundata is an effort towards building a dataset for enabling *foundational* or 
 
 Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
-![Description of image](assets/attributes_categorical.png)
+![Categorical person attributes](assets/attributes_categorical.png)
 
 There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (nulls), and (ii) in some cases we allow "overlapping" categories, such as `employed` and `ft-employed`.
 
 Numeric person attributes:
 
-![Description of image](assets/attributes_numeric.png)
+![Numeric person attributes](assets/attributes_numeric.png)
 
 A sample of some trends:
 
-![Description of image](assets/attributes_trends.png)
+![Attribute trends](assets/attributes_trends.png)
 
 ### Trips (As 24hr Plans) Status
 
@@ -40,13 +38,13 @@ We encode human activity plans as sequences of trips, joinable by a unique perso
 
 We currently map all activities to the following types: {home, work, education, visit, medical, leisure, shop, escort, other}.
 
-We currently map all transport models to the following types: {car, walk, bike, bus, rail, other}.
+We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
 
 
 ### ToDo
 
 - Collect additional features, such as weather conditions and accessibility.
-- We currently combine all plan attributes as *person* attributes, but infact we use *household*, *person*, *day*, and *plan* attributes. We could distinguish these better.
+- We currently combine all plan attributes as *person* attributes, but in fact we use *household*, *person*, *day*, and *plan* attributes. We could distinguish these better.
 - More data, see below: 
 
 

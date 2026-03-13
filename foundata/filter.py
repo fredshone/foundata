@@ -6,19 +6,22 @@ from foundata import utils
 
 
 def home_based(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """
-    Filter out non-home-based plans, where the first and last activity are not home.
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out non-home-based plans (first and last activity must be home).
 
     Args:
-        attributes: DataFrame of plan attributes, must contain a column matching `on`.
-        trips: DataFrame of trips, must contain columns matching `on`, "seq", "oact", and "dact".
+        attributes: DataFrame of plan attributes with a column matching `on`.
+            If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
         on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
     """
     trips = trips.sort(on, "seq")
 
-    n = len(attributes)
+    n = len(attributes) if attributes is not None else len(trips.select(on).unique())
 
     home_based_plans = (
         trips.group_by(on)
@@ -35,10 +38,13 @@ def home_based(
     trips = trips.join(
         home_based_plans, on=on, how="inner", maintain_order="left"
     )
-    attributes = attributes.join(
-        home_based_plans, on=on, how="inner", maintain_order="left"
-    )
-    nn = len(attributes)
+    if attributes is not None:
+        attributes = attributes.join(
+            home_based_plans, on=on, how="inner", maintain_order="left"
+        )
+        nn = len(attributes)
+    else:
+        nn = len(trips.select(on).unique())
 
     print(
         f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"
@@ -47,10 +53,19 @@ def home_based(
 
 
 def missing_acts_or_modes(
-    attributes: pl.DataFrame, trips: pl.DataFrame
-) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans with any missing or unknown activities or modes.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns "pid", "oact", "dact", "mode".
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
     n = len(trips.select("pid").unique())
-    missing_acts_or_modes = (
+    missing = (
         trips.filter(
             pl.col("oact").is_null()
             | pl.col("dact").is_null()
@@ -62,13 +77,15 @@ def missing_acts_or_modes(
         .select("pid")
         .unique()
     )
-    nn = len(missing_acts_or_modes)
+    nn = len(missing)
 
     clean_trips = trips.join(
-        missing_acts_or_modes, on="pid", how="anti", maintain_order="left"
+        missing, on="pid", how="anti", maintain_order="left"
     )
-    clean_attributes = attributes.join(
-        missing_acts_or_modes, on="pid", how="anti", maintain_order="left"
+    clean_attributes = (
+        attributes.join(missing, on="pid", how="anti", maintain_order="left")
+        if attributes is not None
+        else None
     )
 
     print(
@@ -78,9 +95,18 @@ def missing_acts_or_modes(
 
 
 def negative_trips(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans containing trips with negative durations (tst > tet).
 
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "tst", "tet".
+        on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
     n = len(trips.select(on).unique())
     negative_duration_plans = (
         trips.filter((pl.col("tst") > pl.col("tet"))).select(on).unique()
@@ -90,8 +116,10 @@ def negative_trips(
     clean_trips = trips.join(
         negative_duration_plans, on=on, how="anti", maintain_order="left"
     )
-    clean_attributes = attributes.join(
-        negative_duration_plans, on=on, how="anti", maintain_order="left"
+    clean_attributes = (
+        attributes.join(negative_duration_plans, on=on, how="anti", maintain_order="left")
+        if attributes is not None
+        else None
     )
 
     print(
@@ -101,8 +129,18 @@ def negative_trips(
 
 
 def negative_activities(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans containing activities with negative durations.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "tst", "tet".
+        on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
     n = len(trips.select(on).unique())
     negative_duration_plans = (
         trips.filter((pl.col("tst") < (pl.col("tet").shift(1)).over(on)))
@@ -114,8 +152,10 @@ def negative_activities(
     clean_trips = trips.join(
         negative_duration_plans, on=on, how="anti", maintain_order="left"
     )
-    clean_attributes = attributes.join(
-        negative_duration_plans, on=on, how="anti", maintain_order="left"
+    clean_attributes = (
+        attributes.join(negative_duration_plans, on=on, how="anti", maintain_order="left")
+        if attributes is not None
+        else None
     )
 
     print(
@@ -125,18 +165,31 @@ def negative_activities(
 
 
 def null_times(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans containing trips with null start or end times.
 
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "tst", "tet".
+        on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
     n = len(trips.select(on).unique())
-    null_trips = trips.filter(pl.col("tst").is_null() | pl.col("tet").is_null())
-    nn = len(null_trips.select(on).unique())
+    null_trip_pids = trips.filter(
+        pl.col("tst").is_null() | pl.col("tet").is_null()
+    ).select(on).unique()
+    nn = len(null_trip_pids)
 
     clean_trips = trips.join(
-        null_trips.select(on).unique(), on=on, how="anti", maintain_order="left"
+        null_trip_pids, on=on, how="anti", maintain_order="left"
     )
-    clean_attributes = attributes.join(
-        null_trips.select(on).unique(), on=on, how="anti", maintain_order="left"
+    clean_attributes = (
+        attributes.join(null_trip_pids, on=on, how="anti", maintain_order="left")
+        if attributes is not None
+        else None
     )
 
     print(
@@ -146,13 +199,24 @@ def null_times(
 
 
 def null_pids(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-    n_attr = attributes[on].null_count()
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Remove rows with null person IDs from attributes and/or trips.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips.
+        on: Column name for person ID (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
+    if attributes is not None:
+        n_attr = attributes[on].null_count()
+        if n_attr:
+            print(f"Removed {n_attr} rows with null PIDs from attributes")
+            attributes = attributes.filter(pl.col(on).is_not_null())
     n_trips = trips[on].null_count()
-    if n_attr:
-        print(f"Removed {n_attr} rows with null PIDs from attributes")
-        attributes = attributes.filter(pl.col(on).is_not_null())
     if n_trips:
         print(f"Removed {n_trips} rows with null PIDs from trips")
         trips = trips.filter(pl.col(on).is_not_null())
@@ -160,8 +224,18 @@ def null_pids(
 
 
 def time_consistent(
-    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
-) -> tuple[pl.DataFrame, pl.DataFrame]:
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Apply all time-consistency filters: null pids, negative trips/activities, null times.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips.
+        on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
     attributes, trips = null_pids(attributes, trips, on)
     attributes, trips = negative_trips(attributes, trips, on)
     attributes, trips = negative_activities(attributes, trips, on)
