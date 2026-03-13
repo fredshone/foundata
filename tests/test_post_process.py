@@ -413,12 +413,12 @@ def test_fill_nulls_string_cols():
     df = pl.DataFrame(
         {
             "mode": pl.Series(["walk", None, "car"], dtype=pl.String),
-            "age": pl.Series([25, None, 40], dtype=pl.Int32),
+            "age": pl.Series(["25-40", None, "40-60"], dtype=pl.Utf8),
         }
     )
     result = post_process.fill_nulls(df)
     assert result["mode"].to_list() == ["walk", "unknown", "car"]
-    assert result["age"].to_list() == [25, -1, 40]
+    assert result["age"].to_list() == ["25-40", "unknown", "40-60"]
 
 
 def test_fill_nulls_empty_strings():
