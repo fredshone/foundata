@@ -72,18 +72,24 @@ def _bin_labels(breaks: list[float]) -> list[str]:
 
 
 def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
+    # fill null strings with "fill value"
+    string_cols = [col for col in df.columns if df[col].dtype == pl.String]
     df = df.with_columns(
-        [pl.col(col).fill_null(fill_value).alias(col) for col in df.columns]
+        [pl.col(col).fill_null(fill_value).alias(col) for col in string_cols]
     )
     # fill empty string cells as well
-    for col in df.columns:
-        if df[col].dtype == pl.String:
-            df = df.with_columns(
-                pl.when(pl.col(col) == "")
-                .then(pl.lit(fill_value))
-                .otherwise(pl.col(col))
-                .alias(col)
-            )
+    for col in string_cols:
+        df = df.with_columns(
+            pl.when(pl.col(col) == "")
+            .then(pl.lit(fill_value))
+            .otherwise(pl.col(col))
+            .alias(col)
+        )
+    # fill null numeric values with -1
+    numeric_cols = [col for col in df.columns if df[col].dtype.is_numeric()]
+    df = df.with_columns(
+        [pl.col(col).fill_null(-1).alias(col) for col in numeric_cols]
+    )
     return df
 
 

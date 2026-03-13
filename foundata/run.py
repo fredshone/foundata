@@ -279,7 +279,10 @@ def runner(
     activities = post_process.trips_to_activities(all_attributes, all_trips)
     activities.write_csv(output / "activities.csv")
 
-    # home based variations
+    # ------------------------------------------------------------------
+    # Postprocess and write Variations
+    # ------------------------------------------------------------------
+
     if home_based:
         hb_output = output / "home_based"
         hb_output.mkdir(exist_ok=True, parents=True)
