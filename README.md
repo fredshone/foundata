@@ -7,7 +7,7 @@ Foundata is a pipeline for creating reconciled household travel surveys, aimed a
 | source | persons | missing data     | trips   | kms (millions) |
 |--------|---------|-----------|---------|-----------------|
 | London UK (LTDS)   | 71,725  | 35%      | 138,735 | 1.4        |
-| UK (NTS)    | 2,560,548 | 22%    | 5,106,905 | 65.2   |
+| UK (NTS)    | 2,676,737 | 22%    | 5,331,101 | 68.0   |
 | US (NHTS)   | 693,535 | 26%      | 2,412,825 | 37.7     |
 | Chicago US (CMAP)   | 31,540  | 5%       | 101,965 | 0.8        |
 | Victoria AUS (VISTA)  | 94,821  | 30%      | 257,557 | 2.5        |

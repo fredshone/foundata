@@ -63,7 +63,7 @@ def load_households(
     columns = config["column_mappings"]
 
     hhs = pl.read_csv(
-        root / "tab" / "household_eul_2002-2023.tab",
+        root / "tab" / "household_eul_2002-2024.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
@@ -100,7 +100,7 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
     columns = config["column_mappings"]
 
     persons = pl.read_csv(
-        root / "tab" / "individual_eul_2002-2023.tab",
+        root / "tab" / "individual_eul_2002-2024.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
@@ -135,7 +135,7 @@ def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
     columns = config["column_mappings"]
 
     trips = pl.read_csv(
-        root / "tab" / "trip_eul_2002-2023.tab",
+        root / "tab" / "trip_eul_2002-2024.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
@@ -159,7 +159,7 @@ def load_days(root: str | Path, config: dict | None = None) -> pl.DataFrame:
     columns = config["column_mappings"]
 
     days = pl.read_csv(
-        root / "tab" / "day_eul_2002-2023.tab",
+        root / "tab" / "day_eul_2002-2024.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
@@ -174,7 +174,7 @@ def load_stages(root: str | Path, config: dict | None = None) -> pl.DataFrame:
     columns = config["column_mappings"]
 
     stages = pl.read_csv(
-        root / "tab" / "stage_eul_2002-2023.tab",
+        root / "tab" / "stage_eul_2002-2024.tab",
         separator="\t",
         columns=list(columns.keys()),
     ).rename(columns)
