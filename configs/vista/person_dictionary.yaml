@@ -61,7 +61,7 @@ occupation:
         Machinery Operators and Drivers: operator,
         Managers: managerial,
         Missing/Refused: unknown,
-        Not in Work Force: n/a,
+        Not in Work Force: void,
         Professionals: professional,
         Sales Workers: service,
         Technicians and Trades Workers: technical,

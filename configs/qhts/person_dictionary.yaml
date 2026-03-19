@@ -81,7 +81,7 @@ employment:
         Illness: unemployed
         Childcare/Kindergarten: student
         Secondary School: student
-        Under Five: n/a
+        Under Five: void
         Other Study: student
 
 occupation:

@@ -67,17 +67,17 @@ attributes:
   education:
     dtype: str
     default: True
-    set: [n/a, some, none, school, high-school, degree, unknown]
+    set: [some, none, school, high-school, degree, unknown, void]
     description: "Highest education level attained."
   can_wfh:
     dtype: str
     default: True
-    set: ["yes", "no", unknown, n/a]
+    set: ["yes", "no", unknown, void]
     description: "Whether the person can work from home."
   occupation:
     dtype: str
     default: True
-    set: [n/a, clerical, manual, managerial, operator, professional, service, other, technical, unknown]
+    set: [clerical, manual, managerial, operator, professional, service, other, technical, unknown, void]
     description: "Occupation category."
   race:
     dtype: str
@@ -87,7 +87,7 @@ attributes:
   has_licence:
     dtype: str
     default: True
-    set: [n/a, "yes", "no", unknown]
+    set: ["yes", "no", unknown, void]
     description: "Whether the person holds a driving licence."
   relationship:
     dtype: str
@@ -97,7 +97,7 @@ attributes:
   employment:
     dtype: str
     default: True
-    set: [n/a, employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown]
+    set: [employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown, void]
     description: "Employment status."
   country:
     dtype: str

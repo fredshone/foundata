@@ -53,7 +53,7 @@ can_wfh:
         2: "yes"
         3: "no"
         4: "no"
-        -1: "n/a"
+        -1: "void"
 
 occupation:
     default:
@@ -65,4 +65,4 @@ occupation:
         6: manual
         7: managerial
         8: professional
-        -1: n/a
+        -1: void

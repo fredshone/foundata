@@ -160,6 +160,50 @@ def location_consistency(trips: pl.DataFrame) -> bool:
     return True
 
 
+def trips_pids_subset_of_attributes(
+    attributes: pl.DataFrame, trips: pl.DataFrame
+) -> bool:
+    """Check that every pid in trips exists in attributes.
+
+    It is valid for attributes to contain pids not in trips (persons without
+    trips), but the reverse is not valid.
+    """
+    attr_pids = set(attributes["pid"].to_list())
+    trip_pids = set(trips["pid"].to_list())
+    orphans = trip_pids - attr_pids
+    if orphans:
+        print(
+            f"ERROR: {len(orphans)} pid(s) found in trips but not in attributes "
+            f"({100 * len(orphans) / len(trip_pids):.1f}% of trip pids)"
+        )
+        return False
+    return True
+
+
+def activities_pids_match_attributes(
+    attributes: pl.DataFrame, activities: pl.DataFrame
+) -> bool:
+    """Check that activities pids exactly match attributes pids (perfect consistency)."""
+    attr_pids = set(attributes["pid"].to_list())
+    act_pids = set(activities["pid"].to_list())
+    in_attrs_not_acts = attr_pids - act_pids
+    in_acts_not_attrs = act_pids - attr_pids
+    ok = True
+    if in_attrs_not_acts:
+        print(
+            f"ERROR: {len(in_attrs_not_acts)} pid(s) in attributes but not in activities "
+            f"({100 * len(in_attrs_not_acts) / len(attr_pids):.1f}% of attribute pids)"
+        )
+        ok = False
+    if in_acts_not_attrs:
+        print(
+            f"ERROR: {len(in_acts_not_attrs)} pid(s) in activities but not in attributes "
+            f"({100 * len(in_acts_not_attrs) / len(act_pids):.1f}% of activity pids)"
+        )
+        ok = False
+    return ok
+
+
 def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
     actual_cols = set(actual.columns)
     template_cols = set(template.keys())

@@ -308,17 +308,17 @@ def test_trips_to_activities_fixture(fixture_attrs, fixture_trips):
     act_counts = acts.group_by("pid").len()
     joined = trip_counts.join(act_counts, on="pid", suffix="_acts")
     for row in joined.iter_rows(named=True):
-        assert (
-            row["len_acts"] == row["len"] + 1
-        ), f"pid={row['pid']}: {row['len']} trips → expected {row['len'] + 1} activities, got {row['len_acts']}"
+        assert row["len_acts"] == row["len"] + 1, (
+            f"pid={row['pid']}: {row['len']} trips → expected {row['len'] + 1} activities, got {row['len_acts']}"
+        )
 
     # Activities sorted by start within each person
     for pid in fixture_trips["pid"].unique():
         person_acts = acts.filter(pl.col("pid") == pid).sort("start")
         start_vals = person_acts["start"].to_list()
-        assert start_vals == sorted(
-            start_vals
-        ), f"pid={pid} activities not sorted by start time"
+        assert start_vals == sorted(start_vals), (
+            f"pid={pid} activities not sorted by start time"
+        )
 
 
 def test_trips_to_activities_no_trips_person():
@@ -405,7 +405,8 @@ def test_discretise_numeric_label_format():
     result = post_process.discretise_numeric(df, n_bins=3, method="uniform")
     labels = set(result["age"].drop_nulls().to_list())
     assert all(
-        "-" in l or l.startswith("≤") or l.startswith(">") for l in labels
+        "-" in label or label.startswith("≤") or label.startswith(">")
+        for label in labels
     )
 
 
@@ -437,6 +438,15 @@ def test_fill_nulls_numeric_filled_with_minus_one():
     result = post_process.fill_nulls(df)
     assert result["vehicles"].to_list() == [1, -1, 3]
     assert result["weight"].to_list() == [1.5, -1.0, 2.0]
+
+
+def test_fill_nulls_boolean_col():
+    df = pl.DataFrame(
+        {"rain": pl.Series([True, None, False], dtype=pl.Boolean)}
+    )
+    result = post_process.fill_nulls(df)
+    assert result["rain"].dtype == pl.String
+    assert result["rain"].to_list() == ["true", "unknown", "false"]
 
 
 def test_discretise_numeric_invalid_method():

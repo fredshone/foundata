@@ -44,7 +44,7 @@ relationship:
     99: unknown
 
 occupation:
-    -8: n/a
+    -8: void
     -9: unknown
     -10: unknown
     1: professional
@@ -88,7 +88,7 @@ sex:
     2: female
 
 education:
-    -8: n/a
+    -8: void
     -9: unknown
     -10: unknown
     1: some
@@ -106,7 +106,7 @@ has_licence:
     6: "no"
 
 employment: 
-    -8: n/a
+    -8: void
     -9: unknown
     -10: unknown
     1: ft-employed
@@ -125,7 +125,7 @@ race:
     2: non-white
 
 can_wfh:
-    -8: n/a
+    -8: void
     -9: unknown
     -10: unknown
     1: "yes"

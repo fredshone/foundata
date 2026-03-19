@@ -49,14 +49,14 @@ can_wfh:
   -9: unknown
   -8: unknown
   -7: unknown
-  -1: n/a
+  -1: "void"
   1: "yes"
   2: "no"
 
 work_status:
   -8: unknown
   -7: unknown
-  -1: n/a
+  -1: void
   0: employed
   1: retired
   2: unemployed  # volunteer
@@ -70,7 +70,7 @@ work_status:
 occupation:
   "-8": unknown
   "-7": unknown
-  "-1": n/a
+  "-1": void
   "11": manual # Agriculture, Forestry, Fishing and Hunting
   "21": manual # Mining, Quarrying, and Oil and Gas Extraction
   "22": operator
@@ -114,7 +114,7 @@ race:
 has_licence:
   -8: unknown
   -7: unknown
-  -1: n/a
+  -1: void
   1: "yes"
   2: "no"
 

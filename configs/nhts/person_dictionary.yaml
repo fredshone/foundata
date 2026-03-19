@@ -18,7 +18,7 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "n/a",
+        -1: "void",
         1: "school",
         2: "high-school",
         3: "high-school",
@@ -26,7 +26,7 @@ column_mappings:
         5: "degree",
     }
     2022: {
-        -1: "n/a",
+        -1: "void",
         1: "school",
         2: "school",
         3: "high-school",
@@ -39,7 +39,7 @@ column_mappings:
     2001: {
         -8: "unknown",
         -7: "unknown",
-        -1: "n/a",
+        -1: "void",
         -9: "unknown",
         1: "school",
         2: "school",
@@ -64,7 +64,7 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "n/a",
+        -1: "void",
         1: "unemployed",
         2: "unemployed",
         3: "unemployed",
@@ -76,7 +76,7 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "n/a",
+        -1: "void",
         1: "employed",
         2: "unemployed",  # temporarily unemployed
         3: "unemployed",

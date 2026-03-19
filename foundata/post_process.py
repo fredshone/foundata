@@ -90,6 +90,19 @@ def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
     df = df.with_columns(
         [pl.col(col).fill_null(-1).alias(col) for col in numeric_cols]
     )
+    # cast any remaining nullable types (Boolean, Date, etc.) to String and fill
+    other_cols = [col for col in df.columns if df[col].null_count() > 0]
+    if other_cols:
+        df = df.with_columns(
+            [
+                pl.col(col).cast(pl.String).fill_null(fill_value)
+                for col in other_cols
+            ]
+        )
+    # assert there are no missing values left
+    assert df.null_count().sum_horizontal().sum() == 0, (
+        "There are still null values in the DataFrame"
+    )
     return df
 
 

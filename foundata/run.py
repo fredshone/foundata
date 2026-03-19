@@ -30,12 +30,14 @@ def process_source(attributes, trips, source_name):
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
     )
     attributes, trips = filter.missing_acts_or_modes(attributes, trips)
+
     attributes, trips = fix.missing_columns(attributes, trips)
     verify.columns(attributes, trips)
     attributes, trips = filter.columns(attributes, trips)
     attributes, trips = fix.fix_types(attributes, trips)
     attributes = fix.unknown_to_null(attributes)
     attributes = utils.norm_weights(attributes)
+    attributes, trips = filter.trips_on_attribute_pids(attributes, trips)
     print(
         f"Loaded {len(attributes)} persons, "
         f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -263,6 +265,8 @@ def runner(
     # Concat and write
     # ------------------------------------------------------------------
 
+    print("Concatenating and writing outputs...")
+
     all_attributes = pl.concat(all_attributes, how="vertical")
     all_trips = pl.concat(all_trips, how="vertical")
 
@@ -277,7 +281,13 @@ def runner(
     binned_attributes.write_csv(output / "binned_attributes.csv")
     all_trips.write_csv(output / "trips.csv")
 
+    if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
+        raise ValueError("ERROR: Trips has pids not in attributes")
+
     activities = post_process.trips_to_activities(all_attributes, all_trips)
+    if not verify.activities_pids_match_attributes(all_attributes, activities):
+        raise ValueError("ERROR: Activities pids do not match attributes pids")
+
     activities.write_csv(output / "activities.csv")
 
     # ------------------------------------------------------------------
@@ -285,6 +295,10 @@ def runner(
     # ------------------------------------------------------------------
 
     if home_based or filter_consecutive:
+        print(
+            "Applying additional filters and writing post-processed outputs..."
+        )
+
         hb_output = output / "postprocessed"
         hb_output.mkdir(exist_ok=True, parents=True)
 
@@ -302,6 +316,11 @@ def runner(
                 )
             )
 
+        if not verify.trips_pids_subset_of_attributes(
+            all_attributes, all_trips
+        ):
+            raise ValueError("ERROR: Trips has pids not in attributes")
+
         post_processed_attributes.write_csv(hb_output / "attributes.csv")
         post_processed_trips.write_csv(hb_output / "trips.csv")
 
@@ -317,6 +336,13 @@ def runner(
         pp_activities = post_process.trips_to_activities(
             post_processed_attributes, post_processed_trips
         )
+        if not verify.activities_pids_match_attributes(
+            post_processed_attributes, pp_activities
+        ):
+            raise ValueError(
+                "ERROR: Post-processed activities pids do not match attributes pids"
+            )
+
         pp_activities.write_csv(hb_output / "activities.csv")
 
     print(f"Written to {output}")

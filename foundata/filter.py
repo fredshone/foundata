@@ -300,6 +300,32 @@ def time_consistent(
     return attributes, trips
 
 
+def trips_on_attribute_pids(
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
+) -> tuple[pl.DataFrame, pl.DataFrame]:
+    """Remove trips whose pid does not appear in attributes.
+
+    Args:
+        attributes: DataFrame of plan attributes.
+        trips: DataFrame of trips.
+        on: Column name for person ID (default "pid").
+
+    Returns:
+        Tuple of (attributes unchanged, filtered trips).
+    """
+    n = len(trips.select(on).unique())
+    attr_pids = attributes.select(on)
+    clean_trips = trips.join(
+        attr_pids, on=on, how="inner", maintain_order="left"
+    )
+    nn = n - len(clean_trips.select(on).unique())
+    if nn:
+        print(
+            f"Removed {nn}/{n} plans with pids not found in attributes ({100 * nn / n:.1f}%)"
+        )
+    return attributes, clean_trips
+
+
 def columns(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
