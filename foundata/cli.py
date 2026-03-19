@@ -5,7 +5,8 @@ from typing import Optional
 import click
 import polars as pl
 
-from foundata import config_validator, filter as flt, verify
+from foundata import config_validator, verify
+from foundata import filter as flt
 from foundata.run import runner
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
@@ -75,12 +76,19 @@ def cli():
     show_default=True,
     help="Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).",
 )
-def run(data_root, output, select, omit, home_based):
+@click.option(
+    "--filter-consecutive/--no-filter-consecutive",
+    "-fc/-no-fc",
+    default=False,
+    show_default=True,
+    help="Whether to filter out consecutive home, work and education activities.",
+)
+def run(data_root, output, select, omit, home_based, filter_consecutive):
     """Run the data processing pipeline end-to-end."""
     if select and omit:
         click.echo("Cannot use both --select and --omit options.", err=True)
         sys.exit(1)
-    runner(data_root, output, select, omit, home_based)
+    runner(data_root, output, select, omit, home_based, filter_consecutive)
 
 
 @cli.command("validate-config")
@@ -134,31 +142,36 @@ def validate_table(attributes_csv, trips_csv):
 # ---------------------------------------------------------------------------
 
 _ATTR_OPT = click.option(
-    "--attributes", "-a",
+    "--attributes",
+    "-a",
     type=click.Path(exists=True),
     default=None,
     help="Path to attributes CSV.",
 )
 _TRIPS_OPT = click.option(
-    "--trips", "-t",
+    "--trips",
+    "-t",
     required=True,
     type=click.Path(exists=True),
     help="Path to trips CSV.",
 )
 _OUT_DIR_OPT = click.option(
-    "--output", "-o",
+    "--output",
+    "-o",
     type=click.Path(),
     default=None,
     help="Output directory. Outputs use suffixed input filenames.",
 )
 _OUT_ATTR_OPT = click.option(
-    "--output-attributes", "-oa",
+    "--output-attributes",
+    "-oa",
     type=click.Path(),
     default=None,
     help="Explicit output path for attributes CSV (overrides -o).",
 )
 _OUT_TRIPS_OPT = click.option(
-    "--output-trips", "-ot",
+    "--output-trips",
+    "-ot",
     type=click.Path(),
     default=None,
     help="Explicit output path for trips CSV (overrides -o).",
@@ -171,13 +184,20 @@ def filter_group():
 
 
 @filter_group.command("homebased")
-@click.option("--attributes", "-a", required=True, type=click.Path(exists=True),
-              help="Path to attributes CSV.")
+@click.option(
+    "--attributes",
+    "-a",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to attributes CSV.",
+)
 @_TRIPS_OPT
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_homebased(attributes, trips, output, output_attributes, output_trips):
+def filter_homebased(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Remove plans whose first or last activity is not home."""
     suffix = "_homebased"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -200,7 +220,9 @@ def filter_homebased(attributes, trips, output, output_attributes, output_trips)
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_missing_acts_or_modes(attributes, trips, output, output_attributes, output_trips):
+def filter_missing_acts_or_modes(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Remove plans with any missing or unknown activities or modes."""
     suffix = "_clean_modes"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -223,7 +245,9 @@ def filter_missing_acts_or_modes(attributes, trips, output, output_attributes, o
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_negative_trips(attributes, trips, output, output_attributes, output_trips):
+def filter_negative_trips(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Remove plans containing trips with negative durations (tst > tet)."""
     suffix = "_no_neg_trips"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -246,7 +270,9 @@ def filter_negative_trips(attributes, trips, output, output_attributes, output_t
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_negative_activities(attributes, trips, output, output_attributes, output_trips):
+def filter_negative_activities(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Remove plans containing activities with negative durations."""
     suffix = "_no_neg_acts"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -269,7 +295,9 @@ def filter_negative_activities(attributes, trips, output, output_attributes, out
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_null_times(attributes, trips, output, output_attributes, output_trips):
+def filter_null_times(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Remove plans containing trips with null start or end times."""
     suffix = "_no_null_times"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -292,7 +320,9 @@ def filter_null_times(attributes, trips, output, output_attributes, output_trips
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_time_consistent(attributes, trips, output, output_attributes, output_trips):
+def filter_time_consistent(
+    attributes, trips, output, output_attributes, output_trips
+):
     """Apply all time-consistency filters (null pids, negative trips/activities, null times)."""
     suffix = "_time_consistent"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
@@ -309,17 +339,69 @@ def filter_time_consistent(attributes, trips, output, output_attributes, output_
     click.echo(f"Wrote {ot}")
 
 
-@filter_group.command("attributes")
-@click.option("--attributes", "-a", required=True, type=click.Path(exists=True),
-              help="Path to attributes CSV.")
+@filter_group.command("consecutive-activities")
+@_ATTR_OPT
 @_TRIPS_OPT
-@click.option("--key", "-k", required=True, help="Column name to filter on.")
-@click.option("--value", "-v", multiple=True, required=True,
-              help="Value(s) to keep (repeatable).")
+@click.option(
+    "--non-consecutive-types",
+    "-n",
+    multiple=True,
+    default=["home", "work", "education"],
+    show_default=True,
+    help="Activity types that must not appear consecutively (repeatable).",
+)
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_attributes(attributes, trips, key, value, output, output_attributes, output_trips):
+def filter_consecutive_activities(
+    attributes,
+    trips,
+    non_consecutive_types,
+    output,
+    output_attributes,
+    output_trips,
+):
+    """Remove plans containing consecutive activities of the same non-consecutive type."""
+    suffix = "_no_consec_acts"
+    oa = _resolve_out(output_attributes, output, attributes, suffix)
+    ot = _resolve_out(output_trips, output, trips, suffix)
+
+    attrs_df = pl.read_csv(attributes) if attributes else None
+    trips_df = pl.read_csv(trips)
+    attrs_out, trips_out = flt.filter_consecutive_activities(
+        attrs_df, trips_df, non_consecutive_types=list(non_consecutive_types)
+    )
+
+    if oa and attrs_out is not None:
+        attrs_out.write_csv(oa)
+        click.echo(f"Wrote {oa}")
+    trips_out.write_csv(ot)
+    click.echo(f"Wrote {ot}")
+
+
+@filter_group.command("attributes")
+@click.option(
+    "--attributes",
+    "-a",
+    required=True,
+    type=click.Path(exists=True),
+    help="Path to attributes CSV.",
+)
+@_TRIPS_OPT
+@click.option("--key", "-k", required=True, help="Column name to filter on.")
+@click.option(
+    "--value",
+    "-v",
+    multiple=True,
+    required=True,
+    help="Value(s) to keep (repeatable).",
+)
+@_OUT_DIR_OPT
+@_OUT_ATTR_OPT
+@_OUT_TRIPS_OPT
+def filter_attributes(
+    attributes, trips, key, value, output, output_attributes, output_trips
+):
     """Filter attributes on a column value, then restrict trips to surviving persons.
 
     Example: -k employment -v employed -v ft-employed
@@ -334,7 +416,9 @@ def filter_attributes(attributes, trips, key, value, output, output_attributes, 
     total = len(attrs_df)
     attrs_out = attrs_df.filter(pl.col(key).is_in(list(value)))
     surviving_pids = attrs_out.select("pid")
-    trips_out = trips_df.join(surviving_pids, on="pid", how="inner", maintain_order="left")
+    trips_out = trips_df.join(
+        surviving_pids, on="pid", how="inner", maintain_order="left"
+    )
 
     click.echo(
         f"Filtered attributes on {key}={list(value)}: kept {len(attrs_out)}/{total} persons"

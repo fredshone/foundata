@@ -21,7 +21,11 @@ def home_based(
     """
     trips = trips.sort(on, "seq")
 
-    n = len(attributes) if attributes is not None else len(trips.select(on).unique())
+    n = (
+        len(attributes)
+        if attributes is not None
+        else len(trips.select(on).unique())
+    )
 
     home_based_plans = (
         trips.group_by(on)
@@ -50,6 +54,51 @@ def home_based(
         f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"
     )
     return attributes, trips
+
+
+def filter_consecutive_activities(
+    attributes: Optional[pl.DataFrame],
+    trips: pl.DataFrame,
+    non_consecutive_types: list[str] = ["home", "work", "education"],
+    on: str = "pid",
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans containing consecutive activities of the same non-consecutive types.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
+        non_consecutive_types: List of activity types that are allowed to be consecutive (e.g. "work", "education").
+        on: Column name to join on (default "pid").
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
+    n = len(trips.select(on).unique())
+    consecutive_plans = (
+        trips.sort(on, "seq")
+        .with_columns(next_oact=pl.col("oact").shift(-1).over(on))
+        .filter(
+            (pl.col("oact") == pl.col("next_oact"))
+            & pl.col("oact").is_in(non_consecutive_types)
+        )
+        .select(on)
+        .unique()
+    )
+    nn = len(consecutive_plans)
+    clean_trips = trips.join(
+        consecutive_plans, on=on, how="anti", maintain_order="left"
+    )
+    clean_attributes = (
+        attributes.join(
+            consecutive_plans, on=on, how="anti", maintain_order="left"
+        )
+        if attributes is not None
+        else None
+    )
+    print(
+        f"Removed {nn}/{n} plans with consecutive activities of the same non-consecutive types ({100 * nn / n:.1f}%)"
+    )
+    return clean_attributes, clean_trips
 
 
 def missing_acts_or_modes(
@@ -117,7 +166,9 @@ def negative_trips(
         negative_duration_plans, on=on, how="anti", maintain_order="left"
     )
     clean_attributes = (
-        attributes.join(negative_duration_plans, on=on, how="anti", maintain_order="left")
+        attributes.join(
+            negative_duration_plans, on=on, how="anti", maintain_order="left"
+        )
         if attributes is not None
         else None
     )
@@ -153,7 +204,9 @@ def negative_activities(
         negative_duration_plans, on=on, how="anti", maintain_order="left"
     )
     clean_attributes = (
-        attributes.join(negative_duration_plans, on=on, how="anti", maintain_order="left")
+        attributes.join(
+            negative_duration_plans, on=on, how="anti", maintain_order="left"
+        )
         if attributes is not None
         else None
     )
@@ -178,16 +231,20 @@ def null_times(
         Tuple of (filtered attributes or None, filtered trips).
     """
     n = len(trips.select(on).unique())
-    null_trip_pids = trips.filter(
-        pl.col("tst").is_null() | pl.col("tet").is_null()
-    ).select(on).unique()
+    null_trip_pids = (
+        trips.filter(pl.col("tst").is_null() | pl.col("tet").is_null())
+        .select(on)
+        .unique()
+    )
     nn = len(null_trip_pids)
 
     clean_trips = trips.join(
         null_trip_pids, on=on, how="anti", maintain_order="left"
     )
     clean_attributes = (
-        attributes.join(null_trip_pids, on=on, how="anti", maintain_order="left")
+        attributes.join(
+            null_trip_pids, on=on, how="anti", maintain_order="left"
+        )
         if attributes is not None
         else None
     )

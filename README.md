@@ -125,3 +125,29 @@ uv run python scripts/run.py --data-root ~/Data/foundata -s ktdb -s nts --output
 ```
 
 Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`.
+
+### Filtering output CSVs
+
+The `filter` command group applies post-processing filters to `attributes.csv` / `trips.csv` outputs.
+All filter commands accept `-a`/`--attributes` (optional), `-t`/`--trips` (required), and output options `-o` (directory), `-oa` (explicit attributes path), `-ot` (explicit trips path).
+
+```bash
+foundata filter --help
+```
+
+| Command | Description |
+|---------|-------------|
+| `homebased` | Keep only plans whose first and last activity is home. |
+| `missing-acts-or-modes` | Remove plans with null or `unknown` activities or modes. |
+| `consecutive-activities` | Remove plans with consecutive same-type activities (e.g. work→work). Configurable via `-n`/`--non-consecutive-types` (default: `home`, `work`, `education`). |
+| `negative-trips` | Remove plans containing trips where `tst > tet`. |
+| `negative-activities` | Remove plans with overlapping trip times (negative activity durations). |
+| `null-times` | Remove plans with null trip start or end times. |
+| `time-consistent` | Apply all time-consistency filters in one step. |
+| `attributes` | Filter persons on a column value and restrict trips to survivors. |
+
+Example:
+
+```bash
+foundata filter consecutive-activities -t trips.csv -a attributes.csv -n work -n education -o output/
+```

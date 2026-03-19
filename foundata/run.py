@@ -50,6 +50,7 @@ def runner(
     select: list[str],
     omit: list[str],
     home_based: bool = False,
+    filter_consecutive: bool = False,
 ):
     data_root = Path(data_root).expanduser()
     output = Path(output).expanduser()
@@ -283,33 +284,40 @@ def runner(
     # Postprocess and write Variations
     # ------------------------------------------------------------------
 
-    if home_based:
-        hb_output = output / "home_based"
+    if home_based or filter_consecutive:
+        hb_output = output / "postprocessed"
         hb_output.mkdir(exist_ok=True, parents=True)
 
-        home_based_attributes, home_based_trips = filter.home_based(
-            all_attributes, all_trips
-        )
-        home_based_attributes.write_csv(hb_output / "attributes.csv")
-        home_based_trips.write_csv(hb_output / "trips.csv")
+        if home_based:
+            post_processed_attributes, post_processed_trips = filter.home_based(
+                all_attributes, all_trips
+            )
 
-        binned_home_based_attributes = post_process.discretise_numeric(
-            home_based_attributes,
+        if filter_consecutive:
+            post_processed_attributes, post_processed_trips = (
+                filter.filter_consecutive_activities(
+                    post_processed_attributes,
+                    post_processed_trips,
+                    non_consecutive_types=["home", "work", "education"],
+                )
+            )
+
+        post_processed_attributes.write_csv(hb_output / "attributes.csv")
+        post_processed_trips.write_csv(hb_output / "trips.csv")
+
+        binned_pp_attributes = post_process.discretise_numeric(
+            post_processed_attributes,
             n_bins=5,
             method="quantile",
             exclude_cols=["year", "month", "weight", "vehicles", "hh_size"],
         )
-        binned_home_based_attributes = post_process.fill_nulls(
-            binned_home_based_attributes
-        )
-        binned_home_based_attributes.write_csv(
-            hb_output / "binned_attributes.csv"
-        )
+        binned_pp_attributes = post_process.fill_nulls(binned_pp_attributes)
+        binned_pp_attributes.write_csv(hb_output / "binned_attributes.csv")
 
-        home_based_activities = post_process.trips_to_activities(
-            home_based_attributes, home_based_trips
+        pp_activities = post_process.trips_to_activities(
+            post_processed_attributes, post_processed_trips
         )
-        home_based_activities.write_csv(hb_output / "activities.csv")
+        pp_activities.write_csv(hb_output / "activities.csv")
 
     print(f"Written to {output}")
 

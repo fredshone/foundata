@@ -90,6 +90,94 @@ def test_time_consistent_chains_all_three():
     assert set(clean_attrs["pid"]) == {"p3"}
 
 
+# --- filter_consecutive_activities ---
+
+def make_trips_with_acts(
+    pids: list[str],
+    seqs: list[int],
+    oacts: list[str],
+    dacts: list[str],
+) -> pl.DataFrame:
+    return pl.DataFrame({"pid": pids, "seq": seqs, "oact": oacts, "dact": dacts})
+
+
+def test_consecutive_activities_removes_plans_with_consecutive_work():
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2", "p2"],
+        [0, 1, 0, 1],
+        ["work", "work", "home", "work"],  # p1: two consecutive work oacts → removed
+        ["home", "home", "work", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(attrs, trips)
+    assert set(clean_attrs["pid"]) == {"p2"}
+    assert set(clean_trips["pid"]) == {"p2"}
+
+
+def test_consecutive_activities_keeps_plans_without_consecutive_nonconsecutive():
+    attrs = make_attrs(["p1"])
+    trips = make_trips_with_acts(
+        ["p1", "p1"],
+        [0, 1],
+        ["home", "work"],  # different oacts → keep
+        ["work", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(attrs, trips)
+    assert len(clean_attrs) == 1
+    assert len(clean_trips) == 2
+
+
+def test_consecutive_activities_keeps_consecutive_acts_not_in_list():
+    attrs = make_attrs(["p1"])
+    trips = make_trips_with_acts(
+        ["p1", "p1"],
+        [0, 1],
+        ["shop", "shop"],  # consecutive, but "shop" not in default non_consecutive_types
+        ["home", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(attrs, trips)
+    assert len(clean_attrs) == 1
+    assert len(clean_trips) == 2
+
+
+def test_consecutive_activities_removes_consecutive_education():
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2"],
+        [0, 1, 0],
+        ["education", "education", "work"],  # p1: consecutive education → removed
+        ["home", "home", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(attrs, trips)
+    assert set(clean_attrs["pid"]) == {"p2"}
+
+
+def test_consecutive_activities_custom_non_consecutive_types():
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2", "p2"],
+        [0, 1, 0, 1],
+        ["shop", "shop", "work", "home"],  # p1: consecutive shop, custom list → removed
+        ["home", "home", "home", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(
+        attrs, trips, non_consecutive_types=["shop"]
+    )
+    assert set(clean_attrs["pid"]) == {"p2"}
+
+
+def test_consecutive_activities_none_attributes():
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2"],
+        [0, 1, 0],
+        ["work", "work", "home"],
+        ["home", "home", "work"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(None, trips)
+    assert clean_attrs is None
+    assert set(clean_trips["pid"]) == {"p2"}
+
+
 # --- filter.columns ---
 
 def test_columns_trims_to_template(sample_attributes_df, sample_trips_df):
