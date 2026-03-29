@@ -43,6 +43,7 @@ We currently map all transport modes to the following types: {car, walk, bike, b
 
 ### ToDo
 
+- Provide additional output formats; combined acts and trips, acts with/out trips, forward/backward activity/trip combining, matsim xml?
 - Collect additional features, such as weather conditions and accessibility.
 - We currently combine all plan attributes as *person* attributes, but in fact we use *household*, *person*, *day*, and *plan* attributes. We could distinguish these better.
 - More data, see below: 
