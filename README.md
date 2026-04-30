@@ -111,18 +111,21 @@ foundata --help
    foundata validate-table attributes.csv trips.csv
    ```
 
-6. **Add the source to `run.ipynb`** so it is included in the full pipeline run.
+6. **Add the source to `foundata/run.py`** so it is included in the full pipeline run (follow the existing `if "source" in sources:` pattern).
 
 ### Running specific sources
 
-Use `--source` / `-s` to run only a subset of sources (can be repeated):
+Use `--select` / `-s` to run only a subset of sources, or `--omit` / `-x` to exclude sources:
 
 ```bash
 # Run KTDB only
-uv run python scripts/run.py --data-root ~/Data/foundata --source ktdb --output /tmp/out
+foundata run --data-root ~/Data/foundata --select ktdb --output /tmp/out
 
 # Run KTDB and NTS
-uv run python scripts/run.py --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
+foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
+
+# Run everything except NTS
+foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
 Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`.

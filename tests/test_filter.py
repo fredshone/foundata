@@ -1,6 +1,8 @@
 import polars as pl
+from click.testing import CliRunner
 
 from foundata import filter
+from foundata.cli import cli
 
 
 def make_attrs(pids: list[str]) -> pl.DataFrame:
@@ -194,3 +196,27 @@ def test_columns_trims_to_template(sample_attributes_df, sample_trips_df):
     from foundata import utils
     assert set(utils.get_template_attributes().keys()).issubset(set(clean_attrs.columns))
     assert set(utils.get_template_trips().keys()).issubset(set(clean_trips.columns))
+
+
+def test_filter_attributes_numeric_key(tmp_path):
+    attrs = pl.DataFrame({"pid": ["a", "b", "c"], "year": [2022, 2023, 2023]})
+    trips = pl.DataFrame({"pid": ["a", "b", "c"], "seq": [1, 1, 2]})
+    attrs_path = tmp_path / "attrs.csv"
+    trips_path = tmp_path / "trips.csv"
+    attrs.write_csv(attrs_path)
+    trips.write_csv(trips_path)
+
+    out_dir = tmp_path / "out"
+
+    runner = CliRunner()
+    result = runner.invoke(cli, [
+        "filter", "attributes",
+        "-a", str(attrs_path),
+        "-t", str(trips_path),
+        "-k", "year", "-v", "2023",
+        "-o", str(out_dir),
+    ])
+    assert result.exit_code == 0, result.output
+    out_attrs = pl.read_csv(out_dir / "attrs_filtered.csv")
+    assert len(out_attrs) == 2
+    assert set(out_attrs["pid"].to_list()) == {"b", "c"}

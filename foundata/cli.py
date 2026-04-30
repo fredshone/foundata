@@ -25,13 +25,14 @@ def _resolve_out(
     suffix: str,
 ) -> Optional[Path]:
     if explicit:
-        return Path(explicit)
-    if input_path is None:
+        path = Path(explicit)
+    elif input_path is None:
         return None
-    stem_path = _default_out(input_path, suffix)
-    if out_dir:
-        return Path(out_dir) / stem_path.name
-    return stem_path
+    else:
+        stem_path = _default_out(input_path, suffix)
+        path = Path(out_dir) / stem_path.name if out_dir else stem_path
+    path.parent.mkdir(parents=True, exist_ok=True)
+    return path
 
 
 @click.group()
@@ -414,7 +415,9 @@ def filter_attributes(
     trips_df = pl.read_csv(trips)
 
     total = len(attrs_df)
-    attrs_out = attrs_df.filter(pl.col(key).is_in(list(value)))
+    col_dtype = attrs_df[key].dtype
+    typed_values = pl.Series(list(value)).cast(col_dtype).to_list()
+    attrs_out = attrs_df.filter(pl.col(key).is_in(typed_values))
     surviving_pids = attrs_out.select("pid")
     trips_out = trips_df.join(
         surviving_pids, on="pid", how="inner", maintain_order="left"
