@@ -30,6 +30,8 @@ def load(
     attributes = table_joiner(hhs, persons, on="hid")
     trips = load_trips(data_root, trips_config, years=years)
 
+    attributes = compute_avg_speed(attributes, trips)
+
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
@@ -38,8 +40,6 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
-
-    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

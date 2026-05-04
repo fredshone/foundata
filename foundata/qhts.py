@@ -94,6 +94,8 @@ def load_years(
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
 
+    attributes = compute_avg_speed(attributes, trips)
+
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
@@ -102,8 +104,6 @@ def load_years(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
-
-    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

@@ -84,11 +84,11 @@ def test_check_overlap_all_present(capsys):
 
 
 def test_compute_avg_speed_basic():
-    # person "p1": 10 km in 30 min + 20 km in 60 min → 30 km / 1.5 h = 20 km/h
-    attributes = pl.DataFrame({"pid": ["p1"]})
+    # household "h1": 10 km in 30 min + 20 km in 60 min → 30 km / 1.5 h = 20 km/h
+    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
     trips = pl.DataFrame(
         {
-            "pid": ["p1", "p1"],
+            "hid": ["h1", "h1"],
             "tst": [0, 30],
             "tet": [30, 90],
             "distance": [10.0, 20.0],
@@ -100,10 +100,10 @@ def test_compute_avg_speed_basic():
 
 
 def test_compute_avg_speed_null_for_no_trips():
-    attributes = pl.DataFrame({"pid": ["p1", "p2"]})
+    attributes = pl.DataFrame({"pid": ["p1", "p2"], "hid": ["h1", "h2"]})
     trips = pl.DataFrame(
         {
-            "pid": ["p1"],
+            "hid": ["h1"],
             "tst": [0],
             "tet": [60],
             "distance": [30.0],
@@ -115,10 +115,10 @@ def test_compute_avg_speed_null_for_no_trips():
 
 def test_compute_avg_speed_filters_zero_duration():
     # trip with tet == tst should be excluded
-    attributes = pl.DataFrame({"pid": ["p1"]})
+    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
     trips = pl.DataFrame(
         {
-            "pid": ["p1"],
+            "hid": ["h1"],
             "tst": [60],
             "tet": [60],
             "distance": [10.0],
@@ -129,10 +129,10 @@ def test_compute_avg_speed_filters_zero_duration():
 
 
 def test_compute_avg_speed_filters_null_distance():
-    attributes = pl.DataFrame({"pid": ["p1"]})
+    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
     trips = pl.DataFrame(
         {
-            "pid": ["p1"],
+            "hid": ["h1"],
             "tst": [0],
             "tet": [60],
             "distance": [None],
@@ -143,10 +143,10 @@ def test_compute_avg_speed_filters_null_distance():
 
 
 def test_compute_avg_speed_non_negative():
-    attributes = pl.DataFrame({"pid": ["p1", "p2", "p3"]})
+    attributes = pl.DataFrame({"pid": ["p1", "p2", "p3"], "hid": ["h1", "h2", "h3"]})
     trips = pl.DataFrame(
         {
-            "pid": ["p1", "p2", "p3"],
+            "hid": ["h1", "h2", "h3"],
             "tst": [0, 0, 0],
             "tet": [30, 60, 120],
             "distance": [5.0, 40.0, 100.0],

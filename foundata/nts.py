@@ -38,6 +38,8 @@ def load(
 
     trips = load_trips(data_root, trips_config)
 
+    attributes = compute_avg_speed(attributes, trips)
+
     days = load_days(data_root, days_config)
     trips, attributes = split_days(days, trips, attributes)
 
@@ -48,8 +50,6 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
-
-    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 

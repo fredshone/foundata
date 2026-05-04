@@ -88,7 +88,8 @@ def load(
         hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),  # duplicate of pid
     )
     trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
     )
 
     attributes = utils.compute_avg_speed(attributes, trips)

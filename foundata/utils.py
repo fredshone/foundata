@@ -156,8 +156,8 @@ def compute_avg_speed(
 ) -> pl.DataFrame:
     """Add avg_speed (km/h) column to attributes.
 
-    Computed as total trip distance / total trip duration per person.
-    Null for persons with no valid trips or zero total duration.
+    Computed as total trip distance / total trip duration per household.
+    Null for households with no valid trips or zero total duration.
     """
     # check distances are not null and durations are positive to avoid skewing avg_speed
     if not trips.select(pl.col("distance").is_not_null()).to_series().all():
@@ -173,7 +173,7 @@ def compute_avg_speed(
         trips.with_columns(duration=pl.col("tet") - pl.col("tst"))
         .filter(pl.col("duration") > 0)
         .filter(pl.col("distance").is_not_null())
-        .group_by("pid")
+        .group_by("hid")
         .agg(
             total_distance=pl.col("distance").sum(),
             total_duration=pl.col("duration").sum(),
@@ -183,9 +183,9 @@ def compute_avg_speed(
                 pl.col("total_distance") / (pl.col("total_duration") / 60)
             ).cast(pl.Float32)
         )
-        .select("pid", "avg_speed")
+        .select("hid", "avg_speed")
     )
-    return attributes.join(speed, on="pid", how="left")
+    return attributes.join(speed, on="hid", how="left")
 
 
 @functools.lru_cache(maxsize=1)

@@ -48,6 +48,8 @@ def load(
         weather, left_on="survey_date", right_on="date", how="left"
     ).drop("survey_date")
 
+    attributes = compute_avg_speed(attributes, trips)
+
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
@@ -56,8 +58,6 @@ def load(
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
-
-    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 
