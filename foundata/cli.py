@@ -143,7 +143,10 @@ def validate_table(attributes_csv, trips_csv):
 # ---------------------------------------------------------------------------
 
 
-@cli.command("bin", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+@cli.command(
+    "bin",
+    context_settings={"allow_extra_args": True, "ignore_unknown_options": True},
+)
 @click.argument("attributes", type=click.Path(exists=True))
 @click.option(
     "--default",
@@ -169,8 +172,22 @@ def validate_table(attributes_csv, trips_csv):
     default=None,
     help="Output CSV path (default: <input>_binned.csv alongside input).",
 )
+@click.option(
+    "--select",
+    "-s",
+    multiple=True,
+    help="Columns to bin (e.g. --select year --select month --select weight)",
+    show_default=True,
+)
+@click.option(
+    "--omit",
+    "-x",
+    multiple=True,
+    help="Column to omit (e.g. --omit vehicles --omit hh_size)",
+    show_default=True,
+)
 @click.pass_context
-def bin_attributes(ctx, attributes, n_bins, method, output):
+def bin_attributes(ctx, attributes, n_bins, method, output, select, omit):
     """Bin numeric columns of an attributes CSV.
 
     Per-column bin counts can be specified as --COLUMN N, e.g.:
@@ -188,7 +205,10 @@ def bin_attributes(ctx, attributes, n_bins, method, output):
                 i += 2
                 continue
             except ValueError:
-                click.echo(f"Warning: ignoring --{col} (expected integer bin count)", err=True)
+                click.echo(
+                    f"Warning: ignoring --{col} (expected integer bin count)",
+                    err=True,
+                )
         i += 1
 
     df = pl.read_csv(attributes)
@@ -196,6 +216,8 @@ def bin_attributes(ctx, attributes, n_bins, method, output):
         df,
         n_bins=n_bins,
         method=method,
+        cols=select if select else None,
+        exclude_cols=omit if omit else None,
         per_col_bins=per_col_bins or None,
     )
 
