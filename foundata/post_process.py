@@ -112,15 +112,17 @@ def discretise_numeric(
     method: str = "quantile",
     cols: list[str] | None = None,
     exclude_cols: list[str] | None = None,
+    per_col_bins: dict[str, int] | None = None,
 ) -> pl.DataFrame:
     """Discretise numeric columns into labelled string bins.
 
     Args:
         df: Input DataFrame.
-        n_bins: Number of bins.
+        n_bins: Default number of bins.
         method: "quantile" (equal-frequency) or "uniform" (equal-width).
         cols: Columns to discretise. If None, all numeric columns are used.
         exclude_cols: Columns to exclude from discretisation.
+        per_col_bins: Per-column bin count overrides (take precedence over n_bins).
     Returns:
         DataFrame with selected numeric columns replaced by string bin labels.
         Null values are preserved as null.
@@ -142,8 +144,9 @@ def discretise_numeric(
         non_null = df[col].drop_nulls()
         if non_null.len() == 0 or non_null.n_unique() < 2:
             continue
+        n = per_col_bins.get(col, n_bins) if per_col_bins else n_bins
         if method == "quantile":
-            quantiles = [i / n_bins for i in range(1, n_bins)]
+            quantiles = [i / n for i in range(1, n)]
             breaks = sorted({float(non_null.quantile(q)) for q in quantiles})
             if not breaks:
                 continue
@@ -152,8 +155,8 @@ def discretise_numeric(
         else:  # uniform
             min_val = float(non_null.min())
             max_val = float(non_null.max())
-            step = (max_val - min_val) / n_bins
-            breaks = [min_val + i * step for i in range(1, n_bins)]
+            step = (max_val - min_val) / n
+            breaks = [min_val + i * step for i in range(1, n)]
             labels = _bin_labels(breaks)
             exprs.append(pl.col(col).cut(breaks, labels=labels).cast(pl.String))
 

@@ -5,7 +5,7 @@ from typing import Optional
 import click
 import polars as pl
 
-from foundata import config_validator, verify
+from foundata import config_validator, post_process, verify
 from foundata import filter as flt
 from foundata.run import runner
 
@@ -136,6 +136,73 @@ def validate_table(attributes_csv, trips_csv):
     ok = verify.columns(attributes, trips)
     if not ok:
         sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# bin command
+# ---------------------------------------------------------------------------
+
+
+@cli.command("bin", context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+@click.argument("attributes", type=click.Path(exists=True))
+@click.option(
+    "--default",
+    "-n",
+    "n_bins",
+    default=5,
+    show_default=True,
+    type=int,
+    help="Default number of bins for all numeric columns.",
+)
+@click.option(
+    "--method",
+    "-m",
+    default="quantile",
+    show_default=True,
+    type=click.Choice(["quantile", "uniform"]),
+    help="Binning method: quantile (equal-frequency) or uniform (equal-width).",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    default=None,
+    help="Output CSV path (default: <input>_binned.csv alongside input).",
+)
+@click.pass_context
+def bin_attributes(ctx, attributes, n_bins, method, output):
+    """Bin numeric columns of an attributes CSV.
+
+    Per-column bin counts can be specified as --COLUMN N, e.g.:
+
+        foundata bin attributes.csv --default 5 --age 10 --hh_income 3
+    """
+    per_col_bins = {}
+    args = list(ctx.args)
+    i = 0
+    while i < len(args):
+        if args[i].startswith("--") and i + 1 < len(args):
+            col = args[i][2:]
+            try:
+                per_col_bins[col] = int(args[i + 1])
+                i += 2
+                continue
+            except ValueError:
+                click.echo(f"Warning: ignoring --{col} (expected integer bin count)", err=True)
+        i += 1
+
+    df = pl.read_csv(attributes)
+    binned = post_process.discretise_numeric(
+        df,
+        n_bins=n_bins,
+        method=method,
+        per_col_bins=per_col_bins or None,
+    )
+
+    out = Path(output) if output else _default_out(attributes, "_binned")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    binned.write_csv(out)
+    click.echo(f"Wrote {out}")
 
 
 # ---------------------------------------------------------------------------

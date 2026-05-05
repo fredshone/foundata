@@ -130,6 +130,33 @@ foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 
 Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`.
 
+### Binning numeric attributes
+
+The `bin` command discretises numeric columns in an attributes CSV into labelled string bins, using the same quantile/uniform logic as the pipeline's `binned_attributes.csv` output — but runnable on any attributes file with full control over bin counts.
+
+```bash
+# All numeric columns binned into 5 quantile bins (default)
+foundata bin attributes.csv
+
+# Override the default bin count
+foundata bin attributes.csv --default 8
+
+# Per-column overrides: --COLUMN N takes precedence over --default
+foundata bin attributes.csv --default 5 --age 10 --hh_income 3
+
+# Uniform (equal-width) bins, explicit output path
+foundata bin attributes.csv --default 5 --method uniform --output binned.csv
+```
+
+Options:
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--default N` | `-n` | `5` | Default number of bins for all numeric columns. |
+| `--method` | `-m` | `quantile` | `quantile` (equal-frequency) or `uniform` (equal-width). |
+| `--output PATH` | `-o` | `<input>_binned.csv` | Output CSV path. |
+| `--COLUMN N` | | | Per-column bin count override (e.g. `--age 10`). |
+
 ### Filtering output CSVs
 
 The `filter` command group applies post-processing filters to `attributes.csv` / `trips.csv` outputs.
