@@ -182,3 +182,32 @@ Example:
 ```bash
 foundata filter consecutive-activities -t trips.csv -a attributes.csv -n work -n education -o output/
 ```
+
+### Splitting into train/test sets
+
+The `split` command creates train/test splits of one or more CSVs, keeping all records for each person entirely in one set (never split across both). Pass any number of CSV files — they must all share the same set of group IDs.
+
+```bash
+foundata split attributes.csv trips.csv activities.csv --split 20 --output /tmp/split/
+```
+
+Output:
+
+```
+Split on 'pid': 800 train / 200 test (20%)
+  attributes.csv                 →     800 train /     200 test rows
+  trips.csv                      →    6431 train /    1612 test rows
+  activities.csv                 →    9204 train /    2301 test rows
+Wrote outputs to /tmp/split/
+```
+
+Each input file produces `<stem>_train.csv` and `<stem>_test.csv` in the output directory.
+
+Options:
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--group COL` | `-g` | `pid` | Column to group by. |
+| `--split PCT` | `-s` | `20` | Test set size as a percentage. |
+| `--output DIR` | `-o` | parent of first input | Output directory. |
+| `--seed N` | | `42` | Random seed for reproducibility. |

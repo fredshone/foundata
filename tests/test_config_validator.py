@@ -1,13 +1,11 @@
-from pathlib import Path
-
 import pytest
 
+from foundata import utils
 from foundata.config_validator import (
     validate_all_sources,
     validate_column_mappings,
     validate_value_mappings,
 )
-from foundata import utils
 
 
 @pytest.fixture(scope="session")
@@ -22,6 +20,7 @@ def trip_template():
 
 # --- validate_column_mappings ---
 
+
 def test_validate_column_mappings_valid(attr_template):
     config = {"column_mappings": {"RAW_HH_ID": "hid", "RAW_SIZE": "hh_size"}}
     errors = validate_column_mappings(config, attr_template)
@@ -29,7 +28,9 @@ def test_validate_column_mappings_valid(attr_template):
 
 
 def test_validate_column_mappings_invalid_field_name(attr_template):
-    config = {"column_mappings": {"RAW_COL": "hh_incme"}}  # typo — flagged as warning
+    config = {
+        "column_mappings": {"RAW_COL": "hh_incme"}
+    }  # typo — flagged as warning
     warnings = validate_column_mappings(config, attr_template)
     assert len(warnings) == 1
     assert "hh_incme" in warnings[0]
@@ -58,6 +59,7 @@ def test_validate_column_mappings_year_keyed_invalid(attr_template):
 
 
 # --- validate_value_mappings ---
+
 
 def test_validate_value_mappings_valid(attr_template):
     config = {
@@ -89,6 +91,7 @@ def test_validate_value_mappings_skips_non_string(attr_template):
 
 
 # --- validate_all_sources (regression guard) ---
+
 
 def test_all_existing_sources_valid():
     configs_root = utils.get_config_path()

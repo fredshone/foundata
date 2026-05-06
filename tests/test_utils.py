@@ -1,12 +1,7 @@
-import io
-from contextlib import redirect_stdout
-from pathlib import Path
-
 import polars as pl
 import pytest
 
 from foundata import utils
-
 
 # --- sample_to_euro ---
 
@@ -143,7 +138,9 @@ def test_compute_avg_speed_filters_null_distance():
 
 
 def test_compute_avg_speed_non_negative():
-    attributes = pl.DataFrame({"pid": ["p1", "p2", "p3"], "hid": ["h1", "h2", "h3"]})
+    attributes = pl.DataFrame(
+        {"pid": ["p1", "p2", "p3"], "hid": ["h1", "h2", "h3"]}
+    )
     trips = pl.DataFrame(
         {
             "hid": ["h1", "h2", "h3"],

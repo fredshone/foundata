@@ -1,3 +1,5 @@
+import math
+import random
 import sys
 from pathlib import Path
 from typing import Optional
@@ -521,3 +523,102 @@ def filter_attributes(
         click.echo(f"Wrote {oa}")
     trips_out.write_csv(ot)
     click.echo(f"Wrote {ot}")
+
+
+# ---------------------------------------------------------------------------
+# split command
+# ---------------------------------------------------------------------------
+
+
+@cli.command("split")
+@click.argument("inputs", nargs=-1, required=True, type=click.Path(exists=True))
+@click.option(
+    "--group",
+    "-g",
+    default="pid",
+    show_default=True,
+    help="Column to group by (persons stay intact across splits).",
+)
+@click.option(
+    "--split",
+    "-s",
+    "split_pct",
+    default=20,
+    show_default=True,
+    type=float,
+    help="Test split size as a percentage (e.g. 20 = 20%).",
+)
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    default=None,
+    help="Output directory (default: parent dir of first input).",
+)
+@click.option(
+    "--seed",
+    default=42,
+    show_default=True,
+    type=int,
+    help="Random seed for reproducibility.",
+)
+def split_cmd(inputs, group, split_pct, output, seed):
+    """Randomly split CSVs into train/test while keeping group entities intact."""
+    # 1. Read
+    dfs = [(path, pl.read_csv(path)) for path in inputs]
+    # 2. Validate group column present
+    for path, df in dfs:
+        if group not in df.columns:
+            raise click.UsageError(
+                f"Group column '{group}' not found in {path}"
+            )
+    # 3. Check consistency
+    group_sets = [
+        (path, set(df[group].drop_nulls().to_list())) for path, df in dfs
+    ]
+    reference_path, reference_set = group_sets[0]
+    inconsistent = [(p, s) for p, s in group_sets[1:] if s != reference_set]
+    if inconsistent:
+        click.echo(
+            f"ERROR: Group values for '{group}' differ across inputs:", err=True
+        )
+        for p, s in inconsistent:
+            only_ref = reference_set - s
+            only_other = s - reference_set
+            click.echo(f"  {reference_path} vs {p}:", err=True)
+            if only_ref:
+                click.echo(
+                    f"    Only in {reference_path}: {sorted(only_ref)[:10]}{'...' if len(only_ref) > 10 else ''}",
+                    err=True,
+                )
+            if only_other:
+                click.echo(
+                    f"    Only in {p}: {sorted(only_other)[:10]}{'...' if len(only_other) > 10 else ''}",
+                    err=True,
+                )
+        sys.exit(1)
+    # 4. Sample test IDs
+    all_ids = sorted(reference_set)
+    rng = random.Random(seed)
+    rng.shuffle(all_ids)
+    n_test = math.ceil(len(all_ids) * split_pct / 100)
+    test_ids = set(all_ids[:n_test])
+    train_ids = set(all_ids[n_test:])
+    click.echo(
+        f"Split on '{group}': {len(train_ids)} train / {len(test_ids)} test ({split_pct:.0f}%)"
+    )
+    # 5. Write outputs
+    out_dir = Path(output) if output else Path(inputs[0]).parent
+    out_dir.mkdir(parents=True, exist_ok=True)
+    for path, df in dfs:
+        stem = Path(path).stem
+        train_df = df.filter(pl.col(group).is_in(train_ids))
+        test_df = df.filter(pl.col(group).is_in(test_ids))
+        train_path = out_dir / f"{stem}_train.csv"
+        test_path = out_dir / f"{stem}_test.csv"
+        train_df.write_csv(train_path)
+        test_df.write_csv(test_path)
+        click.echo(
+            f"  {Path(path).name:30s} → {len(train_df):>7} train / {len(test_df):>7} test rows"
+        )
+    click.echo(f"Wrote outputs to {out_dir}")
