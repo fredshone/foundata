@@ -21,7 +21,7 @@ def trips_to_activities(
     )
 
     dest_acts = (
-        sorted_trips.filter(pl.col("tet") < 1440)
+        sorted_trips.filter((pl.col("tet") <= 1440))
         .with_columns(
             end=pl.col("tst").shift(-1).over("pid").fill_null(1440),
             seq=pl.col("seq").cast(pl.Int8) + 1,

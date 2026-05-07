@@ -73,16 +73,16 @@ def cli():
     show_default=True,
 )
 @click.option(
-    "--home-based/--no-home-based",
-    "-hb/-no-hb",
-    default=False,
+    "--home-based/--any-based",
+    "-hb/-ab",
+    default=True,
     show_default=True,
     help="Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).",
 )
 @click.option(
-    "--filter-consecutive/--no-filter-consecutive",
-    "-fc/-no-fc",
-    default=False,
+    "--filter-consecutive/--any-consecutive",
+    "-fc/-ac",
+    default=True,
     show_default=True,
     help="Whether to filter out consecutive home, work and education activities.",
 )

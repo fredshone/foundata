@@ -367,6 +367,134 @@ def test_trips_to_activities_no_trips_person():
     assert row["zone"] == "suburban"
 
 
+def test_trips_to_activities_last_trip_at_midnight_generates_final_activity():
+    """Last trip ends at tet=1440 — its destination activity must still be created.
+
+    Pattern seen in NTS: plan has two trips (home→work, work→home) where the
+    return-home trip ends exactly at midnight. Without the fix, the home
+    destination is silently dropped and the plan appears to end at 'work'.
+    """
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "oact": "work",
+                "dact": "home",
+                "ozone": "z2",
+                "dzone": "z1",
+                "tst": 1020,
+                "tet": 1440,  # ends exactly at midnight
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 3
+    last = acts.sort("seq").row(-1, named=True)
+    assert last["act"] == "home"
+    assert last["end"] == 1440
+
+
+def test_trips_to_activities_multi_trip_last_at_midnight_generates_final_activity():
+    """Multi-trip plan where last trip (other→home, tet=1440) must appear in output.
+
+    Pattern: nts200200005603-style plan where 6 intermediate trips all have
+    tet < 1440 and are visible, but the 7th return-home trip has tet=1440 and
+    was previously dropped — leaving 'other' as the apparent last activity.
+    """
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 505,
+                "tet": 510,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "oact": "work",
+                "dact": "other",
+                "ozone": "z2",
+                "dzone": "z3",
+                "tst": 800,
+                "tet": 802,
+            },
+            {
+                "pid": "p1",
+                "seq": 3,
+                "oact": "other",
+                "dact": "shop",
+                "ozone": "z3",
+                "dzone": "z4",
+                "tst": 808,
+                "tet": 810,
+            },
+            {
+                "pid": "p1",
+                "seq": 4,
+                "oact": "shop",
+                "dact": "work",
+                "ozone": "z4",
+                "dzone": "z2",
+                "tst": 825,
+                "tet": 830,
+            },
+            {
+                "pid": "p1",
+                "seq": 5,
+                "oact": "work",
+                "dact": "home",
+                "ozone": "z2",
+                "dzone": "z1",
+                "tst": 1080,
+                "tet": 1090,
+            },
+            {
+                "pid": "p1",
+                "seq": 6,
+                "oact": "home",
+                "dact": "other",
+                "ozone": "z1",
+                "dzone": "z3",
+                "tst": 1175,
+                "tet": 1180,
+            },
+            {
+                "pid": "p1",
+                "seq": 7,
+                "oact": "other",
+                "dact": "home",
+                "ozone": "z3",
+                "dzone": "z1",
+                "tst": 1300,
+                "tet": 1440,
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 8
+    last = acts.sort("seq").row(-1, named=True)
+    assert last["act"] == "home"
+    assert last["end"] == 1440
+
+
 def test_discretise_numeric_quantile_basic():
     df = pl.DataFrame(
         {"pid": ["a", "b", "c", "d", "e"], "age": [10, 20, 30, 40, 50]}

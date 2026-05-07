@@ -5,6 +5,25 @@ import polars as pl
 from foundata import utils
 
 
+def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
+    """Filter trips that end before a specified time limit.
+
+    Args:
+        trips: DataFrame of trips with columns "pid", "oact", "dact", "tet".
+        time_limit: Maximum allowed trip duration (default 1440 minutes).
+
+    Returns:
+        trips DataFrame with trips ending before the specified time limit.
+    """
+    n = len(trips.select("pid").unique())
+    clean_trips = trips.filter(pl.col("tet") <= time_limit)
+    nn = len(clean_trips.select("pid").unique())
+    print(
+        f"Removed {nn}/{n} trips that end before {time_limit} minutes ({100 * nn / n:.1f}%)"
+    )
+    return clean_trips
+
+
 def home_based(
     attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
@@ -30,8 +49,8 @@ def home_based(
     home_based_plans = (
         trips.group_by(on)
         .agg(
-            pl.col("oact").first().alias("first_act"),
-            pl.col("dact").last().alias("last_act"),
+            pl.col("oact").sort_by("seq").first().alias("first_act"),
+            pl.col("dact").sort_by("seq").last().alias("last_act"),
         )
         .filter(
             (pl.col("first_act") == "home") & (pl.col("last_act") == "home")
@@ -67,7 +86,7 @@ def filter_consecutive_activities(
     Args:
         attributes: DataFrame of plan attributes. If None, only trips are filtered.
         trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
-        non_consecutive_types: List of activity types that are allowed to be consecutive (e.g. "work", "education").
+        non_consecutive_types: List of activity types that are not allowed to appear consecutively (e.g. "work", "education").
         on: Column name to join on (default "pid").
 
     Returns:
@@ -76,10 +95,13 @@ def filter_consecutive_activities(
     n = len(trips.select(on).unique())
     consecutive_plans = (
         trips.sort(on, "seq")
-        .with_columns(next_oact=pl.col("oact").shift(-1).over(on))
+        .with_columns(prev_dact=pl.col("dact").shift(1).over(on))
         .filter(
-            (pl.col("oact") == pl.col("next_oact"))
-            & pl.col("oact").is_in(non_consecutive_types)
+            (
+                (pl.col("oact") == pl.col("dact"))
+                | (pl.col("dact") == pl.col("prev_dact"))
+            )
+            & pl.col("dact").is_in(non_consecutive_types)
         )
         .select(on)
         .unique()
@@ -324,6 +346,40 @@ def trips_on_attribute_pids(
             f"Removed {nn}/{n} plans with pids not found in attributes ({100 * nn / n:.1f}%)"
         )
     return attributes, clean_trips
+
+
+def activity_consistency(
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans where dact[i] != oact[i+1] for any consecutive trip pair.
+
+    Skips null and unknown values (mirrors verify.activity_consistency logic).
+    """
+    n = len(trips.select(on).unique())
+    inconsistent = (
+        trips.sort(on, "seq")
+        .with_columns(next_oact=pl.col("oact").shift(-1).over(on))
+        .filter(pl.col("next_oact").is_not_null())
+        # .filter(pl.col("dact") != "unknown")
+        # .filter(pl.col("next_oact") != "unknown")
+        .filter(pl.col("dact") != pl.col("next_oact"))
+        .select(on)
+        .unique()
+    )
+    nn = len(inconsistent)
+    clean_trips = trips.join(
+        inconsistent, on=on, how="anti", maintain_order="left"
+    )
+    clean_attributes = (
+        attributes.join(inconsistent, on=on, how="anti", maintain_order="left")
+        if attributes is not None
+        else None
+    )
+    if nn:
+        print(
+            f"Removed {nn}/{n} plans due to activity chain inconsistencies ({100 * nn / n:.1f}%)"
+        )
+    return clean_attributes, clean_trips
 
 
 def columns(

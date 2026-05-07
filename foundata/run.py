@@ -38,6 +38,8 @@ def process_source(attributes, trips, source_name):
     attributes = fix.unknown_to_null(attributes)
     attributes = utils.norm_weights(attributes)
     attributes, trips = filter.trips_on_attribute_pids(attributes, trips)
+    attributes, trips = filter.activity_consistency(attributes, trips)
+    trips = filter.trips_on_endings(trips, time_limit=1440)
     print(
         f"Loaded {len(attributes)} persons, "
         f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -302,9 +304,14 @@ def runner(
         hb_output = output / "postprocessed"
         hb_output.mkdir(exist_ok=True, parents=True)
 
+        post_processed_attributes, post_processed_trips = (
+            all_attributes,
+            all_trips,
+        )
+
         if home_based:
             post_processed_attributes, post_processed_trips = filter.home_based(
-                all_attributes, all_trips
+                post_processed_attributes, post_processed_trips
             )
 
         if filter_consecutive:
@@ -317,7 +324,7 @@ def runner(
             )
 
         if not verify.trips_pids_subset_of_attributes(
-            all_attributes, all_trips
+            post_processed_attributes, post_processed_trips
         ):
             raise ValueError("ERROR: Trips has pids not in attributes")
 
