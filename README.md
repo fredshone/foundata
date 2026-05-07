@@ -6,14 +6,14 @@ Foundata is a pipeline for creating reconciled household travel surveys, aimed a
 
 | source | persons | missing data | trips | kms (millions) |
 |--------|---------|--------------|-------|----------------|
-| London UK (LTDS) | 71,725 | 34% | 138,735 | 1.4 |
-| UK (NTS) | 2,676,737 | 21% | 5,331,101 | 68.0 |
-| US (NHTS) | 693,535 | 29% | 2,512,825 | 37.7 |
-| Chicago US (CMAP) | 31,540 | 4% | 109,029 | 0.9 |
-| Victoria AUS (VISTA) | 94,821 | 33% | 257,557 | 2.5 |
-| Queensland AUS (QHTS) | 51,481 | 33% | 126,485 | 1.4 |
-| South Korea (KTDB) | 133,326 | 38% | 334,049 | 1.9 |
-| **total** | **3,753,165** | **23%** | **8,802,717** | **113.7** |
+| London UK (LTDS) | 69,399 | 34% | 129,789 | 1.3 |
+| UK (NTS) | 2,646,570 | 21% | 5,211,250 | 66.8 |
+| US (NHTS) | 692,861 | 29% | 2,507,139 | 37.2 |
+| Chicago US (CMAP) | 30,182 | 4% | 95,286 | 0.8 |
+| Victoria AUS (VISTA) | 94,677 | 33% | 255,823 | 2.4 |
+| Queensland AUS (QHTS) | 51,272 | 33% | 125,584 | 1.4 |
+| South Korea (KTDB) | 133,326 | 38% | 331,229 | 1.8 |
+| **total** | **3,718,287** | **23%** | **8,656,036** | **111.8** |
 
 
 ### Person Attributes Status
@@ -73,6 +73,17 @@ We currently map all transport modes to the following types: {car, walk, bike, b
 | Columbia          | US  | ~3k      | 07        | OK?           |
 | Anchorage         | US  | 3k       | 01        | OK?           |
 
+
+## Pre-processed outputs
+
+NTS 2023 processed outputs (56,735 persons, 223,007 activities):
+
+| File | Path |
+|------|------|
+| Person attributes (binned) | `~/Data/foundata/out/nts/2023/attributes_binned.csv` |
+| Activity schedules | `~/Data/foundata/out/nts/2023/activities.csv` |
+
+Activities schema: `pid, seq, act, zone, start, end` (times in minutes from midnight).
 
 ## Usage
 
