@@ -229,6 +229,40 @@ def bin_attributes(ctx, attributes, n_bins, method, output, select, omit):
     click.echo(f"Wrote {out}")
 
 
+@cli.command("fill-unknown")
+@click.argument("attributes", type=click.Path(exists=True))
+@click.option(
+    "--output",
+    "-o",
+    type=click.Path(),
+    default=None,
+    help="Output CSV path (default: <input>_filled.csv alongside input).",
+)
+def fill_unknown_cmd(attributes, output):
+    """Fill null/missing values in an attributes CSV with 'unknown'.
+
+    Reports the percentage of each column filled and warns when a column
+    is entirely unknown or appears to be numeric.
+    """
+    df = pl.read_csv(attributes)
+    filled, stats = post_process.fill_unknown(df)
+
+    if not stats:
+        click.echo("No missing values found.")
+    else:
+        for col, info in stats.items():
+            click.echo(f"  {col}: {info['pct']:.1f}% filled with unknown")
+            if info["all_unknown"]:
+                click.echo(f"WARNING: '{col}' is entirely unknown", err=True)
+            if info["appears_numeric"]:
+                click.echo(f"WARNING: '{col}' appears numeric", err=True)
+
+    out = Path(output) if output else _default_out(attributes, "_filled")
+    out.parent.mkdir(parents=True, exist_ok=True)
+    filled.write_csv(out)
+    click.echo(f"Wrote {out}")
+
+
 # ---------------------------------------------------------------------------
 # filter group
 # ---------------------------------------------------------------------------

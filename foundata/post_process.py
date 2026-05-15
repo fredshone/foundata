@@ -106,6 +106,73 @@ def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
     return df
 
 
+def fill_unknown(
+    df: pl.DataFrame,
+) -> tuple[pl.DataFrame, dict[str, dict]]:
+    """Fill null/empty values with "unknown", returning per-column fill stats.
+
+    Stats dict keys: pct (% filled), all_unknown (bool), appears_numeric (bool).
+    Only columns with at least one fill are included in the stats dict.
+    Numeric columns are cast to String before filling.
+    """
+    n = len(df)
+    stats: dict[str, dict] = {}
+    exprs = []
+
+    for col in df.columns:
+        series = df[col]
+        dtype = series.dtype
+
+        if dtype == pl.String:
+            null_mask = series.is_null() | (series == "")
+            null_count = int(null_mask.sum())
+            if null_count == 0:
+                continue
+            non_empty = series.filter(~null_mask)
+            if non_empty.len() == 0:
+                appears_numeric = False
+                all_unknown = True
+            else:
+                appears_numeric = bool(
+                    non_empty.cast(pl.Float64, strict=False).is_not_null().all()
+                )
+                all_unknown = bool((non_empty == "unknown").all())
+            exprs.append(
+                pl.when(pl.col(col).is_null() | (pl.col(col) == ""))
+                .then(pl.lit("unknown"))
+                .otherwise(pl.col(col))
+                .alias(col)
+            )
+        elif dtype.is_numeric():
+            null_count = int(series.null_count())
+            if null_count == 0:
+                continue
+            appears_numeric = True
+            all_unknown = null_count == n
+            exprs.append(
+                pl.col(col).cast(pl.String).fill_null("unknown").alias(col)
+            )
+        else:
+            null_count = int(series.null_count())
+            if null_count == 0:
+                continue
+            appears_numeric = False
+            all_unknown = null_count == n
+            exprs.append(
+                pl.col(col).cast(pl.String).fill_null("unknown").alias(col)
+            )
+
+        stats[col] = {
+            "pct": 100.0 * null_count / n,
+            "all_unknown": all_unknown,
+            "appears_numeric": appears_numeric,
+        }
+
+    if exprs:
+        df = df.with_columns(exprs)
+    return df, stats
+
+
 def discretise_numeric(
     df: pl.DataFrame,
     n_bins: int = 5,

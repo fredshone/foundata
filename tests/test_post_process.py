@@ -581,3 +581,75 @@ def test_discretise_numeric_invalid_method():
     df = pl.DataFrame({"age": [10, 20, 30]})
     with pytest.raises(ValueError, match="method must be"):
         post_process.discretise_numeric(df, method="bad")
+
+
+# ---------------------------------------------------------------------------
+# fill_unknown
+# ---------------------------------------------------------------------------
+
+
+def test_fill_unknown_string_null_and_empty():
+    df = pl.DataFrame(
+        {"sex": pl.Series(["male", None, "", "female"], dtype=pl.String)}
+    )
+    filled, stats = post_process.fill_unknown(df)
+    assert filled["sex"].to_list() == ["male", "unknown", "unknown", "female"]
+    assert "sex" in stats
+    assert stats["sex"]["pct"] == pytest.approx(50.0)
+    assert stats["sex"]["all_unknown"] is False
+    assert stats["sex"]["appears_numeric"] is False
+
+
+def test_fill_unknown_numeric_column():
+    df = pl.DataFrame({"age": pl.Series([25, None, 40], dtype=pl.Int32)})
+    filled, stats = post_process.fill_unknown(df)
+    assert filled["age"].dtype == pl.String
+    assert filled["age"].to_list() == ["25", "unknown", "40"]
+    assert stats["age"]["appears_numeric"] is True
+    assert stats["age"]["all_unknown"] is False
+    assert stats["age"]["pct"] == pytest.approx(100.0 / 3)
+
+
+def test_fill_unknown_all_null_column():
+    df = pl.DataFrame({"zone": pl.Series([None, None, None], dtype=pl.String)})
+    filled, stats = post_process.fill_unknown(df)
+    assert all(v == "unknown" for v in filled["zone"].to_list())
+    assert stats["zone"]["all_unknown"] is True
+    assert stats["zone"]["pct"] == pytest.approx(100.0)
+
+
+def test_fill_unknown_all_unknown_preexisting():
+    df = pl.DataFrame(
+        {"zone": pl.Series(["unknown", None, "unknown"], dtype=pl.String)}
+    )
+    filled, stats = post_process.fill_unknown(df)
+    assert all(v == "unknown" for v in filled["zone"].to_list())
+    assert stats["zone"]["all_unknown"] is True
+
+
+def test_fill_unknown_appears_numeric_string_column():
+    df = pl.DataFrame(
+        {"income": pl.Series(["1000", None, "2500"], dtype=pl.String)}
+    )
+    filled, stats = post_process.fill_unknown(df)
+    assert stats["income"]["appears_numeric"] is True
+
+
+def test_fill_unknown_not_appears_numeric_text_column():
+    df = pl.DataFrame(
+        {"mode": pl.Series(["walk", None, "car"], dtype=pl.String)}
+    )
+    filled, stats = post_process.fill_unknown(df)
+    assert stats["mode"]["appears_numeric"] is False
+
+
+def test_fill_unknown_no_nulls_absent_from_stats():
+    df = pl.DataFrame({"sex": pl.Series(["male", "female"], dtype=pl.String)})
+    _, stats = post_process.fill_unknown(df)
+    assert "sex" not in stats
+
+
+def test_fill_unknown_empty_stats_when_no_nulls():
+    df = pl.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
+    _, stats = post_process.fill_unknown(df)
+    assert stats == {}
