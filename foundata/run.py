@@ -13,6 +13,7 @@ from foundata import (
     ltds,
     nhts,
     nts,
+    odin,
     post_process,
     qhts,
     utils,
@@ -60,7 +61,7 @@ def runner(
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
 
-    sources = {"ltds", "vista", "qhts", "cmap", "nhts", "nts", "ktdb"}
+    sources = {"ltds", "vista", "qhts", "cmap", "nhts", "nts", "ktdb", "odin"}
     if select:
         sources = set(select)
     if omit:
@@ -260,6 +261,30 @@ def runner(
             days_config=days_config,
         )
         attributes, trips = process_source(attributes, trips, "NTS")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # ODIN
+    # ------------------------------------------------------------------
+    if "odin" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "odin" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "odin" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "odin" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = odin.load(
+            data_root=data_root / "ODIN" / "2018",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "ODIN")
         all_attributes.append(attributes)
         all_trips.append(trips)
 

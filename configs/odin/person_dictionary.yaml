@@ -1,0 +1,63 @@
+# Person-level dictionary for ODIN 2018
+# OPID serves as both pid and hid (set hid = pid in loader).
+
+column_mappings:
+  OPID: pid
+  Leeftijd: age
+  Geslacht: sex
+  MaatsPart: employment
+  Opleiding: education
+  OPRijbewijsAu: has_licence
+  HHPlOP: relationship
+  Herkomst: race
+  FactorP: weight
+
+# Geslacht
+sex:
+  "1": male
+  "2": female
+
+# MaatsPart (maatschappelijke participatie / social participation)
+employment:
+  "1": pt-employed   # werkzaam 12–30 uur per week
+  "2": ft-employed   # werkzaam 30 uur of meer per week
+  "3": other         # eigen huishouding
+  "4": student       # scholier/student
+  "5": unemployed    # werkloos
+  "6": other         # arbeidsongeschikt
+  "7": retired       # gepensioneerd/VUT
+  "8": other         # overig
+  "9": unknown
+
+# Opleiding (hoogst voltooide opleiding)
+education:
+  "0": "none"
+  "1": school        # basisonderwijs
+  "2": school        # lager beroepsonderwijs / vmbo
+  "3": high-school   # middelbaar beroepsonderwijs / havo / vwo
+  "4": degree        # hoger beroepsonderwijs / universiteit
+  "5": unknown       # andere opleiding
+  "6": unknown
+  "7": void          # not asked; respondent under 15
+
+# OPRijbewijsAu (car driving licence)
+has_licence:
+  "0": "no"
+  "1": "yes"
+  "2": "unknown"
+
+# HHPlOP (positie in huishouden / position in household)
+relationship:
+  "1": self          # alleenstaande
+  "2": self          # eenpersoonshuishoudkern in meerpersoonshuishouden
+  "3": partner       # echtgeno(o)t(e)/partner
+  "4": child
+  "5": other         # overig lid
+  "6": unknown
+
+# Herkomst (migratieachtergrond — nearest proxy for race field)
+race:
+  "1": white         # Nederlandse achtergrond
+  "2": other         # Westerse migratieachtergrond
+  "3": non-white     # Niet-westerse migratieachtergrond
+  "4": unknown

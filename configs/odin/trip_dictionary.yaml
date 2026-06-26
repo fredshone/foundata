@@ -1,0 +1,82 @@
+# Trip-level dictionary for ODIN 2018
+# Regular trips are identified by Verpl == "1".
+# Sted (urbanisation class) is used for both ozone and dzone in the loader
+# (not listed in column_mappings because it maps to two output columns).
+
+column_mappings:
+  OPID: pid
+  VerplNr: seq
+  Hvm: mode
+  VertLoc: oact
+  Doel: dact
+  VertUur: tst_hour
+  VertMin: tst_min
+  AankUur: tet_hour
+  AankMin: tet_min
+  AfstV: distance
+
+# Hvm (hoofdvervoermiddel / main mode of transport)
+mode:
+  "1":  car    # Personenauto
+  "2":  rail   # Trein
+  "3":  bus    # Bus
+  "4":  bus    # Tram
+  "5":  bus    # Metro
+  "6":  bike   # Speedpedelec
+  "7":  bike   # Elektrische fiets
+  "8":  bike   # Niet-elektrische fiets
+  "9":  walk   # Te voet
+  "10": other  # Touringcar
+  "11": other  # Bestelauto
+  "12": other  # Vrachtwagen
+  "13": other  # Camper
+  "14": other  # Taxi/Taxibusje
+  "15": other  # Landbouwvoertuig
+  "16": other  # Motor
+  "17": other  # Bromfiets
+  "18": other  # Snorfiets
+  "19": other  # Gehandicaptenvervoermiddel met motor
+  "20": other  # Gehandicaptenvervoermiddel zonder motor
+  "21": other  # Skates/skeelers/step
+  "22": other  # Boot
+  "23": other  # Anders met motor
+  "24": other  # Anders zonder motor
+
+# VertLoc (vertreklocatie / departure location type) → origin activity
+oact:
+  "1": home    # eigen woonadres
+  "2": home    # ander thuisadres
+  "3": work    # een werkadres
+  "4": other   # ander adres
+
+# Doel (bestemming / destination purpose) → destination activity
+dact:
+  "1":  home
+  "2":  work       # werken
+  "3":  work       # zakelijk bezoek in werksfeer
+  "4":  work       # beroepsmatig
+  "5":  escort     # afhalen/brengen personen
+  "6":  other      # afhalen/brengen goederen
+  "7":  education  # onderwijs/cursus volgen
+  "8":  shop       # winkelen/boodschappen doen
+  "9":  visit      # visite/logeren
+  "10": leisure    # toeren/wandelen
+  "11": leisure    # sport/hobby
+  "12": leisure    # overige vrijetijdsbesteding
+  "13": medical    # diensten/persoonlijke verzorging
+  "14": other      # ander doel
+
+# Sted (urbanisation class of home municipality) used as zone proxy
+ozone:
+  "1": urban
+  "2": urban
+  "3": suburban
+  "4": rural
+  "5": rural
+
+dzone:
+  "1": urban
+  "2": urban
+  "3": suburban
+  "4": rural
+  "5": rural
