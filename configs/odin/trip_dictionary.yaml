@@ -26,21 +26,21 @@ mode:
   "7":  bike   # Elektrische fiets
   "8":  bike   # Niet-elektrische fiets
   "9":  walk   # Te voet
-  "10": other  # Touringcar
-  "11": other  # Bestelauto
-  "12": other  # Vrachtwagen
-  "13": other  # Camper
-  "14": other  # Taxi/Taxibusje
-  "15": other  # Landbouwvoertuig
-  "16": other  # Motor
-  "17": other  # Bromfiets
-  "18": other  # Snorfiets
-  "19": other  # Gehandicaptenvervoermiddel met motor
-  "20": other  # Gehandicaptenvervoermiddel zonder motor
+  "10": bus  # Coach
+  "11": car  # van
+  "12": car  # truck
+  "13": car  # Camper
+  "14": car  # Taxi/Taxibusje
+  "15": other  # agricultural vehicle
+  "16": car  # Motor cycle
+  "17": car  # moped
+  "18": car  # scooter
+  "19": other  # motorised mobility aid
+  "20": other  # non motorised mobility aid
   "21": other  # Skates/skeelers/step
-  "22": other  # Boot
-  "23": other  # Anders met motor
-  "24": other  # Anders zonder motor
+  "22": other  # Boat
+  "23": other  # Other motorised vehicle
+  "24": other  # Other non-motorised vehicle
 
 # VertLoc (vertreklocatie / departure location type) → origin activity
 oact:

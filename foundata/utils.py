@@ -143,6 +143,14 @@ def sample_to_euro(bounds, rate=1.0):
     return int(random.randint(int(a), int(b)) * rate)
 
 
+def odin_equivalence(num_adults, num_children):
+    """Compute equivalence factor for household based on number of adults and children.
+
+    Based on ODIN equivalence scale (https://www.odin.dk/en/odin-equivalence-scale/).
+    """
+    return (num_adults + (0.8 * num_children)) ** 0.5
+
+
 def get_config_path(*parts: str) -> Path:
     return Path(__file__).resolve().parent.parent.joinpath("configs", *parts)
 
