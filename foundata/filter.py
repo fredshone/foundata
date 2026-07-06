@@ -17,10 +17,11 @@ def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
     """
     n = len(trips.select("pid").unique())
     clean_trips = trips.filter(pl.col("tet") <= time_limit)
-    nn = len(clean_trips.select("pid").unique())
-    print(
-        f"Removed {nn}/{n} trips that end before {time_limit} minutes ({100 * nn / n:.1f}%)"
-    )
+    nn = n - len(clean_trips.select("pid").unique())
+    if nn > 0:
+        print(
+            f"Removed {nn}/{n} trips that end after {time_limit} minutes ({100 * nn / n:.1f}%)"
+        )
     return clean_trips
 
 
@@ -65,9 +66,9 @@ def home_based(
         attributes = attributes.join(
             home_based_plans, on=on, how="inner", maintain_order="left"
         )
-        nn = len(attributes)
+        nn = n - len(attributes)
     else:
-        nn = len(trips.select(on).unique())
+        nn = n - len(trips.select(on).unique())
 
     print(
         f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"

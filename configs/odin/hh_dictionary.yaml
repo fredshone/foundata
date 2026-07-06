@@ -1,59 +1,58 @@
-# Household-level dictionary for ODIN 2018
+# Household-level dictionary for ODIN (all years)
 # ODIN has no household ID — OPID (person ID) serves as both hid and pid.
 # One row per respondent is identified by OP == "1".
 
 column_mappings:
-  OPID: hid
-  HHPers: hh_size
-  HHBestInkG: hh_income
-  HHAuto: vehicles
-  Sted: hh_zone
-  Weekdag: day
-  Jaar: year
-  Maand: month
+  default:
+    OPID: hid
+    HHPers: hh_size
+    HHBestInkG: hh_income
+    HHAuto: vehicles
+    Sted: hh_zone
+    Weekdag: day
+    Jaar: year
+    Maand: month
+  2024:
+    OPID: hid
+    HHPers_DANS24: hh_size
+    HHGestInkG: hh_income   # standardised income — same decile codes as HHBestInkG
+    HHAuto_DANS24: vehicles
+    Sted: hh_zone
+    Weekdag: day
+    Jaar: year
+    Maand: month
 
 # Approximate Dutch household disposable income decile boundaries (CBS 2018, EUR)
 hh_income:
-  "1":  [0, 16000]
-  "2":  [16000, 22000]
-  "3":  [22000, 29000]
-  "4":  [29000, 36000]
-  "5":  [36000, 44000]
-  "6":  [44000, 54000]
-  "7":  [54000, 63000]
-  "8":  [63000, 78000]
-  "9":  [78000, 115000]
-  "10": [115000, 200000]
-  "11": [0]   # unknown → None via sample_to_euro
-
-# disposable income decile boundaries (after tax)
-# hh_income:
-#   "1":  [0, 15000]
-#   "2":  [15000, 20000]
-#   "3":  [20000, 24000]
-#   "4":  [24000, 28000]
-#   "5":  [28000, 32000]
-#   "6":  [32000, 37000]
-#   "7":  [37000, 43000]
-#   "8":  [43000, 52000]
-#   "9":  [52000, 67000]
-#   "10": [67000, 200000]
-#   "11": [0]   # unknown → None via sample_to_euro
+  default:
+    "1":  [0, 16000]
+    "2":  [16000, 22000]
+    "3":  [22000, 29000]
+    "4":  [29000, 36000]
+    "5":  [36000, 44000]
+    "6":  [44000, 54000]
+    "7":  [54000, 63000]
+    "8":  [63000, 78000]
+    "9":  [78000, 115000]
+    "10": [115000, 200000]
+    "11": [0]   # unknown → None via sample_to_euro
 
 # Sted (stedelijkheidsklasse): 1=very urban .. 5=not urban
 hh_zone:
-  "1": urban
-  "2": urban
-  "3": suburban
-  "4": rural
-  "5": rural
+  default:
+    "1": urban
+    "2": urban
+    "3": suburban
+    "4": rural
+    "5": rural
 
 # Weekdag: 1=Sunday, 2=Monday .. 7=Saturday
 day:
-  "1": sunday
-  "2": monday
-  "3": tuesday
-  "4": wednesday
-  "5": thursday
-  "6": friday
-  "7": saturday
+  default:
+    "1": sunday
+    "2": monday
+    "3": tuesday
+    "4": wednesday
+    "5": thursday
+    "6": friday
+    "7": saturday

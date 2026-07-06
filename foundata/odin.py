@@ -4,29 +4,44 @@ import polars as pl
 
 from foundata import fix
 from foundata.utils import (
+    bounds_from_list,
     compute_avg_speed,
+    config_for_year,
     expand_root,
     sample_to_euro,
     table_joiner,
 )
 
 SOURCE = "odin"
-DATA_FILE = "ODiN2018_Databestand_v2.0.tab"
+DATA_FILES = {
+    2018: "ODiN2018_Databestand_v2.0.tab",
+    2019: "ODiN2019_Databestand_v2.0.tab",
+    2020: "ODiN2020_Databestand_v2.0.tab",
+    2023: "ODiN2023_Databestand.csv",  # tab-separated despite .csv
+    2024: "ODiN2024_DANS_Databestand_v2.0.csv",  # tab-separated despite .csv
+}
 HM_TO_KM = 0.1  # hectometres → kilometres
 
 
 def load(
     data_root: str | Path,
+    years: list[int],
     hh_config: dict,
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     print("Loading ODIN...")
-    hhs = load_households(data_root, hh_config)
-    persons = load_persons(data_root, person_config)
-    attributes = table_joiner(hhs, persons, on="hid")
-    trips = load_trips(data_root, trips_config)
+    all_hhs, all_persons, all_trips = [], [], []
+    for year in years:
+        all_hhs.append(load_households(data_root, hh_config, year))
+        all_persons.append(load_persons(data_root, person_config, year))
+        all_trips.append(load_trips(data_root, trips_config, year))
 
+    hhs = pl.concat(all_hhs, how="diagonal")
+    persons = pl.concat(all_persons, how="diagonal")
+    trips = pl.concat(all_trips, how="diagonal")
+
+    attributes = table_joiner(hhs, persons, on="hid")
     attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
@@ -42,23 +57,25 @@ def load(
     return attributes, trips
 
 
-def load_households(root: str | Path, config: dict) -> pl.DataFrame:
+def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     root = expand_root(root)
-    column_mapping = config["column_mappings"]
+    year_config = config_for_year(config, year)
+    column_mapping = year_config["column_mappings"]
 
-    data = pl.read_csv(root / DATA_FILE, separator="\t", infer_schema_length=0)
+    path = root / str(year) / DATA_FILES[year]
+    data = pl.read_csv(path, separator="\t", infer_schema_length=0)
     # OP == "1" marks the first (and only unique) row per respondent
     data = data.filter(pl.col("OP") == "1")
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
     data = data.with_columns(
         hh_income=pl.col("hh_income")
-        .replace_strict(config["hh_income"])
+        .replace_strict(year_config["hh_income"])
         .map_elements(sample_to_euro, return_dtype=pl.Int32),
         hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
         vehicles=pl.col("vehicles").cast(pl.Int32, strict=False),
-        hh_zone=pl.col("hh_zone").replace_strict(config["hh_zone"]),
-        day=pl.col("day").replace_strict(config["day"]),
+        hh_zone=pl.col("hh_zone").replace_strict(year_config["hh_zone"]),
+        day=pl.col("day").replace_strict(year_config["day"]),
         year=pl.col("year").cast(pl.Int32, strict=False),
         month=pl.col("month").cast(pl.Int8, strict=False),
         dwelling=pl.lit("unknown"),
@@ -68,48 +85,85 @@ def load_households(root: str | Path, config: dict) -> pl.DataFrame:
     return data.filter(pl.col("hid").is_not_null())
 
 
-def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
+def load_persons(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     root = expand_root(root)
-    column_mapping = config["column_mappings"]
+    year_config = config_for_year(config, year)
+    column_mapping = year_config["column_mappings"]
 
-    data = pl.read_csv(root / DATA_FILE, separator="\t", infer_schema_length=0)
+    path = root / str(year) / DATA_FILES[year]
+    data = pl.read_csv(path, separator="\t", infer_schema_length=0)
     data = data.filter(pl.col("OP") == "1")
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
     # OPID serves as both pid and hid
     data = data.with_columns(hid=pl.col("pid"))
 
+    mapped_outputs = set(column_mapping.values())
+
+    # Fill columns absent in this year's data
+    if "age" not in mapped_outputs:
+        data = data.with_columns(age=pl.lit(None, dtype=pl.String))
+    if "relationship" not in mapped_outputs:
+        data = data.with_columns(relationship=pl.lit("unknown"))
+    if "race" not in mapped_outputs:
+        data = data.with_columns(race=pl.lit("unknown"))
+
+    # For years with coded age classes, sample a random age within each class's bounds
+    if year_config["kleeft_age_bounds"]:
+        data = data.with_columns(
+            pl.col("age")
+            .replace_strict(year_config["kleeft_age_bounds"])
+            .str.split("-")
+            .map_elements(
+                lambda bounds: sample_to_euro(bounds_from_list(bounds)),
+                pl.Int32,
+            )
+        )
+
     data = data.with_columns(
         age=pl.col("age").cast(pl.Int32, strict=False),
-        sex=pl.col("sex").replace_strict(config["sex"]),
-        employment=pl.col("employment").replace_strict(config["employment"]),
-        education=pl.col("education").replace_strict(config["education"]),
-        has_licence=pl.col("has_licence").replace_strict(config["has_licence"]),
-        relationship=pl.col("relationship").replace_strict(
-            config["relationship"]
+        sex=pl.col("sex").replace_strict(year_config["sex"]),
+        employment=pl.col("employment").replace_strict(
+            year_config["employment"]
         ),
-        race=pl.col("race").replace_strict(config["race"]),
+        education=pl.col("education").replace_strict(year_config["education"]),
+        has_licence=pl.col("has_licence").replace_strict(
+            year_config["has_licence"]
+        ),
         weight=pl.col("weight").cast(pl.Float32, strict=False),
         disability=pl.lit("unknown"),
         can_wfh=pl.lit("unknown"),
         occupation=pl.lit("unknown"),
     )
 
+    if "relationship" in mapped_outputs:
+        data = data.with_columns(
+            relationship=pl.col("relationship").replace_strict(
+                year_config["relationship"]
+            )
+        )
+    if "race" in mapped_outputs:
+        data = data.with_columns(
+            race=pl.col("race").replace_strict(year_config["race"])
+        )
+
     return data.filter(pl.col("pid").is_not_null())
 
 
-def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
+def load_trips(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     root = expand_root(root)
-    column_mapping = config["column_mappings"]
+    year_config = config_for_year(config, year)
+    column_mapping = year_config["column_mappings"]
 
-    data = pl.read_csv(root / DATA_FILE, separator="\t", infer_schema_length=0)
+    path = root / str(year) / DATA_FILES[year]
+    data = pl.read_csv(path, separator="\t", infer_schema_length=0)
     # Verpl == "1" selects regular (non-series, non-professional-truck) trips
     data = data.filter(pl.col("Verpl") == "1")
 
     # Derive zone from Sted before column selection (maps to two output columns)
     data = data.with_columns(
-        ozone=pl.col("Sted").replace_strict(config["ozone"]),
-        dzone=pl.col("Sted").replace_strict(config["dzone"]),
+        ozone=pl.col("Sted").replace_strict(year_config["ozone"]),
+        dzone=pl.col("Sted").replace_strict(year_config["dzone"]),
     )
 
     data = data.select(list(column_mapping.keys()) + ["ozone", "dzone"]).rename(
@@ -127,10 +181,14 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
         ),
         distance=pl.col("distance").cast(pl.Float32, strict=False) * HM_TO_KM,
         seq=pl.col("seq").cast(pl.Int8, strict=False),
-        mode=pl.col("mode").replace_strict(config["mode"]),
-        oact=pl.col("oact").replace_strict(config["oact"]),
-        dact=pl.col("dact").replace_strict(config["dact"]),
+        mode=pl.col("mode").replace_strict(year_config["mode"]),
+        oact=pl.col("oact").replace_strict(year_config["oact"]),
+        dact=pl.col("dact").replace_strict(year_config["dact"]),
     ).drop(["tst_hour", "tst_min", "tet_hour", "tet_min"])
+
+    data = data.sort(["pid", "seq"]).with_columns(
+        oact=pl.col("dact").shift(1).over("pid").fill_null(pl.col("oact"))
+    )
 
     data = data.with_columns(hid=pl.col("pid"))
     return fix.day_wrap(data)

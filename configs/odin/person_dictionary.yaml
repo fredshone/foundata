@@ -1,63 +1,125 @@
-# Person-level dictionary for ODIN 2018
+# Person-level dictionary for ODIN (all years)
 # OPID serves as both pid and hid (set hid = pid in loader).
 
 column_mappings:
-  OPID: pid
-  Leeftijd: age
-  Geslacht: sex
-  MaatsPart: employment
-  Opleiding: education
-  OPRijbewijsAu: has_licence
-  HHPlOP: relationship
-  Herkomst: race
-  FactorP: weight
+  default:
+    OPID: pid
+    Leeftijd: age
+    Geslacht: sex
+    MaatsPart: employment
+    Opleiding: education
+    OPRijbewijsAu: has_licence
+    HHPlOP: relationship
+    Herkomst: race  # migration background
+    FactorP: weight
+  2023:
+    OPID: pid
+    Leeftijd: age
+    Geslacht: sex
+    MaatsPart: employment
+    Opleiding: education
+    OPRijbewijsAu: has_licence
+    HHPlOP: relationship
+    HerkLand: race  # renamed from Herkomst in 2023
+    FactorP: weight
+  2024:
+    OPID: pid
+    KLeeft: age             # coded age class → sampled via kleeft_age_bounds
+    Geslacht: sex
+    MaatsPart_DANS24: employment
+    Opleiding_DANS24: education
+    OPRijbewijsAu: has_licence
+    # HHPlOP absent in 2024 → relationship set to null in loader
+    # Herkomst/HerkLand absent in 2024 → race set to null in loader
+    FactorP: weight
 
 # Geslacht
 sex:
-  "1": male
-  "2": female
+  default:
+    "1": male
+    "2": female
 
 # MaatsPart (maatschappelijke participatie / social participation)
 employment:
-  "1": pt-employed   # werkzaam 12–30 uur per week
-  "2": ft-employed   # werkzaam 30 uur of meer per week
-  "3": other         # eigen huishouding
-  "4": student       # scholier/student
-  "5": unemployed    # werkloos
-  "6": other         # arbeidsongeschikt
-  "7": retired       # gepensioneerd/VUT
-  "8": other         # overig
-  "9": unknown
+  default:
+    "1": pt-employed   # werkzaam 12–30 uur per week
+    "2": ft-employed   # werkzaam 30 uur of meer per week
+    "3": unemployed    # eigen huishouding
+    "4": student       # scholier/student
+    "5": unemployed    # werkloos
+    "6": unemployed    # arbeidsongeschikt
+    "7": retired       # gepensioneerd/VUT
+    "8": other         # overig
+    "9": unknown
+  2024:
+    "1": pt-employed   # Werkzaam 12 tot 30 uur per week
+    "2": ft-employed   # Werkzaam 30 uur of meer per week
+    "3": student       # Scholier/student
+    "4": unemployed    # Arbeidsongeschikt
+    "5": retired       # Gepensioneerd/VUT
+    "6": other         # Anders (inclusief onbekend)
 
 # Opleiding (hoogst voltooide opleiding)
 education:
-  "0": "none"
-  "1": school        # basisonderwijs
-  "2": school        # lager beroepsonderwijs / vmbo
-  "3": high-school   # middelbaar beroepsonderwijs / havo / vwo
-  "4": degree        # hoger beroepsonderwijs / universiteit
-  "5": unknown       # andere opleiding
-  "6": unknown
-  "7": void          # not asked; respondent under 15
+  default:
+    "0": "none"
+    "1": school        # basisonderwijs
+    "2": school        # lager beroepsonderwijs / vmbo
+    "3": high-school   # middelbaar beroepsonderwijs / havo / vwo
+    "4": degree        # hoger beroepsonderwijs / universiteit
+    "5": some          # andere opleiding
+    "6": unknown
+    "7": void          # not asked; respondent under 15
+  2024:
+    "1": school        # lager beroepsonderwijs / vmbo
+    "2": high-school   # middelbaar beroepsonderwijs / havo
+    "3": degree        # hoger beroepsonderwijs / universiteit
+    "4": other         # Anders (inclusief onbekend)
+    "5": void          # niet gevraagd; OP jonger dan 15 jaar
 
 # OPRijbewijsAu (car driving licence)
 has_licence:
-  "0": "no"
-  "1": "yes"
-  "2": "unknown"
+  default:
+    "0": "no"
+    "1": "yes"
+    "2": "unknown"
 
 # HHPlOP (positie in huishouden / position in household)
 relationship:
-  "1": self          # alleenstaande
-  "2": self          # eenpersoonshuishoudkern in meerpersoonshuishouden
-  "3": partner       # echtgeno(o)t(e)/partner
-  "4": child
-  "5": other         # overig lid
-  "6": unknown
+  default:
+    "1": self          # alleenstaande
+    "2": self          # eenpersoonshuishoudkern in meerpersoonshuishouden
+    "3": partner       # echtgeno(o)t(e)/partner
+    "4": child
+    "5": other         # overig lid
+    "6": unknown
 
-# Herkomst (migratieachtergrond — nearest proxy for race field)
+# KLeeft (leeftijdsklasse / age class) → sampled age bounds (2024 only)
+kleeft_age_bounds:
+  default: {}
+  2024:
+    "2":  "6-11"
+    "3":  "12-14"
+    "4":  "15-17"
+    "5":  "18-19"
+    "6":  "20-24"
+    "7":  "25-29"
+    "8":  "30-34"
+    "9":  "35-39"
+    "10": "40-44"
+    "11": "45-49"
+    "12": "50-54"
+    "13": "55-59"
+    "14": "60-64"
+    "15": "65-69"
+    "16": "70-74"
+    "17": "75-79"
+    "18": "80-99"
+
+# Herkomst / HerkLand (migratieachtergrond — nearest proxy for race field)
 race:
-  "1": white         # Nederlandse achtergrond
-  "2": other         # Westerse migratieachtergrond
-  "3": non-white     # Niet-westerse migratieachtergrond
-  "4": unknown
+  default:
+    "1": white         # Dutch
+    "2": white         # Western
+    "3": non-white     # Non-western
+    "4": unknown       # unknown (Herkomst only; HerkLand uses codes 1–3)
