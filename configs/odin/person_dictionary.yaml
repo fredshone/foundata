@@ -74,7 +74,7 @@ education:
     "1": school        # lager beroepsonderwijs / vmbo
     "2": high-school   # middelbaar beroepsonderwijs / havo
     "3": degree        # hoger beroepsonderwijs / universiteit
-    "4": other         # Anders (inclusief onbekend)
+    "4": some         # Anders (inclusief onbekend)
     "5": void          # niet gevraagd; OP jonger dan 15 jaar
 
 # OPRijbewijsAu (car driving licence)

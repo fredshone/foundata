@@ -25,17 +25,43 @@ HM_TO_KM = 0.1  # hectometres → kilometres
 
 def load(
     data_root: str | Path,
+    configs_root: str | Path,
     years: list[int],
     hh_config: dict,
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     print("Loading ODIN...")
+    gemeente_zone = load_gemeente_zone(Path(configs_root))
     all_hhs, all_persons, all_trips = [], [], []
     for year in years:
-        all_hhs.append(load_households(data_root, hh_config, year))
-        all_persons.append(load_persons(data_root, person_config, year))
-        all_trips.append(load_trips(data_root, trips_config, year))
+        print(f"Loading year {year}...")
+        hhs = load_households(data_root, hh_config, year)
+        persons = load_persons(data_root, person_config, year)
+        trips = load_trips(
+            data_root, trips_config, year, gemeente_zone=gemeente_zone
+        )
+
+        # OPID (-> pid/hid) is only documented by CBS as unique *within* a
+        # single year's release file. Embed the year here, before
+        # concatenating years together, so the same OPID appearing in two
+        # different years can never collide into one fabricated pid/hid.
+        yr = str(year)
+        hhs = hhs.with_columns(
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String)
+        )
+        persons = persons.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+        )
+        trips = trips.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+        )
+
+        all_hhs.append(hhs)
+        all_persons.append(persons)
+        all_trips.append(trips)
 
     hhs = pl.concat(all_hhs, how="diagonal")
     persons = pl.concat(all_persons, how="diagonal")
@@ -45,13 +71,7 @@ def load(
     attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
-        source=pl.lit(SOURCE),
-        country=pl.lit("nl"),
-    )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
+        source=pl.lit(SOURCE), country=pl.lit("nl")
     )
 
     return attributes, trips
@@ -150,7 +170,45 @@ def load_persons(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     return data.filter(pl.col("pid").is_not_null())
 
 
-def load_trips(root: str | Path, config: dict, year: int) -> pl.DataFrame:
+def load_gemeente_zone(configs_root: Path) -> pl.DataFrame:
+    # Gemeente-level stedelijkheidsklasse (1-5) per ODiN survey year, read
+    # directly from CBS's own unprocessed per-year downloads in
+    # configs/odin/raw/kwb_<year>_<table_id>.csv. Each file is CBS's "Mate
+    # van stedelijkheid" field (OAD-based) from that year's "Kerncijfers
+    # wijken en buurten" (KWB) StatLine table, filtered to gemeente-level
+    # rows, e.g. https://opendata.cbs.nl/ODataFeed/odata/85984NED/TypedDataSet.
+    # To add a new survey year, drop in a new kwb_<year>_<table_id>.csv with
+    # the same columns (gemeentenaam, gemeentecode, mate_van_stedelijkheid,
+    # omgevingsadressendichtheid) — no code changes needed.
+    raw_dir = configs_root / "odin" / "zones"
+    years = []
+    for path in sorted(raw_dir.glob("kwb_*.csv")):
+        year = int(path.stem.split("_")[1])
+        years.append(
+            pl.read_csv(
+                path,
+                columns=["gemeentecode", "mate_van_stedelijkheid"],
+                schema_overrides={
+                    "gemeentecode": pl.Utf8,
+                    "mate_van_stedelijkheid": pl.Utf8,
+                },
+            ).select(
+                year=pl.lit(year),
+                gemeentecode=pl.col("gemeentecode")
+                .str.strip_prefix("GM")
+                .str.zfill(4),
+                stedelijkheidsklasse=pl.col("mate_van_stedelijkheid"),
+            )
+        )
+    return pl.concat(years)
+
+
+def load_trips(
+    root: str | Path,
+    config: dict,
+    year: int,
+    gemeente_zone: pl.DataFrame | None = None,
+) -> pl.DataFrame:
     root = expand_root(root)
     year_config = config_for_year(config, year)
     column_mapping = year_config["column_mappings"]
@@ -160,15 +218,55 @@ def load_trips(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     # Verpl == "1" selects regular (non-series, non-professional-truck) trips
     data = data.filter(pl.col("Verpl") == "1")
 
-    # Derive zone from Sted before column selection (maps to two output columns)
-    data = data.with_columns(
-        ozone=pl.col("Sted").replace_strict(year_config["ozone"]),
-        dzone=pl.col("Sted").replace_strict(year_config["dzone"]),
-    )
+    data = data.select(column_mapping.keys()).rename(column_mapping)
 
-    data = data.select(list(column_mapping.keys()) + ["ozone", "dzone"]).rename(
-        column_mapping
-    )
+    if gemeente_zone is not None:
+        zone_lookup = gemeente_zone.filter(pl.col("year") == year).select(
+            "gemeentecode", "stedelijkheidsklasse"
+        )
+        data = (
+            data.with_columns(
+                origin_gemeente=pl.col("origin_gemeente").str.zfill(4),
+                destination_gemeente=pl.col("destination_gemeente").str.zfill(
+                    4
+                ),
+            )
+            .join(
+                zone_lookup.rename(
+                    {
+                        "gemeentecode": "origin_gemeente",
+                        "stedelijkheidsklasse": "ozone",
+                    }
+                ),
+                on="origin_gemeente",
+                how="left",
+                maintain_order="left_right",
+            )
+            .join(
+                zone_lookup.rename(
+                    {
+                        "gemeentecode": "destination_gemeente",
+                        "stedelijkheidsklasse": "dzone",
+                    }
+                ),
+                on="destination_gemeente",
+                how="left",
+                maintain_order="left_right",
+            )
+            .with_columns(
+                ozone=pl.col("ozone").replace_strict(
+                    year_config["stedelijkheidsklasse"], default="unknown"
+                ),
+                dzone=pl.col("dzone").replace_strict(
+                    year_config["stedelijkheidsklasse"], default="unknown"
+                ),
+            )
+            .drop(["origin_gemeente", "destination_gemeente"])
+        )
+    else:
+        data = data.with_columns(
+            ozone=pl.lit("unknown"), dzone=pl.lit("unknown")
+        )
 
     data = data.with_columns(
         tst=(
@@ -186,12 +284,36 @@ def load_trips(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         dact=pl.col("dact").replace_strict(year_config["dact"]),
     ).drop(["tst_hour", "tst_min", "tet_hour", "tet_min"])
 
-    data = data.sort(["pid", "seq"]).with_columns(
-        oact=pl.col("dact").shift(1).over("pid").fill_null(pl.col("oact"))
-    )
+    data = resolve_activity_chain(data)
 
     data = data.with_columns(hid=pl.col("pid"))
     return fix.day_wrap(data)
+
+
+def resolve_activity_chain(data: pl.DataFrame) -> pl.DataFrame:
+    """
+    Resolve round-trip destination activities and chain origin activities.
+
+    Some trips (e.g. Doel code 10, "toeren/wandelen") have no fixed
+    destination and are mapped to a null `dact`. These are resolved to the
+    last known real activity for that `pid` (i.e. they return to wherever
+    the person came from), cascading correctly across consecutive round
+    trips. A person's first trip falls back to its own `oact` (derived from
+    VertLoc) if it is itself a round trip.
+
+    Each trip's `oact` is then set to the previous trip's (resolved) `dact`,
+    chaining activities across a person's day.
+    """
+    data = data.sort(["pid", "seq"]).with_columns(
+        dact=pl.coalesce(
+            pl.col("dact"), pl.when(pl.col("seq") == 1).then(pl.col("oact"))
+        )
+        .forward_fill()
+        .over("pid")
+    )
+    return data.with_columns(
+        oact=pl.col("dact").shift(1).over("pid").fill_null(pl.col("oact"))
+    )
 
 
 COLUMN_TRANSLATIONS = {

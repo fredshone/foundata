@@ -1,7 +1,10 @@
 # Trip-level dictionary for ODIN (all years)
 # Regular trips are identified by Verpl == "1".
-# Sted (urbanisation class) is used for both ozone and dzone in the loader
-# (not listed in column_mappings because it maps to two output columns).
+# ozone/dzone are derived in the loader by joining VertGem/AankGem (origin/
+# destination gemeente code) against configs/odin/zones/kwb_*.csv for the
+# trip's year, then mapping the resulting stedelijkheidsklasse below.
+# 2024 renames VertGem/AankGem to VertGem_DANS24/AankGem_DANS24 — everything
+# else is unchanged from default.
 
 column_mappings:
   default:
@@ -15,6 +18,21 @@ column_mappings:
     AankUur: tet_hour
     AankMin: tet_min
     AfstV: distance
+    VertGem: origin_gemeente
+    AankGem: destination_gemeente
+  2024:
+    OPID: pid
+    VerplNr: seq
+    Hvm: mode
+    VertLoc: oact
+    Doel: dact
+    VertUur: tst_hour
+    VertMin: tst_min
+    AankUur: tet_hour
+    AankMin: tet_min
+    AfstV: distance
+    VertGem_DANS24: origin_gemeente
+    AankGem_DANS24: destination_gemeente
 
 # Hvm (hoofdvervoermiddel / main mode of transport)
 mode:
@@ -64,22 +82,19 @@ dact:
     "7":  education  # onderwijs/cursus volgen
     "8":  shop       # winkelen/boodschappen doen
     "9":  visit      # visite/logeren
-    "10": leisure    # toeren/wandelen
+    "10": null       # toeren/wandelen — round trip, resolved to match the
+                     # origin activity in odin.load_trips (not a genuine
+                     # leisure destination: the trip has no fixed destination
+                     # and returns to where it started)
     "11": leisure    # sport/hobby
     "12": leisure    # overige vrijetijdsbesteding
     "13": medical    # diensten/persoonlijke verzorging
     "14": other      # ander doel
 
-# Sted (urbanisation class of home municipality) used as zone proxy
-ozone:
-  default:
-    "1": urban
-    "2": urban
-    "3": suburban
-    "4": rural
-    "5": rural
-
-dzone:
+# Stedelijkheidsklasse (1-5, CBS OAD-based) of the trip's origin/destination
+# gemeente, looked up from configs/odin/gemeente_stedelijkheid.csv. Same scale
+# as Sted (used for hh_zone), shared between ozone and dzone.
+stedelijkheidsklasse:
   default:
     "1": urban
     "2": urban

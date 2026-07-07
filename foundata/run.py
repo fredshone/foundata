@@ -280,6 +280,7 @@ def runner(
 
         attributes, trips = odin.load(
             data_root=data_root / "ODIN",
+            configs_root=CONFIGS_ROOT,
             years=[2018, 2019, 2020, 2023, 2024],
             hh_config=hh_config,
             person_config=person_config,
@@ -298,6 +299,18 @@ def runner(
     all_attributes = pl.concat(all_attributes, how="vertical")
     all_trips = pl.concat(all_trips, how="vertical")
 
+    if home_based:
+        print("Filtering to home-based trips only...")
+        all_attributes, all_trips = filter.home_based(all_attributes, all_trips)
+
+    if filter_consecutive:
+        print("Filtering to remove consecutive activities of the same type...")
+        all_attributes, all_trips = filter.filter_consecutive_activities(
+            all_attributes,
+            all_trips,
+            non_consecutive_types=["home", "work", "education"],
+        )
+
     all_attributes.write_csv(output / "attributes.csv")
     binned_attributes = post_process.discretise_numeric(
         all_attributes,
@@ -312,71 +325,12 @@ def runner(
     if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
         raise ValueError("ERROR: Trips has pids not in attributes")
 
+    print("Post-processing trips to activities...")
     activities = post_process.trips_to_activities(all_attributes, all_trips)
     if not verify.activities_pids_match_attributes(all_attributes, activities):
         raise ValueError("ERROR: Activities pids do not match attributes pids")
 
     activities.write_csv(output / "activities.csv")
-
-    # ------------------------------------------------------------------
-    # Postprocess and write Variations
-    # ------------------------------------------------------------------
-
-    if home_based or filter_consecutive:
-        print(
-            "Applying additional filters and writing post-processed outputs..."
-        )
-
-        hb_output = output / "postprocessed"
-        hb_output.mkdir(exist_ok=True, parents=True)
-
-        post_processed_attributes, post_processed_trips = (
-            all_attributes,
-            all_trips,
-        )
-
-        if home_based:
-            post_processed_attributes, post_processed_trips = filter.home_based(
-                post_processed_attributes, post_processed_trips
-            )
-
-        if filter_consecutive:
-            post_processed_attributes, post_processed_trips = (
-                filter.filter_consecutive_activities(
-                    post_processed_attributes,
-                    post_processed_trips,
-                    non_consecutive_types=["home", "work", "education"],
-                )
-            )
-
-        if not verify.trips_pids_subset_of_attributes(
-            post_processed_attributes, post_processed_trips
-        ):
-            raise ValueError("ERROR: Trips has pids not in attributes")
-
-        post_processed_attributes.write_csv(hb_output / "attributes.csv")
-        post_processed_trips.write_csv(hb_output / "trips.csv")
-
-        binned_pp_attributes = post_process.discretise_numeric(
-            post_processed_attributes,
-            n_bins=5,
-            method="quantile",
-            exclude_cols=["year", "month", "weight", "vehicles", "hh_size"],
-        )
-        binned_pp_attributes = post_process.fill_nulls(binned_pp_attributes)
-        binned_pp_attributes.write_csv(hb_output / "binned_attributes.csv")
-
-        pp_activities = post_process.trips_to_activities(
-            post_processed_attributes, post_processed_trips
-        )
-        if not verify.activities_pids_match_attributes(
-            post_processed_attributes, pp_activities
-        ):
-            raise ValueError(
-                "ERROR: Post-processed activities pids do not match attributes pids"
-            )
-
-        pp_activities.write_csv(hb_output / "activities.csv")
 
     print(f"Written to {output}")
 

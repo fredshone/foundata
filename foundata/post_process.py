@@ -106,9 +106,7 @@ def fill_nulls(df: pl.DataFrame, fill_value: str = "unknown") -> pl.DataFrame:
     return df
 
 
-def fill_unknown(
-    df: pl.DataFrame,
-) -> tuple[pl.DataFrame, dict[str, dict]]:
+def fill_unknown(df: pl.DataFrame) -> tuple[pl.DataFrame, dict[str, dict]]:
     """Fill null/empty values with "unknown", returning per-column fill stats.
 
     Stats dict keys: pct (% filled), all_unknown (bool), appears_numeric (bool).

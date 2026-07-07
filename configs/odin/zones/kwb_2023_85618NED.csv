@@ -1,0 +1,343 @@
+gemeentenaam,gemeentecode,mate_van_stedelijkheid,omgevingsadressendichtheid
+Groningen,GM0014,1,3427
+Almere,GM0034,2,1629
+Stadskanaal,GM0037,4,840
+Veendam,GM0047,3,1013
+Zeewolde,GM0050,4,842
+Achtkarspelen,GM0059,5,437
+Ameland,GM0060,5,266
+Harlingen,GM0072,3,1092
+Heerenveen,GM0074,3,1109
+Leeuwarden,GM0080,2,2196
+Ooststellingwerf,GM0085,5,482
+Opsterland,GM0086,5,422
+Schiermonnikoog,GM0088,5,325
+Smallingerland,GM0090,3,1342
+Terschelling,GM0093,5,254
+Vlieland,GM0096,5,222
+Weststellingwerf,GM0098,4,690
+Assen,GM0106,2,1592
+Coevorden,GM0109,4,507
+Emmen,GM0114,4,863
+Hoogeveen,GM0118,3,1224
+Meppel,GM0119,3,1299
+Almelo,GM0141,2,1607
+Borne,GM0147,3,1245
+Dalfsen,GM0148,4,520
+Deventer,GM0150,2,1850
+Enschede,GM0153,2,2218
+Haaksbergen,GM0158,3,1043
+Hardenberg,GM0160,4,577
+Hellendoorn,GM0163,4,824
+Hengelo,GM0164,2,1872
+Kampen,GM0166,3,1476
+Losser,GM0168,4,761
+Noordoostpolder,GM0171,4,743
+Oldenzaal,GM0173,3,1487
+Ommen,GM0175,4,512
+Raalte,GM0177,4,667
+Staphorst,GM0180,5,360
+Tubbergen,GM0183,5,298
+Urk,GM0184,3,1093
+Wierden,GM0189,4,712
+Zwolle,GM0193,2,2093
+Aalten,GM0197,4,780
+Apeldoorn,GM0200,2,1788
+Arnhem,GM0202,2,2295
+Barneveld,GM0203,4,894
+Beuningen,GM0209,3,1011
+Brummen,GM0213,4,788
+Buren,GM0214,5,301
+Culemborg,GM0216,3,1494
+Doesburg,GM0221,4,807
+Doetinchem,GM0222,3,1163
+Druten,GM0225,4,811
+Duiven,GM0226,3,1170
+Ede,GM0228,2,1616
+Elburg,GM0230,4,681
+Epe,GM0232,4,732
+Ermelo,GM0233,4,933
+Harderwijk,GM0243,2,1587
+Hattem,GM0244,4,847
+Heerde,GM0246,4,627
+Heumen,GM0252,4,804
+Lochem,GM0262,4,600
+Maasdriel,GM0263,5,495
+Nijkerk,GM0267,3,1140
+Nijmegen,GM0268,2,2423
+Oldebroek,GM0269,4,654
+Putten,GM0273,4,930
+Renkum,GM0274,4,925
+Rheden,GM0275,3,1469
+Rozendaal,GM0277,4,950
+Scherpenzeel,GM0279,4,949
+Tiel,GM0281,3,1471
+Voorst,GM0285,4,582
+Wageningen,GM0289,2,2111
+Westervoort,GM0293,3,1159
+Winterswijk,GM0294,3,1212
+Wijchen,GM0296,3,1241
+Zaltbommel,GM0297,4,711
+Zevenaar,GM0299,3,1043
+Zutphen,GM0301,2,1673
+Nunspeet,GM0302,4,808
+Dronten,GM0303,4,783
+Amersfoort,GM0307,2,2400
+Baarn,GM0308,2,1624
+De Bilt,GM0310,3,1284
+Bunnik,GM0312,4,698
+Bunschoten,GM0313,3,1214
+Eemnes,GM0317,4,962
+Houten,GM0321,2,1586
+Leusden,GM0327,3,1296
+Lopik,GM0331,5,369
+Montfoort,GM0335,4,755
+Renswoude,GM0339,4,529
+Rhenen,GM0340,4,933
+Soest,GM0342,3,1477
+Utrecht,GM0344,1,3588
+Veenendaal,GM0345,2,2226
+Woudenberg,GM0351,3,1005
+Wijk bij Duurstede,GM0352,3,1149
+IJsselstein,GM0353,2,1881
+Zeist,GM0355,2,1630
+Nieuwegein,GM0356,2,1968
+Aalsmeer,GM0358,4,954
+Alkmaar,GM0361,2,2323
+Amstelveen,GM0362,1,2543
+Amsterdam,GM0363,1,6075
+Bergen (NH.),GM0373,4,825
+Beverwijk,GM0375,1,2794
+Blaricum,GM0376,3,1090
+Bloemendaal,GM0377,3,1102
+Castricum,GM0383,3,1351
+Diemen,GM0384,1,2877
+Edam-Volendam,GM0385,3,1321
+Enkhuizen,GM0388,3,1399
+Haarlem,GM0392,1,3632
+Haarlemmermeer,GM0394,2,1535
+Heemskerk,GM0396,2,2374
+Heemstede,GM0397,2,1786
+Heiloo,GM0399,3,1375
+Den Helder,GM0400,2,1687
+Hilversum,GM0402,1,2787
+Hoorn,GM0405,2,1723
+Huizen,GM0406,2,2054
+Landsmeer,GM0415,3,1041
+Laren,GM0417,3,1112
+Medemblik,GM0420,4,526
+Oostzaan,GM0431,3,1067
+Opmeer,GM0432,4,544
+Ouder-Amstel,GM0437,3,1289
+Purmerend,GM0439,2,2179
+Schagen,GM0441,4,758
+Texel,GM0448,5,495
+Uitgeest,GM0450,3,1096
+Uithoorn,GM0451,3,1458
+Velsen,GM0453,2,1884
+Zandvoort,GM0473,2,1842
+Zaanstad,GM0479,2,2098
+Alblasserdam,GM0482,2,1528
+Alphen aan den Rijn,GM0484,2,1897
+Barendrecht,GM0489,2,1699
+Drechterland,GM0498,4,511
+Capelle aan den IJssel,GM0502,2,2280
+Delft,GM0503,1,3674
+Dordrecht,GM0505,1,2535
+Gorinchem,GM0512,2,1750
+Gouda,GM0513,1,2557
+'s-Gravenhage,GM0518,1,5037
+Hardinxveld-Giessendam,GM0523,4,992
+Hendrik-Ido-Ambacht,GM0531,2,1867
+Stede Broec,GM0532,3,1159
+Hillegom,GM0534,2,1598
+Katwijk,GM0537,2,2178
+Krimpen aan den IJssel,GM0542,2,1966
+Leiden,GM0546,1,3891
+Leiderdorp,GM0547,1,2569
+Lisse,GM0553,2,1663
+Maassluis,GM0556,2,2057
+Nieuwkoop,GM0569,4,505
+Noordwijk,GM0575,3,1427
+Oegstgeest,GM0579,2,1788
+Oudewater,GM0589,4,858
+Papendrecht,GM0590,2,1920
+Ridderkerk,GM0597,2,1752
+Rotterdam,GM0599,1,4058
+Rijswijk,GM0603,1,3197
+Schiedam,GM0606,1,3363
+Sliedrecht,GM0610,2,1640
+Albrandswaard,GM0613,3,1054
+Vlaardingen,GM0622,1,2849
+Voorschoten,GM0626,2,1856
+Waddinxveen,GM0627,2,1565
+Wassenaar,GM0629,3,1445
+Woerden,GM0632,3,1402
+Zoetermeer,GM0637,1,2529
+Zoeterwoude,GM0638,4,840
+Zwijndrecht,GM0642,2,2100
+Borsele,GM0654,5,324
+Goes,GM0664,3,1384
+West Maas en Waal,GM0668,5,426
+Hulst,GM0677,4,512
+Kapelle,GM0678,4,661
+Middelburg,GM0687,2,1789
+Reimerswaal,GM0703,4,518
+Terneuzen,GM0715,4,881
+Tholen,GM0716,5,494
+Veere,GM0717,5,350
+Vlissingen,GM0718,2,1972
+De Ronde Venen,GM0736,4,895
+Tytsjerksteradiel,GM0737,5,487
+Asten,GM0743,4,999
+Baarle-Nassau,GM0744,5,353
+Bergen op Zoom,GM0748,2,1874
+Best,GM0753,3,1467
+Boekel,GM0755,4,564
+Boxtel,GM0757,3,1165
+Breda,GM0758,2,2243
+Deurne,GM0762,4,906
+Pekela,GM0765,4,534
+Dongen,GM0766,3,1268
+Eersel,GM0770,4,587
+Eindhoven,GM0772,1,2831
+Etten-Leur,GM0777,2,1718
+Geertruidenberg,GM0779,3,1147
+Gilze en Rijen,GM0784,3,1101
+Goirle,GM0785,3,1198
+Helmond,GM0794,2,1822
+'s-Hertogenbosch,GM0796,2,2023
+Heusden,GM0797,3,1118
+Hilvarenbeek,GM0798,4,595
+Loon op Zand,GM0809,3,1060
+"Nuenen, Gerwen en Nederwetten",GM0820,3,1144
+Oirschot,GM0823,4,628
+Oisterwijk,GM0824,4,936
+Oosterhout,GM0826,2,1572
+Oss,GM0828,3,1435
+Rucphen,GM0840,4,690
+Sint-Michielsgestel,GM0845,4,657
+Someren,GM0847,4,754
+Son en Breugel,GM0848,4,720
+Steenbergen,GM0851,4,746
+Waterland,GM0852,4,655
+Tilburg,GM0855,1,2875
+Valkenswaard,GM0858,2,1501
+Veldhoven,GM0861,2,1684
+Vught,GM0865,3,1174
+Waalre,GM0866,4,889
+Waalwijk,GM0867,3,1350
+Woensdrecht,GM0873,4,668
+Zundert,GM0879,4,592
+Wormerland,GM0880,3,1491
+Landgraaf,GM0882,3,1455
+Beek,GM0888,4,887
+Beesel,GM0889,4,762
+Bergen (L.),GM0893,5,315
+Brunssum,GM0899,2,1665
+Gennep,GM0907,4,661
+Heerlen,GM0917,2,1841
+Kerkrade,GM0928,2,1765
+Maastricht,GM0935,1,2577
+Meerssen,GM0938,4,618
+Mook en Middelaar,GM0944,5,436
+Nederweert,GM0946,4,656
+Roermond,GM0957,2,1590
+Simpelveld,GM0965,4,685
+Stein,GM0971,4,905
+Vaals,GM0981,3,1070
+Venlo,GM0983,2,1681
+Venray,GM0984,3,1035
+Voerendaal,GM0986,4,547
+Weert,GM0988,3,1362
+Valkenburg aan de Geul,GM0994,4,672
+Lelystad,GM0995,3,1409
+Horst aan de Maas,GM1507,4,582
+Oude IJsselstreek,GM1509,4,657
+Teylingen,GM1525,3,1424
+Utrechtse Heuvelrug,GM1581,4,791
+Oost Gelre,GM1586,4,749
+Koggenland,GM1598,5,443
+Lansingerland,GM1621,3,1341
+Leudal,GM1640,5,396
+Maasgouw,GM1641,5,450
+Gemert-Bakel,GM1652,4,790
+Halderberge,GM1655,4,763
+Heeze-Leende,GM1658,4,587
+Laarbeek,GM1659,4,654
+Reusel-De Mierden,GM1667,4,591
+Roerdalen,GM1669,5,394
+Roosendaal,GM1674,2,1755
+Schouwen-Duiveland,GM1676,5,493
+Aa en Hunze,GM1680,5,285
+Borger-Odoorn,GM1681,5,262
+De Wolden,GM1690,5,315
+Noord-Beveland,GM1695,5,251
+Wijdemeren,GM1696,4,601
+Noordenveld,GM1699,4,691
+Twenterand,GM1700,4,606
+Westerveld,GM1701,5,216
+Lingewaard,GM1705,4,974
+Cranendonck,GM1706,4,598
+Steenwijkerland,GM1708,4,592
+Moerdijk,GM1709,4,750
+Echt-Susteren,GM1711,4,732
+Sluis,GM1714,5,440
+Drimmelen,GM1719,4,817
+Bernheze,GM1721,4,697
+Alphen-Chaam,GM1723,5,324
+Bergeijk,GM1724,4,505
+Bladel,GM1728,4,708
+Gulpen-Wittem,GM1729,5,284
+Tynaarlo,GM1730,4,510
+Midden-Drenthe,GM1731,5,406
+Overbetuwe,GM1734,4,815
+Hof van Twente,GM1735,4,608
+Neder-Betuwe,GM1740,5,454
+Rijssen-Holten,GM1742,3,1094
+Geldrop-Mierlo,GM1771,3,1386
+Olst-Wijhe,GM1773,5,478
+Dinkelland,GM1774,5,472
+Westland,GM1783,3,1470
+Midden-Delfland,GM1842,3,1350
+Berkelland,GM1859,4,651
+Bronckhorst,GM1876,5,382
+Sittard-Geleen,GM1883,2,1524
+Kaag en Braassem,GM1884,4,664
+Dantumadiel,GM1891,5,458
+Zuidplas,GM1892,3,1201
+Peel en Maas,GM1894,4,597
+Oldambt,GM1895,4,841
+Zwartewaterland,GM1896,4,736
+S dwest-Frysl n,GM1900,4,852
+Bodegraven-Reeuwijk,GM1901,3,1155
+Eijsden-Margraten,GM1903,5,468
+Stichtse Vecht,GM1904,3,1199
+Hollands Kroon,GM1911,5,446
+Leidschendam-Voorburg,GM1916,1,3005
+Goeree-Overflakkee,GM1924,4,639
+Pijnacker-Nootdorp,GM1926,2,1580
+Nissewaard,GM1930,2,2058
+Krimpenerwaard,GM1931,4,799
+De Fryske Marren,GM1940,4,541
+Gooise Meren,GM1942,2,1911
+Berg en Dal,GM1945,4,658
+Meierijstad,GM1948,3,1012
+Waadhoeke,GM1949,5,477
+Westerwolde,GM1950,5,288
+Midden-Groningen,GM1952,4,872
+Beekdaelen,GM1954,4,500
+Montferland,GM1955,4,773
+Altena,GM1959,4,516
+West Betuwe,GM1960,5,470
+Vijfheerenlanden,GM1961,4,925
+Hoeksche Waard,GM1963,4,841
+Het Hogeland,GM1966,5,421
+Westerkwartier,GM1969,5,487
+Noardeast-Frysl n,GM1970,5,476
+Molenlanden,GM1978,5,402
+Eemsdelta,GM1979,4,710
+Dijk en Waard,GM1980,3,1478
+Land van Cuijk,GM1982,4,645
+Maashorst,GM1991,3,1186
+Voorne aan Zee,GM1992,3,1182
