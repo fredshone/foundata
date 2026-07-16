@@ -79,11 +79,11 @@ def test_check_overlap_all_present(capsys):
 
 
 def test_compute_avg_speed_basic():
-    # household "h1": 10 km in 30 min + 20 km in 60 min → 30 km / 1.5 h = 20 km/h
-    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
+    # person "p1": 10 km in 30 min + 20 km in 60 min → 30 km / 1.5 h = 20 km/h
+    attributes = pl.DataFrame({"pid": ["p1"]})
     trips = pl.DataFrame(
         {
-            "hid": ["h1", "h1"],
+            "pid": ["p1", "p1"],
             "tst": [0, 30],
             "tet": [30, 90],
             "distance": [10.0, 20.0],
@@ -95,10 +95,10 @@ def test_compute_avg_speed_basic():
 
 
 def test_compute_avg_speed_null_for_no_trips():
-    attributes = pl.DataFrame({"pid": ["p1", "p2"], "hid": ["h1", "h2"]})
+    attributes = pl.DataFrame({"pid": ["p1", "p2"]})
     trips = pl.DataFrame(
         {
-            "hid": ["h1"],
+            "pid": ["p1"],
             "tst": [0],
             "tet": [60],
             "distance": [30.0],
@@ -110,10 +110,10 @@ def test_compute_avg_speed_null_for_no_trips():
 
 def test_compute_avg_speed_filters_zero_duration():
     # trip with tet == tst should be excluded
-    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
+    attributes = pl.DataFrame({"pid": ["p1"]})
     trips = pl.DataFrame(
         {
-            "hid": ["h1"],
+            "pid": ["p1"],
             "tst": [60],
             "tet": [60],
             "distance": [10.0],
@@ -124,10 +124,10 @@ def test_compute_avg_speed_filters_zero_duration():
 
 
 def test_compute_avg_speed_filters_null_distance():
-    attributes = pl.DataFrame({"pid": ["p1"], "hid": ["h1"]})
+    attributes = pl.DataFrame({"pid": ["p1"]})
     trips = pl.DataFrame(
         {
-            "hid": ["h1"],
+            "pid": ["p1"],
             "tst": [0],
             "tet": [60],
             "distance": [None],
@@ -138,12 +138,10 @@ def test_compute_avg_speed_filters_null_distance():
 
 
 def test_compute_avg_speed_non_negative():
-    attributes = pl.DataFrame(
-        {"pid": ["p1", "p2", "p3"], "hid": ["h1", "h2", "h3"]}
-    )
+    attributes = pl.DataFrame({"pid": ["p1", "p2", "p3"]})
     trips = pl.DataFrame(
         {
-            "hid": ["h1", "h2", "h3"],
+            "pid": ["p1", "p2", "p3"],
             "tst": [0, 0, 0],
             "tet": [30, 60, 120],
             "distance": [5.0, 40.0, 100.0],
@@ -152,3 +150,170 @@ def test_compute_avg_speed_non_negative():
     result = utils.compute_avg_speed(attributes, trips)
     speeds = result["avg_speed"].drop_nulls().to_list()
     assert all(s >= 0 for s in speeds)
+
+
+# --- split_employment_type ---
+
+
+def test_split_employment_type_collapses_ft_pt():
+    attributes = pl.DataFrame({"employment": ["ft-employed", "pt-employed"]})
+    result = utils.split_employment_type(attributes)
+    assert result["employment"].to_list() == ["employed", "employed"]
+    assert result["employed_type"].to_list() == ["ft", "pt"]
+
+
+def test_split_employment_type_void_for_non_split_categories():
+    attributes = pl.DataFrame(
+        {"employment": ["employed", "student", "unemployed", "retired"]}
+    )
+    result = utils.split_employment_type(attributes)
+    assert result["employment"].to_list() == [
+        "employed",
+        "student",
+        "unemployed",
+        "retired",
+    ]
+    assert result["employed_type"].to_list() == ["void", "void", "void", "void"]
+
+
+def test_split_employment_type_unknown():
+    attributes = pl.DataFrame({"employment": ["unknown", None]})
+    result = utils.split_employment_type(attributes)
+    assert result["employed_type"].to_list() == ["unknown", "unknown"]
+
+
+# --- resolve_activity_chain ---
+
+
+def test_resolve_activity_chain_groups_by_multiple_columns():
+    # NTS's JourSeq restarts each DayID, so chaining must group by
+    # (pid, did) rather than pid alone — otherwise a round trip on day 2
+    # would wrongly inherit day 1's last activity.
+    data = pl.DataFrame(
+        {
+            "pid": ["1", "1", "1", "1"],
+            "did": ["a", "a", "b", "b"],
+            "seq": [1, 2, 1, 2],
+            "oact": ["home", "unset", "home", "unset"],
+            "dact": ["work", "home", "shop", None],
+        }
+    )
+
+    result = utils.resolve_activity_chain(data, group_cols=["pid", "did"])
+    result = result.sort(["did", "seq"])
+
+    assert result["dact"].to_list() == ["work", "home", "shop", "shop"]
+    assert result["oact"].to_list() == ["home", "work", "home", "shop"]
+
+
+def test_combine_consecutive_acts_removes_self_loop_trip():
+    # p1: single "there and back" trip (home -> home) → removed entirely
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p2", "p2"],
+            "seq": [0, 0, 1],
+            "oact": ["home", "home", "work"],
+            "dact": ["home", "work", "home"],
+        }
+    )
+    result = utils.combine_consecutive_acts(trips)
+    assert "p1" not in set(result["pid"])
+    assert set(result["pid"]) == {"p2"}
+    assert len(result) == 2
+
+
+def test_combine_consecutive_acts_removes_middle_trip_within_day():
+    # p1: home -> shop -> home -> home -> other; the redundant home->home
+    # trip (seq 2) is dropped, merging the two home activities either side
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1"] * 5,
+            "seq": [0, 1, 2, 3, 4],
+            "oact": ["home", "shop", "home", "home", "other"],
+            "dact": ["shop", "home", "home", "other", "home"],
+        }
+    )
+    result = utils.combine_consecutive_acts(trips)
+    assert result["seq"].to_list() == [0, 1, 3, 4]
+
+
+def test_combine_consecutive_acts_keeps_types_not_in_list():
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1"],
+            "seq": [0, 1],
+            "oact": ["shop", "shop"],
+            "dact": [
+                "other",
+                "other",
+            ],  # consecutive, but "other" not restricted
+        }
+    )
+    result = utils.combine_consecutive_acts(trips)
+    assert len(result) == 2
+
+
+def test_combine_consecutive_acts_keeps_non_consecutive_plan():
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1"],
+            "seq": [0, 1],
+            "oact": ["home", "work"],
+            "dact": ["work", "home"],
+        }
+    )
+    result = utils.combine_consecutive_acts(trips)
+    assert len(result) == 2
+
+
+def test_combine_consecutive_acts_custom_non_consecutive_types():
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1", "p2", "p2"],
+            "seq": [0, 1, 0, 1],
+            "oact": ["home", "home", "work", "home"],
+            "dact": ["shop", "shop", "home", "home"],
+        }
+    )
+    result = utils.combine_consecutive_acts(
+        trips, non_consecutive_types=["shop"]
+    )
+    assert result.filter(pl.col("pid") == "p1")["seq"].to_list() == [0]
+    assert result.filter(pl.col("pid") == "p2").height == 2
+
+
+def test_combine_consecutive_acts_inconsistent_oact_dact_chain():
+    """Regression: consecutive dacts are detected even when oact[i] != dact[i-1]."""
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1", "p1"],
+            "seq": [0, 1, 2],
+            "oact": ["home", "shop", "work"],
+            "dact": ["shop", "home", "home"],  # dact[1]==dact[2]==home
+        }
+    )
+    result = utils.combine_consecutive_acts(
+        trips, non_consecutive_types=["home"]
+    )
+    assert result["seq"].to_list() == [0, 1]
+
+
+def test_resolve_activity_chain_leading_round_trip_both_ends_unknown():
+    # Unlike ODiN's VertLoc-derived oact, some sources (e.g. NTS) draw oact
+    # from the same round-trip vocabulary as dact — so a group's first trip
+    # can have both ends unresolved, with no real activity anywhere in the
+    # group to anchor to. This should fall back to "unknown" rather than
+    # leaving a null that fails downstream validation.
+    data = pl.DataFrame(
+        {
+            "pid": ["1", "1"],
+            "seq": [1, 2],
+            "oact": [None, "unset"],
+            "dact": [None, "shop"],
+        }
+    )
+
+    result = utils.resolve_activity_chain(data, group_cols=["pid"]).sort("seq")
+
+    assert result["dact"].to_list() == ["unknown", "shop"]
+    assert result["oact"].to_list() == ["unknown", "unknown"]

@@ -143,6 +143,91 @@ def sample_to_euro(bounds, rate=1.0):
     return int(random.randint(int(a), int(b)) * rate)
 
 
+def resolve_activity_chain(
+    data: pl.DataFrame, group_cols: list[str]
+) -> pl.DataFrame:
+    """
+    Resolve round-trip destination activities and chain origin activities.
+
+    Some trips have no fixed destination (e.g. ODiN's Doel code 10
+    "toeren/wandelen", or NTS's TripPurpTo_B01ID code 15 "Day trip/just
+    walk") and are mapped to a null `dact`. These are resolved to the last
+    known real activity within `group_cols` (i.e. they return to wherever
+    the traveller came from), cascading correctly across consecutive round
+    trips. The first trip within a group falls back to its own `oact` if it
+    is itself a round trip.
+
+    Each trip's `oact` is then set to the previous trip's (resolved) `dact`,
+    chaining activities across the group (e.g. a person's day). If a
+    group's first trip is itself a round trip on both ends (no real
+    activity anywhere in the group to anchor to — e.g. `oact` shares the
+    same round-trip vocabulary as `dact`, unlike ODiN's VertLoc-derived
+    `oact`), the remaining nulls are filled with "unknown".
+    """
+    data = data.sort(group_cols + ["seq"]).with_columns(
+        dact=pl.coalesce(
+            pl.col("dact"), pl.when(pl.col("seq") == 1).then(pl.col("oact"))
+        )
+        .forward_fill()
+        .over(group_cols)
+        .fill_null("unknown")
+    )
+    return data.with_columns(
+        oact=pl.col("dact")
+        .shift(1)
+        .over(group_cols)
+        .fill_null(pl.col("oact"))
+        .fill_null("unknown")
+    )
+
+
+def combine_consecutive_acts(
+    trips: pl.DataFrame,
+    non_consecutive_types: list[str] = ["home", "work", "education"],
+    on: str = "pid",
+) -> pl.DataFrame:
+    """Combine consecutive activities of the same non-consecutive type.
+
+    Where a trip's destination activity is the same as the activity
+    immediately before it (either its own origin, for a "there and back"
+    trip, or the previous trip's destination, for a chain broken
+    elsewhere), that trip is removed rather than filtering out the whole
+    plan. Removing it merges the two same-type activities either side of
+    it into one, instead of leaving an artificial extra activity in the
+    plan.
+
+    Args:
+        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
+        non_consecutive_types: List of activity types that are not allowed to appear consecutively (e.g. "work", "education").
+        on: Column name to join on (default "pid").
+
+    Returns:
+        trips DataFrame with the redundant trips removed.
+    """
+    n = len(trips)
+    redundant = (
+        trips.sort(on, "seq")
+        .with_columns(prev_dact=pl.col("dact").shift(1).over(on))
+        .filter(
+            (
+                (pl.col("oact") == pl.col("dact"))
+                | (pl.col("dact") == pl.col("prev_dact"))
+            )
+            & pl.col("dact").is_in(non_consecutive_types)
+        )
+        .select(on, "seq")
+    )
+    clean_trips = trips.join(
+        redundant, on=[on, "seq"], how="anti", maintain_order="left"
+    )
+    nn = n - len(clean_trips)
+    if nn:
+        print(
+            f"Combined {nn}/{n} trips with consecutive activities of the same non-consecutive types ({100 * nn / n:.1f}%)"
+        )
+    return clean_trips
+
+
 def odin_equivalence(num_adults, num_children):
     """Compute equivalence factor for household based on number of adults and children.
 
@@ -160,12 +245,13 @@ def template() -> Path:
 
 
 def compute_avg_speed(
-    attributes: pl.DataFrame, trips: pl.DataFrame
+    attributes: pl.DataFrame, trips: pl.DataFrame, on: str = "pid"
 ) -> pl.DataFrame:
     """Add avg_speed (km/h) column to attributes.
 
-    Computed as total trip distance / total trip duration per household.
-    Null for households with no valid trips or zero total duration.
+    Computed as total trip distance / total trip duration per `on` group
+    (default "pid"). Null for groups with no valid trips or zero total
+    duration.
     """
     # check distances are not null and durations are positive to avoid skewing avg_speed
     if not trips.select(pl.col("distance").is_not_null()).to_series().all():
@@ -181,7 +267,7 @@ def compute_avg_speed(
         trips.with_columns(duration=pl.col("tet") - pl.col("tst"))
         .filter(pl.col("duration") > 0)
         .filter(pl.col("distance").is_not_null())
-        .group_by("hid")
+        .group_by(on)
         .agg(
             total_distance=pl.col("distance").sum(),
             total_duration=pl.col("duration").sum(),
@@ -191,9 +277,37 @@ def compute_avg_speed(
                 pl.col("total_distance") / (pl.col("total_duration") / 60)
             ).cast(pl.Float32)
         )
-        .select("hid", "avg_speed")
+        .select(on, "avg_speed")
     )
-    return attributes.join(speed, on="hid", how="left")
+    attributes = attributes.join(speed, on=on, how="left")
+    return attributes
+
+
+def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
+    """Split the ft/pt distinction out of employment into employed_type.
+
+    "ft-employed" and "pt-employed" collapse to "employed", with the split
+    preserved in the new "employed_type" column ("ft"/"pt"). Categories the
+    split doesn't apply to (bare "employed", "student", "unemployed",
+    "retired", "other", "void") get "void". "unknown"/null employment maps
+    to "unknown" employed_type.
+    """
+    attributes = attributes.with_columns(
+        employed_type=pl.when(pl.col("employment") == "ft-employed")
+        .then(pl.lit("ft"))
+        .when(pl.col("employment") == "pt-employed")
+        .then(pl.lit("pt"))
+        .when(
+            (pl.col("employment") == "unknown") | pl.col("employment").is_null()
+        )
+        .then(pl.lit("unknown"))
+        .otherwise(pl.lit("void"))
+    )
+    return attributes.with_columns(
+        employment=pl.col("employment").replace(
+            {"ft-employed": "employed", "pt-employed": "employed"}
+        )
+    )
 
 
 @functools.lru_cache(maxsize=1)

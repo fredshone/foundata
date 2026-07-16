@@ -12,6 +12,8 @@ column_mappings:
     Weekdag: day
     Jaar: year
     Maand: month
+    Week: week
+    WoGem: home_gemeente
   2024:
     OPID: hid
     HHPers_DANS24: hh_size
@@ -21,6 +23,8 @@ column_mappings:
     Weekdag: day
     Jaar: year
     Maand: month
+    Week: week
+    Wogem_DANS24: home_gemeente
 
 # Approximate Dutch household disposable income decile boundaries (CBS 2018, EUR)
 hh_income:

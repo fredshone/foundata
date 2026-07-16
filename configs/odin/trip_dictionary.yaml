@@ -82,10 +82,7 @@ dact:
     "7":  education  # onderwijs/cursus volgen
     "8":  shop       # winkelen/boodschappen doen
     "9":  visit      # visite/logeren
-    "10": null       # toeren/wandelen — round trip, resolved to match the
-                     # origin activity in odin.load_trips (not a genuine
-                     # leisure destination: the trip has no fixed destination
-                     # and returns to where it started)
+    "10": null       # toeren/wandelen — round trip
     "11": leisure    # sport/hobby
     "12": leisure    # overige vrijetijdsbesteding
     "13": medical    # diensten/persoonlijke verzorging

@@ -7,7 +7,6 @@ from foundata import fix
 from foundata.utils import (
     bounds_from_list,
     check_overlap,
-    compute_avg_speed,
     config_for_year,
     expand_root,
     fuzzy_loader,
@@ -136,8 +135,6 @@ def load_years(
         month=pl.lit(None, dtype=pl.Int8),
         disability=pl.lit("unknown"),
     )
-
-    attributes = compute_avg_speed(attributes, trips)
 
     return attributes, trips
 
@@ -504,7 +501,6 @@ def preprocess_stages(stages: pl.DataFrame, config: dict) -> pl.DataFrame:
 
 
 def extract_trip_distances(stages: pl.DataFrame) -> pl.DataFrame:
-
     return (
         stages.group_by(["pid", "tid"])
         .agg(pl.col("distance").sum().alias("distance"))
@@ -513,7 +509,6 @@ def extract_trip_distances(stages: pl.DataFrame) -> pl.DataFrame:
 
 
 def extract_pid_access_egress_distance(stages: pl.DataFrame) -> pl.DataFrame:
-
     pt_trips = (
         stages.filter(pl.col("mode").is_in(["bus", "rail"]))
         .select("tid")

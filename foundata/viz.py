@@ -57,9 +57,13 @@ def group_null_pct(
 
 
 def summary_table(
-    attributes: pl.DataFrame, trips: pl.DataFrame
-) -> pl.DataFrame:
-    """Produce a per-source summary table (persons, nulls %, trips, kms)."""
+    attributes: pl.DataFrame, trips: pl.DataFrame, markdown: bool = False
+) -> pl.DataFrame | str:
+    """Produce a per-source summary table (persons, nulls %, trips, kms).
+
+    If `markdown` is True, return a markdown-formatted string table (as
+    used in the README) instead of a DataFrame.
+    """
     # treat "unknown" as null for null-pct calculation
     attributes = attributes.with_columns(
         pl.when(pl.col(col) == "unknown")
@@ -139,7 +143,33 @@ def summary_table(
         },
     )
 
-    return pl.concat([attributes_summary, total_row], how="diagonal")
+    table = pl.concat([attributes_summary, total_row], how="diagonal")
+
+    if markdown:
+        return _summary_table_to_markdown(table)
+
+    return table
+
+
+def _summary_table_to_markdown(table: pl.DataFrame) -> str:
+    headers = ["source", "plans", "missing data", "trips", "kms (millions)"]
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "|" + "|".join("-" * len(h) for h in headers) + "|",
+    ]
+    for row in table.iter_rows(named=True):
+        is_total = row["source"] == "total"
+        cells = [
+            row["source"],
+            f"{row['persons']:,}",
+            f"{row['nulls']:.0f}%",
+            f"{row['trips']:,}",
+            f"{row['kms (millions)']:.1f}",
+        ]
+        if is_total:
+            cells = [f"**{cell}**" for cell in cells]
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines)
 
 
 def plot_numeric_hist_grid(

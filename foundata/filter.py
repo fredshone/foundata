@@ -47,24 +47,24 @@ def home_based(
         else len(trips.select(on).unique())
     )
 
-    home_based_plans = (
+    not_home_based_plans = (
         trips.group_by(on)
         .agg(
             pl.col("oact").sort_by("seq").first().alias("first_act"),
             pl.col("dact").sort_by("seq").last().alias("last_act"),
         )
         .filter(
-            (pl.col("first_act") == "home") & (pl.col("last_act") == "home")
+            (pl.col("first_act") != "home") | (pl.col("last_act") != "home")
         )
         .select(on)
     )
 
     trips = trips.join(
-        home_based_plans, on=on, how="inner", maintain_order="left"
+        not_home_based_plans, on=on, how="anti", maintain_order="left"
     )
     if attributes is not None:
         attributes = attributes.join(
-            home_based_plans, on=on, how="inner", maintain_order="left"
+            not_home_based_plans, on=on, how="anti", maintain_order="left"
         )
         nn = n - len(attributes)
     else:
@@ -74,54 +74,6 @@ def home_based(
         f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"
     )
     return attributes, trips
-
-
-def filter_consecutive_activities(
-    attributes: Optional[pl.DataFrame],
-    trips: pl.DataFrame,
-    non_consecutive_types: list[str] = ["home", "work", "education"],
-    on: str = "pid",
-) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
-    """Filter out plans containing consecutive activities of the same non-consecutive types.
-
-    Args:
-        attributes: DataFrame of plan attributes. If None, only trips are filtered.
-        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
-        non_consecutive_types: List of activity types that are not allowed to appear consecutively (e.g. "work", "education").
-        on: Column name to join on (default "pid").
-
-    Returns:
-        Tuple of (filtered attributes or None, filtered trips).
-    """
-    n = len(trips.select(on).unique())
-    consecutive_plans = (
-        trips.sort(on, "seq")
-        .with_columns(prev_dact=pl.col("dact").shift(1).over(on))
-        .filter(
-            (
-                (pl.col("oact") == pl.col("dact"))
-                | (pl.col("dact") == pl.col("prev_dact"))
-            )
-            & pl.col("dact").is_in(non_consecutive_types)
-        )
-        .select(on)
-        .unique()
-    )
-    nn = len(consecutive_plans)
-    clean_trips = trips.join(
-        consecutive_plans, on=on, how="anti", maintain_order="left"
-    )
-    clean_attributes = (
-        attributes.join(
-            consecutive_plans, on=on, how="anti", maintain_order="left"
-        )
-        if attributes is not None
-        else None
-    )
-    print(
-        f"Removed {nn}/{n} plans with consecutive activities of the same non-consecutive types ({100 * nn / n:.1f}%)"
-    )
-    return clean_attributes, clean_trips
 
 
 def missing_acts_or_modes(
@@ -198,6 +150,54 @@ def negative_trips(
 
     print(
         f"Removed {nn}/{n} plans due to negative trip durations ({100 * nn / n:.1f}%)"
+    )
+    return clean_attributes, clean_trips
+
+
+def feasible_trips(
+    attributes: Optional[pl.DataFrame],
+    trips: pl.DataFrame,
+    on: str = "pid",
+    max_distance: float = 200,
+    max_duration: float = 720,
+    max_speed: float = 3,
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Filter out plans containing trips long too long distances or durations or
+    that are too fast.
+
+    Args:
+        attributes: DataFrame of plan attributes. If None, only trips are filtered.
+        trips: DataFrame of trips with columns matching `on`, "tst", "tet".
+        on: Column name to join on (default "pid").
+        max_distance: Maximum allowed trip distance in km (default 200).
+        max_duration: Maximum allowed trip duration in minutes (default 720).
+        max_speed: Maximum allowed average speed in km/min (default 3).
+
+    Returns:
+        Tuple of (filtered attributes or None, filtered trips).
+    """
+    n = len(trips.select(on).unique())
+    exclude = (
+        trips.filter(
+            (pl.col("distance") > max_distance)
+            | (pl.col("tet") - pl.col("tst") > max_duration)
+            | (
+                (pl.col("distance") / (pl.col("tet") - pl.col("tst")))
+                > max_speed
+            )
+        )
+        .select(on)
+        .unique()
+    )
+    nn = len(exclude.select(on).unique())
+    clean_trips = trips.join(exclude, on=on, how="anti", maintain_order="left")
+    clean_attributes = (
+        attributes.join(exclude, on=on, how="anti", maintain_order="left")
+        if attributes is not None
+        else None
+    )
+    print(
+        f"Removed {nn}/{n} plans due to infeasible trips ({100 * nn / n:.1f}%)"
     )
     return clean_attributes, clean_trips
 
@@ -381,6 +381,23 @@ def activity_consistency(
             f"Removed {nn}/{n} plans due to activity chain inconsistencies ({100 * nn / n:.1f}%)"
         )
     return clean_attributes, clean_trips
+
+
+def filter_consecutive_activities(
+    attributes: Optional[pl.DataFrame],
+    trips: pl.DataFrame,
+    non_consecutive_types: list[str] = ["home", "work", "education"],
+    on: str = "pid",
+) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
+    """Remove redundant trips that merge consecutive same-type activities.
+
+    Attributes are passed through unchanged. See
+    utils.combine_consecutive_acts for the row-level removal logic.
+    """
+    clean_trips = utils.combine_consecutive_acts(
+        trips, non_consecutive_types=non_consecutive_types, on=on
+    )
+    return attributes, clean_trips
 
 
 def columns(

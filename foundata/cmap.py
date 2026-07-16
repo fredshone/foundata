@@ -2,13 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from .utils import (
-    compute_avg_speed,
-    expand_root,
-    get_config_path,
-    sample_to_euro,
-    table_joiner,
-)
+from .utils import expand_root, get_config_path, sample_to_euro, table_joiner
 
 USD_TO_EURO = 0.85
 
@@ -47,8 +41,6 @@ def load(
     attributes = attributes.join(
         weather, left_on="survey_date", right_on="date", how="left"
     ).drop("survey_date")
-
-    attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
@@ -94,7 +86,6 @@ def load_households(root: str | Path, config: dict) -> pl.DataFrame:
 
 
 def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
-
     column_mapping = config["column_mappings"]
     persons = pl.read_csv(root / "person.csv", ignore_errors=True)
 
@@ -255,7 +246,6 @@ def load_home_locations(
 def load_trips(
     root: str | Path, config: dict, rurality_mapping: pl.DataFrame | None = None
 ) -> pl.DataFrame:
-
     trips = pl.read_csv(root / "place.csv", ignore_errors=True)
 
     column_mapping = config["column_mappings"]

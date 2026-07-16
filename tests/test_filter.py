@@ -225,6 +225,16 @@ def test_home_based_uses_seq_order():
     assert set(clean_attrs["pid"]) == {"p1"}
 
 
+def test_home_based_keeps_pids_with_no_trips():
+    # p2 stayed home all day (no trip rows) — trivially home-based, not
+    # penalised for having nothing to check.
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(["p1"], [0], ["home"], ["home"])
+    clean_attrs, clean_trips = filter.home_based(attrs, trips)
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    assert set(clean_trips["pid"]) == {"p1"}
+
+
 def test_home_based_none_attributes():
     trips = make_trips_with_acts(
         ["p1", "p1", "p2"],
@@ -238,24 +248,28 @@ def test_home_based_none_attributes():
 
 
 # --- filter_consecutive_activities ---
+# Combines consecutive same-type activities by removing the redundant trip
+# between them, rather than filtering out whole plans. See
+# foundata.utils.combine_consecutive_acts for the underlying logic/tests.
 
 
-def test_consecutive_activities_removes_plans_with_consecutive_home_only():
+def test_consecutive_activities_combines_consecutive_home_only():
     attrs = make_attrs(["p1", "p2"])
     trips = make_trips_with_acts(
         ["p1", "p2", "p2"],
         [0, 0, 1],
-        ["home", "home", "work"],  # p1: two consecutive home acts → removed
+        ["home", "home", "work"],  # p1: home->home self-loop trip → removed
         ["home", "work", "home"],
     )
     clean_attrs, clean_trips = filter.filter_consecutive_activities(
         attrs, trips
     )
-    assert set(clean_attrs["pid"]) == {"p2"}
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    assert "p1" not in set(clean_trips["pid"])
     assert set(clean_trips["pid"]) == {"p2"}
 
 
-def test_consecutive_activities_removes_plans_with_consecutive_home_within_day():
+def test_consecutive_activities_combines_consecutive_home_within_day():
     attrs = make_attrs(["p1", "p2"])
     trips = make_trips_with_acts(
         ["p1", "p1", "p1", "p1", "p1", "p2", "p2"],
@@ -268,17 +282,18 @@ def test_consecutive_activities_removes_plans_with_consecutive_home_within_day()
             "other",
             "home",
             "work",
-        ],  # p1: two consecutive home acts → removed
+        ],  # p1: home->home trip (seq 2) merges the two home acts
         ["shop", "home", "home", "other", "home", "work", "home"],
     )
     clean_attrs, clean_trips = filter.filter_consecutive_activities(
         attrs, trips
     )
-    assert set(clean_attrs["pid"]) == {"p2"}
-    assert set(clean_trips["pid"]) == {"p2"}
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0, 1, 3, 4]
 
 
-def test_consecutive_activities_removes_plans_with_consecutive_work():
+def test_consecutive_activities_combines_consecutive_work():
     attrs = make_attrs(["p1", "p2"])
     trips = make_trips_with_acts(
         ["p1", "p1", "p2", "p2"],
@@ -288,14 +303,35 @@ def test_consecutive_activities_removes_plans_with_consecutive_work():
             "work",
             "home",
             "work",
-        ],  # p1: two consecutive work oacts → removed
+        ],  # p1: dact[0]==dact[1]==home → seq 1 merges into seq 0's activity
         ["home", "home", "work", "home"],
     )
     clean_attrs, clean_trips = filter.filter_consecutive_activities(
         attrs, trips
     )
-    assert set(clean_attrs["pid"]) == {"p2"}
-    assert set(clean_trips["pid"]) == {"p2"}
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0]
+
+
+def test_consecutive_activities_combines_consecutive_education():
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2"],
+        [0, 1, 0],
+        [
+            "education",
+            "education",
+            "work",
+        ],  # p1: consecutive education dacts (home,home) → seq 1 removed
+        ["home", "home", "home"],
+    )
+    clean_attrs, clean_trips = filter.filter_consecutive_activities(
+        attrs, trips
+    )
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0]
 
 
 def test_consecutive_activities_keeps_plans_without_consecutive_nonconsecutive():
@@ -331,24 +367,6 @@ def test_consecutive_activities_keeps_consecutive_acts_not_in_list():
     assert len(clean_trips) == 2
 
 
-def test_consecutive_activities_removes_consecutive_education():
-    attrs = make_attrs(["p1", "p2"])
-    trips = make_trips_with_acts(
-        ["p1", "p1", "p2"],
-        [0, 1, 0],
-        [
-            "education",
-            "education",
-            "work",
-        ],  # p1: consecutive education → removed
-        ["home", "home", "home"],
-    )
-    clean_attrs, clean_trips = filter.filter_consecutive_activities(
-        attrs, trips
-    )
-    assert set(clean_attrs["pid"]) == {"p2"}
-
-
 def test_consecutive_activities_custom_non_consecutive_types():
     attrs = make_attrs(["p1", "p2"])
     trips = make_trips_with_acts(
@@ -359,13 +377,15 @@ def test_consecutive_activities_custom_non_consecutive_types():
             "home",
             "work",
             "home",
-        ],  # p1: consecutive shop destinations, custom list → removed
+        ],  # p1: consecutive shop destinations, custom list → merged
         ["shop", "shop", "home", "home"],
     )
     clean_attrs, clean_trips = filter.filter_consecutive_activities(
         attrs, trips, non_consecutive_types=["shop"]
     )
-    assert set(clean_attrs["pid"]) == {"p2"}
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0]
 
 
 def test_consecutive_activities_none_attributes():
@@ -373,11 +393,13 @@ def test_consecutive_activities_none_attributes():
         ["p1", "p1", "p2"],
         [0, 1, 0],
         ["work", "work", "home"],
-        ["home", "home", "work"],
+        ["home", "home", "work"],  # p1: dact[0]==dact[1]==home → seq 1 removed
     )
     clean_attrs, clean_trips = filter.filter_consecutive_activities(None, trips)
     assert clean_attrs is None
-    assert set(clean_trips["pid"]) == {"p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0]
+    assert set(clean_trips["pid"]) == {"p1", "p2"}
 
 
 def test_consecutive_activities_inconsistent_oact_dact_chain():
@@ -397,8 +419,9 @@ def test_consecutive_activities_inconsistent_oact_dact_chain():
     clean_attrs, clean_trips = filter.filter_consecutive_activities(
         attrs, trips, non_consecutive_types=["home"]
     )
-    assert set(clean_attrs["pid"]) == {"p2"}
-    assert set(clean_trips["pid"]) == {"p2"}
+    assert set(clean_attrs["pid"]) == {"p1", "p2"}
+    p1_trips = clean_trips.filter(pl.col("pid") == "p1")
+    assert p1_trips["seq"].to_list() == [0, 1]
 
 
 # --- activity_consistency ---

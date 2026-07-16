@@ -5,7 +5,7 @@ import polars as pl
 from foundata import fix
 from foundata.utils import (
     check_overlap,
-    compute_avg_speed,
+    resolve_activity_chain,
     sample_to_euro,
     table_joiner,
 )
@@ -23,7 +23,6 @@ def load(
     stages_config: dict,
     days_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-
     print("Loading NTS...")
 
     hhs = load_households(data_root, hh_config)
@@ -37,8 +36,6 @@ def load(
     attributes = calc_transit_access_egress_distance(attributes, stages)
 
     trips = load_trips(data_root, trips_config)
-
-    attributes = compute_avg_speed(attributes, trips)
 
     days = load_days(data_root, days_config)
     trips, attributes = split_days(days, trips, attributes)
@@ -57,7 +54,6 @@ def load(
 def load_households(
     root: str | Path, config: dict | None = None
 ) -> pl.DataFrame:
-
     print("loading households...")
 
     columns = config["column_mappings"]
@@ -94,7 +90,6 @@ def load_households(
 
 
 def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-
     print("loading persons...")
 
     columns = config["column_mappings"]
@@ -129,7 +124,6 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
 
 def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-
     print("loading trips...")
 
     columns = config["column_mappings"]
@@ -151,11 +145,15 @@ def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
         dzone=pl.lit("unknown"),
     )
 
+    # purpose code 15 ("Day trip/just walk") has no fixed destination and is
+    # mapped to a null dact — resolve it to the last real activity, per
+    # person per day (JourSeq restarts each DayID)
+    trips = resolve_activity_chain(trips, group_cols=["pid", "did"])
+
     return trips.sort("hid", "pid", "tid")
 
 
 def load_days(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-
     columns = config["column_mappings"]
 
     days = pl.read_csv(
@@ -170,7 +168,6 @@ def load_days(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
 
 def load_stages(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-
     columns = config["column_mappings"]
 
     stages = pl.read_csv(
@@ -193,7 +190,6 @@ def load_stages(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 def calc_transit_access_egress_distance(
     attributes: pl.DataFrame, stages: pl.DataFrame
 ) -> pl.DataFrame:
-
     n_trips = stages.select("pid", "tid").unique().shape[0]
 
     # main stages with at least one transit stage (either bus or rail)
@@ -252,7 +248,6 @@ def calc_transit_access_egress_distance(
 def split_days(
     days: pl.DataFrame, trips: pl.DataFrame, attributes: pl.DataFrame
 ) -> pl.DataFrame:
-
     # add pdid to days
     days = (
         days.sort("pid", "did")

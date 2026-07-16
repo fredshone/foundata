@@ -26,6 +26,8 @@ CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
 
 
 def process_source(attributes, trips, source_name):
+    attributes = utils.compute_avg_speed(attributes, trips)
+    attributes = utils.split_employment_type(attributes)
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     utils.check_overlap(
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
@@ -41,6 +43,8 @@ def process_source(attributes, trips, source_name):
     attributes, trips = filter.trips_on_attribute_pids(attributes, trips)
     attributes, trips = filter.activity_consistency(attributes, trips)
     trips = filter.trips_on_endings(trips, time_limit=1440)
+    attributes, trips = filter.feasible_trips(attributes, trips)
+
     print(
         f"Loaded {len(attributes)} persons, "
         f"{len(trips.select(pl.col('pid').unique()))} plans, "
@@ -55,7 +59,7 @@ def runner(
     select: list[str],
     omit: list[str],
     home_based: bool = False,
-    filter_consecutive: bool = False,
+    fix_consecutive: bool = False,
 ):
     data_root = Path(data_root).expanduser()
     output = Path(output).expanduser()
@@ -303,12 +307,11 @@ def runner(
         print("Filtering to home-based trips only...")
         all_attributes, all_trips = filter.home_based(all_attributes, all_trips)
 
-    if filter_consecutive:
-        print("Filtering to remove consecutive activities of the same type...")
-        all_attributes, all_trips = filter.filter_consecutive_activities(
-            all_attributes,
-            all_trips,
-            non_consecutive_types=["home", "work", "education"],
+    if fix_consecutive:
+        non_consecutive_types = ["home", "work", "education"]
+        print(f"Fixing consecutive activities of {non_consecutive_types}...")
+        all_trips = utils.combine_consecutive_acts(
+            all_trips, non_consecutive_types=non_consecutive_types
         )
 
     all_attributes.write_csv(output / "attributes.csv")
@@ -338,6 +341,7 @@ def runner(
     # Visualisations
     # ------------------------------------------------------------------
     print(viz.summary_table(all_attributes, all_trips))
+    print(viz.summary_table(all_attributes, all_trips, markdown=True))
 
     viz.plot_numeric_hist_grid(
         all_attributes,

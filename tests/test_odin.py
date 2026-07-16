@@ -1,7 +1,7 @@
 import polars as pl
 
 from foundata import odin
-from foundata.utils import get_config_path
+from foundata.utils import get_config_path, load_yaml_config
 
 CONFIGS_ROOT = get_config_path()
 
@@ -166,7 +166,13 @@ def test_load_prevents_cross_year_pid_collisions(monkeypatch):
     # the year into pid/hid before concatenating, or the two distinct people
     # collide into one fabricated pid.
     def fake_load_households(root, config, year):
-        return pl.DataFrame({"hid": ["1"]})
+        return pl.DataFrame(
+            {
+                "hid": ["1"],
+                "survey_date": [f"{year}-01-01"],
+                "home_gemeente": ["0001"],
+            }
+        )
 
     def fake_load_persons(root, config, year):
         return pl.DataFrame(
@@ -186,6 +192,18 @@ def test_load_prevents_cross_year_pid_collisions(monkeypatch):
 
     monkeypatch.setattr(
         odin, "load_gemeente_zone", lambda configs_root: pl.DataFrame()
+    )
+    monkeypatch.setattr(
+        odin,
+        "load_weather",
+        lambda configs_root: pl.DataFrame(
+            {
+                "date": ["2018-01-01", "2019-01-01"],
+                "region_code": ["0001", "0001"],
+                "max_temp_c": [5.0, 6.0],
+                "rain": [False, True],
+            }
+        ),
     )
     monkeypatch.setattr(odin, "load_households", fake_load_households)
     monkeypatch.setattr(odin, "load_persons", fake_load_persons)
@@ -208,3 +226,73 @@ def test_load_prevents_cross_year_pid_collisions(monkeypatch):
     ages = dict(zip(attributes["pid"], attributes["age"]))
     assert ages["odin20181"] == 30
     assert ages["odin20191"] == 50
+
+
+def _write_households_tab(path, header: list[str], rows: list[list[str]]):
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w") as f:
+        f.write("\t".join(header) + "\n")
+        for row in rows:
+            f.write("\t".join(row) + "\n")
+
+
+def test_load_households_derives_survey_date_from_iso_week(tmp_path):
+    # ODiN has no calendar-date column; survey_date must be reconstructed
+    # from Jaar (year), Week (ISO week) and Weekdag (1=Sunday..7=Saturday).
+    hh_config = load_yaml_config(CONFIGS_ROOT / "odin" / "hh_dictionary.yaml")
+
+    header = [
+        "OP",
+        "OPID",
+        "HHPers",
+        "HHBestInkG",
+        "HHAuto",
+        "Sted",
+        "Weekdag",
+        "Jaar",
+        "Maand",
+        "Week",
+        "WoGem",
+    ]
+    # 2018-01-01 is a Monday (ISO week 1); Weekdag 2 == Monday.
+    rows = [["1", "1", "2", "11", "1", "1", "2", "2018", "1", "1", "3"]]
+    _write_households_tab(
+        tmp_path / "2018" / odin.DATA_FILES[2018], header, rows
+    )
+
+    result = odin.load_households(tmp_path, hh_config, 2018)
+
+    assert result["survey_date"].to_list() == ["2018-01-01"]
+    assert result["home_gemeente"].to_list() == ["0003"]
+
+
+def test_load_households_nulls_dans_privacy_codes(tmp_path):
+    # 2024's Wogem_DANS24 uses codes 9000-9008 as statistical-disclosure
+    # placeholders for small municipalities grouped for privacy — these
+    # aren't real gemeenten and can't be geocoded, so should become null
+    # rather than being treated as a normal (zero-padded) gemeente code.
+    hh_config = load_yaml_config(CONFIGS_ROOT / "odin" / "hh_dictionary.yaml")
+
+    header = [
+        "OP",
+        "OPID",
+        "HHPers_DANS24",
+        "HHGestInkG",
+        "HHAuto_DANS24",
+        "Sted",
+        "Weekdag",
+        "Jaar",
+        "Maand",
+        "Week",
+        "Wogem_DANS24",
+    ]
+    # 2024-12-29 is a Sunday (ISO week 52); Weekdag 1 == Sunday.
+    rows = [["1", "1", "2", "11", "1", "1", "1", "2024", "12", "52", "9000"]]
+    _write_households_tab(
+        tmp_path / "2024" / odin.DATA_FILES[2024], header, rows
+    )
+
+    result = odin.load_households(tmp_path, hh_config, 2024)
+
+    assert result["survey_date"].to_list() == ["2024-12-29"]
+    assert result["home_gemeente"].to_list() == [None]

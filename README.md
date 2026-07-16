@@ -2,18 +2,23 @@
 
 Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* or *world* models of human behaviour — and a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
 
+The project is intended to be uses as a discoverable cli: `uv run foundata --help`.
+
 ### Progress
 
-| source | persons | missing data | trips | kms (millions) |
-|--------|---------|--------------|-------|----------------|
-| London UK (LTDS) | 69,399 | 34% | 129,789 | 1.3 |
-| UK (NTS) | 2,646,570 | 21% | 5,211,250 | 66.8 |
-| US (NHTS) | 692,861 | 29% | 2,507,139 | 37.2 |
-| Chicago US (CMAP) | 30,182 | 4% | 95,286 | 0.8 |
-| Victoria AUS (VISTA) | 94,677 | 33% | 255,823 | 2.4 |
-| Queensland AUS (QHTS) | 51,272 | 33% | 125,584 | 1.4 |
-| South Korea (KTDB) | 133,326 | 38% | 331,229 | 1.8 |
-| **total** | **3,718,287** | **23%** | **8,656,036** | **111.8** |
+The latest output using 'foundata run' (home based with no consecutive home, work or education acts) is as follows:
+
+| source | plans | missing data | trips | kms (millions) |
+|------|-----|------------|-----|--------------|
+| ktdb | 120,100 | 37% | 285,011 | 0.8 |
+| ltds | 60,124 | 34% | 106,668 | 0.9 |
+| nts | 2,481,048 | 22% | 4,413,614 | 45.3 |
+| odin | 270,193 | 26% | 634,515 | 7.1 |
+| vista | 89,466 | 29% | 233,600 | 2.0 |
+| cmap | 25,385 | 5% | 74,572 | 0.5 |
+| qhts | 48,794 | 33% | 117,998 | 1.2 |
+| nhts | 631,065 | 25% | 2,201,666 | 24.9 |
+| **total** | **3,726,175** | **23%** | **8,067,644** | **82.6** |
 
 
 ### Person Attributes Status
@@ -51,6 +56,7 @@ We currently map all transport modes to the following types: {car, walk, bike, b
 
 |  source           |     | persons  | years     | label availability | source  |
 | ----------------- |---- | -------- |-----------|---------------|--------------------|
+| ODIN              | netherlands | 200k | 21        | C             | [request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
 | KTDB              | S.Korea | 100k | 21        | C             | [request](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
 | NTS               | UK  | 1.7m     | 02-23     | A             | [request](https://ukdataservice.ac.uk/) (not open)            |
 | CMAP              | US  | 30k      | 17-19     | A-            | [data](https://github.com/CMAP-REPOS/mydailytravel) (open) |
@@ -73,17 +79,6 @@ We currently map all transport modes to the following types: {car, walk, bike, b
 | Columbia          | US  | ~3k      | 07        | OK?           |
 | Anchorage         | US  | 3k       | 01        | OK?           |
 
-
-## Pre-processed outputs
-
-NTS 2023 processed outputs (56,735 persons, 223,007 activities):
-
-| File | Path |
-|------|------|
-| Person attributes (binned) | `~/Data/foundata/out/nts/2023/attributes_binned.csv` |
-| Activity schedules | `~/Data/foundata/out/nts/2023/activities.csv` |
-
-Activities schema: `pid, seq, act, zone, start, end` (times in minutes from midnight).
 
 ## Usage
 

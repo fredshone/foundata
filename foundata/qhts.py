@@ -4,12 +4,7 @@ from typing import Optional
 import polars as pl
 
 from .fix import day_wrap
-from .utils import (
-    compute_avg_speed,
-    config_for_year,
-    sample_to_euro,
-    table_joiner,
-)
+from .utils import config_for_year, sample_to_euro, table_joiner
 
 AUD_TO_EURO = 0.6
 
@@ -24,7 +19,6 @@ def load_years(
     trips_config: dict,
     zones_mapping: Optional[pl.DataFrame] = None,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-
     all_attributes = []
     all_trips = []
 
@@ -93,8 +87,6 @@ def load_years(
 
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
-
-    attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
@@ -223,7 +215,6 @@ def preprocess_persons(
 
 
 def load_zone_mapping(path: str | Path) -> pl.DataFrame:
-
     mapping = {
         "Rural Balance": "rural",
         "Bounded Locality": "rural",

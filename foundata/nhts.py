@@ -4,7 +4,6 @@ import polars as pl
 
 from foundata import fix
 from foundata.utils import (
-    compute_avg_speed,
     config_for_year,
     expand_root,
     sample_to_euro,
@@ -23,14 +22,11 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-
     print("Loading NHTS...")
     hhs = load_households(data_root, hh_config, years=years)
     persons = load_persons(data_root, person_config, years=years)
     attributes = table_joiner(hhs, persons, on="hid")
     trips = load_trips(data_root, trips_config, years=years)
-
-    attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
@@ -232,7 +228,6 @@ def _preprocess_trips(
         .otherwise(pl.col("distance")),
     )
 
-    # todo: remove or also filter associated attributes
     trips = trips.filter(
         ~(
             ((pl.col("tst") < 0) | (pl.col("duration") < 0))
@@ -242,7 +237,7 @@ def _preprocess_trips(
     )
 
     trips = trips.with_columns(
-        distance=pl.col("distance") * 1.6,
+        distance=pl.col("distance") * 1.6,  # convert miles to km
         tst=pl.col("tst").map_elements(_hhmm_to_minutes),
         mode=pl.col("mode").replace_strict(
             mode_mapping, return_dtype=pl.String, default=pl.col("mode")
@@ -280,11 +275,16 @@ def _preprocess_trips(
     else:
         trips = trips.with_columns(dzone=pl.lit("unknown"))
 
-    trips = trips.with_columns(tet=pl.col("tst") + pl.col("duration"))
+    trips = trips.with_columns(
+        tet=pl.col("tst") + pl.col("duration"),
+        hid=(pl.lit(year).cast(pl.String) + pl.col("hid").cast(pl.String)).cast(
+            pl.Int64
+        ),
+    )
 
     trips = fix.day_wrap(trips)
 
-    return trips.with_columns(tet=(pl.col("tst") + pl.col("duration")))
+    return trips
 
 
 def load_trips(

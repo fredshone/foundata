@@ -5,12 +5,12 @@ import polars as pl
 from foundata import fix
 from foundata.utils import (
     bounds_from_list,
-    compute_avg_speed,
     config_for_year,
     expand_root,
     sample_to_euro,
     table_joiner,
 )
+from foundata.utils import resolve_activity_chain as _resolve_activity_chain
 
 SOURCE = "odin"
 DATA_FILES = {
@@ -41,11 +41,6 @@ def load(
         trips = load_trips(
             data_root, trips_config, year, gemeente_zone=gemeente_zone
         )
-
-        # OPID (-> pid/hid) is only documented by CBS as unique *within* a
-        # single year's release file. Embed the year here, before
-        # concatenating years together, so the same OPID appearing in two
-        # different years can never collide into one fabricated pid/hid.
         yr = str(year)
         hhs = hhs.with_columns(
             hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String)
@@ -68,11 +63,30 @@ def load(
     trips = pl.concat(all_trips, how="diagonal")
 
     attributes = table_joiner(hhs, persons, on="hid")
-    attributes = compute_avg_speed(attributes, trips)
 
     attributes = attributes.with_columns(
         source=pl.lit(SOURCE), country=pl.lit("nl")
     )
+
+    weather = load_weather(configs_root)
+
+    # check for missing regions in weather data
+    weather_regions = set(
+        pl.Series(weather.select("region_code").unique()).to_list()
+    )
+    attribute_regions = set(
+        pl.Series(attributes.select("home_gemeente").unique()).to_list()
+    ) - {None}
+    missing_regions = attribute_regions - weather_regions
+    if missing_regions:
+        raise ValueError(f"Missing weather data for regions: {missing_regions}")
+
+    attributes = attributes.join(
+        weather,
+        left_on=["survey_date", "home_gemeente"],
+        right_on=["date", "region_code"],
+        how="left",
+    ).drop(["survey_date", "home_gemeente"])
 
     return attributes, trips
 
@@ -88,6 +102,13 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     data = data.filter(pl.col("OP") == "1")
     data = data.select(column_mapping.keys()).rename(column_mapping)
 
+    # ODiN has no calendar-date column, but Jaar/Week/Weekdag together
+    # determine one exactly via ISO-week arithmetic. Weekdag is coded
+    # 1=Sunday..7=Saturday; ISO weekday is 1=Monday..7=Sunday.
+    iso_weekday = (pl.col("day").cast(pl.Int32, strict=False) - 2) % 7 + 1
+    jan4 = pl.date(pl.col("year").cast(pl.Int32, strict=False), 1, 4)
+    week1_monday = jan4 - pl.duration(days=jan4.dt.weekday() - 1)
+
     data = data.with_columns(
         hh_income=pl.col("hh_income")
         .replace_strict(year_config["hh_income"])
@@ -95,9 +116,24 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
         vehicles=pl.col("vehicles").cast(pl.Int32, strict=False),
         hh_zone=pl.col("hh_zone").replace_strict(year_config["hh_zone"]),
+        survey_date=(
+            week1_monday
+            + pl.duration(
+                days=(pl.col("week").cast(pl.Int32, strict=False) - 1) * 7
+                + (iso_weekday - 1)
+            )
+        ).dt.strftime("%Y-%m-%d"),
         day=pl.col("day").replace_strict(year_config["day"]),
         year=pl.col("year").cast(pl.Int32, strict=False),
         month=pl.col("month").cast(pl.Int8, strict=False),
+        # Codes 9000+ are DANS statistical-disclosure-control placeholders
+        # (small municipalities grouped for privacy in the restricted 2024
+        # release) — not real, geocodable gemeenten, so treat as unknown.
+        home_gemeente=pl.when(
+            pl.col("home_gemeente").cast(pl.Int32, strict=False) < 9000
+        )
+        .then(pl.col("home_gemeente").str.zfill(4))
+        .otherwise(None),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
     )
@@ -168,6 +204,14 @@ def load_persons(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         )
 
     return data.filter(pl.col("pid").is_not_null())
+
+
+def load_weather(configs_root: Path) -> pl.DataFrame:
+    csv = Path(configs_root) / "odin" / "weather_regions.csv"
+    weather = pl.read_csv(csv, schema_overrides={"region_code": pl.String})
+    return weather.with_columns(rain=pl.col("precipitation_mm") > 0).drop(
+        "precipitation_mm"
+    )
 
 
 def load_gemeente_zone(configs_root: Path) -> pl.DataFrame:
@@ -295,25 +339,12 @@ def resolve_activity_chain(data: pl.DataFrame) -> pl.DataFrame:
     Resolve round-trip destination activities and chain origin activities.
 
     Some trips (e.g. Doel code 10, "toeren/wandelen") have no fixed
-    destination and are mapped to a null `dact`. These are resolved to the
-    last known real activity for that `pid` (i.e. they return to wherever
-    the person came from), cascading correctly across consecutive round
-    trips. A person's first trip falls back to its own `oact` (derived from
-    VertLoc) if it is itself a round trip.
-
-    Each trip's `oact` is then set to the previous trip's (resolved) `dact`,
-    chaining activities across a person's day.
+    destination and are mapped to a null `dact`. A person's first trip falls
+    back to its own `oact` (derived from VertLoc) if it is itself a round
+    trip. See `foundata.utils.resolve_activity_chain` for details; ODiN's
+    survey is a single-day diary, so grouping is by `pid` alone.
     """
-    data = data.sort(["pid", "seq"]).with_columns(
-        dact=pl.coalesce(
-            pl.col("dact"), pl.when(pl.col("seq") == 1).then(pl.col("oact"))
-        )
-        .forward_fill()
-        .over("pid")
-    )
-    return data.with_columns(
-        oact=pl.col("dact").shift(1).over("pid").fill_null(pl.col("oact"))
-    )
+    return _resolve_activity_chain(data, group_cols=["pid"])
 
 
 COLUMN_TRANSLATIONS = {

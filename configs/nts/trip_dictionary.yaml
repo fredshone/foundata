@@ -46,7 +46,7 @@ act:
     12: other  # Entertain/ public activity
     13: other  # Sport: participate
     14: home  # Holiday: base
-    15: other  # Day trip/just walk
+    15: null  # Day trip/just walk — round trip
     16: other  # Other non-escort
     17: escort  # Escort home
     18: escort  # Escort work

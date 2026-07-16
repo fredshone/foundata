@@ -92,8 +92,6 @@ def load(
         hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
     )
 
-    attributes = utils.compute_avg_speed(attributes, trips)
-
     return attributes, trips
 
 
@@ -247,7 +245,7 @@ def load_distances() -> pl.DataFrame:
 def load_weather() -> pl.DataFrame:
     csv = utils.get_config_path("ktdb", "weather_regions.csv")
     weather = pl.read_csv(csv, schema_overrides={"region_code": pl.String})
-    return weather.with_columns(rain=pl.col("precipitation_mm") > 1).drop(
+    return weather.with_columns(rain=pl.col("precipitation_mm") > 0).drop(
         "precipitation_mm"
     )
 
@@ -385,7 +383,10 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
     ).rename({"distance_km": "distance"})
 
     data = data.with_columns(
-        distance=pl.when(pl.col("distance") == 0)
+        distance=pl.when(
+            (pl.col("distance") == 0)
+            | ((pl.col("distance") * 1.3) / (pl.col("duration") / 60) > 100)
+        )
         .then((pl.col("duration") / 60) * pl.col("mode").replace_strict(SPEEDS))
         .otherwise(pl.col("distance") * 1.3)
         .cast(pl.Float32)
@@ -396,7 +397,9 @@ def load_trips(root: str | Path, config: dict) -> pl.DataFrame:
 
     # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
     data = data.with_columns(
-        region_code=pl.when(pl.col("ozone").cast(pl.String).str.strip_chars() != "")
+        region_code=pl.when(
+            pl.col("ozone").cast(pl.String).str.strip_chars() != ""
+        )
         .then(pl.col("ozone").cast(pl.String).str.slice(0, 2))
         .otherwise(None)
     )

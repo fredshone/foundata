@@ -99,6 +99,11 @@ attributes:
     default: True
     set: [employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown, void]
     description: "Employment status."
+  employed_type:
+    dtype: str
+    default: True
+    set: [ft, pt, void, unknown]
+    description: "Full-time/part-time split of employment. 'void' when the split doesn't apply (not employed, or employed without a known ft/pt breakdown). Derived by utils.split_employment_type()."
   country:
     dtype: str
     default: True

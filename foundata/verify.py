@@ -249,7 +249,7 @@ def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
 
         if "set" in cnfg:
             expected_set = set(cnfg["set"])
-            good_set = check_set(expected_set, actual[col])
+            good_set = check_set(expected_set, actual[col].drop_nulls())
             if not good_set:
                 print(
                     f"ERROR: Column '{col}' expected set {expected_set} but found ^."

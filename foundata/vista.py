@@ -5,7 +5,6 @@ import polars as pl
 from .fix import day_wrap
 from .utils import (
     bounds_from_list,
-    compute_avg_speed,
     config_for_year,
     sample_to_euro,
     table_joiner,
@@ -23,7 +22,6 @@ def load_years(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-
     hhs_names = [
         "households_vista_2012_2020_lga_v1.csv",
         "household_vista_2022_2023.csv",
@@ -96,15 +94,12 @@ def load_years(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
     )
 
-    attributes = compute_avg_speed(attributes, trips)
-
     return attributes, trips
 
 
 def preprocess_households(
     hhs: pl.DataFrame, config: dict, year: str
 ) -> pl.DataFrame:
-
     column_mapping = config["column_mappings"]
 
     month_mapping = config["month"]
