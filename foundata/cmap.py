@@ -240,6 +240,13 @@ def load_home_locations(
         .drop("fips")
     ).rename({"sampno": "hid"})
 
+    # some households have more than one location flagged home==1 in the
+    # source data (different locno, occasionally different tract); keep a
+    # single row per household so the join in load() doesn't duplicate rows
+    locations = locations.unique(
+        subset=["hid"], keep="first", maintain_order=True
+    )
+
     return locations
 
 

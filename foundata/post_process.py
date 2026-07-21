@@ -5,10 +5,13 @@ import polars.selectors as cs
 def trips_to_activities(
     attributes: pl.DataFrame, trips: pl.DataFrame
 ) -> pl.DataFrame:
-    sorted_trips = trips.sort("pid", "seq")
+    print("Converting trips to activities...")
+    print("number of persons in attributes:", len(attributes))
+    print("number of persons in trips:", len(trips.select("pid").unique()))
 
     first_acts = (
-        sorted_trips.group_by("pid")
+        trips.sort("pid", "seq")
+        .group_by("pid")
         .agg(pl.all().first())
         .select(
             pl.col("pid"),
@@ -21,7 +24,8 @@ def trips_to_activities(
     )
 
     dest_acts = (
-        sorted_trips.filter((pl.col("tet") <= 1440))
+        trips.sort("pid", "seq")
+        .filter((pl.col("tet") <= 1440))
         .with_columns(
             end=pl.col("tst").shift(-1).over("pid").fill_null(1440),
             seq=pl.col("seq").cast(pl.Int8) + 1,
@@ -46,8 +50,18 @@ def trips_to_activities(
         pl.lit(0, dtype=pl.Int32).alias("start"),
         pl.lit(1440, dtype=pl.Int32).alias("end"),
     )
+    print(
+        f"number of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
+    )
 
-    return pl.concat([first_acts, dest_acts, no_trip_acts]).sort("pid", "seq")
+    activities = pl.concat([first_acts, dest_acts, no_trip_acts]).sort(
+        "pid", "seq"
+    )
+    print(
+        "number of persons in activities:",
+        len(activities.select("pid").unique()),
+    )
+    return activities
 
 
 def trips_with_following_activity(
