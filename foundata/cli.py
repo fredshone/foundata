@@ -24,15 +24,26 @@ def _resolve_out(
     explicit: Optional[str],
     out_dir: Optional[str],
     input_path: Optional[str],
-    suffix: str,
+    optional_suffix: str,
 ) -> Optional[Path]:
     if explicit:
         path = Path(explicit)
     elif input_path is None:
         return None
     else:
-        stem_path = _default_out(input_path, suffix)
+        stem_path = _default_out(input_path, "")
         path = Path(out_dir) / stem_path.name if out_dir else stem_path
+        # check if file exists, if so, add suffix to avoid overwriting
+        if path.exists():
+            click.echo(
+                f"WARNING: output path {path} already exists, adding suffix '{optional_suffix}' to avoid overwriting."
+            )
+            stem_path = _default_out(input_path, optional_suffix)
+            path = Path(out_dir) / stem_path.name if out_dir else stem_path
+            if path.exists():
+                click.echo(
+                    f"WARNING: output path {path} already exists, overwriting."
+                )
     path.parent.mkdir(parents=True, exist_ok=True)
     return path
 
