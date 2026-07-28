@@ -8,17 +8,18 @@ The project is intended to be uses as a discoverable cli: `uv run foundata --hel
 
 The latest output using 'foundata run' (home based with no consecutive home, work or education acts) is as follows:
 
+
 | source | plans | missing data | trips | kms (millions) |
 |------|-----|------------|-----|--------------|
-| ktdb | 120,100 | 37% | 285,011 | 0.8 |
-| ltds | 60,124 | 34% | 106,668 | 0.9 |
-| nts | 2,481,048 | 22% | 4,413,614 | 45.3 |
+| ltds | 60,123 | 36% | 106,669 | 0.9 |
+| nhts | 630,925 | 27% | 2,201,088 | 24.9 |
+| nts | 2,483,044 | 22% | 4,420,967 | 45.4 |
 | odin | 270,193 | 26% | 634,515 | 7.1 |
-| vista | 89,466 | 29% | 233,600 | 2.0 |
-| cmap | 25,385 | 5% | 74,572 | 0.5 |
-| qhts | 48,794 | 33% | 117,998 | 1.2 |
-| nhts | 631,065 | 25% | 2,201,666 | 24.9 |
-| **total** | **3,726,175** | **23%** | **8,067,644** | **82.6** |
+| qhts | 48,718 | 33% | 117,885 | 1.2 |
+| cmap | 25,716 | 7% | 76,658 | 0.5 |
+| ktdb | 120,100 | 39% | 285,011 | 0.8 |
+| vista | 89,465 | 29% | 235,847 | 2.0 |
+| **total** | **3,728,284** | **24%** | **8,078,640** | **82.7** |
 
 
 ### Person Attributes Status
