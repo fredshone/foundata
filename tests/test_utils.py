@@ -164,22 +164,27 @@ def test_split_employment_type_collapses_ft_pt():
 
 def test_split_employment_type_void_for_non_split_categories():
     attributes = pl.DataFrame(
-        {"employment": ["employed", "student", "unemployed", "retired"]}
+        {"employment": ["student", "unemployed", "retired"]}
     )
     result = utils.split_employment_type(attributes)
     assert result["employment"].to_list() == [
-        "employed",
         "student",
         "unemployed",
         "retired",
     ]
-    assert result["employed_type"].to_list() == ["void", "void", "void", "void"]
+    assert result["employed_type"].to_list() == ["void", "void", "void"]
 
 
 def test_split_employment_type_unknown():
-    attributes = pl.DataFrame({"employment": ["unknown", None]})
+    # bare "employed" has no ft/pt distinction recorded, same as
+    # "unknown"/null employment.
+    attributes = pl.DataFrame({"employment": ["unknown", None, "employed"]})
     result = utils.split_employment_type(attributes)
-    assert result["employed_type"].to_list() == ["unknown", "unknown"]
+    assert result["employed_type"].to_list() == [
+        "unknown",
+        "unknown",
+        "unknown",
+    ]
 
 
 # --- resolve_activity_chain ---

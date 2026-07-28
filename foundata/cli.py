@@ -297,7 +297,7 @@ _OUT_DIR_OPT = click.option(
     "-o",
     type=click.Path(),
     default=None,
-    help="Output directory. Outputs use suffixed input filenames.",
+    help="Output directory. Outputs use input filenames, suffixed only to avoid overwriting an existing file.",
 )
 _OUT_ATTR_OPT = click.option(
     "--output-attributes",

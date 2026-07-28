@@ -287,10 +287,10 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
     """Split the ft/pt distinction out of employment into employed_type.
 
     "ft-employed" and "pt-employed" collapse to "employed", with the split
-    preserved in the new "employed_type" column ("ft"/"pt"). Categories the
-    split doesn't apply to (bare "employed", "student", "unemployed",
-    "retired", "other", "void") get "void". "unknown"/null employment maps
-    to "unknown" employed_type.
+    preserved in the new "employed_type" column ("ft"/"pt"). Bare "employed"
+    (ft/pt distinction unknown) also maps to "unknown" employed_type, same
+    as "unknown"/null employment. Categories the split doesn't apply to
+    ("student", "unemployed", "retired", "other", "void") get "void".
     """
     attributes = attributes.with_columns(
         employed_type=pl.when(pl.col("employment") == "ft-employed")

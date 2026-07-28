@@ -540,6 +540,6 @@ def test_filter_attributes_numeric_key(tmp_path):
         ],
     )
     assert result.exit_code == 0, result.output
-    out_attrs = pl.read_csv(out_dir / "attrs_filtered.csv")
+    out_attrs = pl.read_csv(out_dir / "attrs.csv")
     assert len(out_attrs) == 2
     assert set(out_attrs["pid"].to_list()) == {"b", "c"}

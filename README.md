@@ -46,11 +46,7 @@ We currently map all activities to the following types: {home, work, education, 
 
 We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
 
-### Trip & Activity Timing
-
-Diagnostics computed on the **raw**, pre-filter trip times for each source (i.e. before day-wrap, negative-duration and infeasible-speed trips are cleaned up), so that a source-specific time-encoding issue is visible rather than filtered away:
-
-`foundata run` also prints a per-source trip-time-quality summary table to stdout (non-positive-duration %, day-wrap %, median duration, implausible-speed %) as a quick numeric companion to the plots below.
+### Trip & Activity Timing / Diagnostics
 
 Departure/arrival time-of-day density, wrapped onto a 0-24h axis. The legend shows each source's share of trips with a raw start/end time greater than 1440 minutes (an uncorrected day-wrap is a common symptom of a source-specific time bug):
 
@@ -68,7 +64,7 @@ Activity duration distributions, faceted by activity type:
 
 ![Activity duration by type](assets/activity_duration_by_type.png)
 
-Mean per-person activity count (work, education) by employment category, dodged by source — a category that doesn't follow the expected pattern (e.g. "unemployed" with a high mean `work` count) usually signals a miscoded attribute or activity-purpose field:
+Mean per-person activity count (work, education) by employment category:
 
 ![Activity count by employment](assets/activity_count_by_employment.png)
 
