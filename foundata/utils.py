@@ -297,6 +297,8 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
         .then(pl.lit("ft"))
         .when(pl.col("employment") == "pt-employed")
         .then(pl.lit("pt"))
+        .when(pl.col("employment") == "employed")
+        .then(pl.lit("unknown"))
         .when(
             (pl.col("employment") == "unknown") | pl.col("employment").is_null()
         )

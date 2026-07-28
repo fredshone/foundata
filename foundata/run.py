@@ -375,4 +375,58 @@ def runner(
         save_path=output / "attributes_trends.png",
     )
 
+    print(
+        viz.time_quality_summary_table(all_attributes, all_trips, markdown=True)
+    )
+
+    viz.plot_time_of_day_profile(
+        all_attributes,
+        all_trips,
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "trip_time_of_day.png",
+    )
+
+    viz.plot_time_heaping(
+        all_attributes,
+        all_trips,
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "trip_time_heaping.png",
+    )
+
+    viz.plot_trip_time_diagnostics(
+        all_attributes,
+        all_trips,
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "trip_time_diagnostics.png",
+    )
+
+    viz.plot_activity_duration_by_type(
+        all_attributes,
+        all_trips,
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "activity_duration_by_type.png",
+    )
+
+    viz.plot_activity_count_by_attribute(
+        all_attributes,
+        all_trips,
+        attribute_col="employment",
+        act_types=["work", "education"],
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "activity_count_by_employment.png",
+    )
+
+    viz.plot_attribute_activity_heatmap(
+        all_attributes,
+        all_trips,
+        attribute_col="employment",
+        on="source",
+        save_path=output / "activity_heatmap_by_employment.png",
+    )
+
     print(f"Figures saved to {output}")

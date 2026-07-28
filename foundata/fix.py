@@ -9,6 +9,13 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
     """
     Look for trips with negative duration or time inconsistencies (overlapping trips).
     If found, add 1440 minutes to the tst and tet of the trip and all subsequent trips of the same pid.
+
+    Each pid is shifted by at most one day (a single 1440-minute correction) per
+    pass, covering a genuine midnight crossing. Trips still inconsistent after
+    that are left as-is rather than cascading further shifts, since repeated
+    inconsistencies signal corrupt data — downstream filters (e.g.
+    `filter.time_consistent`, `filter.feasible_trips`) are responsible for
+    catching and dropping those.
     """
     # first consider case where trip end has moved past midnight.
     # This is identified by tet < tst.
@@ -16,13 +23,15 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
         trips.with_columns(
             flag=pl.when(pl.col("tet") < pl.col("tst")).then(1).otherwise(0)
         )
-        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
+        .with_columns(
+            flag=pl.col("flag").cum_sum().over("pid").clip(upper_bound=1)
+        )
         .with_columns(
             tst=pl.col("tst")
             + pl.col("flag").shift(1, fill_value=0).over("pid") * 1440,
             tet=pl.col("tet") + (pl.col("flag") * 1440),
         )
-    ).remove("flag")
+    ).drop("flag")
 
     # also check for case where tst has moved past midnight.
     trips = (
@@ -31,12 +40,14 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
             .then(1)
             .otherwise(0)
         )
-        .with_columns(flag=pl.col("flag").cum_sum().over("pid"))
+        .with_columns(
+            flag=pl.col("flag").cum_sum().over("pid").clip(upper_bound=1)
+        )
         .with_columns(
             tst=pl.col("tst") + (pl.col("flag") * 1440),
             tet=pl.col("tet") + (pl.col("flag") * 1440),
         )
-    ).remove("flag")
+    ).drop("flag")
 
     return trips
 

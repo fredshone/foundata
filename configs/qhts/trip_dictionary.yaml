@@ -5,8 +5,8 @@ column_mappings:
         STARTSTOP: seq,
         MAINMODE: mode,
         CUMDIST: distance,
-        STARTIME: tst,  # minutes > 1440
-        ARRTIME: tet,  # minutes > 1440
+        STARTIME: tst,  # QHTS TIME-code, anchored at 04:00 (see R_TIME.csv); +240 offset applied in qhts.py
+        ARRTIME: tet,  # QHTS TIME-code, anchored at 04:00 (see R_TIME.csv); +240 offset applied in qhts.py
         ORIGPURP: oact,
         DESTPURP: dact,
         ORIGSA1_2021: ozone,

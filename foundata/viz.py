@@ -9,6 +9,8 @@ import polars as pl
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
+from foundata import post_process
+
 
 def group_null_pct(
     df: pl.DataFrame,
@@ -670,3 +672,741 @@ def plot_categorical_bar_grid(
         plt.close(fig)
     else:
         plt.show()
+
+
+def _group_color_map(groups: list, cmap_name: str = "tab20") -> dict:
+    cmap = plt.get_cmap(cmap_name)
+    if hasattr(cmap, "colors") and cmap.colors is not None:
+        palette = list(cmap.colors)
+    else:
+        palette = [cmap(i / 20) for i in range(20)]
+    color_cycle = cycle(palette)
+    return {g: next(color_cycle) for g in groups}
+
+
+def _non_null_groups(df: pl.DataFrame, on: str) -> list:
+    groups = sorted(
+        df.select(pl.col(on)).drop_nulls().unique().to_series().to_list()
+    )
+    if not groups:
+        raise ValueError(f"No non-null groups found in '{on}'.")
+    return groups
+
+
+def plot_time_of_day_profile(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    linewidth: float = 2.5,
+    save_path: str | Path | None = None,
+):
+    """Departure/arrival time-of-day density per source.
+
+    tst/tet are wrapped modulo 1440 (minutes/day) onto a 0-24h axis so
+    day-crossing trips still land in a sensible hour-of-day bucket. The
+    legend annotates each source's share of trips with tst/tet > 1440
+    (uncorrected day-wrap) — a source with a much larger share than the
+    others is a strong signal of a time-encoding bug rather than genuine
+    late-night travel.
+    """
+    trips = trips.join(attributes.select("pid", on), on="pid", how="left")
+    groups = _non_null_groups(trips, on)
+    color_map = _group_color_map(groups, cmap_name)
+
+    fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
+    fig.patch.set_facecolor(fig_bg)
+    for ax in axes:
+        ax.set_facecolor(ax_bg)
+
+    bin_edges = np.linspace(0, 24, 49)  # half-hour bins
+    wrap_shares = {}
+
+    for panel, (col, title) in enumerate(
+        [("tst", "Departure Time of Day"), ("tet", "Arrival Time of Day")]
+    ):
+        ax = axes[panel]
+        for g in groups:
+            vals = (
+                trips.filter(pl.col(on) == g)
+                .select(col)
+                .drop_nulls()
+                .to_series()
+                .to_numpy()
+            )
+            if vals.size == 0:
+                continue
+            if panel == 0:
+                wrap_shares[g] = float(np.mean(vals > 1440))
+            hours = np.mod(vals, 1440) / 60.0
+            ax.hist(
+                hours,
+                bins=bin_edges,
+                histtype="step",
+                density=True,
+                color=color_map[g],
+                linewidth=linewidth,
+                label=str(g),
+            )
+        ax.set_xlim(0, 24)
+        ax.set_xticks(range(0, 25, 3))
+        ax.set_xlabel("hour of day")
+        ax.set_title(title, fontsize="large")
+
+    axes[0].set_ylabel("density")
+
+    handles = [
+        Line2D(
+            [0],
+            [0],
+            color=color_map[g],
+            lw=linewidth,
+            label=f"{g} ({wrap_shares.get(g, 0.0) * 100:.1f}% day-wrap)",
+        )
+        for g in groups
+    ]
+    axes[1].legend(
+        handles=handles,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1),
+        borderaxespad=0.0,
+        frameon=False,
+        fontsize="medium",
+    )
+
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_time_heaping(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    time_col: str = "tst",
+    n_cols: int = 3,
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    save_path: str | Path | None = None,
+):
+    """Minute-within-hour heaping per source.
+
+    Self-reported travel times tend to "heap" at round numbers (:00, :15,
+    :30, :45). A source with disproportionate heaping relative to the
+    others is a classic marker of imprecise or reconstructed times.
+    """
+    trips = trips.join(attributes.select("pid", on), on="pid", how="left")
+    groups = _non_null_groups(trips, on)
+    color_map = _group_color_map(groups, cmap_name)
+
+    n_rows = math.ceil(len(groups) / n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(4.5 * n_cols, 3.2 * n_rows), squeeze=False
+    )
+    fig.patch.set_facecolor(fig_bg)
+
+    for idx, g in enumerate(groups):
+        r, c = idx // n_cols, idx % n_cols
+        ax = axes[r][c]
+        ax.set_facecolor(ax_bg)
+
+        minutes = (
+            trips.filter(pl.col(on) == g)
+            .select(time_col)
+            .drop_nulls()
+            .to_series()
+            .to_numpy()
+        )
+        minutes = np.mod(minutes, 60).astype(int)
+        if minutes.size == 0:
+            ax.axis("off")
+            continue
+
+        counts = np.bincount(minutes, minlength=60)
+        proportions = counts / counts.sum()
+
+        ax.bar(range(60), proportions, color=color_map[g], width=1.0)
+        round_share = proportions[[0, 15, 30, 45]].sum() * 100
+        ax.set_title(
+            f"{g} ({round_share:.0f}% on :00/:15/:30/:45)", fontsize="medium"
+        )
+        ax.set_xlim(-0.5, 59.5)
+        ax.set_xticks([0, 15, 30, 45])
+        ax.set_xlabel("minute of hour")
+
+    for i in range(len(groups), n_rows * n_cols):
+        r, c = i // n_cols, i % n_cols
+        axes[r][c].axis("off")
+
+    fig.suptitle(f"Time Heaping ({time_col})", fontsize="large")
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_trip_time_diagnostics(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    linewidth: float = 2.5,
+    clip_percentiles: tuple[float, float] = (1.0, 99.0),
+    save_path: str | Path | None = None,
+):
+    """Trip duration, implied speed, and non-positive-duration share per source.
+
+    Implied speed is distance / ((tet - tst) / 60), restricted to trips
+    with positive duration and non-null distance (same guard as
+    `utils.compute_avg_speed`). A source with speed mass piled up near 0 or
+    stretching to implausible values usually means a duration or distance
+    unit/encoding bug rather than genuinely different travel behaviour.
+    """
+    trips = trips.join(
+        attributes.select("pid", on), on="pid", how="left"
+    ).with_columns(duration=(pl.col("tet") - pl.col("tst")).cast(pl.Float64))
+    groups = _non_null_groups(trips, on)
+    color_map = _group_color_map(groups, cmap_name)
+
+    valid = trips.filter(pl.col("duration") > 0)
+    speeds = valid.filter(pl.col("distance").is_not_null()).with_columns(
+        speed=pl.col("distance") / (pl.col("duration") / 60)
+    )
+
+    negative_share = trips.group_by(on).agg(
+        share=(pl.col("duration") <= 0).mean() * 100
+    )
+    negative_map = dict(
+        zip(negative_share[on].to_list(), negative_share["share"].to_list())
+    )
+
+    fig, axes = plt.subplots(1, 3, figsize=(16, 4.5))
+    fig.patch.set_facecolor(fig_bg)
+    for ax in axes:
+        ax.set_facecolor(ax_bg)
+
+    lo_p, hi_p = clip_percentiles
+
+    # Panel 1: trip duration
+    ax = axes[0]
+    all_durations = valid.select("duration").to_series().to_numpy()
+    hi = (
+        float(np.percentile(all_durations, hi_p)) if all_durations.size else 1.0
+    )
+    bin_edges = np.linspace(0, max(hi, 1.0), 40)
+    for g in groups:
+        vals = (
+            valid.filter(pl.col(on) == g)
+            .select("duration")
+            .to_series()
+            .to_numpy()
+        )
+        if vals.size == 0:
+            continue
+        vals = np.clip(vals, 0, hi)
+        ax.hist(
+            vals,
+            bins=bin_edges,
+            histtype="step",
+            density=True,
+            color=color_map[g],
+            linewidth=linewidth,
+            label=str(g),
+        )
+    ax.set_title("Trip Duration (min)", fontsize="large")
+    ax.set_xlabel("minutes")
+    ax.set_ylabel("density")
+
+    # Panel 2: implied speed
+    ax = axes[1]
+    all_speeds = speeds.select("speed").to_series().to_numpy()
+    if all_speeds.size:
+        lo_s, hi_s = np.percentile(all_speeds, [lo_p, hi_p])
+    else:
+        lo_s, hi_s = 0.0, 1.0
+    lo_s = max(lo_s, 0.0)
+    bin_edges = np.linspace(lo_s, max(hi_s, lo_s + 1.0), 40)
+    for g in groups:
+        vals = (
+            speeds.filter(pl.col(on) == g)
+            .select("speed")
+            .to_series()
+            .to_numpy()
+        )
+        if vals.size == 0:
+            continue
+        vals = np.clip(vals, bin_edges[0], bin_edges[-1])
+        ax.hist(
+            vals,
+            bins=bin_edges,
+            histtype="step",
+            density=True,
+            color=color_map[g],
+            linewidth=linewidth,
+            label=str(g),
+        )
+    ax.set_title("Implied Trip Speed (km/h)", fontsize="large")
+    ax.set_xlabel("km/h")
+
+    # Panel 3: non-positive duration share
+    ax = axes[2]
+    ax.set_facecolor(ax_bg)
+    xs = range(len(groups))
+    heights = [negative_map.get(g, 0.0) for g in groups]
+    ax.bar(xs, heights, color=[color_map[g] for g in groups])
+    ax.set_xticks(list(xs))
+    ax.set_xticklabels(groups, rotation=45, ha="right")
+    ax.set_ylabel("%")
+    ax.set_title("Non-positive Duration Trips", fontsize="large")
+
+    handles = [
+        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
+        for g in groups
+    ]
+    axes[1].legend(
+        handles=handles,
+        loc="upper left",
+        bbox_to_anchor=(1.02, 1),
+        borderaxespad=0.0,
+        frameon=False,
+        fontsize="medium",
+    )
+
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_activity_duration_by_type(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    n_cols: int = 3,
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    linewidth: float = 2.5,
+    clip_percentiles: tuple[float, float] = (1.0, 99.0),
+    min_group_rows: int = 10,
+    save_path: str | Path | None = None,
+):
+    """Activity duration distribution per source, faceted by activity type.
+
+    Derives activities via `post_process.trips_to_activities`. A source
+    with an implausible duration shape for a specific purpose (e.g. `work`
+    durations clustering near 0 or near a full day) points to a
+    purpose-specific time-encoding issue rather than a general one.
+    """
+    activities = post_process.trips_to_activities(attributes, trips)
+    activities = activities.join(
+        attributes.select("pid", on), on="pid", how="left"
+    ).with_columns(duration=(pl.col("end") - pl.col("start")).cast(pl.Float64))
+
+    groups = _non_null_groups(activities, on)
+    act_types = sorted(
+        activities.select("act").drop_nulls().unique().to_series().to_list()
+    )
+    color_map = _group_color_map(groups, cmap_name)
+
+    n_plots = len(act_types) + 1  # +1 for legend
+    n_rows = math.ceil(n_plots / n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(5 * n_cols, 3.5 * n_rows), squeeze=False
+    )
+    fig.patch.set_facecolor(fig_bg)
+
+    lo_p, hi_p = clip_percentiles
+
+    for idx, act in enumerate(act_types):
+        r, c = idx // n_cols, idx % n_cols
+        ax = axes[r][c]
+        ax.set_facecolor(ax_bg)
+
+        sub_act = activities.filter(pl.col("act") == act)
+        all_durations = sub_act.select("duration").to_series().to_numpy()
+        if all_durations.size == 0:
+            ax.axis("off")
+            continue
+        hi = float(np.percentile(all_durations, hi_p))
+        bin_edges = np.linspace(0, max(hi, 1.0), 30)
+
+        for g in groups:
+            vals = (
+                sub_act.filter(pl.col(on) == g)
+                .select("duration")
+                .to_series()
+                .to_numpy()
+            )
+            if vals.size < min_group_rows:
+                continue
+            vals = np.clip(vals, 0, hi)
+            ax.hist(
+                vals,
+                bins=bin_edges,
+                histtype="step",
+                density=True,
+                color=color_map[g],
+                linewidth=linewidth,
+                label=str(g),
+            )
+
+        ax.set_title(act.title(), fontsize="large")
+        ax.set_xlabel("minutes")
+
+    # legend cell
+    idx = len(act_types)
+    r, c = idx // n_cols, idx % n_cols
+    ax = axes[r][c]
+    ax.set_facecolor(ax_bg)
+    handles = [
+        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
+        for g in groups
+    ]
+    ax.legend(
+        handles=handles,
+        loc="center",
+        bbox_to_anchor=(0.86, 0.5),
+        borderaxespad=0.0,
+        frameon=False,
+        fontsize="large",
+    )
+
+    for i in range(n_plots - 1, n_rows * n_cols):
+        r, c = i // n_cols, i % n_cols
+        axes[r][c].axis("off")
+
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def _activity_counts_per_person(
+    attributes: pl.DataFrame, trips: pl.DataFrame, act_types: list[str]
+) -> pl.DataFrame:
+    """Per-person activity counts, one column per `act_types` entry, zero-filled.
+
+    Every pid in `attributes` gets a row, including persons with no trips
+    (all counts 0) — needed so attribute categories with mostly-inactive
+    persons (e.g. "retired") aren't silently dropped from the denominator.
+    """
+    activities = post_process.trips_to_activities(attributes, trips)
+    counts = (
+        activities.filter(pl.col("act").is_in(act_types))
+        .group_by("pid", "act")
+        .agg(n=pl.len())
+        .pivot(on="act", index="pid", values="n")
+    )
+    counts = attributes.select("pid").join(counts, on="pid", how="left")
+    counts = counts.with_columns(
+        (
+            pl.col(act).fill_null(0) if act in counts.columns else pl.lit(0)
+        ).alias(act)
+        for act in act_types
+    )
+    return counts.select("pid", *act_types)
+
+
+def plot_activity_count_by_attribute(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    attribute_col: str = "employment",
+    act_types: Optional[list[str]] = None,
+    on: str = "source",
+    n_cols: int = 3,
+    cmap_name: str = "tab20",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    bar_width: float = 0.8,
+    save_path: str | Path | None = None,
+):
+    """Mean per-person activity count by attribute category, faceted by activity type.
+
+    Bars are dodged by `on` (source) so cross-survey coding differences are
+    visible directly. E.g. `attribute_col="employment"`, `act_types=["work",
+    "education"]` should show "student" peaking on education and
+    "employed"/"ft-employed" peaking on work — a category that doesn't
+    follow the expected pattern (e.g. "unemployed" with a high mean `work`
+    count) usually signals a miscoded attribute or activity-purpose field.
+    """
+    if act_types is None:
+        act_types = ["work", "education"]
+
+    counts = _activity_counts_per_person(attributes, trips, act_types)
+    counts = counts.join(
+        attributes.select("pid", attribute_col, on), on="pid", how="left"
+    )
+
+    cats = sorted(
+        counts.select(attribute_col).drop_nulls().unique().to_series().to_list()
+    )
+    if not cats:
+        raise ValueError(f"No non-null categories found in '{attribute_col}'.")
+    groups = _non_null_groups(counts, on)
+    color_map = _group_color_map(groups, cmap_name)
+
+    n_plots = len(act_types) + 1  # +1 for legend
+    n_rows = math.ceil(n_plots / n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows), squeeze=False
+    )
+    fig.patch.set_facecolor(fig_bg)
+
+    x = np.arange(len(cats))
+    width = bar_width / max(len(groups), 1)
+
+    for idx, act in enumerate(act_types):
+        r, c = idx // n_cols, idx % n_cols
+        ax = axes[r][c]
+        ax.set_facecolor(ax_bg)
+
+        agg = counts.group_by([attribute_col, on]).agg(
+            pl.col(act).mean().alias("mean_count")
+        )
+
+        for gi, g in enumerate(groups):
+            sub = agg.filter(pl.col(on) == g)
+            values = dict(
+                zip(sub[attribute_col].to_list(), sub["mean_count"].to_list())
+            )
+            heights = [values.get(cat, 0.0) for cat in cats]
+            offset = (gi - (len(groups) - 1) / 2) * width
+            ax.bar(
+                x + offset,
+                heights,
+                width=width,
+                color=color_map[g],
+                label=str(g),
+            )
+
+        ax.set_xticks(x)
+        ax.set_xticklabels(cats, rotation=45, ha="right")
+        ax.set_title(
+            f"Mean {act.title()} Activities by {attribute_col.title()}",
+            fontsize="large",
+        )
+        ax.set_ylabel("mean count / person")
+
+    # legend cell
+    idx = len(act_types)
+    r, c = idx // n_cols, idx % n_cols
+    ax = axes[r][c]
+    ax.set_facecolor(ax_bg)
+    handles = [Patch(facecolor=color_map[g], label=str(g)) for g in groups]
+    ax.legend(
+        handles=handles,
+        loc="center",
+        bbox_to_anchor=(0.86, 0.5),
+        borderaxespad=0.0,
+        frameon=False,
+        fontsize="large",
+    )
+
+    for i in range(n_plots - 1, n_rows * n_cols):
+        r, c = i // n_cols, i % n_cols
+        axes[r][c].axis("off")
+
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def plot_attribute_activity_heatmap(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    attribute_col: str = "employment",
+    on: str = "source",
+    cmap_name: str = "YlOrRd",
+    n_cols: int = 3,
+    fig_bg: str = "lightgray",
+    save_path: str | Path | None = None,
+):
+    """Mean activity-count matrix (attribute category x activity type), per source.
+
+    Cell (row, col) is the mean number of `col`-purpose activities per person
+    in attribute category `row`, one heatmap per `on` group with a shared
+    colour scale for cross-source comparability. Look for rows that don't
+    match the category's expected activity profile — e.g. "student" with
+    near-zero `education`, or "retired" with a high `work` mean — which
+    usually points to a miscoded attribute or activity-purpose field rather
+    than genuine behavioural variation.
+    """
+    activities = post_process.trips_to_activities(attributes, trips)
+    act_types = sorted(
+        activities.select("act").drop_nulls().unique().to_series().to_list()
+    )
+
+    counts = _activity_counts_per_person(attributes, trips, act_types)
+    counts = counts.join(
+        attributes.select("pid", attribute_col, on), on="pid", how="left"
+    )
+
+    cats = sorted(
+        counts.select(attribute_col).drop_nulls().unique().to_series().to_list()
+    )
+    if not cats:
+        raise ValueError(f"No non-null categories found in '{attribute_col}'.")
+    groups = _non_null_groups(counts, on)
+
+    def _matrix_for(sub: pl.DataFrame) -> np.ndarray:
+        agg = sub.group_by(attribute_col).agg(
+            [pl.col(act).mean().alias(act) for act in act_types]
+        )
+        agg_map = {row[attribute_col]: row for row in agg.iter_rows(named=True)}
+        return np.array(
+            [
+                [agg_map.get(cat, {}).get(act, 0.0) for act in act_types]
+                for cat in cats
+            ]
+        )
+
+    vmax = max(float(_matrix_for(counts).max()), 1e-9)
+
+    n_rows = math.ceil(len(groups) / n_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(4.5 * n_cols, 3.8 * n_rows), squeeze=False
+    )
+    fig.patch.set_facecolor(fig_bg)
+
+    for idx, g in enumerate(groups):
+        r, c = idx // n_cols, idx % n_cols
+        ax = axes[r][c]
+
+        matrix = _matrix_for(counts.filter(pl.col(on) == g))
+        im = ax.imshow(matrix, aspect="auto", cmap=cmap_name, vmin=0, vmax=vmax)
+
+        for i in range(len(cats)):
+            for j in range(len(act_types)):
+                ax.text(
+                    j,
+                    i,
+                    f"{matrix[i, j]:.1f}",
+                    ha="center",
+                    va="center",
+                    fontsize="x-small",
+                    color="black",
+                )
+
+        ax.set_xticks(range(len(act_types)))
+        ax.set_xticklabels(act_types, rotation=45, ha="right")
+        ax.set_yticks(range(len(cats)))
+        ax.set_yticklabels(cats)
+        ax.set_title(str(g), fontsize="large")
+        fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
+
+    for i in range(len(groups), n_rows * n_cols):
+        r, c = i // n_cols, i % n_cols
+        axes[r][c].axis("off")
+
+    fig.suptitle(
+        f"Mean Activity Count by {attribute_col.title()}", fontsize="large"
+    )
+    plt.tight_layout()
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()
+
+
+def time_quality_summary_table(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    max_plausible_speed: float = 150.0,
+    markdown: bool = False,
+) -> pl.DataFrame | str:
+    """Per-source trip-time quality diagnostics.
+
+    Flags non-positive-duration trips (tst >= tet), day-wrap trips
+    (tst/tet > 1440), and implausibly fast trips (implied speed above
+    `max_plausible_speed` km/h) — the signatures of a per-source
+    time-encoding bug rather than an exhaustive quality check.
+    """
+    trips = trips.join(
+        attributes.select("pid", on), on="pid", how="left"
+    ).with_columns(duration=(pl.col("tet") - pl.col("tst")).cast(pl.Float64))
+
+    speed_expr = (
+        pl.when((pl.col("duration") > 0) & pl.col("distance").is_not_null())
+        .then(pl.col("distance") / (pl.col("duration") / 60))
+        .otherwise(None)
+    )
+
+    summary = (
+        trips.with_columns(speed=speed_expr)
+        .group_by(on)
+        .agg(
+            n_trips=pl.len(),
+            non_positive_duration_pct=(pl.col("duration") <= 0).mean() * 100,
+            day_wrap_pct=(
+                (pl.col("tst") > 1440) | (pl.col("tet") > 1440)
+            ).mean()
+            * 100,
+            median_duration_min=pl.col("duration")
+            .filter(pl.col("duration") > 0)
+            .median(),
+            implausible_speed_pct=(pl.col("speed") > max_plausible_speed).mean()
+            * 100,
+            median_speed_kmh=pl.col("speed").median(),
+        )
+        .sort(on)
+    )
+
+    if markdown:
+        return _time_quality_table_to_markdown(summary)
+    return summary
+
+
+def _time_quality_table_to_markdown(table: pl.DataFrame) -> str:
+    headers = [
+        "source",
+        "trips",
+        "non-positive dur %",
+        "day-wrap %",
+        "median dur (min)",
+        "implausible speed %",
+        "median speed (km/h)",
+    ]
+    lines = [
+        "| " + " | ".join(headers) + " |",
+        "|" + "|".join("-" * len(h) for h in headers) + "|",
+    ]
+    for row in table.iter_rows(named=True):
+        cells = [
+            str(row[table.columns[0]]),
+            f"{row['n_trips']:,}",
+            f"{row['non_positive_duration_pct']:.1f}%",
+            f"{row['day_wrap_pct']:.1f}%",
+            (
+                f"{row['median_duration_min']:.1f}"
+                if row["median_duration_min"] is not None
+                else "n/a"
+            ),
+            f"{row['implausible_speed_pct']:.1f}%",
+            (
+                f"{row['median_speed_kmh']:.1f}"
+                if row["median_speed_kmh"] is not None
+                else "n/a"
+            ),
+        ]
+        lines.append("| " + " | ".join(cells) + " |")
+    return "\n".join(lines)

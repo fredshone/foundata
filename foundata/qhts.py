@@ -240,6 +240,15 @@ def preprocess_trips(
     column_mapping = config["column_mappings"]
     trips = trips.select(column_mapping.keys()).rename(column_mapping)
 
+    # QHTS's raw STARTIME/ARRTIME are TIME-codes anchored at 4:00am (per the
+    # survey's R_TIME.csv lookup table: TIME=0 -> 04:00:00), not literal
+    # minutes-since-midnight. Shift by 4 hours to align with the template's
+    # midnight-relative tst/tet convention.
+    trips = trips.with_columns(
+        tst=pl.col("tst") + 240,
+        tet=pl.col("tet") + 240,
+    )
+
     mode_map = config["mode_mappings"]
     act_map = config["act_mappings"]
     trips = trips.with_columns(
