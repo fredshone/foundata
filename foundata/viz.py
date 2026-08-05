@@ -154,7 +154,13 @@ def summary_table(
 
 
 def _summary_table_to_markdown(table: pl.DataFrame) -> str:
-    headers = ["source", "plans", "missing data", "trips", "kms (millions)"]
+    headers = [
+        "Source",
+        "Plans",
+        "Missing attributes",
+        "Trips",
+        "Trip kms (millions)",
+    ]
     lines = [
         "| " + " | ".join(headers) + " |",
         "|" + "|".join("-" * len(h) for h in headers) + "|",
@@ -1325,6 +1331,88 @@ def plot_attribute_activity_heatmap(
         plt.close(fig)
     else:
         plt.show()
+
+
+def activity_summary_table(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    on: str = "source",
+    markdown: bool = False,
+) -> pl.DataFrame | str:
+    """Per-source, per-activity-type participation and typical duration.
+
+    Derives activities via `post_process.trips_to_activities`. Participation
+    probability is the share of persons in each source group with at least
+    one activity of that type (P(count >= 1)); rate is the expected number
+    of that activity per person (mean count, including zeros). Duration
+    stats are computed over all activities of that type (not per-person).
+    """
+    activities = post_process.trips_to_activities(attributes, trips)
+    activities = activities.join(
+        attributes.select("pid", on), on="pid", how="left"
+    ).with_columns(duration=(pl.col("end") - pl.col("start")).cast(pl.Float64))
+
+    n_persons = attributes.group_by(on).agg(n_persons=pl.len())
+
+    summary = (
+        activities.group_by([on, "act"])
+        .agg(
+            n_activities=pl.len(),
+            n_participants=pl.col("pid").n_unique(),
+            median_duration_min=pl.col("duration").median(),
+            mean_duration_min=pl.col("duration").mean(),
+        )
+        .join(n_persons, on=on, how="left")
+        .with_columns(
+            (pl.col("n_participants") / pl.col("n_persons") * 100).alias(
+                "participation_prob_pct"
+            ),
+            (pl.col("n_activities") / pl.col("n_persons") * 100).alias(
+                "participation_rate_pct"
+            ),
+        )
+        .drop("n_persons")
+        .sort(["act", on])
+    )
+
+    if markdown:
+        return _activity_summary_table_to_markdown(summary, on)
+    return summary
+
+
+def _activity_summary_table_to_markdown(table: pl.DataFrame, on: str) -> str:
+    headers = [
+        on,
+        "participation prob %",
+        "rate %",
+        "median dur (min)",
+        "mean dur (min)",
+    ]
+    sep = "|" + "|".join("-" * len(h) for h in headers) + "|"
+
+    blocks = []
+    for act in table["act"].unique(maintain_order=False).sort().to_list():
+        lines = [f"**{act}**", "", "| " + " | ".join(headers) + " |", sep]
+        for row in table.filter(pl.col("act") == act).iter_rows(named=True):
+            cells = [
+                str(row[on]),
+                f"{row['participation_prob_pct']:.1f}%",
+                f"{row['participation_rate_pct']:.1f}%",
+                (
+                    f"{row['median_duration_min']:.1f}"
+                    if row["median_duration_min"] is not None
+                    else "n/a"
+                ),
+                (
+                    f"{row['mean_duration_min']:.1f}"
+                    if row["mean_duration_min"] is not None
+                    else "n/a"
+                ),
+            ]
+            lines.append("| " + " | ".join(cells) + " |")
+        blocks.append("\n".join(lines))
+
+    return "\n\n".join(blocks)
 
 
 def time_quality_summary_table(

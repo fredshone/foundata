@@ -1,13 +1,25 @@
+from typing import Optional
+
 import polars as pl
 import polars.selectors as cs
 
 
 def trips_to_activities(
-    attributes: pl.DataFrame, trips: pl.DataFrame
+    attributes: Optional[pl.DataFrame], trips: pl.DataFrame
 ) -> pl.DataFrame:
+    """ "Convert trips to activities by creating an activity for each trip's origin and destination.
+    The first activity of each person is created from the first trip's origin, and the last
+    activity is created from the last trip's destination. Persons with no trips are assigned a single "home" activity.
+    Args:
+        attributes: DataFrame with person attributes, must contain "pid" and "hh_zone".
+        trips: DataFrame with columns pid, seq, tst, tet, oact, dact, ozone, dzone.
+    Returns:
+        DataFrame with columns pid, seq, act, zone, start, end.
+    """
     print("Converting trips to activities...")
-    print("number of persons in attributes:", len(attributes))
-    print("number of persons in trips:", len(trips.select("pid").unique()))
+    if attributes is not None:
+        print("\tnumber of persons in attributes:", len(attributes))
+    print("\tnumber of persons in trips:", len(trips.select("pid").unique()))
 
     first_acts = (
         trips.sort("pid", "seq")
@@ -19,49 +31,101 @@ def trips_to_activities(
             pl.col("oact").alias("act"),
             pl.col("ozone").alias("zone"),
             pl.lit(0, dtype=pl.Int32).alias("start"),
-            pl.col("tst").alias("end"),
+            pl.col("tst").alias("end").cast(pl.Int32),
         )
     )
 
     dest_acts = (
         trips.sort("pid", "seq")
-        .filter((pl.col("tet") <= 1440))
         .with_columns(
-            end=pl.col("tst").shift(-1).over("pid").fill_null(1440),
+            end=pl.col("tst")
+            .shift(-1)
+            .over("pid")
+            .fill_null(1440)
+            .cast(pl.Int32),
             seq=pl.col("seq").cast(pl.Int8) + 1,
         )
+        .filter(pl.col("tet") <= 1440)
         .select(
             pl.col("pid"),
             pl.col("seq").cast(pl.Int8).alias("seq"),
             pl.col("dact").alias("act"),
             pl.col("dzone").alias("zone"),
-            pl.col("tst").alias("start"),
-            pl.col("end").alias("end"),
+            pl.col("tet").alias("start").cast(pl.Int32),
+            pl.col("end").alias("end").cast(pl.Int32),
         )
     )
 
-    no_trip_acts = attributes.join(
-        trips.select("pid").unique(), on="pid", how="anti"
-    ).select(
-        pl.col("pid"),
-        pl.lit(0, dtype=pl.Int8).alias("seq"),
-        pl.lit("home").alias("act"),
-        pl.col("hh_zone").alias("zone"),
-        pl.lit(0, dtype=pl.Int32).alias("start"),
-        pl.lit(1440, dtype=pl.Int32).alias("end"),
-    )
-    print(
-        f"number of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
-    )
+    activities = pl.concat([first_acts, dest_acts]).sort("pid", "seq")
 
-    activities = pl.concat([first_acts, dest_acts, no_trip_acts]).sort(
-        "pid", "seq"
-    )
+    if attributes is not None:
+        no_trip_acts = attributes.join(
+            trips.select("pid").unique(), on="pid", how="anti"
+        ).select(
+            pl.col("pid"),
+            pl.lit(0, dtype=pl.Int8).alias("seq"),
+            pl.lit("home").alias("act"),
+            pl.col("hh_zone").alias("zone"),
+            pl.lit(0, dtype=pl.Int32).alias("start"),
+            pl.lit(1440, dtype=pl.Int32).alias("end"),
+        )
+        print(
+            f"\tnumber of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
+        )
+
+        activities = pl.concat([activities, no_trip_acts]).sort("pid", "seq")
     print(
-        "number of persons in activities:",
+        "\tnumber of persons in activities:",
         len(activities.select("pid").unique()),
     )
     return activities
+
+
+def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:
+    """Convert activities to trips by pairing each activity with the next one in sequence.
+    The last activity of each person is ignored, as it has no following activity to form a trip.
+    This cannot recover trip modes or distances!
+    Args:
+        activities: DataFrame with columns pid, seq, act, zone, start, end.
+    Returns:
+        DataFrame with columns pid, seq, tst, tet, oact, dact, ozone, dzone.
+    """
+    print("Converting activities to trips...")
+    print(
+        "\tnumber of persons in activities:",
+        len(activities.select("pid").unique()),
+    )
+
+    # filter away plans with no trips (i.e. only one activity)
+    activities = activities.filter(pl.len().over("pid") > 1)
+
+    trips = (
+        activities.sort("pid", "seq")
+        .with_columns(
+            seq=pl.col("seq").cast(pl.Int8),
+            tst=pl.col("end"),
+            tet=pl.col("start").shift(-1).over("pid"),
+            oact=pl.col("act"),
+            dact=pl.col("act").shift(-1).over("pid"),
+            ozone=pl.col("zone"),
+            dzone=pl.col("zone").shift(-1).over("pid"),
+        )
+        .filter(
+            pl.col("dact").is_not_null()
+        )  # drop the last activity per pid — no trip follows it
+        .select(
+            pl.col("pid"),
+            pl.col("seq"),
+            pl.col("tst"),
+            pl.col("tet"),
+            pl.col("oact"),
+            pl.col("dact"),
+            pl.col("ozone"),
+            pl.col("dzone"),
+        )
+    )
+    print("\tnumber of persons in trips:", len(trips.select("pid").unique()))
+    return trips
 
 
 def trips_with_following_activity(

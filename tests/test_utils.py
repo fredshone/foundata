@@ -35,23 +35,13 @@ def test_sample_to_euro_gbp_conversion():
 
 
 def test_config_for_year_uses_year_specific():
-    config = {
-        "column_mappings": {
-            2017: {"A": "hid"},
-            "default": {"B": "hid"},
-        }
-    }
+    config = {"column_mappings": {2017: {"A": "hid"}, "default": {"B": "hid"}}}
     result = utils.config_for_year(config, 2017)
     assert result["column_mappings"] == {"A": "hid"}
 
 
 def test_config_for_year_falls_back_to_default():
-    config = {
-        "column_mappings": {
-            2017: {"A": "hid"},
-            "default": {"B": "hid"},
-        }
-    }
+    config = {"column_mappings": {2017: {"A": "hid"}, "default": {"B": "hid"}}}
     result = utils.config_for_year(config, 2009)
     assert result["column_mappings"] == {"B": "hid"}
 
@@ -97,12 +87,7 @@ def test_compute_avg_speed_basic():
 def test_compute_avg_speed_null_for_no_trips():
     attributes = pl.DataFrame({"pid": ["p1", "p2"]})
     trips = pl.DataFrame(
-        {
-            "pid": ["p1"],
-            "tst": [0],
-            "tet": [60],
-            "distance": [30.0],
-        }
+        {"pid": ["p1"], "tst": [0], "tet": [60], "distance": [30.0]}
     )
     result = utils.compute_avg_speed(attributes, trips)
     assert result.filter(pl.col("pid") == "p2")["avg_speed"][0] is None
@@ -112,12 +97,7 @@ def test_compute_avg_speed_filters_zero_duration():
     # trip with tet == tst should be excluded
     attributes = pl.DataFrame({"pid": ["p1"]})
     trips = pl.DataFrame(
-        {
-            "pid": ["p1"],
-            "tst": [60],
-            "tet": [60],
-            "distance": [10.0],
-        }
+        {"pid": ["p1"], "tst": [60], "tet": [60], "distance": [10.0]}
     )
     result = utils.compute_avg_speed(attributes, trips)
     assert result["avg_speed"][0] is None
@@ -126,12 +106,7 @@ def test_compute_avg_speed_filters_zero_duration():
 def test_compute_avg_speed_filters_null_distance():
     attributes = pl.DataFrame({"pid": ["p1"]})
     trips = pl.DataFrame(
-        {
-            "pid": ["p1"],
-            "tst": [0],
-            "tet": [60],
-            "distance": [None],
-        }
+        {"pid": ["p1"], "tst": [0], "tet": [60], "distance": [None]}
     )
     result = utils.compute_avg_speed(attributes, trips)
     assert result["avg_speed"][0] is None
@@ -322,3 +297,45 @@ def test_resolve_activity_chain_leading_round_trip_both_ends_unknown():
 
     assert result["dact"].to_list() == ["unknown", "shop"]
     assert result["oact"].to_list() == ["unknown", "unknown"]
+
+
+def test_assign_education_to_escort():
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1"],
+            "seq": [0, 1],
+            "tst": [0, 90],
+            "tet": [60, 150],
+            "oact": ["home", "education"],
+            "dact": ["education", "home"],
+            "distance": [5.0, 5.0],
+            "mode": ["walk", "walk"],
+            "ozone": ["A", "B"],
+            "dzone": ["B", "A"],
+        },
+        schema_overrides={"tst": pl.Int32, "tet": pl.Int32},
+    )
+    result = utils.assign_education_to_escort(trips)
+    assert result["oact"].to_list() == ["home", "escort"]
+    assert result["dact"].to_list() == ["escort", "home"]
+
+
+def test_do_not_assign_education_to_escort():
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1"],
+            "seq": [0, 1],
+            "tst": [0, 180],
+            "tet": [60, 230],
+            "oact": ["home", "education"],
+            "dact": ["education", "home"],
+            "distance": [5.0, 5.0],
+            "mode": ["walk", "walk"],
+            "ozone": ["A", "B"],
+            "dzone": ["B", "A"],
+        },
+        schema_overrides={"tst": pl.Int32, "tet": pl.Int32},
+    )
+    result = utils.assign_education_to_escort(trips)
+    assert result["oact"].to_list() == ["home", "education"]
+    assert result["dact"].to_list() == ["education", "home"]

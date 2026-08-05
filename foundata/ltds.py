@@ -5,6 +5,7 @@ import polars as pl
 
 from foundata import fix
 from foundata.utils import (
+    assign_education_to_escort,
     bounds_from_list,
     check_overlap,
     config_for_year,
@@ -125,6 +126,8 @@ def load_years(
 
     attributes = table_stacker(all_attributes)
     trips = table_stacker(all_trips)
+
+    trips = assign_education_to_escort(trips)
 
     attributes = attributes.with_columns(
         source=pl.lit(SOURCE),

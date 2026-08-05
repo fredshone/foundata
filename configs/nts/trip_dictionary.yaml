@@ -32,19 +32,19 @@ mode:
     -8: unknown
 
 act:
-    1: work
+    1: work  # work
     2: work  # In course of work
     3: education
     4: shop  # Food shopping
     5: shop  # Non food shopping
     6: medical  # Personal business medical
-    7: other  # Personal business eat/drink
+    7: leisure  # Personal business eat/drink
     8: other  # Personal business other
-    9: other  # Eat/drink with friends
+    9: leisure  # Eat/drink with friends
     10: visit  # Visit friends
-    11: other  # Other social
-    12: other  # Entertain/ public activity
-    13: other  # Sport: participate
+    11: leisure  # Other social
+    12: leisure  # Entertain/ public activity
+    13: leisure  # Sport: participate
     14: home  # Holiday: base
     15: null  # Day trip/just walk — round trip
     16: other  # Other non-escort

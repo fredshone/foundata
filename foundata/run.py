@@ -25,6 +25,10 @@ from foundata import (
 CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
 
 
+def print_markdown_table(title: str, table: str):
+    print(f"\n### {title}\n\n{table}\n")
+
+
 def process_source(attributes, trips, source_name):
     attributes = utils.compute_avg_speed(attributes, trips)
     attributes = utils.split_employment_type(attributes)
@@ -285,7 +289,7 @@ def runner(
         attributes, trips = odin.load(
             data_root=data_root / "ODIN",
             configs_root=CONFIGS_ROOT,
-            years=[2018, 2019, 2020, 2023, 2024],
+            years=[2018, 2019, 2020, 2022, 2023, 2024],
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
@@ -340,8 +344,9 @@ def runner(
     # ------------------------------------------------------------------
     # Visualisations
     # ------------------------------------------------------------------
-    print(viz.summary_table(all_attributes, all_trips))
-    print(viz.summary_table(all_attributes, all_trips, markdown=True))
+    print_markdown_table(
+        "Summary", viz.summary_table(all_attributes, all_trips, markdown=True)
+    )
 
     viz.plot_numeric_hist_grid(
         all_attributes,
@@ -375,8 +380,11 @@ def runner(
         save_path=output / "attributes_trends.png",
     )
 
-    print(
-        viz.time_quality_summary_table(all_attributes, all_trips, markdown=True)
+    print_markdown_table(
+        "Time Quality",
+        viz.time_quality_summary_table(
+            all_attributes, all_trips, markdown=True
+        ),
     )
 
     viz.plot_time_of_day_profile(
@@ -409,6 +417,11 @@ def runner(
         on="source",
         cmap_name="Dark2",
         save_path=output / "activity_duration_by_type.png",
+    )
+
+    print_markdown_table(
+        "Activity Participation & Duration",
+        viz.activity_summary_table(all_attributes, all_trips, markdown=True),
     )
 
     viz.plot_activity_count_by_attribute(

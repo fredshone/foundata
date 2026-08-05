@@ -42,6 +42,20 @@ def _make_attributes(rows):
     return pl.DataFrame(rows, schema={"pid": pl.String, "hh_zone": pl.String})
 
 
+def _make_activities(rows):
+    return pl.DataFrame(
+        rows,
+        schema={
+            "pid": pl.String,
+            "seq": pl.Int32,
+            "act": pl.String,
+            "zone": pl.String,
+            "start": pl.Int32,
+            "end": pl.Int32,
+        },
+    )
+
+
 def test_trips_to_activities_basic():
     attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips(
@@ -90,19 +104,19 @@ def test_trips_to_activities_basic():
     row1 = acts.row(1, named=True)
     assert row1["act"] == "work"
     assert row1["zone"] == "z2"
-    assert row1["start"] == 480
+    assert row1["start"] == 540
     assert row1["end"] == 900
 
     row2 = acts.row(2, named=True)
     assert row2["act"] == "shop"
     assert row2["zone"] == "z3"
-    assert row2["start"] == 900
+    assert row2["start"] == 920
     assert row2["end"] == 960
 
     row3 = acts.row(3, named=True)
     assert row3["act"] == "home"
     assert row3["zone"] == "z1"
-    assert row3["start"] == 960
+    assert row3["start"] == 1020
     assert row3["end"] == 1440
 
 
@@ -274,7 +288,7 @@ def test_trips_to_activities_includes_end_of_day():
     acts = post_process.trips_to_activities(attrs, trips)
     row = acts.row(-1, named=True)
     assert row["end"] == 1440
-    assert row["start"] == 1020
+    assert row["start"] == 1080
     assert row["act"] == "home"
     assert row["zone"] == "z1"
 
@@ -493,6 +507,737 @@ def test_trips_to_activities_multi_trip_last_at_midnight_generates_final_activit
     last = acts.sort("seq").row(-1, named=True)
     assert last["act"] == "home"
     assert last["end"] == 1440
+
+
+# ---------------------------------------------------------------------------
+# trips_to_activities: malformed / odd inputs
+# ---------------------------------------------------------------------------
+
+
+def test_trips_to_activities_seq_contradicts_chronological_tst_order():
+    """seq order and chronological (tst) order disagree.
+
+    trips_to_activities orders purely by seq, not by tst, so this produces a
+    nonsensical activity (end < start) rather than raising — documents that
+    no timing validation happens here (that's filter.py's job upstream).
+    """
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 900,
+                "tet": 950,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "oact": "work",
+                "dact": "home",
+                "ozone": "z2",
+                "dzone": "z1",
+                "tst": 480,
+                "tet": 500,
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 3
+    row = acts.filter(pl.col("seq") == 2).row(0, named=True)
+    assert row["act"] == "work"
+    assert row["start"] == 950
+    assert row["end"] == 480
+    assert row["end"] < row["start"]
+
+
+def test_trips_to_activities_non_contiguous_seq_numbers():
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            },
+            {
+                "pid": "p1",
+                "seq": 3,
+                "oact": "work",
+                "dact": "shop",
+                "ozone": "z2",
+                "dzone": "z3",
+                "tst": 900,
+                "tet": 920,
+            },
+            {
+                "pid": "p1",
+                "seq": 5,
+                "oact": "shop",
+                "dact": "home",
+                "ozone": "z3",
+                "dzone": "z1",
+                "tst": 960,
+                "tet": 1020,
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == len(trips) + 1
+    # seq gaps are passed through unrenumbered
+    assert acts.sort("seq").get_column("seq").to_list() == [1, 2, 4, 6]
+
+
+def test_trips_to_activities_duplicate_seq():
+    """Duplicate seq values per pid are not deduplicated or rejected."""
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "work",
+                "dact": "shop",
+                "ozone": "z2",
+                "dzone": "z3",
+                "tst": 600,
+                "tet": 650,
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == len(trips) + 1
+    seqs = acts.get_column("seq").to_list()
+    assert seqs.count(2) == 2  # duplicate seq propagates into the output
+
+
+def test_trips_to_activities_tet_over_1440_dropped_silently():
+    """Regression test for the dest_acts filter/shift ordering fix.
+
+    When a trip's tet > 1440 is dropped, the *preceding* surviving
+    destination activity's end must still be computed from the real next
+    trip's tst (not cascaded to fill_null(1440) because the shift ran after
+    filtering).
+    """
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "oact": "work",
+                "dact": "home",
+                "ozone": "z2",
+                "dzone": "z1",
+                "tst": 900,
+                "tet": 1500,  # invalid, > 1440
+            },
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 2  # the invalid trip's destination activity is dropped
+    row = acts.sort("seq").row(-1, named=True)
+    assert row["act"] == "work"
+    assert row["start"] == 540
+    assert row["end"] == 900  # not 1440 — uses the real next trip's tst
+
+
+def test_trips_to_activities_tet_less_than_tst():
+    """tet < tst (bad/negative duration) doesn't crash; no validation happens here."""
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 500,
+                "tet": 480,
+            }
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 2
+    row = acts.sort("seq").row(-1, named=True)
+    assert row["act"] == "work"
+    assert row["start"] == 480
+    assert row["end"] == 1440
+
+
+def test_trips_to_activities_pid_missing_from_attributes():
+    """A pid present in trips but absent from attributes is still processed
+    normally — attributes only gates the anti-join for no-trip pids."""
+    attrs = _make_attributes([{"pid": "pX", "hh_zone": "suburban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            }
+        ]
+    )
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 3
+    p1_acts = acts.filter(pl.col("pid") == "p1")
+    assert len(p1_acts) == 2
+
+    pX_acts = acts.filter(pl.col("pid") == "pX")
+    assert len(pX_acts) == 1
+    row = pX_acts.row(0, named=True)
+    assert row["act"] == "home"
+    assert row["zone"] == "suburban"
+    assert row["start"] == 0
+    assert row["end"] == 1440
+
+
+def test_trips_to_activities_empty_trips_all_get_home_activity():
+    attrs = _make_attributes(
+        [
+            {"pid": "p1", "hh_zone": "urban"},
+            {"pid": "p2", "hh_zone": "suburban"},
+        ]
+    )
+    trips = _make_trips([])
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 2
+    for row in acts.iter_rows(named=True):
+        assert row["act"] == "home"
+        assert row["start"] == 0
+        assert row["end"] == 1440
+
+
+def test_trips_to_activities_both_empty():
+    attrs = _make_attributes([])
+    trips = _make_trips([])
+    acts = post_process.trips_to_activities(attrs, trips)
+    assert len(acts) == 0
+    assert set(acts.columns) == {"pid", "seq", "act", "zone", "start", "end"}
+
+
+# ---------------------------------------------------------------------------
+# activities_to_trips
+# ---------------------------------------------------------------------------
+
+
+def test_activities_to_trips_basic():
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 900,
+            },
+            {
+                "pid": "p1",
+                "seq": 3,
+                "act": "home",
+                "zone": "z1",
+                "start": 900,
+                "end": 1440,
+            },
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert len(trips) == 2
+
+    row0 = trips.row(0, named=True)
+    assert row0["oact"] == "home"
+    assert row0["dact"] == "work"
+    assert row0["ozone"] == "z1"
+    assert row0["dzone"] == "z2"
+    assert row0["tst"] == 480
+    assert row0["tet"] == 480
+
+    row1 = trips.row(1, named=True)
+    assert row1["oact"] == "work"
+    assert row1["dact"] == "home"
+    assert row1["ozone"] == "z2"
+    assert row1["dzone"] == "z1"
+    assert row1["tst"] == 900
+    assert row1["tet"] == 900
+
+
+def test_activities_to_trips_single_activity_dropped():
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 1440,
+            }
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert len(trips) == 0
+
+
+def test_activities_to_trips_mixed_single_and_multi_activity_persons():
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 1440,
+            },
+            {
+                "pid": "p2",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p2",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 1440,
+            },
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert trips.get_column("pid").to_list() == ["p2"]
+
+
+def test_activities_to_trips_columns():
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 1440,
+            },
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert set(trips.columns) == {
+        "pid",
+        "seq",
+        "tst",
+        "tet",
+        "oact",
+        "dact",
+        "ozone",
+        "dzone",
+    }
+
+
+def test_activities_to_trips_seq_cast_to_int8():
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 1440,
+            },
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert trips.schema["seq"] == pl.Int8
+
+
+def test_activities_to_trips_out_of_order_rows():
+    ordered = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 900,
+            },
+            {
+                "pid": "p1",
+                "seq": 3,
+                "act": "home",
+                "zone": "z1",
+                "start": 900,
+                "end": 1440,
+            },
+        ]
+    )
+    shuffled = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 3,
+                "act": "home",
+                "zone": "z1",
+                "start": 900,
+                "end": 1440,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 900,
+            },
+        ]
+    )
+    expected = post_process.activities_to_trips(ordered)
+    result = post_process.activities_to_trips(shuffled)
+    assert result.rows() == expected.rows()
+
+
+def test_activities_to_trips_duplicate_seq():
+    """Duplicate seq values per pid are not deduplicated or rejected."""
+    activities = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "weird",
+                "zone": "z9",
+                "start": 100,
+                "end": 200,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 1440,
+            },
+        ]
+    )
+    trips = post_process.activities_to_trips(activities)
+    assert len(trips) == 2
+    row0 = trips.row(0, named=True)
+    assert row0["oact"] == "home"
+    assert row0["dact"] == "weird"
+    assert row0["tst"] == 480
+    assert (
+        row0["tet"] == 100
+    )  # tet < tst: nonsensical, but produced without error
+
+
+def test_activities_to_trips_empty_input():
+    activities = _make_activities([])
+    trips = post_process.activities_to_trips(activities)
+    assert len(trips) == 0
+    assert set(trips.columns) == {
+        "pid",
+        "seq",
+        "tst",
+        "tet",
+        "oact",
+        "dact",
+        "ozone",
+        "dzone",
+    }
+
+
+# ---------------------------------------------------------------------------
+# round-trip consistency between trips_to_activities and activities_to_trips
+# ---------------------------------------------------------------------------
+
+
+def test_round_trip_trips_to_activities_to_trips_is_exact_identity():
+    """On well-formed input, trips -> activities -> trips reproduces the
+    original trips exactly (mod seq dtype). This depends on dest_acts using
+    tet (arrival) rather than tst (departure) for the activity start."""
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "oact": "work",
+                "dact": "shop",
+                "ozone": "z2",
+                "dzone": "z3",
+                "tst": 900,
+                "tet": 920,
+            },
+            {
+                "pid": "p1",
+                "seq": 3,
+                "oact": "shop",
+                "dact": "home",
+                "ozone": "z3",
+                "dzone": "z1",
+                "tst": 960,
+                "tet": 1020,
+            },
+        ]
+    )
+    activities = post_process.trips_to_activities(attrs, trips)
+    round_trip = post_process.activities_to_trips(activities)
+
+    assert len(round_trip) == len(trips)
+    for orig_row, rt_row in zip(
+        trips.sort("seq").iter_rows(named=True),
+        round_trip.sort("seq").iter_rows(named=True),
+    ):
+        assert rt_row["tst"] == orig_row["tst"]
+        assert rt_row["tet"] == orig_row["tet"]
+        assert rt_row["oact"] == orig_row["oact"]
+        assert rt_row["dact"] == orig_row["dact"]
+        assert rt_row["ozone"] == orig_row["ozone"]
+        assert rt_row["dzone"] == orig_row["dzone"]
+
+
+def test_round_trip_trips_to_activities_to_trips_no_trip_pid_yields_zero_trips():
+    attrs = _make_attributes(
+        [
+            {"pid": "p1", "hh_zone": "urban"},
+            {"pid": "p2", "hh_zone": "suburban"},
+        ]
+    )
+    trips = _make_trips(
+        [
+            {
+                "pid": "p1",
+                "seq": 1,
+                "oact": "home",
+                "dact": "work",
+                "ozone": "z1",
+                "dzone": "z2",
+                "tst": 480,
+                "tet": 540,
+            }
+        ]
+    )
+    activities = post_process.trips_to_activities(attrs, trips)
+    round_trip = post_process.activities_to_trips(activities)
+    assert round_trip.get_column("pid").to_list() == ["p1"]
+
+
+def test_round_trip_activities_to_trips_to_activities_is_exact_identity_even_with_gaps():
+    """Regression test for the dest_acts start=tet fix: activities -> trips
+    -> activities is a clean identity even when the activity chain has real
+    gaps (travel time) between activities, not just for contiguous chains.
+    Before the fix, gaps collapsed to zero on the return trip."""
+    attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
+
+    contiguous = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 480,
+                "end": 900,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "act": "home",
+                "zone": "z1",
+                "start": 900,
+                "end": 1440,
+            },
+        ]
+    )
+    gapped = _make_activities(
+        [
+            {
+                "pid": "p1",
+                "seq": 0,
+                "act": "home",
+                "zone": "z1",
+                "start": 0,
+                "end": 480,
+            },
+            {
+                "pid": "p1",
+                "seq": 1,
+                "act": "work",
+                "zone": "z2",
+                "start": 540,
+                "end": 900,
+            },
+            {
+                "pid": "p1",
+                "seq": 2,
+                "act": "home",
+                "zone": "z1",
+                "start": 960,
+                "end": 1440,
+            },
+        ]
+    )
+
+    for activities in (contiguous, gapped):
+        round_trip = post_process.activities_to_trips(activities)
+        round_activities = post_process.trips_to_activities(attrs, round_trip)
+        assert round_activities.sort("seq").select(
+            "act", "zone", "start", "end"
+        ).rows() == (
+            activities.sort("seq").select("act", "zone", "start", "end").rows()
+        )
+
+
+def test_round_trip_fixture_csv_exact_identity(fixture_attrs, fixture_trips):
+    """tst/tet/dact/dzone always survive the round trip exactly, since they map
+    1:1 from a trip's own fields. oact/ozone are reconstructed from the
+    *previous* trip's dact/dzone (the activity chain), so they only survive
+    where the original data's chain is internally consistent — real NTS data
+    isn't always (verify.activity_consistency exists for exactly this)."""
+    activities = post_process.trips_to_activities(fixture_attrs, fixture_trips)
+    round_trip = post_process.activities_to_trips(activities)
+
+    orig = fixture_trips.select(
+        "pid",
+        pl.col("seq").cast(pl.Int8).alias("seq"),
+        "tst",
+        "tet",
+        "oact",
+        "dact",
+        "ozone",
+        "dzone",
+    )
+    assert len(round_trip) == len(orig)
+
+    joined = orig.join(round_trip, on=["pid", "seq"], suffix="_rt")
+    assert len(joined) == len(
+        orig
+    )  # every original trip has a round-tripped match
+
+    for col in ("tst", "tet", "dact", "dzone"):
+        assert (joined[col] == joined[f"{col}_rt"]).all(), (
+            f"{col} mismatch after round-trip"
+        )
+
+    # oact/ozone only round-trip where the original chain is self-consistent
+    # (previous trip's dact/dzone matches this trip's oact/ozone)
+    chained = orig.sort("pid", "seq").with_columns(
+        prev_dact=pl.col("dact").shift(1).over("pid"),
+        prev_dzone=pl.col("dzone").shift(1).over("pid"),
+    )
+    consistent_pids_seqs = chained.filter(
+        pl.col("prev_dact").is_null() | (pl.col("prev_dact") == pl.col("oact"))
+    ).select("pid", "seq")
+    consistent_joined = joined.join(consistent_pids_seqs, on=["pid", "seq"])
+    assert len(consistent_joined) > 0
+    assert (consistent_joined["oact"] == consistent_joined["oact_rt"]).all()
+    assert (consistent_joined["ozone"] == consistent_joined["ozone_rt"]).all()
 
 
 def test_discretise_numeric_quantile_basic():

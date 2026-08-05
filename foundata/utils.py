@@ -7,6 +7,8 @@ import polars as pl
 import yaml
 from rapidfuzz import fuzz, process
 
+from foundata.post_process import activities_to_trips, trips_to_activities
+
 DTYPE_MAP = {
     "int8": pl.Int8,
     "int16": pl.Int16,
@@ -310,6 +312,42 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
             {"ft-employed": "employed", "pt-employed": "employed"}
         )
     )
+
+
+def assign_education_to_escort(trips: pl.DataFrame) -> pl.DataFrame:
+    """Assign education trips to escort trips.
+
+    The LTDS data combined education and escort education trip purposes
+    into a single "education" category. This function calculates the associated
+    activity durations for trips, if an "education" activity has a duration less
+    than 60 minutes, it is assumed to be an escort trip and the activity is
+    reassigned to "escort". The trips are then updated to reflect the new activity
+    assignments.
+    """
+    # convert trips to activities to calculate durations
+    activities = trips_to_activities(None, trips)
+    activities = activities.with_columns(
+        duration=pl.col("end") - pl.col("start")
+    )
+    # where act is "education" and duration < 60, assign to escort
+    activities = activities.with_columns(
+        pl.when((pl.col("act") == "education") & (pl.col("duration") < 60))
+        .then(pl.lit("escort"))
+        .otherwise(pl.col("act"))
+        .alias("act")
+    )
+
+    #  turn back into trips
+    new_acts = activities_to_trips(activities).select(
+        "oact", "dact", "pid", "seq"
+    )
+
+    # join back to trips and update oact/dact
+    trips = trips.join(new_acts, on=["pid", "seq"], how="left")
+    trips = trips.with_columns(
+        oact=pl.col("oact_right"), dact=pl.col("dact_right")
+    ).drop(["oact_right", "dact_right"])
+    return trips
 
 
 @functools.lru_cache(maxsize=1)

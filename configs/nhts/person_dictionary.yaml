@@ -4,7 +4,7 @@ column_mappings:
         "HOUSEID": "hid"
         "R_AGE": "age"
         "EDUC": "education"
-        "MEDCOND": "disability"  # actually difficulty travelling
+        "MEDCOND": "disability"  # = difficulty traveling
         "WORKER": "employed"
         "PRMACT": "employment"
         "R_RELAT": "relationship"

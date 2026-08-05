@@ -17,6 +17,7 @@ DATA_FILES = {
     2018: "ODiN2018_Databestand_v2.0.tab",
     2019: "ODiN2019_Databestand_v2.0.tab",
     2020: "ODiN2020_Databestand_v2.0.tab",
+    2022: "ODiN2022_Databestand.tab",
     2023: "ODiN2023_Databestand.csv",  # tab-separated despite .csv
     2024: "ODiN2024_DANS_Databestand_v2.0.csv",  # tab-separated despite .csv
 }

@@ -1,34 +1,83 @@
 [![Weekly](https://github.com/fredshone/foundata/actions/workflows/weekly.yml/badge.svg)](https://github.com/fredshone/foundata/actions/workflows/weekly.yml)
 
-Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* or *world* models of human behaviour — and a useful source of code for those wishing to work with available datasets. We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
+Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* models of human behaviour — but also a useful source of code for those wishing to work with openly available datasets.
 
-The project is intended to be uses as a discoverable cli: `uv run foundata --help`.
+We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
 
-### Progress
+The project is intended to be uses as a discoverable cli via `uv run foundata --help`.
 
-The latest output using 'foundata run' (home based with no consecutive home, work or education acts) is as follows:
+For example, `uv run foundata run --help`:
+```
+Usage: foundata run [OPTIONS]
+
+  Run the data processing pipeline end-to-end.
+
+Options:
+  -d, --data-root PATH                                Base data directory, e.g. ~/Data/foundata [required]
+  -o, --output PATH                                   Directory where CSVs and PNGs are written, defaults to ./output  [default: output]
+  -s, --select TEXT                                   Comma-separated list of sources to process (e.g. --select nhts --select ktdb).
+  -x, --omit TEXT                                     Comma-separated list of sources to omit (e.g. --omit nhts --omit ktdb).
+  -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
+  -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities. [default: filter-consecutive]
+  --help                                              Show this message and exit.
+```
+
+The base data directory needs to hold raw data downloaded from the various sources by the user. The template directory `data_dir_template`, shows the expected folder and files structure.
+
+### Data Summary
+
+The latest output using `uv run foundata run` is as follows:
 
 
-| source | plans | missing data | trips | kms (millions) |
+| Source | Plans* | Missing attributes** | Trips | Trip kms (millions) |
 |------|-----|------------|-----|--------------|
-| ltds | 60,123 | 36% | 106,669 | 0.9 |
+| odin | 324,609 | 25% | 764,037 | 8.4 |
+| ltds | 60,526 | 36% | 108,367 | 0.9 |
+| vista | 89,465 | 29% | 235,847 | 2.0 |
+| cmap | 25,716 | 7% | 76,658 | 0.5 |
+| qhts | 48,718 | 33% | 117,885 | 1.2 |
+| ktdb | 120,100 | 39% | 285,011 | 0.8 |
 | nhts | 630,925 | 27% | 2,201,088 | 24.9 |
 | nts | 2,483,044 | 22% | 4,420,967 | 45.4 |
-| odin | 270,193 | 26% | 634,515 | 7.1 |
-| qhts | 48,718 | 33% | 117,885 | 1.2 |
-| cmap | 25,716 | 7% | 76,658 | 0.5 |
-| ktdb | 120,100 | 39% | 285,011 | 0.8 |
-| vista | 89,465 | 29% | 235,847 | 2.0 |
-| **total** | **3,728,284** | **24%** | **8,078,640** | **82.7** |
+| **total** | **3,783,103** | **24%** | **8,209,860** | **84.1** |
+
+\* a plan is a sequence of activities and associated trips within a 24hr period starting at midnight.
+
+\*\* missing plan attribute data (ie unknown values)
+
+### Data Sources
+
+Foundata makes use of open (safely available, either immediately, or available via simple request) datasources as follows
 
 
-### Person Attributes Status
+|  Name             | Location  | ~Years    | Note              | Source             |
+| ----------------- |---------- |-----------|-------------------|--------------------|
+| ODIN        | Netherlands | 2018-24 | Currently missing 2021 | [request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
+| KTDB        | S.Korea |  2021        |  | [request](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
+| NTS         | UK      | 2002-24     |                   | [request](https://ukdataservice.ac.uk/)            |
+| CMAP        | US      | 17-19     |                   | [data](https://github.com/CMAP-REPOS/mydailytravel) |
+| NHTS        | US      | 2001,09,17,22 |               | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
+| QHTS        | AUS | 2012-24     |          | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
+| VISTA       | AUS | 2012-25  |             | [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
+| LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | request from TfL |
+
+### Trips/Plans
+
+We encode human activity plans as sequences of activities and associated trips. We output both activity-based and trips-based representations of plans. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
+
+We currently map all activities to the following types: {home, work, education, visit, medical, leisure, shop, escort, other}. Note that not all sources use all of these types. Medical, for example, is not included in many datasets.
+
+We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
+
+### Person Attributes
+
+Plans are joinable by a unique person id (pid) to attributes. Attributes include household, individual, day and plan information.
 
 Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
 ![Categorical person attributes](assets/attributes_categorical.png)
 
-There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (nulls), and (ii) in some cases we allow "overlapping" categories, such as `employed` and `ft-employed`.
+There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (null or unknown), and (ii) in some cases we allow "overlapping" categories.
 
 Numeric person attributes:
 
@@ -37,74 +86,6 @@ Numeric person attributes:
 A sample of some trends:
 
 ![Attribute trends](assets/attributes_trends.png)
-
-### Trips (As 24hr Plans) Status
-
-We encode human activity plans as sequences of trips, joinable by a unique person id (pid) to each other and their attributes. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
-
-We currently map all activities to the following types: {home, work, education, visit, medical, leisure, shop, escort, other}.
-
-We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
-
-### Trip & Activity Timing / Diagnostics
-
-Departure/arrival time-of-day density, wrapped onto a 0-24h axis. The legend shows each source's share of trips with a raw start/end time greater than 1440 minutes (an uncorrected day-wrap is a common symptom of a source-specific time bug):
-
-![Trip time of day](assets/trip_time_of_day.png)
-
-Minute-within-hour "heaping" per source — self-reported times tend to round to :00/:15/:30/:45, and a source heaping much more than the others usually means less precise raw timestamps:
-
-![Trip time heaping](assets/trip_time_heaping.png)
-
-Trip duration, implied speed (`distance / duration`), and the share of trips with non-positive duration, per source:
-
-![Trip time diagnostics](assets/trip_time_diagnostics.png)
-
-Activity duration distributions, faceted by activity type:
-
-![Activity duration by type](assets/activity_duration_by_type.png)
-
-Mean per-person activity count (work, education) by employment category:
-
-![Activity count by employment](assets/activity_count_by_employment.png)
-
-The same comparison as a heatmap (employment category x activity type, shared colour scale per source):
-
-![Activity heatmap by employment](assets/activity_heatmap_by_employment.png)
-
-
-### ToDo
-
-- Provide additional output formats; combined acts and trips, acts with/out trips, forward/backward activity/trip combining, matsim xml?
-- Collect additional features, such as weather conditions and accessibility.
-- We currently combine all plan attributes as *person* attributes, but in fact we use *household*, *person*, *day*, and *plan* attributes. We could distinguish these better.
-- More data, see below: 
-
-
-|  source           |     | persons  | years     | label availability | source  |
-| ----------------- |---- | -------- |-----------|---------------|--------------------|
-| ODIN              | netherlands | 200k | 21        | C             | [request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
-| KTDB              | S.Korea | 100k | 21        | C             | [request](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
-| NTS               | UK  | 1.7m     | 02-23     | A             | [request](https://ukdataservice.ac.uk/) (not open)            |
-| CMAP              | US  | 30k      | 17-19     | A-            | [data](https://github.com/CMAP-REPOS/mydailytravel) (open) |
-| NHTS              | US  | 700k       | 01,09,17,22 | A           | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) (open) |
-| QHTS        | AUS | 50k     | 12-24     | A-            | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) (open) |
-| VISTA         | AUS | 100k     | 12 -> 25  | B+            | [here](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) (open) |
-| LTDS              | UK  | 70k     | 19 -> 24  | B+            | request from TfL (open) |
-| **Metropolitan (US datasets)** :   ||||                        | [data](https://www.nrel.gov/transportation/secure-transportation-data/tsdc-metropolitan-travel-survey-archive) (open) |
-| California        | US  | 40k      | 01        | OK?           |
-| LA                | US  | ?        | 01        | BAD?          |
-| Seattle           | US  | 37k      | 00/02     | OK?           |
-| SanFran           | US  | 35k      | 00        | OK?           |
-| NY                | US  | 27k      | 98        | OK?           |
-| Philly            | US  | 10k      | 00        | OK?           |
-| Pheonix           | US  | 10k      | 02        | OK?           |
-| Baltimore         | US  | 8k       | 01        | OK?           |
-| Indiana           | US  | 8k       | 07/08     | OK?           |
-| Spokane           | US  | 7k       | 05        | BAD?          |
-| Idaho             | US  | 6k       | 02        | OK?           |
-| Columbia          | US  | ~3k      | 07        | OK?           |
-| Anchorage         | US  | 3k       | 01        | OK?           |
 
 
 ## Usage
@@ -115,6 +96,28 @@ The same comparison as a heatmap (employment category x activity type, shared co
 uv sync          # install dependencies and register the CLI entry point
 foundata --help
 ```
+
+### Trying it out with example data
+
+`data_dir_template/` is a small, runnable stand-in for a real `~/Data/foundata/`
+tree — same folder/file layout, just a handful of rows per source — so you can
+try the pipeline without access to any of the real (often restricted) survey
+extracts:
+
+```bash
+foundata run --data-root data_dir_template --output /tmp/out
+```
+
+CMAP, NHTS, QHTS and VISTA are public/open datasets, sampled directly with
+real values. ODiN, KTDB, NTS and LTDS are restricted-access research datasets:
+their rows use fresh synthetic ids and have their demographic/attribute
+columns independently shuffled across the sampled group, so no real
+respondent's full attribute combination appears, while trip/stage rows are
+left internally intact so trip logic (sequencing, times, zones) stays
+coherent. See `scripts/build_data_dir_template.py` for how it's built (it
+regenerates `data_dir_template/` from a real `~/Data/foundata/` tree — sibling
+to `scripts/generate_fixtures.py`, which builds the smaller `tests/fixtures/`
+used by the unit tests).
 
 ### Adding a new source
 
@@ -244,3 +247,30 @@ Options:
 | `--split PCT` | `-s` | `20` | Test set size as a percentage. |
 | `--output DIR` | `-o` | parent of first input | Output directory. |
 | `--seed N` | | `42` | Random seed for reproducibility. |
+
+
+### Diagnostics
+
+Departure/arrival time-of-day density, wrapped onto a 0-24h axis. The legend shows each source's share of trips with a raw start/end time greater than 1440 minutes (an uncorrected day-wrap is a common symptom of a source-specific time bug):
+
+![Trip time of day](assets/trip_time_of_day.png)
+
+Minute-within-hour "heaping" per source — self-reported times tend to round to :00/:15/:30/:45, and a source heaping much more than the others usually means less precise raw timestamps:
+
+![Trip time heaping](assets/trip_time_heaping.png)
+
+Trip duration, implied speed (`distance / duration`), and the share of trips with non-positive duration, per source:
+
+![Trip time diagnostics](assets/trip_time_diagnostics.png)
+
+Activity duration distributions, faceted by activity type:
+
+![Activity duration by type](assets/activity_duration_by_type.png)
+
+Mean per-person activity count (work, education) by employment category:
+
+![Activity count by employment](assets/activity_count_by_employment.png)
+
+The same comparison as a heatmap (employment category x activity type, shared colour scale per source):
+
+![Activity heatmap by employment](assets/activity_heatmap_by_employment.png)
