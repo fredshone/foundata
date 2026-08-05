@@ -1,0 +1,5 @@
+hhid,surveyperiod,travdow,travmonth,daytype,dwelltype,owndwell,hhsize,hhinc,visitors,aveage,youngest,oldest,yearslived,monthslived,adultbikes,kidsbikes,totalbikes,cars,fourwds,utes,vans,trucks,mbikes,othervehs,totalvehs,wdhhwgt_LGA,wehhwgt_LGA,homeLGA,homesubregion_ASGC,homeregion_ASGC
+Y13H0240434,2012-13,Saturday,January,Weekend,Terrace/Townhouse,Fully Owned,2,,0,80,78,83,16,2,1,0,1,2,0,0,0,0,0,0,2,,211.06,Hobsons Bay (C),MELB - Middle,MSD_31LGAs
+Y16H1900201,2015-16,Monday,March,Weekday,Separate House,Being Purchased,5,"$1,625",0,34,12,55,12,4,1,2,3,3,0,0,0,0,0,0,3,84.66,,Knox (C),MELB - Outer,MSD_31LGAs
+Y18H2980531,2017-18,Wednesday,April,Weekday,Other,Something Else,2,$700,0,76,75,78,10,1,0,0,0,2,0,0,0,0,0,0,2,71.86,,Melton (C),MELB - Outer,MSD_31LGAs
+Y18H3150424,2018-19,Wednesday,August,Weekday,Separate House,Being Purchased,4,"$2,498",0,24,7,41,10,2,1,2,3,1,1,0,0,0,0,0,2,53.03,,Moreland (C),MELB - Middle,MSD_31LGAs

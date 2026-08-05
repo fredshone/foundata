@@ -1,0 +1,10 @@
+HHID,PERSID,AGEGROUP,SEX,RELATIONSHIP,CARLICENCE,CARLICTYPE,MCLICENCE,MCLICTYPE,OTHERLICENCE,WORKSTATUS,ANZSCO_1-digit,ANZSCO_3-digit,INDUSTRY,STUDYING,ED_TYPE,MAINACT,STARTPLACE,ANYSTOPS,LASTLEFT,ASSISTAGE,ASSISTLTHC,ASSISTSTHC,ASSISTDISABILITY,ASSISTENGLISH,ASSISTOTHER,ASSISTANY,WFHDAY,WFHWEEK,WFHCORONA,HSGROCERY,HSTAKEAWAY,HSCFET,HSOTHER,INCOME,RIDESHARETRIPS,RIDESHAREENT,RIDESHAREHC,RIDESHAREED,RIDESHARESHOP,RIDESHAREWORK,RIDESHAREOTHER,TAXITRIPS,TAXIENT,TAXIHC,TAXIED,TAXISHOP,TAXIWORK,TAXIOTHER,DEMOGWGT21,PERSWGT21
+61082,61082/1000,10,female,,1,fullLicence,0,,0,workPartTime,4,400,education,,,Part-time Work,home,1,,,,,,,,,0,0,0,,,,,,0,,,,,,,0,,,,,,,0.90702224,144.96037
+61082,61082/1007,10,male,spouse,1,fullLicence,0,,0,workFullTime,3,331,construction,,,Full-time Work,home,1,08/22/19 00:00:00,,,,,,,,0,0,0,,,,,,0,,,,,,,0,,,,,,,0.95611155,152.80583
+61082,61082/1008,3,male,child,0,,0,,0,,,,,Primary,1,Primary School,home,1,,1,,,,,,1,0,0,0,,,,,,0,,,,,,,0,,,,,,,1.0448946,166.99513
+63960,63960/1000,17,female,,0,,0,,0,retired,,,,,,Retired,home,1,,,,,,,,,0,0,0,,,,,,0,,,,,,,0,,,,,,,0.79549265,43.159935
+63960,63960/1001,17,male,spouse,1,fullLicence,0,,0,retired,,,,,,Retired,home,1,,,,,,,,,0,0,0,,,,,,0,,,,,,,0,,,,,,,0.8864308,48.093842
+85011,85011/1000,12,female,,1,fullLicence,1,fullLicence,0,workFullTime,2,242,education,,,Full-time Work,home,1,,,,,,,,0,0,0,0,,,,,,,,,,,,,,,,,,,,1.1584598,74.052078
+85011,85011/1001,13,female,spouse,1,fullLicence,0,,0,otherReason,,,,tertiaryPartTime,,Part-time TAFE/Uni,other,1,,,,,,,,0,0,,,,,,,,,,,,,,,,,,,,,,1.0975062,70.155754
+98702,98702/1000,18,male,,1,fullLicence,0,,0,retired,,,,,,Retired,home,1,,,,,,,,0,0,,,,,,,,,,,,,,,,,,,,,,1.0704,32.575256
+98702,98702/1001,14,female,spouse,1,fullLicence,0,,0,workFullTime,1,100,retail,,,Full-time Work,home,1,,,,,,,,0,0,0,0,,,,,,,,,,,,,,,,,,,,1.1282287,34.335144

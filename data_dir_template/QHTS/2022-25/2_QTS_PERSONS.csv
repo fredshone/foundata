@@ -1,0 +1,15 @@
+HHID,PERSID,AGEGROUP,SEX,RELATIONSHIP,CARLICENCE,CARLICTYPE,MCLICENCE,MCLICTYPE,OTHERLICENCE,WORKSTATUS,ANZSCO_1-digit,ANZSCO_3-digit,INDUSTRY,STUDYING,ED_TYPE,MAINACT,STARTPLACE,ANYSTOPS,REASON,LASTLEFT,ASSISTAGE,ASSISTLTHC,ASSISTSTHC,ASSISTDISABILITY,ASSISTENGLISH,ASSISTOTHER,ASSISTANY,WFHDAY,WFHWEEK,FIFTYCENTNEWTRIP,FIFTYCENTMODE,INCOME,DEMOGWGT24,PERSWGT24
+141973,141973/1000,6,female,,1,fullLicence,0,,0,workFullTime,2,252,health,,,Full-time Work,home,1,,,,,,,,,,0,0,,,"$1,750 - $1,999 per week ($91,000 - $103,999 per year)",1.3134818,79.775688
+141973,141973/1001,7,male,spouse,1,fullLicence,1,,0,workFullTime,2,232,professional,,,Full-time Work,home,1,,,,,,,,,,1,3,,,"$1,500 - $1,749 per week ($78,000 - $90,999 per year)",1.2877644,78.213715
+143184,143184/1000,10,female,,1,fullLicence,0,,0,workFullTime,2,241,education,,,Full-time Work,home,1,,,,,,,,,,0,0,,,"$1,500 - $1,749 per week ($78,000 - $90,999 per year)",0.98430777,106.64462
+143184,143184/1001,10,male,spouse,1,fullLicence,0,,0,workFullTime,5,552,financial,,,Full-time Work,home,1,,,,,,,,,,1,2,,,"$3,500 or more per week ($182,000 or more per year)",0.92905658,100.65844
+143184,143184/1002,4,male,child,1,p1Licence,0,,0,otherReason,,,,secondary,2,Secondary School,home,1,,,,,,,,,,0,,,,"$1 - $149 per week ($1 - $7,799 per year)",1.1236304,121.7395
+143184,143184/1003,3,male,child,0,,0,,0,,,,,secondary,2,Secondary School,home,1,,,,,,,,,,0,,,,Nil or negative income,1.0308492,111.68714
+143184,143184/1004,3,male,child,0,,0,,0,,,,,primary,1,Primary School,home,1,,,,,,,,,,0,,,,Nil or negative income,1.0308492,111.68714
+143804,143804/1000,10,male,,1,fullLicence,0,,1,workFullTime,1,133,construction,,,Full-time Work,home,1,,,,,,,,,,0,0,,,"$1,000 - $1,249 per week ($52,000 - $64,999 per year)",0.82623112,148.03867
+143804,143804/1001,9,female,spouse,1,fullLicence,0,,0,workFullTime,6,610,retail,,,Full-time Work,home,1,,,,,,,,,,0,0,,,"$1,000 - $1,249 per week ($52,000 - $64,999 per year)",0.88210148,158.04915
+143804,143804/1002,4,male,child,0,,0,,0,workPartTime,6,631,retail,secondary,1,Part-time Work,home,1,,,,,,,,,,0,0,,,"$1 - $149 per week ($1 - $7,799 per year)",1.0614911,190.19101
+143804,143804/1003,3,female,child,0,,0,,0,,,,,secondary,1,Secondary School,home,1,,,,,,,,,,0,,,,Nil or negative income,0.86759216,155.44946
+175162,175162/1000,13,male,,1,fullLicence,1,fullLicence,0,workFullTime,1,134,education,,,Full-time Work,home,1,,,,,,,,,,0,0,,,Prefer not to say / can't say,1.1859566,183.14612
+175162,175162/1001,13,female,spouse,1,fullLicence,0,,0,shortTermIllness,,,,,,Illness,home,1,,,,,,,,,,0,,,,Prefer not to say / can't say,1.021487,157.74724
+175162,175162/1002,5,male,child,1,fullLicence,0,,0,otherReason,,,,tertiaryFullTime,,Full-time TAFE/Uni,home,1,,,,,,,,,,0,,,,Nil or negative income,1.3191205,203.71049
