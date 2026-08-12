@@ -219,9 +219,9 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
-        employment=pl.when(pl.col("ft") == "Y")
+        employment=pl.when(pl.col("ft").is_in(["Y", "Yes"]))
         .then(pl.lit("ft-employed"))
-        .when(pl.col("pt") == "Y")
+        .when(pl.col("pt").is_in(["Y", "Yes"]))
         .then(pl.lit("pt-employed"))
         .when(pl.col("studying") != "No Study")
         .then(pl.lit("student"))
