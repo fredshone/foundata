@@ -1398,3 +1398,68 @@ def test_fill_unknown_empty_stats_when_no_nulls():
     df = pl.DataFrame({"a": [1, 2, 3], "b": ["x", "y", "z"]})
     _, stats = post_process.fill_unknown(df)
     assert stats == {}
+
+
+# ---------------------------------------------------------------------------
+# add_age_band
+# ---------------------------------------------------------------------------
+
+
+def test_add_age_band():
+    df = pl.DataFrame({"age": [35, 19, 70, 40, 22, 45]})
+    banded = post_process.add_age_band(df)
+    assert banded["age_band"].to_list() == [
+        "35-44",
+        "18-20",
+        "65+",
+        "35-44",
+        "21-24",
+        "45-54",
+    ]
+
+
+def test_add_age_band_preserves_nulls():
+    df = pl.DataFrame({"age": [10, None, 30]})
+    banded = post_process.add_age_band(df)
+    assert banded["age_band"].to_list() == ["0-10", None, "25-34"]
+
+
+# ---------------------------------------------------------------------------
+# activity_counts_per_person
+# ---------------------------------------------------------------------------
+
+
+def test_activity_counts_per_person():
+    attrs = _make_attributes(
+        [
+            {"pid": "p1", "hh_zone": "urban"},
+            {"pid": "p2", "hh_zone": "urban"},
+            {"pid": "p3", "hh_zone": "urban"},
+            {"pid": "p4", "hh_zone": "urban"},
+        ]
+    )
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p2", "p3", "p4"],
+            "seq": [0, 0, 0, 0],
+            "oact": ["home", "home", "home", "home"],
+            "dact": ["education", "work", "work", "work"],
+            "ozone": ["urban"] * 4,
+            "dzone": ["urban"] * 4,
+            "mode": ["car", "car", "car", "car"],
+            "tst": [480, 1500, 490, 600],  # p2 day-wraps
+            "tet": [510, 1530, 480, 605],  # p3 has tst > tet
+            "distance": [5.0, 2.0, 1.0, 50.0],
+        },
+        schema=TRIPS_SCHEMA,
+    )
+
+    activities = post_process.trips_to_activities(attrs, trips)
+    counts = post_process.activity_counts_per_person(
+        attrs, activities, ["work", "education"]
+    ).sort("pid")
+    assert counts["pid"].to_list() == ["p1", "p2", "p3", "p4"]
+    # p2's trip day-wraps (tet=1530 > 1440), so trips_to_activities drops its
+    # destination activity — p2 contributes 0 to every activity type here.
+    assert counts["work"].to_list() == [0, 0, 1, 1]
+    assert counts["education"].to_list() == [1, 0, 0, 0]

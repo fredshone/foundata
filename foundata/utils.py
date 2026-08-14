@@ -314,6 +314,35 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def assign_retired(
+    attributes: pl.DataFrame, trips: pl.DataFrame, age_threshold: int = 60
+) -> pl.DataFrame:
+    """Reclassify unemployed persons as retired based on age and trip purpose.
+
+    Some sources (e.g. ktdb) have no "retired" category and instead code
+    everyone who isn't a student or employed as "unemployed". A person is
+    reclassified as "retired" when they are "unemployed", aged
+    `age_threshold` or older, and make no trips with purpose "work" (dact).
+    """
+    has_work_trip = (
+        trips.filter(pl.col("dact") == "work")
+        .select("pid")
+        .unique()
+        .with_columns(has_work_trip=pl.lit(True))
+    )
+    attributes = attributes.join(has_work_trip, on="pid", how="left")
+    attributes = attributes.with_columns(
+        employment=pl.when(
+            (pl.col("employment") == "unemployed")
+            & (pl.col("age") >= age_threshold)
+            & pl.col("has_work_trip").is_null()
+        )
+        .then(pl.lit("retired"))
+        .otherwise(pl.col("employment"))
+    )
+    return attributes.drop("has_work_trip")
+
+
 def assign_education_to_escort(trips: pl.DataFrame) -> pl.DataFrame:
     """Assign education trips to escort trips.
 

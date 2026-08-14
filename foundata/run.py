@@ -6,6 +6,7 @@ from pathlib import Path
 import polars as pl
 
 from foundata import (
+    anomaly,
     cmap,
     filter,
     fix,
@@ -14,12 +15,13 @@ from foundata import (
     nhts,
     nts,
     odin,
+    plots,
     post_process,
     qhts,
+    tables,
     utils,
     verify,
     vista,
-    viz,
 )
 
 CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
@@ -345,10 +347,11 @@ def runner(
     # Visualisations
     # ------------------------------------------------------------------
     print_markdown_table(
-        "Summary", viz.summary_table(all_attributes, all_trips, markdown=True)
+        "Summary",
+        tables.summary_table(all_attributes, all_trips, markdown=True),
     )
 
-    viz.plot_numeric_hist_grid(
+    plots.numeric_hist_grid(
         all_attributes,
         on="source",
         cmap_name="Dark2",
@@ -367,27 +370,24 @@ def runner(
         save_path=output / "attributes_numeric.png",
     )
 
-    viz.plot_categorical_bar_grid(
+    plots.categorical_bar_grid(
         all_attributes,
         on="source",
         save_path=output / "attributes_categorical.png",
     )
 
-    viz.plot_summary_trends(
+    plots.summary_trends(
         all_attributes,
         on="source",
         cmap_name="Dark2",
         save_path=output / "attributes_trends.png",
     )
 
-    print_markdown_table(
-        "Time Quality",
-        viz.time_quality_summary_table(
-            all_attributes, all_trips, markdown=True
-        ),
-    )
+    # ------------------------------------------------------------------
+    # Diagnostics and anomaly detection
+    # ------------------------------------------------------------------
 
-    viz.plot_time_of_day_profile(
+    plots.time_of_day_profile(
         all_attributes,
         all_trips,
         on="source",
@@ -395,7 +395,7 @@ def runner(
         save_path=output / "trip_time_of_day.png",
     )
 
-    viz.plot_time_heaping(
+    plots.time_heaping(
         all_attributes,
         all_trips,
         on="source",
@@ -403,7 +403,7 @@ def runner(
         save_path=output / "trip_time_heaping.png",
     )
 
-    viz.plot_trip_time_diagnostics(
+    plots.trip_time_diagnostics(
         all_attributes,
         all_trips,
         on="source",
@@ -411,35 +411,128 @@ def runner(
         save_path=output / "trip_time_diagnostics.png",
     )
 
-    viz.plot_activity_duration_by_type(
+    plots.activity_duration_by_type(
         all_attributes,
-        all_trips,
+        activities,
         on="source",
         cmap_name="Dark2",
         save_path=output / "activity_duration_by_type.png",
     )
 
-    print_markdown_table(
-        "Activity Participation & Duration",
-        viz.activity_summary_table(all_attributes, all_trips, markdown=True),
-    )
-
-    viz.plot_activity_count_by_attribute(
+    plots.attribute_activity_heatmap(
         all_attributes,
-        all_trips,
-        attribute_col="employment",
-        act_types=["work", "education"],
-        on="source",
-        cmap_name="Dark2",
-        save_path=output / "activity_count_by_employment.png",
-    )
-
-    viz.plot_attribute_activity_heatmap(
-        all_attributes,
-        all_trips,
+        activities,
         attribute_col="employment",
         on="source",
         save_path=output / "activity_heatmap_by_employment.png",
     )
 
-    print(f"Figures saved to {output}")
+    plots.attribute_activity_heatmap(
+        all_attributes,
+        activities,
+        attribute_col="hh_income",
+        n_bins=8,
+        on="source",
+        save_path=output / "activity_heatmap_by_hh_income.png",
+    )
+
+    plots.attribute_activity_heatmap(
+        all_attributes,
+        activities,
+        attribute_col="year",
+        on="source",
+        save_path=output / "activity_heatmap_by_year.png",
+    )
+
+    plots.attribute_activity_heatmap(
+        all_attributes,
+        activities,
+        attribute_col="day",
+        on="source",
+        save_path=output / "activity_heatmap_by_day.png",
+    )
+
+    plots.activities_attributes_grid(
+        all_attributes,
+        activities,
+        attribute_cols={
+            "employment": "bar",
+            "hh_income": "line",
+            "age": "line",
+        },
+        on="source",
+        cmap_name="Dark2",
+        save_path=output / "activity_counts_grid.png",
+    )
+
+    all_attributes_age = post_process.add_age_band(all_attributes)
+    plots.attribute_activity_heatmap(
+        all_attributes_age,
+        activities,
+        attribute_col="age_band",
+        on="source",
+        save_path=output / "activity_heatmap_by_age.png",
+    )
+
+    # anomaly detection - time quality
+    print_markdown_table(
+        "Time Quality",
+        anomaly.time_quality_summary_table(
+            all_attributes, all_trips, markdown=True
+        ),
+    )
+
+    # anomaly detection - activities
+    activity_distribution_shift = anomaly.activity_distribution_shift_matrix(
+        all_attributes, activities, on=["source", "year"]
+    )
+    activity_distribution_shift.write_csv(
+        output / "activity_distribution_shift_matrix.csv"
+    )
+    activity_distribution_shift_outliers = (
+        anomaly.flag_distribution_shift_outliers(
+            activity_distribution_shift,
+            on=["source", "year"],
+            top_n=20,
+            markdown=True,
+        )
+    )
+    print_markdown_table(
+        "20 most unusual activity-participation distributions by source-year "
+        "(Jensen-Shannon divergence vs the pooled activity-type mix across "
+        "all sources and years)",
+        activity_distribution_shift_outliers,
+    )
+
+    # anomaly detection - attributes
+    distribution_shift = anomaly.attribute_distribution_shift_matrix(
+        all_attributes, on=["source", "year"]
+    )
+    distribution_shift.write_csv(output / "distribution_shift_matrix.csv")
+    distribution_shift_outliers = anomaly.flag_distribution_shift_outliers(
+        distribution_shift, on=["source", "year"], top_n=20, markdown=True
+    )
+    print_markdown_table(
+        "20 most unusual attribute distributions by source-year (Jensen-Shannon "
+        "divergence vs the pooled distribution across all sources and years)",
+        distribution_shift_outliers,
+    )
+
+    # anomaly detection - conditionality
+    conditionality_by_year = anomaly.conditionality_matrix(
+        all_attributes, activities, on=["source", "year"]
+    )
+    conditionality_by_year.write_csv(
+        output / "conditionality_matrix_by_year.csv"
+    )
+    outliers_by_year = anomaly.flag_conditionality_outliers(
+        conditionality_by_year, on=["source", "year"], top_n=20, markdown=True
+    )
+    print_markdown_table(
+        "Top 20 conditionality outliers by source-year (attribute x activity "
+        "Cramér's V vs peer source-years, most anomalous first; catches "
+        "per-year mapping bugs that a source-level check averages away)",
+        outliers_by_year,
+    )
+
+    print(f"Done, outputs saved to {output}")

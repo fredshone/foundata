@@ -177,7 +177,7 @@ def preprocess_persons(
 
     persons = persons.with_columns(
         pl.col("disability").replace_strict(
-            disability_mapping, default=pl.lit("unknown")
+            disability_mapping, default=pl.lit("no")
         )
     )
 
@@ -204,7 +204,9 @@ def preprocess_persons(
             )
         )
         persons = persons.with_columns(
-            hh_income=pl.col("income").sum().over("hid")
+            hh_income=pl.when(pl.col("income").is_not_null().any().over("hid"))
+            .then(pl.col("income").sum().over("hid"))
+            .otherwise(None)
         ).drop("income")
     else:
         persons = persons.with_columns(hh_income=pl.lit(None, dtype=pl.Int32))
@@ -244,10 +246,7 @@ def preprocess_trips(
     # survey's R_TIME.csv lookup table: TIME=0 -> 04:00:00), not literal
     # minutes-since-midnight. Shift by 4 hours to align with the template's
     # midnight-relative tst/tet convention.
-    trips = trips.with_columns(
-        tst=pl.col("tst") + 240,
-        tet=pl.col("tet") + 240,
-    )
+    trips = trips.with_columns(tst=pl.col("tst") + 240, tet=pl.col("tet") + 240)
 
     mode_map = config["mode_mappings"]
     act_map = config["act_mappings"]

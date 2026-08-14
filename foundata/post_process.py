@@ -3,6 +3,48 @@ from typing import Optional
 import polars as pl
 import polars.selectors as cs
 
+# Fixed age bands used for cross-source diagnostics (plots and conditionality
+# checks alike). Unlike `discretise_numeric` (data-driven quantile/uniform
+# bins, recomputed per dataframe), these breaks are pinned to ages where
+# education/workforce participation genuinely changes (16, 18, 21) and are
+# applied identically to every source. A source whose raw age coding is
+# coarser than these bands (e.g. one combined "17-24" category) will show up
+# as flat/uninformative within a band, rather than being invisibly
+# re-smoothed by a fresh source-specific cut.
+AGE_BAND_BREAKS = [10, 15, 17, 20, 24, 34, 44, 54, 64]
+AGE_BAND_LABELS = [
+    "0-10",
+    "11-15",
+    "16-17",
+    "18-20",
+    "21-24",
+    "25-34",
+    "35-44",
+    "45-54",
+    "55-64",
+    "65+",
+]
+
+
+def add_age_band(
+    attributes: pl.DataFrame,
+    age_col: str = "age",
+    breaks: list[float] = AGE_BAND_BREAKS,
+    labels: list[str] = AGE_BAND_LABELS,
+    out_col: str = "age_band",
+) -> pl.DataFrame:
+    """Add a fixed-band categorical column derived from a numeric age column.
+
+    See `AGE_BAND_BREAKS`/`AGE_BAND_LABELS` for why these bands are fixed
+    rather than data-driven. Nulls in `age_col` stay null in `out_col`.
+    """
+    return attributes.with_columns(
+        pl.col(age_col)
+        .cut(breaks, labels=labels)
+        .cast(pl.String)
+        .alias(out_col)
+    )
+
 
 def trips_to_activities(
     attributes: Optional[pl.DataFrame], trips: pl.DataFrame
@@ -79,6 +121,32 @@ def trips_to_activities(
         len(activities.select("pid").unique()),
     )
     return activities
+
+
+def activity_counts_per_person(
+    attributes: pl.DataFrame, activities: pl.DataFrame, act_types: list[str]
+) -> pl.DataFrame:
+    """Per-person activity counts, one column per `act_types` entry, zero-filled.
+
+    `activities` should come from `trips_to_activities`. Every pid in
+    `attributes` gets a row, including persons with no trips (all counts 0)
+    — needed so attribute categories with mostly-inactive persons (e.g.
+    "retired") aren't silently dropped from the denominator.
+    """
+    counts = (
+        activities.filter(pl.col("act").is_in(act_types))
+        .group_by("pid", "act")
+        .agg(n=pl.len())
+        .pivot(on="act", index="pid", values="n")
+    )
+    counts = attributes.select("pid").join(counts, on="pid", how="left")
+    counts = counts.with_columns(
+        (
+            pl.col(act).fill_null(0) if act in counts.columns else pl.lit(0)
+        ).alias(act)
+        for act in act_types
+    )
+    return counts.select("pid", *act_types)
 
 
 def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:

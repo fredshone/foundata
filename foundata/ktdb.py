@@ -34,6 +34,7 @@ def load(
     print(f"Loading {SOURCE} data...")
     attributes = load_persons(data_root, person_config)
     trips = load_trips(data_root, trips_config)
+    attributes = utils.assign_retired(attributes, trips)
 
     # transfer access egress distances from trips to attributes
     ae_distances = (
@@ -154,10 +155,18 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         hh_income=pl.col("hh_income")
         .replace_strict(config["hh_income"], default=None)
         .map_elements(
-            lambda b: utils.sample_to_euro(b, KRW_TO_EURO),
+            # config bounds are in millions of KRW (e.g. [1, 3] for
+            # 1-3 million KRW/month); scale to actual KRW *before*
+            # sampling, since sample_to_euro truncates to int(...) after
+            # applying the exchange rate — applying the million-KRW ->
+            # KRW conversion afterwards (as `* 1_000_000` below) is too
+            # late, as by then the sampled EUR value has already been
+            # truncated to 0 for every bracket.
+            lambda b: utils.sample_to_euro(
+                [v * 1_000_000 for v in b], KRW_TO_EURO
+            ),
             return_dtype=pl.Int32,
         )
-        * 1000000
         * 12,
         dwelling=pl.col("dwelling").replace_strict(
             config["dwelling"], default="unknown"

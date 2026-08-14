@@ -1,7 +1,7 @@
 import math
 from itertools import cycle
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Optional
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -12,175 +12,7 @@ from matplotlib.patches import Patch
 from foundata import post_process
 
 
-def group_null_pct(
-    df: pl.DataFrame,
-    group_cols: Iterable[str],
-    ignore: Optional[Iterable[str]] = None,
-    return_per_column: bool = False,
-    return_overall: bool = True,
-) -> pl.DataFrame:
-    """
-    Compute null percentages per group.
-    - return_per_column=True: adds one column per input column with % nulls
-    - return_overall=True: adds a single 'overall_null_pct' across all kept columns
-    """
-    ignore = list(ignore) if ignore else []
-    kept_cols = df.select(pl.all().exclude(ignore)).columns
-    k = len(kept_cols)
-    if k == 0 and return_overall:
-        raise ValueError(
-            "No columns left after excluding; overall % null is undefined."
-        )
-
-    agg_exprs = []
-
-    if return_per_column:
-        agg_exprs.append((pl.all().exclude(ignore).is_null().mean() * 100))
-
-    if return_overall:
-        total_nulls_expr = pl.fold(
-            acc=pl.lit(0),
-            function=lambda acc, s: acc + s,
-            exprs=[pl.col(c).is_null().sum() for c in kept_cols],
-        )
-        agg_exprs.append(
-            (total_nulls_expr / (pl.len() * pl.lit(k)) * 100).alias(
-                "overall_null_pct"
-            )
-        )
-
-    summary = df.group_by(list(group_cols)).agg(agg_exprs)
-    summary = summary.with_columns(
-        pl.col(col).list.first()
-        for col in summary.columns
-        if summary[col].dtype == pl.List
-    )
-    return summary
-
-
-def summary_table(
-    attributes: pl.DataFrame, trips: pl.DataFrame, markdown: bool = False
-) -> pl.DataFrame | str:
-    """Produce a per-source summary table (persons, nulls %, trips, kms).
-
-    If `markdown` is True, return a markdown-formatted string table (as
-    used in the README) instead of a DataFrame.
-    """
-    # treat "unknown" as null for null-pct calculation
-    attributes = attributes.with_columns(
-        pl.when(pl.col(col) == "unknown")
-        .then(None)
-        .otherwise(pl.col(col))
-        .alias(col)
-        for col in attributes.columns
-        if attributes[col].dtype == pl.String
-    )
-
-    attribute_counts = attributes.group_by("source").agg(n_attributes=pl.len())
-
-    null_counts = group_null_pct(
-        attributes,
-        group_cols=["source"],
-        ignore=["hid", "pid", "source"],
-        return_per_column=False,
-        return_overall=True,
-    )
-
-    trip_counts = (
-        trips.join(attributes.select("pid", "source"), on="pid", how="left")
-        .group_by("source")
-        .agg(n_trips=pl.len())
-    )
-
-    distance_counts = (
-        trips.join(attributes.select("pid", "source"), on="pid", how="left")
-        .group_by("source")
-        .agg(total_distance=pl.col("distance").sum() / 1000000)
-    )
-
-    attributes_summary = (
-        attribute_counts.join(
-            null_counts.select("source", "overall_null_pct"),
-            on="source",
-            how="left",
-        )
-        .join(trip_counts, on="source", how="left")
-        .join(distance_counts, on="source", how="left")
-        .fill_null(0)
-        .rename(
-            {
-                "n_attributes": "persons",
-                "n_trips": "trips",
-                "overall_null_pct": "nulls",
-                "total_distance": "kms (millions)",
-            }
-        )
-    )
-
-    total_nulls = sum(
-        attributes[col].is_null().sum()
-        for col in attributes.select(
-            pl.all().exclude("hid", "pid", "source")
-        ).columns
-    )
-
-    total_row = pl.DataFrame(
-        {
-            "source": ["total"],
-            "persons": [attributes.height],
-            "trips": [trips.height],
-            "nulls": [
-                total_nulls / (attributes.height * (attributes.width - 3)) * 100
-            ],
-            "kms (millions)": [
-                trips.select(pl.col("distance").sum() / 1000000).item()
-            ],
-        },
-        schema={
-            "source": pl.String,
-            "persons": pl.UInt32,
-            "trips": pl.UInt32,
-            "nulls": attributes_summary["nulls"].dtype,
-            "kms (millions)": attributes_summary["kms (millions)"].dtype,
-        },
-    )
-
-    table = pl.concat([attributes_summary, total_row], how="diagonal")
-
-    if markdown:
-        return _summary_table_to_markdown(table)
-
-    return table
-
-
-def _summary_table_to_markdown(table: pl.DataFrame) -> str:
-    headers = [
-        "Source",
-        "Plans",
-        "Missing attributes",
-        "Trips",
-        "Trip kms (millions)",
-    ]
-    lines = [
-        "| " + " | ".join(headers) + " |",
-        "|" + "|".join("-" * len(h) for h in headers) + "|",
-    ]
-    for row in table.iter_rows(named=True):
-        is_total = row["source"] == "total"
-        cells = [
-            row["source"],
-            f"{row['persons']:,}",
-            f"{row['nulls']:.0f}%",
-            f"{row['trips']:,}",
-            f"{row['kms (millions)']:.1f}",
-        ]
-        if is_total:
-            cells = [f"**{cell}**" for cell in cells]
-        lines.append("| " + " | ".join(cells) + " |")
-    return "\n".join(lines)
-
-
-def plot_numeric_hist_grid(
+def numeric_hist_grid(
     df: pl.DataFrame,
     on: str = "source",
     n_cols: int = 3,
@@ -497,7 +329,7 @@ def _plot_categorical_column(ax, df: pl.DataFrame, col: str, on: str):
     ax.set_facecolor("lightgray")
 
 
-def plot_summary_trends(
+def summary_trends(
     df: pl.DataFrame,
     on: str = "source",
     cmap_name: str = "tab20",
@@ -629,11 +461,31 @@ def plot_summary_trends(
         plt.show()
 
 
-def plot_categorical_bar_grid(
+def _stratified_sample(
+    df: pl.DataFrame, on: str, max_per_group: int
+) -> pl.DataFrame:
+    """Sample up to `max_per_group` rows per `on` group, not globally.
+
+    A single global sample over pooled multi-source data can, purely by
+    chance, drop every row of a rare category within a source that's a
+    small share of the total — making that category look absent from that
+    source when it isn't. Sampling within each group avoids that.
+    """
+    groups = df.select(pl.col(on)).drop_nulls().unique().to_series().to_list()
+    parts = []
+    for g in groups:
+        sub = df.filter(pl.col(on) == g)
+        if sub.height > max_per_group:
+            sub = sub.sample(n=max_per_group, shuffle=True)
+        parts.append(sub)
+    return pl.concat(parts, how="vertical") if parts else df.head(0)
+
+
+def categorical_bar_grid(
     df: pl.DataFrame,
     on: str = "source",
     n_cols: int = 3,
-    max_sample: int = 10_000,
+    max_sample_per_group: int = 1000,
     cmap_name: str = "tab20",
     ignore_cols: set | None = None,
     save_path: str | Path | None = None,
@@ -654,10 +506,7 @@ def plot_categorical_bar_grid(
         n_rows, n_cols, figsize=(5 * n_cols, 3.0 * n_rows), squeeze=False
     )
 
-    if df.height > max_sample:
-        df_plot = df.sample(n=max_sample, shuffle=True)
-    else:
-        df_plot = df
+    df_plot = _stratified_sample(df, on, max_sample_per_group)
 
     fig.patch.set_facecolor("lightgray")
 
@@ -699,7 +548,74 @@ def _non_null_groups(df: pl.DataFrame, on: str) -> list:
     return groups
 
 
-def plot_time_of_day_profile(
+def _kde_bandwidth(vals: np.ndarray) -> float:
+    """Silverman's rule of thumb, robust to skew via min(std, IQR/1.34).
+
+    A bandwidth built from the raw std alone is inflated by the long right
+    tail typical of durations, which over-smooths the bulk of the
+    distribution where the anomalies usually show up. Falling back to the
+    IQR-based scale when it's smaller keeps the bandwidth sane for skewed
+    data without needing a manual bin width.
+    """
+    n = vals.size
+    std = float(np.std(vals))
+    q25, q75 = np.percentile(vals, [25, 75])
+    iqr = q75 - q25
+    scale = min(std, iqr / 1.34) if iqr > 0 else std
+    if scale <= 0:
+        scale = std if std > 0 else 1.0
+    return max(0.9 * scale * n ** (-1 / 5), 1e-6)
+
+
+def _gaussian_kde(
+    centers: np.ndarray, grid: np.ndarray, bandwidth: float, norm_n: int
+) -> np.ndarray:
+    diffs = (grid[:, None] - centers[None, :]) / bandwidth
+    density = np.exp(-0.5 * diffs**2).sum(axis=1)
+    return density / (norm_n * bandwidth * np.sqrt(2 * np.pi))
+
+
+def _kde_subsample(
+    vals: np.ndarray, max_sample: int, rng_seed: int = 0
+) -> np.ndarray:
+    if vals.size <= max_sample:
+        return vals
+    rng = np.random.default_rng(rng_seed)
+    return rng.choice(vals, size=max_sample, replace=False)
+
+
+def _kde_bounded(
+    vals: np.ndarray,
+    grid: np.ndarray,
+    lo: float = 0.0,
+    max_sample: int = 20_000,
+) -> np.ndarray:
+    """Gaussian KDE for a non-negative quantity (duration, etc.), reflected
+    at `lo` so density doesn't leak below the natural lower bound instead
+    of piling up at it as a clipped histogram would.
+    """
+    vals = _kde_subsample(vals, max_sample)
+    bandwidth = _kde_bandwidth(vals)
+    centers = np.concatenate([vals, 2 * lo - vals])
+    return _gaussian_kde(centers, grid, bandwidth, vals.size)
+
+
+def _kde_circular(
+    vals: np.ndarray,
+    grid: np.ndarray,
+    period: float = 24.0,
+    max_sample: int = 20_000,
+) -> np.ndarray:
+    """Gaussian KDE on a circular domain (e.g. hour-of-day), wrapping mass
+    across the period boundary instead of losing it there.
+    """
+    vals = _kde_subsample(vals, max_sample)
+    bandwidth = _kde_bandwidth(vals)
+    centers = np.concatenate([vals - period, vals, vals + period])
+    return _gaussian_kde(centers, grid, bandwidth, vals.size)
+
+
+def time_of_day_profile(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
     on: str = "source",
@@ -712,11 +628,11 @@ def plot_time_of_day_profile(
     """Departure/arrival time-of-day density per source.
 
     tst/tet are wrapped modulo 1440 (minutes/day) onto a 0-24h axis so
-    day-crossing trips still land in a sensible hour-of-day bucket. The
-    legend annotates each source's share of trips with tst/tet > 1440
-    (uncorrected day-wrap) — a source with a much larger share than the
-    others is a strong signal of a time-encoding bug rather than genuine
-    late-night travel.
+    day-crossing trips still land in a sensible hour-of-day bucket. Density
+    is a Gaussian KDE wrapped across the midnight boundary (rather than a
+    fixed-width histogram), so smooth diurnal shape and sharp anomalous
+    spikes (e.g. heaping at a specific hour) both show up without an
+    arbitrary bin width hiding or exaggerating either.
     """
     trips = trips.join(attributes.select("pid", on), on="pid", how="left")
     groups = _non_null_groups(trips, on)
@@ -727,8 +643,7 @@ def plot_time_of_day_profile(
     for ax in axes:
         ax.set_facecolor(ax_bg)
 
-    bin_edges = np.linspace(0, 24, 49)  # half-hour bins
-    wrap_shares = {}
+    grid = np.linspace(0, 24, 241)  # ~6-minute resolution
 
     for panel, (col, title) in enumerate(
         [("tst", "Departure Time of Day"), ("tet", "Arrival Time of Day")]
@@ -744,14 +659,11 @@ def plot_time_of_day_profile(
             )
             if vals.size == 0:
                 continue
-            if panel == 0:
-                wrap_shares[g] = float(np.mean(vals > 1440))
             hours = np.mod(vals, 1440) / 60.0
-            ax.hist(
-                hours,
-                bins=bin_edges,
-                histtype="step",
-                density=True,
+            density = _kde_circular(hours, grid)
+            ax.plot(
+                grid,
+                density,
                 color=color_map[g],
                 linewidth=linewidth,
                 label=str(g),
@@ -764,13 +676,7 @@ def plot_time_of_day_profile(
     axes[0].set_ylabel("density")
 
     handles = [
-        Line2D(
-            [0],
-            [0],
-            color=color_map[g],
-            lw=linewidth,
-            label=f"{g} ({wrap_shares.get(g, 0.0) * 100:.1f}% day-wrap)",
-        )
+        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
         for g in groups
     ]
     axes[1].legend(
@@ -790,7 +696,7 @@ def plot_time_of_day_profile(
         plt.show()
 
 
-def plot_time_heaping(
+def time_heaping(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
     on: str = "source",
@@ -859,7 +765,7 @@ def plot_time_heaping(
         plt.show()
 
 
-def plot_trip_time_diagnostics(
+def trip_time_diagnostics(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
     on: str = "source",
@@ -909,7 +815,7 @@ def plot_trip_time_diagnostics(
     hi = (
         float(np.percentile(all_durations, hi_p)) if all_durations.size else 1.0
     )
-    bin_edges = np.linspace(0, max(hi, 1.0), 40)
+    grid = np.linspace(0, max(hi, 1.0), 200)
     for g in groups:
         vals = (
             valid.filter(pl.col(on) == g)
@@ -919,16 +825,11 @@ def plot_trip_time_diagnostics(
         )
         if vals.size == 0:
             continue
-        vals = np.clip(vals, 0, hi)
-        ax.hist(
-            vals,
-            bins=bin_edges,
-            histtype="step",
-            density=True,
-            color=color_map[g],
-            linewidth=linewidth,
-            label=str(g),
+        density = _kde_bounded(vals, grid, lo=0.0)
+        ax.plot(
+            grid, density, color=color_map[g], linewidth=linewidth, label=str(g)
         )
+    ax.set_xlim(grid[0], grid[-1])
     ax.set_title("Trip Duration (min)", fontsize="large")
     ax.set_xlabel("minutes")
     ax.set_ylabel("density")
@@ -996,9 +897,9 @@ def plot_trip_time_diagnostics(
         plt.show()
 
 
-def plot_activity_duration_by_type(
+def activity_duration_by_type(
     attributes: pl.DataFrame,
-    trips: pl.DataFrame,
+    activities: pl.DataFrame,
     on: str = "source",
     n_cols: int = 3,
     cmap_name: str = "tab20",
@@ -1011,12 +912,11 @@ def plot_activity_duration_by_type(
 ):
     """Activity duration distribution per source, faceted by activity type.
 
-    Derives activities via `post_process.trips_to_activities`. A source
-    with an implausible duration shape for a specific purpose (e.g. `work`
-    durations clustering near 0 or near a full day) points to a
+    `activities` should come from `post_process.trips_to_activities`. A
+    source with an implausible duration shape for a specific purpose (e.g.
+    `work` durations clustering near 0 or near a full day) points to a
     purpose-specific time-encoding issue rather than a general one.
     """
-    activities = post_process.trips_to_activities(attributes, trips)
     activities = activities.join(
         attributes.select("pid", on), on="pid", how="left"
     ).with_columns(duration=(pl.col("end") - pl.col("start")).cast(pl.Float64))
@@ -1047,7 +947,7 @@ def plot_activity_duration_by_type(
             ax.axis("off")
             continue
         hi = float(np.percentile(all_durations, hi_p))
-        bin_edges = np.linspace(0, max(hi, 1.0), 30)
+        grid = np.linspace(0, max(hi, 1.0), 150)
 
         for g in groups:
             vals = (
@@ -1058,17 +958,16 @@ def plot_activity_duration_by_type(
             )
             if vals.size < min_group_rows:
                 continue
-            vals = np.clip(vals, 0, hi)
-            ax.hist(
-                vals,
-                bins=bin_edges,
-                histtype="step",
-                density=True,
+            density = _kde_bounded(vals, grid, lo=0.0)
+            ax.plot(
+                grid,
+                density,
                 color=color_map[g],
                 linewidth=linewidth,
                 label=str(g),
             )
 
+        ax.set_xlim(grid[0], grid[-1])
         ax.set_title(act.title(), fontsize="large")
         ax.set_xlabel("minutes")
 
@@ -1102,35 +1001,9 @@ def plot_activity_duration_by_type(
         plt.show()
 
 
-def _activity_counts_per_person(
-    attributes: pl.DataFrame, trips: pl.DataFrame, act_types: list[str]
-) -> pl.DataFrame:
-    """Per-person activity counts, one column per `act_types` entry, zero-filled.
-
-    Every pid in `attributes` gets a row, including persons with no trips
-    (all counts 0) — needed so attribute categories with mostly-inactive
-    persons (e.g. "retired") aren't silently dropped from the denominator.
-    """
-    activities = post_process.trips_to_activities(attributes, trips)
-    counts = (
-        activities.filter(pl.col("act").is_in(act_types))
-        .group_by("pid", "act")
-        .agg(n=pl.len())
-        .pivot(on="act", index="pid", values="n")
-    )
-    counts = attributes.select("pid").join(counts, on="pid", how="left")
-    counts = counts.with_columns(
-        (
-            pl.col(act).fill_null(0) if act in counts.columns else pl.lit(0)
-        ).alias(act)
-        for act in act_types
-    )
-    return counts.select("pid", *act_types)
-
-
-def plot_activity_count_by_attribute(
+def activity_count_by_attribute(
     attributes: pl.DataFrame,
-    trips: pl.DataFrame,
+    activities: pl.DataFrame,
     attribute_col: str = "employment",
     act_types: Optional[list[str]] = None,
     on: str = "source",
@@ -1143,7 +1016,8 @@ def plot_activity_count_by_attribute(
 ):
     """Mean per-person activity count by attribute category, faceted by activity type.
 
-    Bars are dodged by `on` (source) so cross-survey coding differences are
+    `activities` should come from `post_process.trips_to_activities`. Bars
+    are dodged by `on` (source) so cross-survey coding differences are
     visible directly. E.g. `attribute_col="employment"`, `act_types=["work",
     "education"]` should show "student" peaking on education and
     "employed"/"ft-employed" peaking on work — a category that doesn't
@@ -1153,7 +1027,9 @@ def plot_activity_count_by_attribute(
     if act_types is None:
         act_types = ["work", "education"]
 
-    counts = _activity_counts_per_person(attributes, trips, act_types)
+    counts = post_process.activity_counts_per_person(
+        attributes, activities, act_types
+    )
     counts = counts.join(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
@@ -1235,95 +1111,163 @@ def plot_activity_count_by_attribute(
         plt.show()
 
 
-def plot_attribute_activity_heatmap(
+def attribute_activity_heatmap(
     attributes: pl.DataFrame,
-    trips: pl.DataFrame,
+    activities: pl.DataFrame,
     attribute_col: str = "employment",
+    act_types: Optional[list[str]] = None,
     on: str = "source",
+    n_bins: Optional[int] = None,
     cmap_name: str = "YlOrRd",
     n_cols: int = 3,
     fig_bg: str = "lightgray",
     save_path: str | Path | None = None,
 ):
-    """Mean activity-count matrix (attribute category x activity type), per source.
+    """Mean activity-count matrix (attribute category x source), one subplot
+    per activity type.
 
-    Cell (row, col) is the mean number of `col`-purpose activities per person
-    in attribute category `row`, one heatmap per `on` group with a shared
-    colour scale for cross-source comparability. Look for rows that don't
-    match the category's expected activity profile — e.g. "student" with
-    near-zero `education`, or "retired" with a high `work` mean — which
-    usually points to a miscoded attribute or activity-purpose field rather
-    than genuine behavioural variation.
+    `activities` should come from `post_process.trips_to_activities`. Cell
+    (row, col) is the mean number of activities of this subplot's type per
+    person in attribute category `row` and source `col` — sources share the
+    x-axis within each subplot so they can be compared directly, rather
+    than needing to flip between separate per-source heatmaps. Each
+    subplot's colour scale is normalised to its own activity type (not
+    shared across the grid), since activity types differ hugely in typical
+    count (e.g. `home` vs `escort`) and a shared scale would wash out the
+    low-count ones. Look for rows that don't match the category's expected
+    activity profile — e.g. "student" with near-zero `education`, or
+    "retired" with a high `work` mean — which usually points to a miscoded
+    attribute or activity-purpose field rather than genuine behavioural
+    variation. Pass `n_bins` for a continuous `attribute_col` (e.g.
+    `hh_income`) to quantile-bin it into that many rows instead of treating
+    it as categorical.
     """
-    activities = post_process.trips_to_activities(attributes, trips)
-    act_types = sorted(
-        activities.select("act").drop_nulls().unique().to_series().to_list()
-    )
+    if act_types is None:
+        act_types = sorted(
+            activities.select("act").drop_nulls().unique().to_series().to_list()
+        )
 
-    counts = _activity_counts_per_person(attributes, trips, act_types)
+    counts = post_process.activity_counts_per_person(
+        attributes, activities, act_types
+    )
     counts = counts.join(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
-
-    cats = sorted(
-        counts.select(attribute_col).drop_nulls().unique().to_series().to_list()
-    )
-    if not cats:
-        raise ValueError(f"No non-null categories found in '{attribute_col}'.")
     groups = _non_null_groups(counts, on)
 
-    def _matrix_for(sub: pl.DataFrame) -> np.ndarray:
-        agg = sub.group_by(attribute_col).agg(
-            [pl.col(act).mean().alias(act) for act in act_types]
+    edges = None
+    if n_bins is not None:
+        all_vals = (
+            counts.select(attribute_col).drop_nulls().to_series().to_numpy()
         )
-        agg_map = {row[attribute_col]: row for row in agg.iter_rows(named=True)}
+        if all_vals.size == 0:
+            raise ValueError(f"No non-null values found in '{attribute_col}'.")
+        edges = _quantile_bin_edges(all_vals, n_bins)
+        cats = _bin_edge_labels(edges)
+    else:
+        cats = sorted(
+            counts.select(attribute_col)
+            .drop_nulls()
+            .unique()
+            .to_series()
+            .to_list()
+        )
+        if not cats:
+            raise ValueError(
+                f"No non-null categories found in '{attribute_col}'."
+            )
+
+    def _matrix_for(act: str) -> np.ndarray:
+        """NaN where a category/source combination has no persons at all —
+        distinct from a genuine mean of 0 for persons who exist but never
+        do this activity.
+        """
+        if edges is not None:
+            n = len(cats)
+            matrix = np.full((n, len(groups)), np.nan)
+            for gi, g in enumerate(groups):
+                sub = (
+                    counts.filter(pl.col(on) == g)
+                    .select(attribute_col, act)
+                    .drop_nulls()
+                )
+                if sub.height == 0:
+                    continue
+                vals = sub[attribute_col].to_numpy()
+                y = sub[act].to_numpy()
+                bin_idx = np.clip(
+                    np.digitize(vals, edges[1:-1], right=True), 0, n - 1
+                )
+                for b in range(n):
+                    mask = bin_idx == b
+                    if mask.any():
+                        matrix[b, gi] = y[mask].mean()
+            return matrix
+
+        agg = counts.group_by([attribute_col, on]).agg(
+            pl.col(act).mean().alias("mean_count")
+        )
+        agg_map = {
+            (row[attribute_col], row[on]): row["mean_count"]
+            for row in agg.iter_rows(named=True)
+        }
         return np.array(
-            [
-                [agg_map.get(cat, {}).get(act, 0.0) for act in act_types]
-                for cat in cats
-            ]
+            [[agg_map.get((cat, g), np.nan) for g in groups] for cat in cats]
         )
 
-    vmax = max(float(_matrix_for(counts).max()), 1e-9)
+    matrices = {act: _matrix_for(act) for act in act_types}
 
-    n_rows = math.ceil(len(groups) / n_cols)
+    n_rows = math.ceil(len(act_types) / n_cols)
     fig, axes = plt.subplots(
         n_rows, n_cols, figsize=(4.5 * n_cols, 3.8 * n_rows), squeeze=False
     )
     fig.patch.set_facecolor(fig_bg)
 
-    for idx, g in enumerate(groups):
+    cmap = plt.get_cmap(cmap_name).copy()
+    cmap.set_bad(color="lightgrey")
+
+    for idx, act in enumerate(act_types):
         r, c = idx // n_cols, idx % n_cols
         ax = axes[r][c]
 
-        matrix = _matrix_for(counts.filter(pl.col(on) == g))
-        im = ax.imshow(matrix, aspect="auto", cmap=cmap_name, vmin=0, vmax=vmax)
+        matrix = matrices[act]
+        finite = matrix[np.isfinite(matrix)]
+        vmax = max(float(finite.max()), 1e-9) if finite.size else 1e-9
+        im = ax.imshow(
+            np.ma.masked_invalid(matrix),
+            aspect="auto",
+            cmap=cmap,
+            vmin=0,
+            vmax=vmax,
+        )
 
         for i in range(len(cats)):
-            for j in range(len(act_types)):
+            for j in range(len(groups)):
+                value = matrix[i, j]
                 ax.text(
                     j,
                     i,
-                    f"{matrix[i, j]:.1f}",
+                    "n/a" if np.isnan(value) else f"{value:.1f}",
                     ha="center",
                     va="center",
                     fontsize="x-small",
                     color="black",
                 )
 
-        ax.set_xticks(range(len(act_types)))
-        ax.set_xticklabels(act_types, rotation=45, ha="right")
+        ax.set_xticks(range(len(groups)))
+        ax.set_xticklabels(groups, rotation=45, ha="right")
         ax.set_yticks(range(len(cats)))
         ax.set_yticklabels(cats)
-        ax.set_title(str(g), fontsize="large")
+        ax.set_title(act.title(), fontsize="large")
         fig.colorbar(im, ax=ax, fraction=0.046, pad=0.04)
 
-    for i in range(len(groups), n_rows * n_cols):
+    for i in range(len(act_types), n_rows * n_cols):
         r, c = i // n_cols, i % n_cols
         axes[r][c].axis("off")
 
     fig.suptitle(
-        f"Mean Activity Count by {attribute_col.title()}", fontsize="large"
+        f"Mean Activity Count by {attribute_col.title()} and {on.title()}",
+        fontsize="large",
     )
     plt.tight_layout()
     if save_path is not None:
@@ -1333,168 +1277,186 @@ def plot_attribute_activity_heatmap(
         plt.show()
 
 
-def activity_summary_table(
+def _quantile_bin_edges(values: np.ndarray, n_bins: int) -> np.ndarray:
+    edges = np.unique(np.quantile(values, np.linspace(0, 1, n_bins + 1)))
+    if edges.size < 2:
+        edges = np.array([float(values.min()), float(values.min()) + 1.0])
+    return edges
+
+
+def _plot_bar_cell(
+    ax,
+    counts: pl.DataFrame,
+    act: str,
+    attribute_col: str,
+    on: str,
+    groups: list,
+    color_map: dict,
+    bar_width: float,
+):
+    cats = sorted(
+        counts.select(attribute_col).drop_nulls().unique().to_series().to_list()
+    )
+    x = np.arange(len(cats))
+    width = bar_width / max(len(groups), 1)
+
+    agg = counts.group_by([attribute_col, on]).agg(
+        pl.col(act).mean().alias("mean_count")
+    )
+    for gi, g in enumerate(groups):
+        sub = agg.filter(pl.col(on) == g)
+        values = dict(
+            zip(sub[attribute_col].to_list(), sub["mean_count"].to_list())
+        )
+        heights = [values.get(cat, 0.0) for cat in cats]
+        offset = (gi - (len(groups) - 1) / 2) * width
+        ax.bar(x + offset, heights, width=width, color=color_map[g])
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(cats, rotation=45, ha="right", fontsize="small")
+
+
+def _bin_edge_labels(edges: np.ndarray) -> list[str]:
+    return [f"{edges[i]:.0f}–{edges[i + 1]:.0f}" for i in range(len(edges) - 1)]
+
+
+def _plot_line_cell(
+    ax,
+    counts: pl.DataFrame,
+    act: str,
+    attribute_col: str,
+    on: str,
+    groups: list,
+    color_map: dict,
+    n_bins: int,
+):
+    all_vals = counts.select(attribute_col).drop_nulls().to_series().to_numpy()
+    if all_vals.size == 0:
+        return
+    edges = _quantile_bin_edges(all_vals, n_bins)
+    n = len(edges) - 1
+    x = np.arange(n)
+
+    for g in groups:
+        sub = (
+            counts.filter(pl.col(on) == g)
+            .select(attribute_col, act)
+            .drop_nulls()
+        )
+        if sub.height == 0:
+            continue
+        vals = sub[attribute_col].to_numpy()
+        y = sub[act].to_numpy()
+        bin_idx = np.clip(np.digitize(vals, edges[1:-1], right=True), 0, n - 1)
+        means = np.full(n, np.nan)
+        for b in range(n):
+            mask = bin_idx == b
+            if mask.any():
+                means[b] = y[mask].mean()
+        ax.plot(
+            x, means, color=color_map[g], marker="o", markersize=4, linewidth=2
+        )
+
+    ax.set_xticks(x)
+    ax.set_xticklabels(
+        _bin_edge_labels(edges), rotation=45, ha="right", fontsize="small"
+    )
+
+
+def activities_attributes_grid(
     attributes: pl.DataFrame,
-    trips: pl.DataFrame,
+    activities: pl.DataFrame,
+    act_types: Optional[list[str]] = None,
+    attribute_cols: Optional[dict[str, str]] = None,
     on: str = "source",
-    markdown: bool = False,
-) -> pl.DataFrame | str:
-    """Per-source, per-activity-type participation and typical duration.
+    n_bins: int = 8,
+    cmap_name: str = "Dark2",
+    fig_bg: str = "lightgray",
+    ax_bg: str = "lightgray",
+    bar_width: float = 0.8,
+    save_path: str | Path | None = None,
+):
+    """Mean per-person activity count: one row per activity type, one column
+    per attribute, faceted by `on` (source).
 
-    Derives activities via `post_process.trips_to_activities`. Participation
-    probability is the share of persons in each source group with at least
-    one activity of that type (P(count >= 1)); rate is the expected number
-    of that activity per person (mean count, including zeros). Duration
-    stats are computed over all activities of that type (not per-person).
+    `activities` should come from `post_process.trips_to_activities`.
+    `attribute_cols` maps attribute column -> "bar" (categorical, dodged bars
+    over sorted categories) or "line" (continuous, mean count within
+    quantile bins of the attribute, one line per `on` group, plotted at
+    regular bin-index intervals with bin-range tick labels rather than at
+    the actual bin-midpoint values — so a skewed distribution doesn't bunch
+    points together). Defaults to `{"employment": "bar", "hh_income":
+    "line", "age": "line"}` — bars for the categorical driver of activity
+    participation, lines for the two continuous ones.
     """
-    activities = post_process.trips_to_activities(attributes, trips)
-    activities = activities.join(
-        attributes.select("pid", on), on="pid", how="left"
-    ).with_columns(duration=(pl.col("end") - pl.col("start")).cast(pl.Float64))
-
-    n_persons = attributes.group_by(on).agg(n_persons=pl.len())
-
-    summary = (
-        activities.group_by([on, "act"])
-        .agg(
-            n_activities=pl.len(),
-            n_participants=pl.col("pid").n_unique(),
-            median_duration_min=pl.col("duration").median(),
-            mean_duration_min=pl.col("duration").mean(),
+    if act_types is None:
+        act_types = sorted(
+            activities.select("act").drop_nulls().unique().to_series().to_list()
         )
-        .join(n_persons, on=on, how="left")
-        .with_columns(
-            (pl.col("n_participants") / pl.col("n_persons") * 100).alias(
-                "participation_prob_pct"
-            ),
-            (pl.col("n_activities") / pl.col("n_persons") * 100).alias(
-                "participation_rate_pct"
-            ),
-        )
-        .drop("n_persons")
-        .sort(["act", on])
+    if attribute_cols is None:
+        attribute_cols = {
+            "employment": "bar",
+            "hh_income": "line",
+            "age": "line",
+        }
+
+    counts = post_process.activity_counts_per_person(
+        attributes, activities, act_types
+    )
+    counts = counts.join(
+        attributes.select("pid", on, *attribute_cols.keys()),
+        on="pid",
+        how="left",
+    )
+    groups = _non_null_groups(counts, on)
+    color_map = _group_color_map(groups, cmap_name)
+
+    n_rows = len(act_types)
+    n_cols = len(attribute_cols)
+    fig, axes = plt.subplots(
+        n_rows, n_cols, figsize=(5 * n_cols, 3.2 * n_rows), squeeze=False
+    )
+    fig.patch.set_facecolor(fig_bg)
+
+    for r, act in enumerate(act_types):
+        for c, (col, kind) in enumerate(attribute_cols.items()):
+            ax = axes[r][c]
+            ax.set_facecolor(ax_bg)
+
+            if kind == "bar":
+                _plot_bar_cell(
+                    ax, counts, act, col, on, groups, color_map, bar_width
+                )
+            elif kind == "line":
+                _plot_line_cell(
+                    ax, counts, act, col, on, groups, color_map, n_bins
+                )
+                ax.set_xlabel(col.replace("_", " ").title(), fontsize="small")
+            else:
+                raise ValueError(
+                    f"Unknown kind '{kind}' for '{col}': must be 'bar' or 'line'."
+                )
+
+            if r == 0:
+                ax.set_title(col.replace("_", " ").title(), fontsize="large")
+            if c == 0:
+                ax.set_ylabel(f"{act.title()}\nmean count / person")
+
+    handles = [Patch(facecolor=color_map[g], label=str(g)) for g in groups]
+    fig.legend(
+        handles=handles,
+        loc="upper center",
+        bbox_to_anchor=(0.5, 1.0),
+        ncol=min(len(groups), 6),
+        frameon=False,
+        fontsize="large",
     )
 
-    if markdown:
-        return _activity_summary_table_to_markdown(summary, on)
-    return summary
-
-
-def _activity_summary_table_to_markdown(table: pl.DataFrame, on: str) -> str:
-    headers = [
-        on,
-        "participation prob %",
-        "rate %",
-        "median dur (min)",
-        "mean dur (min)",
-    ]
-    sep = "|" + "|".join("-" * len(h) for h in headers) + "|"
-
-    blocks = []
-    for act in table["act"].unique(maintain_order=False).sort().to_list():
-        lines = [f"**{act}**", "", "| " + " | ".join(headers) + " |", sep]
-        for row in table.filter(pl.col("act") == act).iter_rows(named=True):
-            cells = [
-                str(row[on]),
-                f"{row['participation_prob_pct']:.1f}%",
-                f"{row['participation_rate_pct']:.1f}%",
-                (
-                    f"{row['median_duration_min']:.1f}"
-                    if row["median_duration_min"] is not None
-                    else "n/a"
-                ),
-                (
-                    f"{row['mean_duration_min']:.1f}"
-                    if row["mean_duration_min"] is not None
-                    else "n/a"
-                ),
-            ]
-            lines.append("| " + " | ".join(cells) + " |")
-        blocks.append("\n".join(lines))
-
-    return "\n\n".join(blocks)
-
-
-def time_quality_summary_table(
-    attributes: pl.DataFrame,
-    trips: pl.DataFrame,
-    on: str = "source",
-    max_plausible_speed: float = 150.0,
-    markdown: bool = False,
-) -> pl.DataFrame | str:
-    """Per-source trip-time quality diagnostics.
-
-    Flags non-positive-duration trips (tst >= tet), day-wrap trips
-    (tst/tet > 1440), and implausibly fast trips (implied speed above
-    `max_plausible_speed` km/h) — the signatures of a per-source
-    time-encoding bug rather than an exhaustive quality check.
-    """
-    trips = trips.join(
-        attributes.select("pid", on), on="pid", how="left"
-    ).with_columns(duration=(pl.col("tet") - pl.col("tst")).cast(pl.Float64))
-
-    speed_expr = (
-        pl.when((pl.col("duration") > 0) & pl.col("distance").is_not_null())
-        .then(pl.col("distance") / (pl.col("duration") / 60))
-        .otherwise(None)
-    )
-
-    summary = (
-        trips.with_columns(speed=speed_expr)
-        .group_by(on)
-        .agg(
-            n_trips=pl.len(),
-            non_positive_duration_pct=(pl.col("duration") <= 0).mean() * 100,
-            day_wrap_pct=(
-                (pl.col("tst") > 1440) | (pl.col("tet") > 1440)
-            ).mean()
-            * 100,
-            median_duration_min=pl.col("duration")
-            .filter(pl.col("duration") > 0)
-            .median(),
-            implausible_speed_pct=(pl.col("speed") > max_plausible_speed).mean()
-            * 100,
-            median_speed_kmh=pl.col("speed").median(),
-        )
-        .sort(on)
-    )
-
-    if markdown:
-        return _time_quality_table_to_markdown(summary)
-    return summary
-
-
-def _time_quality_table_to_markdown(table: pl.DataFrame) -> str:
-    headers = [
-        "source",
-        "trips",
-        "non-positive dur %",
-        "day-wrap %",
-        "median dur (min)",
-        "implausible speed %",
-        "median speed (km/h)",
-    ]
-    lines = [
-        "| " + " | ".join(headers) + " |",
-        "|" + "|".join("-" * len(h) for h in headers) + "|",
-    ]
-    for row in table.iter_rows(named=True):
-        cells = [
-            str(row[table.columns[0]]),
-            f"{row['n_trips']:,}",
-            f"{row['non_positive_duration_pct']:.1f}%",
-            f"{row['day_wrap_pct']:.1f}%",
-            (
-                f"{row['median_duration_min']:.1f}"
-                if row["median_duration_min"] is not None
-                else "n/a"
-            ),
-            f"{row['implausible_speed_pct']:.1f}%",
-            (
-                f"{row['median_speed_kmh']:.1f}"
-                if row["median_speed_kmh"] is not None
-                else "n/a"
-            ),
-        ]
-        lines.append("| " + " | ".join(cells) + " |")
-    return "\n".join(lines)
+    fig_height = 3.2 * n_rows
+    legend_frac = min(0.5 / fig_height, 0.15)
+    plt.tight_layout(rect=(0, 0, 1, 1 - legend_frac))
+    if save_path is not None:
+        fig.savefig(save_path, bbox_inches="tight")
+        plt.close(fig)
+    else:
+        plt.show()

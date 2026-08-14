@@ -29,17 +29,17 @@ The base data directory needs to hold raw data downloaded from the various sourc
 The latest output using `uv run foundata run` is as follows:
 
 
-| Source | Plans* | Missing attributes** | Trips | Trip kms (millions) |
-|------|-----|------------|-----|--------------|
-| odin | 324,609 | 25% | 764,037 | 8.4 |
-| ltds | 60,526 | 36% | 108,367 | 0.9 |
-| vista | 89,465 | 29% | 235,847 | 2.0 |
-| cmap | 25,716 | 7% | 76,658 | 0.5 |
-| qhts | 48,718 | 33% | 117,885 | 1.2 |
-| ktdb | 120,100 | 39% | 285,011 | 0.8 |
-| nhts | 630,925 | 27% | 2,201,088 | 24.9 |
-| nts | 2,483,044 | 22% | 4,420,967 | 45.4 |
-| **total** | **3,783,103** | **24%** | **8,209,860** | **84.1** |
+| Source    | Plans         | Missing attributes | Trips         | Trip kms (millions) |
+|-----------|---------------|--------------------|---------------|---------------------|
+| qhts      | 48,718        | 33%                | 117,885       | 1.2                 |
+| ktdb      | 120,100       | 39%                | 285,011       | 0.8                 |
+| nhts      | 630,925       | 27%                | 2,201,088     | 24.9                |
+| cmap      | 25,716        | 7%                 | 76,658        | 0.5                 |
+| nts       | 2,483,044     | 22%                | 4,420,967     | 45.4                |
+| ltds      | 60,520        | 36%                | 108,322       | 0.9                 |
+| odin      | 324,609       | 25%                | 764,037       | 8.4                 |
+| vista     | 89,465        | 29%                | 235,847       | 2.0                 |
+| **total** | **3,783,097** | **24%**            | **8,209,815** | **84.1**            |
 
 \* a plan is a sequence of activities and associated trips within a 24hr period starting at midnight.
 
@@ -53,7 +53,7 @@ Foundata makes use of open (safely available, either immediately, or available v
 |  Name             | Location  | ~Years    | Note              | Source             |
 | ----------------- |---------- |-----------|-------------------|--------------------|
 | ODIN        | Netherlands | 2018-24 | Currently missing 2021 | [request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
-| KTDB        | S.Korea |  2021        |  | [request](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
+| KTDB        | S.Korea |  2021        |  | [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
 | NTS         | UK      | 2002-24     |                   | [request](https://ukdataservice.ac.uk/)            |
 | CMAP        | US      | 17-19     |                   | [data](https://github.com/CMAP-REPOS/mydailytravel) |
 | NHTS        | US      | 2001,09,17,22 |               | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
@@ -97,27 +97,15 @@ uv sync          # install dependencies and register the CLI entry point
 foundata --help
 ```
 
-### Trying it out with example data
+### Trying it out with toy data
 
 `data_dir_template/` is a small, runnable stand-in for a real `~/Data/foundata/`
 tree — same folder/file layout, just a handful of rows per source — so you can
-try the pipeline without access to any of the real (often restricted) survey
-extracts:
+try the pipeline without access to any of the real data:
 
 ```bash
 foundata run --data-root data_dir_template --output /tmp/out
 ```
-
-CMAP, NHTS, QHTS and VISTA are public/open datasets, sampled directly with
-real values. ODiN, KTDB, NTS and LTDS are restricted-access research datasets:
-their rows use fresh synthetic ids and have their demographic/attribute
-columns independently shuffled across the sampled group, so no real
-respondent's full attribute combination appears, while trip/stage rows are
-left internally intact so trip logic (sequencing, times, zones) stays
-coherent. See `scripts/build_data_dir_template.py` for how it's built (it
-regenerates `data_dir_template/` from a real `~/Data/foundata/` tree — sibling
-to `scripts/generate_fixtures.py`, which builds the smaller `tests/fixtures/`
-used by the unit tests).
 
 ### Adding a new source
 
@@ -267,10 +255,10 @@ Activity duration distributions, faceted by activity type:
 
 ![Activity duration by type](assets/activity_duration_by_type.png)
 
-Mean per-person activity count (work, education) by employment category:
+Mean per-person activity durations:
 
-![Activity count by employment](assets/activity_count_by_employment.png)
+![Activity duration by type](assets/activity_duration_by_type.png)
 
-The same comparison as a heatmap (employment category x activity type, shared colour scale per source):
+Activity participations by employment, income and age:
 
-![Activity heatmap by employment](assets/activity_heatmap_by_employment.png)
+![Activity heatmap by age](assets/activity_counts_grid.png)

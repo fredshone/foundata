@@ -13,6 +13,8 @@ from foundata.run import runner
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
 
+OPEN_SOURCES = ("nhts", "cmap", "vista", "qhts", "ktdb")
+
 
 def _default_out(input_path: str, suffix: str) -> Path:
     """Derive a default output path by appending *suffix* to the input stem."""
@@ -84,6 +86,15 @@ def cli():
     show_default=True,
 )
 @click.option(
+    "--open",
+    "open_only",
+    is_flag=True,
+    help=(
+        "Run only the open-data sources "
+        f"({', '.join(OPEN_SOURCES)}). Overrides --select and --omit."
+    ),
+)
+@click.option(
     "--home-based/--any-based",
     "-hb/-ab",
     default=True,
@@ -97,9 +108,17 @@ def cli():
     show_default=True,
     help="Whether to filter out consecutive home, work and education activities.",
 )
-def run(data_root, output, select, omit, home_based, filter_consecutive):
+def run(
+    data_root, output, select, omit, open_only, home_based, filter_consecutive
+):
     """Run the data processing pipeline end-to-end."""
-    if select and omit:
+    if open_only:
+        if select or omit:
+            click.echo(
+                "--open overrides --select and --omit; ignoring them.", err=True
+            )
+        select, omit = OPEN_SOURCES, ()
+    elif select and omit:
         click.echo("Cannot use both --select and --omit options.", err=True)
         sys.exit(1)
     runner(data_root, output, select, omit, home_based, filter_consecutive)

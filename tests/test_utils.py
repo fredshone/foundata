@@ -162,6 +162,62 @@ def test_split_employment_type_unknown():
     ]
 
 
+# --- assign_retired ---
+
+
+def test_assign_retired_reclassifies_unemployed_over_60_with_no_work_trips():
+    attributes = pl.DataFrame(
+        {"pid": ["p1"], "employment": ["unemployed"], "age": [65]}
+    )
+    trips = pl.DataFrame({"pid": ["p1"], "dact": ["shop"]})
+    result = utils.assign_retired(attributes, trips)
+    assert result["employment"].to_list() == ["retired"]
+
+
+def test_assign_retired_keeps_unemployed_with_work_trip():
+    attributes = pl.DataFrame(
+        {"pid": ["p1"], "employment": ["unemployed"], "age": [65]}
+    )
+    trips = pl.DataFrame({"pid": ["p1"], "dact": ["work"]})
+    result = utils.assign_retired(attributes, trips)
+    assert result["employment"].to_list() == ["unemployed"]
+
+
+def test_assign_retired_keeps_unemployed_under_age_threshold():
+    attributes = pl.DataFrame(
+        {"pid": ["p1"], "employment": ["unemployed"], "age": [59]}
+    )
+    trips = pl.DataFrame({"pid": ["p1"], "dact": ["shop"]})
+    result = utils.assign_retired(attributes, trips)
+    assert result["employment"].to_list() == ["unemployed"]
+
+
+def test_assign_retired_leaves_non_unemployed_untouched():
+    attributes = pl.DataFrame(
+        {
+            "pid": ["p1", "p2"],
+            "employment": ["employed", "student"],
+            "age": [65, 65],
+        }
+    )
+    trips = pl.DataFrame(
+        {"pid": [], "dact": []}, schema={"pid": pl.String, "dact": pl.String}
+    )
+    result = utils.assign_retired(attributes, trips)
+    assert result["employment"].to_list() == ["employed", "student"]
+
+
+def test_assign_retired_person_with_no_trips_is_reclassified():
+    attributes = pl.DataFrame(
+        {"pid": ["p1"], "employment": ["unemployed"], "age": [65]}
+    )
+    trips = pl.DataFrame(
+        {"pid": [], "dact": []}, schema={"pid": pl.String, "dact": pl.String}
+    )
+    result = utils.assign_retired(attributes, trips)
+    assert result["employment"].to_list() == ["retired"]
+
+
 # --- resolve_activity_chain ---
 
 

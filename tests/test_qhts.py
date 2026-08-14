@@ -74,3 +74,68 @@ def test_qhts_preprocess_trips_applies_4am_offset():
 
     assert result["tst"].to_list() == [180 + 240]
     assert result["tet"].to_list() == [200 + 240]
+
+
+def test_qhts_preprocess_persons_hh_income_null_when_all_unanswered():
+    """A household where every member's INCOME response is a non-answer
+    ("Select One" / "Prefer not to say") must get a null hh_income, not 0.
+
+    `sample_to_euro` already encodes "no real answer" as a single-element
+    bounds list -> None per person; but summing a group of all-null values
+    with polars' `.sum()` silently produces 0 rather than null, which
+    previously miscoded "nobody answered" households as literally €0
+    income, indistinguishable from a household that actually reported nil
+    income ("Nil or negative income": [0, 0]).
+    """
+    config = {
+        "column_mappings": {
+            "PERSID": "pid",
+            "HHID": "hid",
+            "AGEGROUP": "age",
+            "SEX": "sex",
+            "RELATIONSHIP": "relationship",
+            "CARLICENCE": "has_licence",
+            "MAINACT": "employment",
+            "ANZSCO_1-digit": "occupation",
+            "ASSISTANY": "disability",
+            "INCOME": "income",
+        },
+        "age": {1: [0, 4]},
+        "sex": {"M": "male", "F": "female"},
+        "relationship": {"spouse": "partner"},
+        "has_licence": {1: "yes", 0: "no"},
+        "employment": {"Full-time Work": "ft-employed"},
+        "occupation": {1: "managerial"},
+        "disability": {1: "yes", 0: "no"},
+        "income": {
+            "Select One": [0],
+            "Prefer not to say / can't say": [0],
+            "Nil or negative income": [0, 0],
+        },
+    }
+    raw = pl.DataFrame(
+        {
+            "PERSID": ["h1/1", "h1/2", "h2/1", "h2/2"],
+            "HHID": [1, 1, 2, 2],
+            "AGEGROUP": [1, 1, 1, 1],
+            "SEX": ["M", "F", "M", "F"],
+            "RELATIONSHIP": ["spouse", "spouse", "spouse", "spouse"],
+            "CARLICENCE": [1, 1, 1, 1],
+            "MAINACT": ["Full-time Work"] * 4,
+            "ANZSCO_1-digit": [1, 1, 1, 1],
+            "ASSISTANY": [0, 0, 0, 0],
+            "INCOME": [
+                "Select One",
+                "Prefer not to say / can't say",
+                "Nil or negative income",
+                "Prefer not to say / can't say",
+            ],
+        }
+    )
+
+    result = qhts.preprocess_persons(raw, config, year="2019-22")
+
+    h1 = result.filter(pl.col("hid") == 1)
+    h2 = result.filter(pl.col("hid") == 2)
+    assert h1["hh_income"].to_list() == [None, None]
+    assert h2["hh_income"].to_list() == [0, 0]
