@@ -118,7 +118,9 @@ def load_households(
             ).cast(pl.Int64)
         )
 
-        data = data.with_columns(source=pl.lit("nhts"), country=pl.lit("usa"))
+        data = data.with_columns(
+            survey=pl.lit("nhts"), source=pl.lit("nhts"), country=pl.lit("usa")
+        )
 
         data = data.filter(pl.col("hid").is_not_null())
 

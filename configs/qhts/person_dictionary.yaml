@@ -77,11 +77,11 @@ employment:
         Full-time Work: ft-employed
         Other Education: student
         Part-time Work: pt-employed
-        Other Activity: other
+        Other Activity: unknown
         Illness: unemployed
         Childcare/Kindergarten: student
         Secondary School: student
-        Under Five: void
+        Under Five: unemployed
         Other Study: student
 
 occupation:
@@ -114,7 +114,7 @@ income:
         $1,750 - $1,999 per week ($91,000 - $103,999 per year): [91000, 104000]
         $2,000 - $2,999 per week ($104,000 - $155,999 per year): [104000, 156000]
         $3,000 - $3,499 per week ($156,000 - $181,999 per year): [156000, 182000]
-        $3,500 or more per week ($182,000 or more per year): [182000, 1000000]
+        $3,500 or more per week ($182,000 or more per year): [182000, 200000]
  
 disability:
     default:

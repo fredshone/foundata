@@ -60,7 +60,7 @@ purpose:
     9: shop #  Shopped (routine like grocery, clothing),
     10: other #  Drive-thru errands (ATM, dry cleaning, pharmacy, etc.),
     11: other #  Serviced a vehicle (purchased gas, regular maintenance),
-    12: medical #  Health care visit for self,
+    12: other #  Health care visit for self,
     13: visit #  Health care visit for someone else,
     14: visit #  Visited a person staying at the hospital,
     15: other #  Non-shopping errands (banking, post office, government, etc.),

@@ -85,7 +85,7 @@ dact:
     "10": null       # toeren/wandelen — round trip
     "11": leisure    # sport/hobby
     "12": leisure    # overige vrijetijdsbesteding
-    "13": medical    # diensten/persoonlijke verzorging
+    "13": other    # diensten/persoonlijke verzorging
     "14": other      # ander doel
 
 # Stedelijkheidsklasse (1-5, CBS OAD-based) of the trip's origin/destination

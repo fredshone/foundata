@@ -49,7 +49,7 @@ employment:
     "5": unemployed    # werkloos
     "6": unemployed    # arbeidsongeschikt
     "7": retired       # gepensioneerd/VUT
-    "8": other         # overig
+    "8": unknown       # overig
     "9": unknown
   2024:
     "1": pt-employed   # Werkzaam 12 tot 30 uur per week
@@ -57,7 +57,7 @@ employment:
     "3": student       # Scholier/student
     "4": unemployed    # Arbeidsongeschikt
     "5": retired       # Gepensioneerd/VUT
-    "6": other         # Anders (inclusief onbekend)
+    "6": unknown       # Anders (inclusief onbekend)
 
 # Opleiding (hoogst voltooide opleiding)
 education:
@@ -69,13 +69,13 @@ education:
     "4": degree        # hoger beroepsonderwijs / universiteit
     "5": some          # andere opleiding
     "6": unknown
-    "7": void          # not asked; respondent under 15
+    "7": unknown          # not asked; respondent under 15
   2024:
     "1": school        # lager beroepsonderwijs / vmbo
     "2": high-school   # middelbaar beroepsonderwijs / havo
     "3": degree        # hoger beroepsonderwijs / universiteit
     "4": some         # Anders (inclusief onbekend)
-    "5": void          # niet gevraagd; OP jonger dan 15 jaar
+    "5": unknown          # niet gevraagd; OP jonger dan 15 jaar
 
 # OPRijbewijsAu (car driving licence)
 has_licence:

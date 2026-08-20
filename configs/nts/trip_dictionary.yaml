@@ -37,7 +37,7 @@ act:
     3: education
     4: shop  # Food shopping
     5: shop  # Non food shopping
-    6: medical  # Personal business medical
+    6: other  # Personal business medical
     7: leisure  # Personal business eat/drink
     8: other  # Personal business other
     9: leisure  # Eat/drink with friends

@@ -56,7 +56,7 @@ can_wfh:
 work_status:
   -8: unknown
   -7: unknown
-  -1: void
+  -1: unemployed  # skip
   0: employed
   1: retired
   2: unemployed  # volunteer
@@ -65,7 +65,7 @@ work_status:
   5: unemployed
   6: student
   7: unemployed
-  97: other
+  97: unknown
 
 occupation:
   "-8": unknown

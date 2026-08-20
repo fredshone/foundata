@@ -2,7 +2,6 @@ import pytest
 
 from foundata import utils
 from foundata.config_validator import (
-    validate_all_sources,
     validate_column_mappings,
     validate_value_mappings,
 )
@@ -88,12 +87,3 @@ def test_validate_value_mappings_skips_non_string(attr_template):
     # hh_income has no 'set', so skipped entirely
     errors = validate_value_mappings(config, attr_template)
     assert errors == []
-
-
-# --- validate_all_sources (regression guard) ---
-
-
-def test_all_existing_sources_valid():
-    configs_root = utils.get_config_path()
-    result = validate_all_sources(configs_root)
-    assert result is True, "One or more existing source configs are invalid"

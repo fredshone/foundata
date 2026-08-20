@@ -27,9 +27,7 @@ def load(
     print("loading persons...")
     persons = load_persons(data_root, person_config)
 
-    attributes = table_joiner(hhs, persons, on="hid").with_columns(
-        country=pl.lit("usa"), source=pl.lit("cmap")
-    )
+    attributes = table_joiner(hhs, persons, on="hid")
 
     print("loading trips...")
     rurality_mapping = load_locations(data_root, rurality_table=rurality)
@@ -43,6 +41,9 @@ def load(
     ).drop("survey_date")
 
     attributes = attributes.with_columns(
+        survey=pl.lit(SOURCE),
+        source=pl.lit(SOURCE),
+        country=pl.lit("usa"),
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
         hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
         access_egress_distance=pl.lit(None, dtype=pl.Float32),

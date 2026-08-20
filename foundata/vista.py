@@ -48,6 +48,7 @@ def load_years(
         years, hhs_names, persons_names, trips_names
     ):
         print(f"Loading {year}...")
+        yr = year[2:4] + year[5:7]
 
         hh_config_year = config_for_year(hh_config, year)
         person_config_year = config_for_year(person_config, year)
@@ -79,20 +80,20 @@ def load_years(
         trips = preprocess_trips(trips, trips_config_year, year=year)
         trips = day_wrap(trips)
 
+        attributes = attributes.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+            access_egress_distance=pl.lit(None, dtype=pl.Float32),
+        )
+        trips = trips.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String)
+        )
+
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
-
-    attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
-        access_egress_distance=pl.lit(None, dtype=pl.Float32),
-    )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
-    )
 
     return attributes, trips
 
@@ -168,8 +169,9 @@ def preprocess_households(
     )
 
     hhs = hhs.with_columns(
+        survey=pl.lit(SOURCE) + pl.lit(year),
         source=pl.lit(SOURCE),
-        country=pl.lit("australia"),
+        country=pl.lit("aus"),
         can_wfh=pl.lit("unknown"),
     )
 
@@ -229,7 +231,7 @@ def preprocess_persons(
         .then(pl.lit("retired"))
         .when(pl.col("activity") == "Unemployed")
         .then(pl.lit("unemployed"))
-        .otherwise(pl.lit("other"))
+        .otherwise(pl.lit("unknown"))
     ).drop("ft", "pt", "studying", "activity")
 
     persons = persons.with_columns(

@@ -81,6 +81,7 @@ def load_households(
         pl.col("dwelling").replace_strict(config["dwelling"]),
         pl.col("hh_zone").replace_strict(config["hh_zone"]),
         pl.lit("nts").alias("source"),
+        pl.lit("nts").alias("survey"),
         pl.lit("uk").alias("country"),
     )
 

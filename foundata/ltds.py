@@ -113,6 +113,8 @@ def load_years(
 
         yr = year[-4:]
         attributes = attributes.with_columns(
+            survey=pl.lit(SOURCE) + pl.lit(year),
+            source=pl.lit(SOURCE),
             pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
             hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
         )
@@ -130,7 +132,6 @@ def load_years(
     trips = assign_education_to_escort(trips)
 
     attributes = attributes.with_columns(
-        source=pl.lit(SOURCE),
         country=pl.lit("uk"),
         education=pl.lit("unknown"),
         ownership=pl.lit("unknown"),

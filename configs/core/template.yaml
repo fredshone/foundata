@@ -97,8 +97,8 @@ attributes:
   employment:
     dtype: str
     default: True
-    set: [employed, ft-employed, pt-employed, unemployed, retired, student, other, unknown, void]
-    description: "Employment status."
+    set: [employed, unemployed, retired, student, unknown, void]
+    description: "Employment status. 'void' for children too young for employment status to apply (see utils.correct_child_employment())."
   employed_type:
     dtype: str
     default: True
@@ -179,12 +179,12 @@ trips:
   oact:
     dtype: str
     default: True
-    set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
+    set: [home, work, education, shop, leisure, visit, escort, other, unknown]
     description: "Activity at trip origin (what the person was doing before departing)."
   dact:
     dtype: str
     default: True
-    set: [home, work, education, shop, leisure, medical, visit, escort, other, unknown]
+    set: [home, work, education, shop, leisure, visit, escort, other, unknown]
     description: "Activity at trip destination (purpose of the trip)."
   mode:
     dtype: str

@@ -64,27 +64,27 @@ column_mappings:
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "void",
+        -1: "unemployed",
         1: "unemployed",
         2: "unemployed",
         3: "unemployed",
         4: "student",
         5: "retired",
-        97: "other",
+        97: "unknown",
     }
     "default": {
         -9: "unknown",
         -8: "unknown",
         -7: "unknown",
-        -1: "void",
+        -1: "unemployed",
         1: "employed",
         2: "unemployed",  # temporarily unemployed
         3: "unemployed",
         4: "unemployed",  # home maker
         5: "student",
         6: "retired",
-        7: "other",
-        97: "other",
+        7: "unknown",
+        97: "unknown",
     }
 "race":
     "default": {

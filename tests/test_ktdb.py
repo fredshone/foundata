@@ -4,7 +4,11 @@ from pathlib import Path
 import polars as pl
 
 from foundata import filter, fix, ktdb, verify
-from foundata.utils import get_config_path, load_yaml_config
+from foundata.utils import (
+    get_config_path,
+    load_yaml_config,
+    split_employment_type,
+)
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
 DATA_ROOT = os.getenv("FOUNDATA_KTDB_DATA", str(FIXTURE_ROOT / "ktdb"))
@@ -27,6 +31,7 @@ def test_ktdb_load():
     assert len(trips) > 0
     assert "ktdb" in attrs["source"].unique().to_list()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
+    attrs = split_employment_type(attrs)
     attrs, trips = fix.missing_columns(attrs, trips)
     attrs, trips = filter.columns(attrs, trips)
     attrs, trips = fix.fix_types(attrs, trips)

@@ -26,6 +26,8 @@ def load_years(
     for year in years:
         print(f"Loading {year}...")
 
+        yr = year[3:5] + year[5:7]
+
         hh_config_year = config_for_year(hh_config, year)
         person_config_year = config_for_year(person_config, year)
         trips_config_year = config_for_year(trips_config, year)
@@ -82,20 +84,20 @@ def load_years(
                 dzone=pl.col("dzone").fill_null("unknown"),
             )
 
+        attributes = attributes.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+            access_egress_distance=pl.lit(None, dtype=pl.Float32),
+        )
+        trips = trips.with_columns(
+            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String)
+        )
+
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     attributes = pl.concat(all_attributes)
     trips = pl.concat(all_trips)
-
-    attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
-        access_egress_distance=pl.lit(None, dtype=pl.Float32),
-    )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
-    )
 
     return attributes, trips
 
@@ -182,8 +184,9 @@ def preprocess_persons(
     )
 
     persons = persons.with_columns(
-        country=pl.lit("australia"),
-        source=pl.lit("qhts"),
+        country=pl.lit("aus"),
+        survey=pl.lit(SOURCE) + pl.lit(year),
+        source=pl.lit(SOURCE),
         race=pl.lit("unknown"),
         can_wfh=pl.lit("unknown"),
         ownership=pl.lit("unknown"),

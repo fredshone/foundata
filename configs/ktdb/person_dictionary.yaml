@@ -22,6 +22,7 @@ column_mappings:
   Q3: hh_income  # monthly
   Q2: dwelling
   # RAW_COL_NAME: ownership
+  SQ1_5: home_zone
   Q4_1: cars
   Q4_2: vans
   Q4_6: motorcycles

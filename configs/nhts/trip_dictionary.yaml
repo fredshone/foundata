@@ -204,7 +204,7 @@ act_mappings:
         8: "work",  # Volunteer activities (not paid)
         9: "other",  # Change type of transportation
         10: "escort",  # Drop off/pick up someone (personal)
-        11: "medical",  # Health care visit
+        11: "other",  # Health care visit
         12: "shop",  # Buy meals
         13: "shop",  # Shop/buy/pick-up or return goods
         14: "visit",  # Other family/personal errands
@@ -237,7 +237,7 @@ act_mappings:
         15: "leisure",  # Recreational activities
         16: "leisure",  # Exercise
         17: "visit",  # Visit friends or relatives
-        18: "medical",
+        18: "other",
         19: "other",  # Religious or other community activities
         97: "other",  # Something else (specify)
     }
@@ -260,7 +260,7 @@ act_mappings:
         23: "education",  # library
         24: "education",  # daycare
 
-        30: "medical",
+        30: "other",
 
         40: "shop",  # shopping errands
         41: "shop",  # goods
@@ -312,7 +312,7 @@ act_mappings:
         23: "education",  # library
         24: "education",  # daycare
 
-        30: "medical",
+        30: "other",
 
         40: "shop",  # shopping errands
         41: "shop",  # goods

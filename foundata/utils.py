@@ -314,6 +314,36 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
     )
 
 
+def correct_child_employment(
+    attributes: pl.DataFrame,
+    void_age_max: int = 5,
+    student_age_max: int = 16,
+) -> pl.DataFrame:
+    """Force employment/employed_type for children based on age.
+
+    Children aged 0 to `void_age_max` are below school age, so employment
+    status doesn't apply and is forced to "void". Children aged
+    `void_age_max + 1` to `student_age_max` are of compulsory school age,
+    so employment is forced to "student". In both cases the ft/pt split
+    doesn't apply, so `employed_type` is forced to "void" too.
+
+    Must run after `split_employment_type()`, which is what populates
+    `employed_type` in the first place.
+    """
+    attributes = attributes.with_columns(
+        employment=pl.when(pl.col("age") <= void_age_max)
+        .then(pl.lit("void"))
+        .when(pl.col("age") <= student_age_max)
+        .then(pl.lit("student"))
+        .otherwise(pl.col("employment"))
+    )
+    return attributes.with_columns(
+        employed_type=pl.when(pl.col("age") <= student_age_max)
+        .then(pl.lit("void"))
+        .otherwise(pl.col("employed_type"))
+    )
+
+
 def assign_retired(
     attributes: pl.DataFrame, trips: pl.DataFrame, age_threshold: int = 60
 ) -> pl.DataFrame:

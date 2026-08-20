@@ -85,8 +85,14 @@ def load(
 
     # Prefix IDs with source name for global uniqueness
     attributes = attributes.with_columns(
+        survey=pl.lit(SOURCE),
+        source=pl.lit(SOURCE),
+        country=pl.lit("kr"),
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),  # duplicate of pid
+        # duplicate of pid: the raw data has no household ID linking
+        # respondents (each row is an independently surveyed individual),
+        # so there is no real household to group by
+        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
     )
     trips = trips.with_columns(
         pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
@@ -130,8 +136,6 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
     data = data.with_columns(
         hid=pl.col("pid"),
         year=pl.lit(2021, dtype=pl.Int32),
-        source=pl.lit(SOURCE),
-        country=pl.lit("south korea"),
         # read to date from YYYYMMDD integer format, e.g. 20210101 for Jan 1, 2021
         date=(pl.lit(20210000) + pl.col("date"))
         .cast(pl.String)
@@ -152,6 +156,12 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
         can_wfh=pl.col("can_wfh").replace_strict(
             config["can_wfh"], default="unknown"
         ),
+        # Q3 (household income) is answered by only one respondent per
+        # household (almost always the non-student adult, R2==99) - other
+        # household members (esp. students/children) leave it blank. The
+        # raw data has no household ID linking respondents, so there is no
+        # way to backfill hh_income for the respondents who weren't asked;
+        # it is left null (-> unknown) for them rather than imputed.
         hh_income=pl.col("hh_income")
         .replace_strict(config["hh_income"], default=None)
         .map_elements(
@@ -198,9 +208,16 @@ def load_persons(root: str | Path, config: dict) -> pl.DataFrame:
             "relationship",
             "race",
             "ownership",
-            "hh_zone",
         ]
     )
+
+    zones = load_zones()
+    zone_mapping = dict(zip(zones["zone"], zones["hh_zone"]))
+    data = data.with_columns(
+        hh_zone=pl.col("home_zone").replace_strict(
+            zone_mapping, default="unknown"
+        )
+    ).drop("home_zone")
     return data
 
 

@@ -34,6 +34,7 @@ def print_markdown_table(title: str, table: str):
 def process_source(attributes, trips, source_name):
     attributes = utils.compute_avg_speed(attributes, trips)
     attributes = utils.split_employment_type(attributes)
+    attributes = utils.correct_child_employment(attributes)
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
     utils.check_overlap(
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"

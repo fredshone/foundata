@@ -45,7 +45,7 @@ employment:
         Retired: retired
         Student: student
         PT Worker: employed
-        Other: other
+        Other: unknown
 
 can_wfh:
     default:

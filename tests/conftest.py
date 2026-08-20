@@ -63,6 +63,7 @@ def sample_attributes_df():
             "distance": [5.0, 5.0, 3.2],
         }
     )
+    attrs = utils.split_employment_type(attrs)
     attrs, _ = fix.fix_types(attrs, trips)
     attrs, _ = fix.missing_columns(attrs, trips)
     return attrs
