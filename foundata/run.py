@@ -292,7 +292,7 @@ def runner(
         attributes, trips = odin.load(
             data_root=data_root / "ODIN",
             configs_root=CONFIGS_ROOT,
-            years=[2018, 2019, 2020, 2022, 2023, 2024],
+            years=[2018, 2019, 2020, 2021, 2022, 2023, 2024],
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
