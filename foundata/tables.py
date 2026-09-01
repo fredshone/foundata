@@ -140,6 +140,7 @@ def summary_table(
                 "total_distance": "kms (millions)",
             }
         )
+        .sort("persons", descending=True)
     )
 
     total_nulls = sum(

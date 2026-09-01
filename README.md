@@ -17,6 +17,7 @@ Options:
   -o, --output PATH                                   Directory where CSVs and PNGs are written, defaults to ./output  [default: output]
   -s, --select TEXT                                   Comma-separated list of sources to process (e.g. --select nhts --select ktdb).
   -x, --omit TEXT                                     Comma-separated list of sources to omit (e.g. --omit nhts --omit ktdb).
+  --open                                               Run only the open-data sources (nhts, cmap, vista, qhts, ktdb). Overrides --select and --omit.
   -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
   -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities. [default: filter-consecutive]
   --help                                              Show this message and exit.
@@ -28,22 +29,22 @@ The base data directory needs to hold raw data downloaded from the various sourc
 
 The latest output using `uv run foundata run` is as follows:
 
-
 | Source    | Plans         | Missing attributes | Trips         | Trip kms (millions) |
 |-----------|---------------|--------------------|---------------|---------------------|
-| qhts      | 48,718        | 33%                | 117,885       | 1.2                 |
-| ktdb      | 120,100       | 39%                | 285,011       | 0.8                 |
+| nts       | 2,483,044     | 20%                | 4,420,967     | 45.4                |
 | nhts      | 630,925       | 27%                | 2,201,088     | 24.9                |
+| odin      | 383,679       | 26%                | 886,686       | 9.6                 |
+| ktdb      | 120,100       | 35%                | 285,011       | 0.8                 |
+| vista     | 89,465        | 30%                | 235,847       | 2.0                 |
+| ltds      | 60,518        | 36%                | 108,321       | 0.9                 |
+| qhts      | 48,718        | 33%                | 117,885       | 1.2                 |
 | cmap      | 25,716        | 7%                 | 76,658        | 0.5                 |
-| nts       | 2,483,044     | 22%                | 4,420,967     | 45.4                |
-| ltds      | 60,520        | 36%                | 108,322       | 0.9                 |
-| odin      | 324,609       | 25%                | 764,037       | 8.4                 |
-| vista     | 89,465        | 29%                | 235,847       | 2.0                 |
-| **total** | **3,783,097** | **24%**            | **8,209,815** | **84.1**            |
+| **total** | **3,842,165** | **23%**            | **8,332,463** | **85.3**            |
 
-\* a plan is a sequence of activities and associated trips within a 24hr period starting at midnight.
 
-\*\* missing plan attribute data (ie unknown values)
+\* Plans: a sequence of activities and associated trips within a 24hr period starting at midnight.
+
+\*\* missing attributes: attribute data with `unknown`/`null` values.
 
 ### Data Sources
 
@@ -52,26 +53,51 @@ Foundata makes use of open (safely available, either immediately, or available v
 
 |  Name             | Location  | ~Years    | Note              | Source             |
 | ----------------- |---------- |-----------|-------------------|--------------------|
-| ODIN        | Netherlands | 2018-24 | Currently missing 2021 | [request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
-| KTDB        | S.Korea |  2021        |  | [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
-| NTS         | UK      | 2002-24     |                   | [request](https://ukdataservice.ac.uk/)            |
-| CMAP        | US      | 17-19     |                   | [data](https://github.com/CMAP-REPOS/mydailytravel) |
-| NHTS        | US      | 2001,09,17,22 |               | [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
-| QHTS        | AUS | 2012-24     |          | [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
-| VISTA       | AUS | 2012-25  |             | [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
-| LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | request from TfL |
+| ODIN        | NL | 2018-24 | | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
+| KTDB        | KR |  2021        | Mostly Thursdays, no income info for young people | Open [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
+| NTS         | UK      | 2002-24     |                   | [Request](https://ukdataservice.ac.uk/)            |
+| CMAP        | US      | 17-19     | Small but good attribute availability | Open [data](https://github.com/CMAP-REPOS/mydailytravel) |
+| NHTS        | US      | 2001,09,17,22 |               | Open [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
+| QHTS        | AUS | 2012-24     |          | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
+| VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
+| LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
 
-### Trips/Plans
+### Plans
 
-We encode human activity plans as sequences of activities and associated trips. We output both activity-based and trips-based representations of plans. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
+We encode human activity plans as sequences of activities and associated trips. Foundata `run` will output both an activities table and a trips table. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
+
+### Activities
+
+The activities output combines activities with their **preceding** trip:
+
+|   pid | seq | act     |   start |   end |
+|------:|-----|:--------|--------:|------:|
+|     0 | 0   | home    |       0 |   600 |
+|     0 | 1   |  shop   |     600 |  660  |
+|     0 | 2   |  home   |     660 |  1440 |
 
 We currently map all activities to the following types: {home, work, education, visit, medical, leisure, shop, escort, other}. Note that not all sources use all of these types. Medical, for example, is not included in many datasets.
+
+### Trips
+
+The trips output provides both trip information and origin/destination location and activity information:
+
+|   pid | seq | ozone | dzone | oact | dact | mode | tst | tet | distance |
+|------:|:----|------:|------:|------|------|------|-----|-----|----------|
+|     0 | 0   | rural | urban | home | shop | car  | 600 | 620 | 12       |
+|     0 | 1   | urban | rural | shop | home | car  | 660 | 680 | 12       |
+
+Trip start time (tst) and trip end time (tet) are in minutes since midnight. Distance is in km.
 
 We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
 
 ### Person Attributes
 
 Plans are joinable by a unique person id (pid) to attributes. Attributes include household, individual, day and plan information.
+
+|   pid | source   |   year | age   | employment   | hh_income   | hh_zone   | ... |
+|------:|:---------|-------:|:------|:-------------|:------------|:----------|-----|
+|     0 | xxxx     |   2021 | 51-65 | employed     | ≤21280      | urban     | ... |
 
 Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
@@ -152,7 +178,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`.
 
 ### Binning numeric attributes
 
@@ -179,7 +205,23 @@ Options:
 | `--default N` | `-n` | `5` | Default number of bins for all numeric columns. |
 | `--method` | `-m` | `quantile` | `quantile` (equal-frequency) or `uniform` (equal-width). |
 | `--output PATH` | `-o` | `<input>_binned.csv` | Output CSV path. |
+| `--select TEXT` | `-s` | | Columns to bin (repeatable, e.g. `--select age --select hh_income`). |
+| `--omit TEXT` | `-x` | | Columns to exclude from binning (repeatable). |
 | `--COLUMN N` | | | Per-column bin count override (e.g. `--age 10`). |
+
+### Filling missing values
+
+The `fill-unknown` command fills null/missing values in an attributes CSV with the string `"unknown"`, and reports the percentage of each column filled. It warns if a column is entirely unknown or looks numeric (filling a numeric column with a string is usually a mistake).
+
+```bash
+foundata fill-unknown attributes.csv --output filled.csv
+```
+
+Options:
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--output PATH` | `-o` | `<input>_filled.csv` | Output CSV path. |
 
 ### Filtering output CSVs
 

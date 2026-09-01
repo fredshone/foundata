@@ -19,8 +19,8 @@ DATA_FILES = {
     2020: "ODiN2020_Databestand_v2.0.tab",
     2021: "ODiN2021_Databestand.tab",
     2022: "ODiN2022_Databestand.tab",
-    # 2023: "ODiN2023_Databestand.csv",  # tab-separated despite .csv
-    # 2024: "ODiN2024_DANS_Databestand_v2.0.csv",  # tab-separated despite .csv
+    2023: "ODiN2023_Databestand.csv",  # tab-separated despite .csv
+    2024: "ODiN2024_DANS_Databestand_v2.0.csv",  # tab-separated despite .csv
 }
 HM_TO_KM = 0.1  # hectometres → kilometres
 
