@@ -203,6 +203,67 @@ def _summary_table_to_markdown(table: pl.DataFrame) -> str:
     return render_markdown_table(headers, rows)
 
 
+def attribute_availability(
+    attributes: pl.DataFrame, markdown: bool = False
+) -> pl.DataFrame | str:
+    """Per-attribute % available (not null or "unknown"), one column per source.
+
+    Returns a table with one row per attribute and one column per source
+    (plus an "all" column pooling across all sources), cell values are the
+    % of records with that attribute available (i.e. not null or
+    "unknown") in that source. Rows are sorted by the "all" column,
+    highest availability first.
+    """
+    attributes = attributes.with_columns(
+        pl.when(pl.col(col) == "unknown")
+        .then(None)
+        .otherwise(pl.col(col))
+        .alias(col)
+        for col in attributes.columns
+        if attributes[col].dtype == pl.String
+    )
+
+    per_source = group_null_pct(
+        attributes,
+        group_cols=["source"],
+        ignore=["hid", "pid", "source"],
+        return_per_column=True,
+        return_overall=False,
+    )
+    overall = group_null_pct(
+        attributes.with_columns(pl.lit("all").alias("source")),
+        group_cols=["source"],
+        ignore=["hid", "pid", "source"],
+        return_per_column=True,
+        return_overall=False,
+    )
+    per_source = per_source.sort("source")
+    per_source = pl.concat([per_source, overall], how="vertical")
+    per_source = per_source.with_columns(
+        (pl.lit(100) - pl.col(col)).alias(col)
+        for col in per_source.columns
+        if col != "source"
+    )
+
+    table = per_source.transpose(
+        include_header=True, header_name="attribute", column_names="source"
+    ).sort("all", descending=True)
+
+    if markdown:
+        return _attribute_availability_to_markdown(table)
+
+    return table
+
+
+def _attribute_availability_to_markdown(table: pl.DataFrame) -> str:
+    headers = ["Attribute"] + table.columns[1:]
+    rows = []
+    for row in table.iter_rows():
+        attribute, *pcts = row
+        rows.append([attribute] + [f"{pct:.0f}%" for pct in pcts])
+    return render_markdown_table(headers, rows)
+
+
 def activity_summary_table(
     attributes: pl.DataFrame,
     activities: pl.DataFrame,

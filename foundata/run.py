@@ -352,6 +352,11 @@ def runner(
         tables.summary_table(all_attributes, all_trips, markdown=True),
     )
 
+    print_markdown_table(
+        "Attribute Availability by Source",
+        tables.attribute_availability(all_attributes, markdown=True),
+    )
+
     plots.numeric_hist_grid(
         all_attributes,
         on="source",

@@ -24,8 +24,7 @@ TRIPS_SCHEMA = {
 
 def test_render_markdown_table_pads_columns_to_widest_cell():
     md = tables.render_markdown_table(
-        ["source", "trips"],
-        [["ltds", "10"], ["vista_long_name", "200,000"]],
+        ["source", "trips"], [["ltds", "10"], ["vista_long_name", "200,000"]]
     )
     lines = md.splitlines()
     # every line has identical total width once padded — that's what makes
@@ -75,6 +74,60 @@ def trips():
         },
         schema=TRIPS_SCHEMA,
     )
+
+
+# ---------------------------------------------------------------------------
+# attribute_availability
+# ---------------------------------------------------------------------------
+
+
+def test_attribute_availability_values():
+    attrs = pl.DataFrame(
+        {
+            "pid": ["p1", "p2", "p3", "p4"],
+            "hid": ["h1", "h2", "h3", "h4"],
+            "source": ["a", "a", "b", "b"],
+            # nulls in both a and b => all-availability 50%
+            "age": [25, None, None, 50],
+            # nulls only in a => all-availability 75%
+            "employment": ["employed", "unknown", "unemployed", "employed"],
+        }
+    )
+
+    table = tables.attribute_availability(attrs)
+
+    assert table.columns == ["attribute", "a", "b", "all"]
+    age_row = table.filter(pl.col("attribute") == "age").row(0, named=True)
+    assert age_row["a"] == pytest.approx(50.0)
+    assert age_row["b"] == pytest.approx(50.0)
+    assert age_row["all"] == pytest.approx(50.0)
+
+    # "unknown" strings are treated the same as null
+    employment_row = table.filter(pl.col("attribute") == "employment").row(
+        0, named=True
+    )
+    assert employment_row["a"] == pytest.approx(50.0)
+    assert employment_row["b"] == pytest.approx(100.0)
+    assert employment_row["all"] == pytest.approx(75.0)
+
+    # rows sorted by "all" availability, highest first
+    assert table["attribute"].to_list() == ["employment", "age"]
+
+
+def test_attribute_availability_markdown():
+    attrs = pl.DataFrame(
+        {
+            "pid": ["p1", "p2"],
+            "hid": ["h1", "h2"],
+            "source": ["a", "b"],
+            "age": [25, None],
+        }
+    )
+
+    md = tables.attribute_availability(attrs, markdown=True)
+    assert isinstance(md, str)
+    assert "| Attribute | a" in md
+    assert "age" in md and "0%" in md and "100%" in md
 
 
 # ---------------------------------------------------------------------------
