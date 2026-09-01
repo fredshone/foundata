@@ -128,6 +128,37 @@ def test_conditionality_matrix_respects_min_group_n(
     assert matrix["source"].to_list() == ["a"]
 
 
+def test_conditionality_matrix_attribute_name_collides_with_act_type(
+    attrs_conditionality, activities_conditionality
+):
+    # "education" is both an act_type below and, here, a person attribute
+    # name. `activity_counts_per_person` returns a count column literally
+    # named "education", and a naive join against the attribute of the same
+    # name lets the count column silently win — the attribute's own values
+    # (all null for source "a") must not be shadowed by that count.
+    attrs = attrs_conditionality.with_columns(
+        education=pl.Series([None, None, None, None, "degree", "none"])
+    )
+    matrix = anomaly.conditionality_matrix(
+        attrs,
+        activities_conditionality,
+        attribute_cols=["education"],
+        act_types=["work", "education"],
+        min_group_n=1,
+    )
+
+    # Source "a" has a fully-null "education" attribute (n=0 non-null),
+    # so it must be skipped entirely — if the count column shadowed it,
+    # rows would wrongly appear since the count is never null.
+    assert matrix.filter(pl.col("source") == "a").is_empty()
+
+    # Source "b" has real "education" attribute values and should compute
+    # against them normally.
+    b = matrix.filter(pl.col("source") == "b")
+    assert set(b["act_type"].to_list()) == {"work", "education"}
+    assert b["n"].to_list() == [2, 2]
+
+
 def test_conditionality_matrix_composite_on(
     attrs_conditionality, activities_conditionality
 ):

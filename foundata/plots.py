@@ -1030,6 +1030,14 @@ def activity_count_by_attribute(
     counts = post_process.activity_counts_per_person(
         attributes, activities, act_types
     )
+    # Rename count columns before joining: an act_type can share a name
+    # with a person attribute (e.g. "education" is both an activity
+    # purpose and an attribute), and pl.DataFrame.join silently suffixes
+    # the *incoming* column on a name clash rather than raising — so
+    # `attribute_col="education"` would silently read the activity count
+    # instead of the attribute value below.
+    count_cols = {t: f"__count_{t}" for t in act_types}
+    counts = counts.rename(count_cols)
     counts = counts.join(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
@@ -1058,7 +1066,7 @@ def activity_count_by_attribute(
         ax.set_facecolor(ax_bg)
 
         agg = counts.group_by([attribute_col, on]).agg(
-            pl.col(act).mean().alias("mean_count")
+            pl.col(count_cols[act]).mean().alias("mean_count")
         )
 
         for gi, g in enumerate(groups):
@@ -1150,6 +1158,15 @@ def attribute_activity_heatmap(
     counts = post_process.activity_counts_per_person(
         attributes, activities, act_types
     )
+    # Rename count columns before joining: an act_type can share a name
+    # with a person attribute (e.g. "education" is both an activity
+    # purpose and an attribute, and this function's own docstring example
+    # uses it as `attribute_col`), and pl.DataFrame.join silently suffixes
+    # the *incoming* column on a name clash rather than raising — so
+    # `attribute_col` would silently resolve to the activity count instead
+    # of the attribute value everywhere below.
+    count_cols = {t: f"__count_{t}" for t in act_types}
+    counts = counts.rename(count_cols)
     counts = counts.join(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
@@ -1188,13 +1205,13 @@ def attribute_activity_heatmap(
             for gi, g in enumerate(groups):
                 sub = (
                     counts.filter(pl.col(on) == g)
-                    .select(attribute_col, act)
+                    .select(attribute_col, count_cols[act])
                     .drop_nulls()
                 )
                 if sub.height == 0:
                     continue
                 vals = sub[attribute_col].to_numpy()
-                y = sub[act].to_numpy()
+                y = sub[count_cols[act]].to_numpy()
                 bin_idx = np.clip(
                     np.digitize(vals, edges[1:-1], right=True), 0, n - 1
                 )
@@ -1205,7 +1222,7 @@ def attribute_activity_heatmap(
             return matrix
 
         agg = counts.group_by([attribute_col, on]).agg(
-            pl.col(act).mean().alias("mean_count")
+            pl.col(count_cols[act]).mean().alias("mean_count")
         )
         agg_map = {
             (row[attribute_col], row[on]): row["mean_count"]
@@ -1294,6 +1311,11 @@ def _plot_bar_cell(
     color_map: dict,
     bar_width: float,
 ):
+    """`act` is the column in `counts` holding the activity count — the
+    caller must pass its (possibly renamed) column name, not necessarily
+    the literal activity-type string, to avoid colliding with an
+    identically-named attribute column (see `activities_attributes_grid`).
+    """
     cats = sorted(
         counts.select(attribute_col).drop_nulls().unique().to_series().to_list()
     )
@@ -1330,6 +1352,8 @@ def _plot_line_cell(
     color_map: dict,
     n_bins: int,
 ):
+    """`act` is the column in `counts` holding the activity count — see the
+    note on `_plot_bar_cell`."""
     all_vals = counts.select(attribute_col).drop_nulls().to_series().to_numpy()
     if all_vals.size == 0:
         return
@@ -1403,6 +1427,13 @@ def activities_attributes_grid(
     counts = post_process.activity_counts_per_person(
         attributes, activities, act_types
     )
+    # Rename count columns before joining: an act_type can share a name
+    # with a person attribute (e.g. "education"), and pl.DataFrame.join
+    # silently suffixes the *incoming* column on a name clash rather than
+    # raising — so an attribute in `attribute_cols` would silently shadow
+    # the identically-named activity count instead of joining in cleanly.
+    count_cols = {t: f"__count_{t}" for t in act_types}
+    counts = counts.rename(count_cols)
     counts = counts.join(
         attributes.select("pid", on, *attribute_cols.keys()),
         on="pid",
@@ -1425,11 +1456,25 @@ def activities_attributes_grid(
 
             if kind == "bar":
                 _plot_bar_cell(
-                    ax, counts, act, col, on, groups, color_map, bar_width
+                    ax,
+                    counts,
+                    count_cols[act],
+                    col,
+                    on,
+                    groups,
+                    color_map,
+                    bar_width,
                 )
             elif kind == "line":
                 _plot_line_cell(
-                    ax, counts, act, col, on, groups, color_map, n_bins
+                    ax,
+                    counts,
+                    count_cols[act],
+                    col,
+                    on,
+                    groups,
+                    color_map,
+                    n_bins,
                 )
                 ax.set_xlabel(col.replace("_", " ").title(), fontsize="small")
             else:

@@ -192,11 +192,22 @@ def conditionality_matrix(
     counts = post_process.activity_counts_per_person(
         attributes, activities, act_types
     )
+    # Rename count columns before joining attribute_cols in: an act_type can
+    # share a name with a person attribute (e.g. "education" is both an
+    # activity purpose and an attribute), and pl.DataFrame.join silently
+    # suffixes the *incoming* column on a name clash rather than raising —
+    # so `sub[attr]` below would silently read the activity count instead of
+    # the attribute value.
+    count_cols = {t: f"__count_{t}" for t in act_types}
+    counts = counts.rename(count_cols)
     counts = counts.join(
         binned.select("pid", *join_cols, *attribute_cols), on="pid", how="left"
     )
     counts = counts.with_columns(
-        [(pl.col(t) > 0).cast(pl.Int8).alias(f"has_{t}") for t in act_types]
+        [
+            (pl.col(count_cols[t]) > 0).cast(pl.Int8).alias(f"has_{t}")
+            for t in act_types
+        ]
     )
 
     groups = (

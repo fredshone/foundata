@@ -236,6 +236,46 @@ def test_plot_attribute_activity_heatmap_binned(
     _assert_saved(out)
 
 
+def test_plot_activity_count_by_attribute_name_collides_with_act_type(
+    attrs_conditionality, trips_conditionality, tmp_path
+):
+    # "education" is both an act_type and, here, the attribute being
+    # faceted on — activity_counts_per_person's "education" count column
+    # must not shadow the attribute column after the join (see
+    # tests/test_anomaly.py for the same collision on conditionality_matrix).
+    attrs = attrs_conditionality.with_columns(
+        education=pl.Series(
+            ["degree", "none", "degree", "none", "degree", "none"]
+        )
+    )
+    activities = post_process.trips_to_activities(attrs, trips_conditionality)
+
+    out = tmp_path / "activity_count_by_attribute_education.png"
+    plots.activity_count_by_attribute(
+        attrs,
+        activities,
+        attribute_col="education",
+        act_types=["work", "education"],
+        save_path=out,
+    )
+    _assert_saved(out)
+
+    out2 = tmp_path / "attribute_activity_heatmap_education.png"
+    plots.attribute_activity_heatmap(
+        attrs, activities, attribute_col="education", save_path=out2
+    )
+    _assert_saved(out2)
+
+    out3 = tmp_path / "activities_attributes_grid_education.png"
+    plots.activities_attributes_grid(
+        attrs,
+        activities,
+        attribute_cols={"education": "bar"},
+        save_path=out3,
+    )
+    _assert_saved(out3)
+
+
 def test_plot_activity_counts_grid(attrs_full, trips_conditionality, tmp_path):
     out = tmp_path / "activity_counts_grid.png"
     activities = post_process.trips_to_activities(
