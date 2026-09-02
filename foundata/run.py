@@ -52,6 +52,11 @@ def process_source(attributes, trips, source_name):
     trips = filter.trips_on_endings(trips, time_limit=1440)
     attributes, trips = filter.feasible_trips(attributes, trips)
 
+    # guarantee attributes and trips share the same pid order, regardless of
+    # what order the source's raw files or intermediate joins produced
+    attributes = attributes.sort("pid")
+    trips = trips.sort(["pid", "seq"])
+
     print(
         f"Loaded {len(attributes)} persons, "
         f"{len(trips.select(pl.col('pid').unique()))} plans, "

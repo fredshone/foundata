@@ -68,7 +68,7 @@ def load_households(
         path = root / str(year) / name
         data = pl.read_csv(path, ignore_errors=True)
 
-        select = column_mapping.keys() & set(data.columns)
+        select = [c for c in column_mapping.keys() if c in data.columns]
         data = data.select(select).rename(column_mapping, strict=False)
 
         if "date" in data.columns:
