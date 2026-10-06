@@ -62,6 +62,28 @@ Foundata makes use of open (safely available, either immediately, or available v
 | VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
 
+### In progress/todo
+
+|  Name       | Location  | ~Years    | Note              | Source             |
+| ----------- |---------- |-----------|-------------------|--------------------|
+| OVIN        | NL | 2010-17 | | [Request](https://ssh.datastations.nl/)     |
+| OM          | NL | 2004-07 | | [Request](https://ssh.datastations.nl/)     |
+| Various     | FR |         | | [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
+| TUS         | IN | 2019,24 | Time use survey but maybe useable | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
+| São Paulo OD 2017 | BR | 2017 | | [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075)     |
+| Mexico City EOD | BR | 2017 | | [data](https://www.inegi.org.mx/programas/eod/2017/#herramientas)     |
+| Buenos Aires | ARG |  | unverified | [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas)     |
+| Montevideo | URG |   | unverified | [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
+
+Bogotá EM 2023 / 2019
+Santiago EOD 2012
+MTUS harmonised episodes (Korea) https://timeuse.org/
+Mongolia TUS 2015 / 2019
+Tokyo PT 2008 / 2018
+JICA PT surveys via PFLOW
+Hong Kong TCS 2011 / 2022
+Montevideo https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad
+
 ### Plans
 
 We encode human activity plans as sequences of activities and associated trips. Foundata `run` will output both an activities table and a trips table. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
