@@ -1,0 +1,136 @@
+# Person-level dictionary for TUS (India, Time Use Survey), covering both
+# the 2024 (tus106PER) and 2019 (NSS Blocks 3/5/6) rounds.
+#
+# 2024 carries demographics + day-of-week + diary episodes all on one row
+# per diary episode (tus106PER), so its column_mappings is a single flat
+# dict. 2019 splits the same information across three separate tables --
+# Block 3 (demographics, one row per household member), Block 5 (day of
+# week + type of day, one row per diary participant) and Block 6 (diary
+# episodes) -- so its column_mappings has a sub-dict per table; tus.py joins
+# them back together on (hid, pid). Both rounds share the same value
+# mappings below (sex/relationship/employment/education/day all use
+# identical codes in both rounds).
+#
+# TUS has no occupation code in either round (only a 2-digit industry code,
+# which isn't occupation), no driving licence question, no work-from-home
+# question, and no race/ethnicity question comparable to the template's
+# "race" field — those template fields are left unmapped (null/"unknown").
+# "disability" is also left unmapped: Principal_Activity_Status has a
+# disability-related *employment* status code (95), but that's not the same
+# question as the template's "has a disability affecting travel".
+
+column_mappings:
+  "2024":
+    FSU_Serial_No: hid_fsu                    # intermediate -- combined into hid/pid in tus.py
+    Sample_HH_No: hid_sample                  # intermediate -- combined into hid/pid in tus.py
+    Person_Serial_No: pid_person              # intermediate -- combined into pid in tus.py
+    Age: age
+    Gender: sex
+    Relation_to_Head: relationship
+    Principal_Activity_Status: employment
+    Highest_Education: education
+    Day_of_Week: day
+    Activity_Serial_No: activity_serial_no      # intermediate -- diary episode order, used in tus.py
+    Major_Activity_Flag: major_activity_flag    # intermediate -- "1"=primary activity, "2"=simultaneous secondary (dropped)
+    Time_From: time_from                        # intermediate -- episode start, HH:MM
+    Time_To: time_to                            # intermediate -- episode end, HH:MM
+    Activity_Code_3Digit: activity_code         # intermediate -- ICATUS 2016 3-digit code, mapped via trip_dictionary.yaml
+  "2019":
+    demographics:                 # NSS Block 3 -- one row per household member
+      fsu: hid_fsu                # intermediate -- combined into hid/pid in tus.py
+      b1q4: hid_sample            # intermediate -- combined into hid/pid in tus.py
+      b3q1: pid_person            # intermediate -- combined into pid in tus.py (Person serial no.)
+      b3q5: age
+      b3q4: sex
+      b3q3: relationship
+      b3q8: employment
+      b3q7: education
+    day:                          # NSS Block 5 -- one row per diary participant
+      fsu: hid_fsu                # intermediate -- combined into hid/pid in tus.py
+      b1q4: hid_sample            # intermediate -- combined into hid/pid in tus.py
+      b5q1: pid_person            # intermediate -- combined into pid in tus.py (srl. No of member)
+      b5q5: day
+    diary:                        # NSS Block 6 -- one row per diary episode
+      fsu: hid_fsu                # intermediate -- combined into hid/pid in tus.py
+      b1q4: hid_sample            # intermediate -- combined into hid/pid in tus.py
+      b6q1: pid_person            # intermediate -- combined into pid in tus.py (Serial no. of member)
+      b6q3: activity_serial_no    # intermediate -- diary episode order, used in tus.py (srl. No of activity)
+      b6q9: major_activity_flag   # intermediate -- "1"=major, "2"=minor (dropped)
+      b6q4: time_from             # intermediate -- episode start, HH:MM
+      b6q5: time_to               # intermediate -- episode end, HH:MM
+      b6q10: activity_code        # intermediate -- ICATUS 2016 3-digit code, mapped via trip_dictionary.yaml
+
+# sex mapping (shared across rounds)
+# Valid values: male, female, other, unknown
+sex:
+  "1": male
+  "2": female
+  "3": other
+
+# relationship mapping (shared across rounds)
+# Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+# Codes 4 (spouse of married child), 6 (grandchild), 7 (parent/parent-in-law,
+# bundled together) and 8 (sibling/sibling-in-law/other relative, bundled
+# together) each mix a precise template category with in-laws/other
+# relatives in one source code, so the safer (if coarser) choice is
+# "relative" rather than guessing which part of the bundle predominates.
+relationship:
+  "1": self
+  "2": partner
+  "3": child
+  "4": relative
+  "5": child
+  "6": relative
+  "7": relative
+  "8": relative
+  "9": unrelated
+
+# employment mapping (shared across rounds, from "usual principal activity
+# status" -- this is usual/annual status, not status on the diary day). 2019
+# doesn't use codes 51 and 97 (its schedule folds casual wage labour into a
+# single code 41 and has no "others" catch-all), but the codes it does use
+# carry identical meanings to 2024's. Child ages are then forced to
+# student/void by utils.correct_child_employment() in the pipeline,
+# overriding this mapping.
+# Valid values: employed, unemployed, retired, student, unknown, void
+employment:
+  "11": employed   # worked in household enterprise (self-employed): own account worker
+  "12": employed   # worked in household enterprise (self-employed): employer
+  "21": employed   # worked as helper in household enterprise (unpaid family worker)
+  "31": employed   # worked as regular salaried/wage employee
+  "41": employed   # worked as casual wage labour: in public works
+  "51": employed   # worked as casual wage labour: in other types of work
+  "81": unemployed # did not work but was seeking and/or available for work
+  "91": student    # attended educational institution
+  "92": unemployed # attended domestic duties only (not in labour force)
+  "93": unemployed # attended domestic duties + unpaid production for household use
+  "94": retired    # rentiers, pensioners, remittance recipients, etc.
+  "95": unemployed # not able to work due to disability
+  "97": unknown    # others (incl. begging, prostitution, etc.)
+
+# education mapping (shared across rounds)
+# Valid values: some, none, school, high-school, degree, unknown, void
+education:
+  "01": none        # not literate
+  "02": some        # literate: below primary
+  "03": school       # literate: primary
+  "04": school       # literate: upper primary/middle
+  "05": school       # literate: secondary
+  "06": high-school  # literate: higher secondary
+  "07": high-school  # literate: diploma/certificate course (up to secondary)
+  "08": high-school  # literate: diploma/certificate course (higher secondary)
+  "10": degree       # literate: diploma/certificate course (graduation & above)
+  "11": degree       # literate: graduate
+  "12": degree       # literate: post graduate and above
+
+# day mapping (shared across rounds -- the actual day of the diary, not a
+# usual/reference day)
+# Valid values: monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown
+day:
+  "1": monday
+  "2": tuesday
+  "3": wednesday
+  "4": thursday
+  "5": friday
+  "6": saturday
+  "7": sunday

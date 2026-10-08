@@ -386,7 +386,7 @@ def filter_missing_acts_or_modes(
 
     attrs_df = pl.read_csv(attributes) if attributes else None
     trips_df = pl.read_csv(trips)
-    attrs_out, trips_out = flt.missing_acts_or_modes(attrs_df, trips_df)
+    attrs_out, trips_out = flt.missing_acts(attrs_df, trips_df)
 
     if oa and attrs_out is not None:
         attrs_out.write_csv(oa)

@@ -19,6 +19,7 @@ from foundata import (
     post_process,
     qhts,
     tables,
+    tus,
     utils,
     verify,
     vista,
@@ -39,7 +40,7 @@ def process_source(attributes, trips, source_name):
     utils.check_overlap(
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
     )
-    attributes, trips = filter.missing_acts_or_modes(attributes, trips)
+    attributes, trips = filter.missing_acts(attributes, trips)
 
     attributes, trips = fix.missing_columns(attributes, trips)
     verify.columns(attributes, trips)
@@ -52,8 +53,6 @@ def process_source(attributes, trips, source_name):
     trips = filter.trips_on_endings(trips, time_limit=1440)
     attributes, trips = filter.feasible_trips(attributes, trips)
 
-    # guarantee attributes and trips share the same pid order, regardless of
-    # what order the source's raw files or intermediate joins produced
     attributes = attributes.sort("pid")
     trips = trips.sort(["pid", "seq"])
 
@@ -77,7 +76,17 @@ def runner(
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
 
-    sources = {"ltds", "vista", "qhts", "cmap", "nhts", "nts", "ktdb", "odin"}
+    sources = {
+        "ltds",
+        "vista",
+        "qhts",
+        "cmap",
+        "nhts",
+        "nts",
+        "ktdb",
+        "odin",
+        "tus",
+    }
     if select:
         sources = set(select)
     if omit:
@@ -303,6 +312,31 @@ def runner(
             trips_config=trips_config,
         )
         attributes, trips = process_source(attributes, trips, "ODIN")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # TUS (INDIA)
+    # ------------------------------------------------------------------
+    if "tus" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "tus" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "tus" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "tus" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = tus.load_years(
+            data_root=data_root / "TUS",
+            years=[2019, 2024],
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "TUS")
         all_attributes.append(attributes)
         all_trips.append(trips)
 

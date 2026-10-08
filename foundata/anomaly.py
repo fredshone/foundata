@@ -595,7 +595,7 @@ def time_quality_summary_table(
 ) -> pl.DataFrame | str:
     """Per-source trip-time quality diagnostics.
 
-    Flags non-positive-duration trips (tst >= tet), day-wrap trips
+    Flags unknown trips speeds, non-positive-duration trips (tst >= tet), day-wrap trips
     (tst/tet > 1440), and implausibly fast trips (implied speed above
     `max_plausible_speed` km/h) — the signatures of a per-source
     time-encoding bug rather than an exhaustive quality check.
@@ -605,7 +605,11 @@ def time_quality_summary_table(
     ).with_columns(duration=(pl.col("tet") - pl.col("tst")).cast(pl.Float64))
 
     speed_expr = (
-        pl.when((pl.col("duration") > 0) & pl.col("distance").is_not_null())
+        pl.when(
+            (pl.col("duration").is_not_null())
+            & (pl.col("duration") > 0)
+            & pl.col("distance").is_not_null()
+        )
         .then(pl.col("distance") / (pl.col("duration") / 60))
         .otherwise(None)
     )
@@ -658,7 +662,11 @@ def _time_quality_table_to_markdown(table: pl.DataFrame) -> str:
                     if row["median_duration_min"] is not None
                     else "n/a"
                 ),
-                f"{row['implausible_speed_pct']:.1f}%",
+                (
+                    f"{row['implausible_speed_pct']:.1f}%"
+                    if row["implausible_speed_pct"] is not None
+                    else "n/a"
+                ),
                 (
                     f"{row['median_speed_kmh']:.1f}"
                     if row["median_speed_kmh"] is not None
