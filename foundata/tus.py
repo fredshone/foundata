@@ -525,7 +525,7 @@ def _add_implied_trips(episodes: pl.DataFrame) -> pl.DataFrame:
 
     - the location changes (inside <-> outside),
     - the activity type changes (so never home -> home), and
-    - the outside one is work, education or shop (IMPLIED_TRIP_ACTS),
+    - the outside one is an IMPLIED_TRIP_ACTS type (e.g. work, shop),
       which must happen somewhere else.
 
     The trip takes the last IMPLIED_TRIP_MINS of the earlier episode

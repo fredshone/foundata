@@ -328,13 +328,14 @@ def test_load_trips_adds_trip_for_unrecorded_move_to_work(trips_cfg):
 
 def test_load_trips_no_implied_trip_for_other_moves(trips_cfg):
     """No trip is added for: moving outside without changing activity type
-    (home -> home), going out for an activity that may be just outside
-    (chatting), or changing activity without changing location."""
+    (home -> home), going out for an activity type not in
+    IMPLIED_TRIP_ACTS ("other", e.g. tending a kitchen garden), or changing
+    activity without changing location."""
     episodes = _episodes(
         [
             ("04:00", "07:00", "911", "1", "", "1"),  # home, inside
             ("07:00", "08:00", "931", "1", "", "2"),  # home, outside
-            ("08:00", "09:00", "711", "1", "", "2"),  # visit, outside
+            ("08:00", "09:00", "211", "1", "", "2"),  # other, outside
             ("09:00", "10:00", "921", "1", "", "1"),  # home, inside
             ("10:00", "12:00", "110", "1", "", "1"),  # work, inside
             ("12:00", "04:00", "911", "1", "", "1"),  # home, inside
@@ -344,6 +345,21 @@ def test_load_trips_no_implied_trip_for_other_moves(trips_cfg):
     trips = tus.load_trips(episodes, trips_cfg, _ATTRS)
 
     assert trips.is_empty()
+
+
+def test_load_trips_adds_trip_for_unrecorded_move_to_visit(trips_cfg):
+    episodes = _episodes(
+        [
+            ("04:00", "08:00", "911", "1", "", "1"),  # home, inside
+            ("08:00", "09:00", "711", "1", "", "2"),  # chatting, outside
+            ("09:00", "04:00", "911", "1", "", "1"),  # home, inside
+        ]
+    )
+
+    trips = tus.load_trips(episodes, trips_cfg, _ATTRS)
+
+    assert trips["oact"].to_list() == ["home", "visit"]
+    assert trips["dact"].to_list() == ["visit", "home"]
 
 
 def test_load_trips_no_implied_trip_next_to_recorded_travel(trips_cfg):
