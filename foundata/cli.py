@@ -379,14 +379,14 @@ def filter_homebased(
 def filter_missing_acts_or_modes(
     attributes, trips, output, output_attributes, output_trips
 ):
-    """Remove plans with any missing or unknown activities or modes."""
+    """Remove plans with any missing or unknown activities."""
     suffix = "_clean_modes"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
     ot = _resolve_out(output_trips, output, trips, suffix)
 
     attrs_df = pl.read_csv(attributes) if attributes else None
     trips_df = pl.read_csv(trips)
-    attrs_out, trips_out = flt.missing_acts_or_modes(attrs_df, trips_df)
+    attrs_out, trips_out = flt.missing_acts(attrs_df, trips_df)
 
     if oa and attrs_out is not None:
         attrs_out.write_csv(oa)

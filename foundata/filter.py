@@ -76,14 +76,14 @@ def home_based(
     return attributes, trips
 
 
-def missing_acts_or_modes(
+def missing_acts(
     attributes: Optional[pl.DataFrame], trips: pl.DataFrame
 ) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
-    """Filter out plans with any missing or unknown activities or modes.
+    """Filter out plans with any missing or unknown activities.
 
     Args:
         attributes: DataFrame of plan attributes. If None, only trips are filtered.
-        trips: DataFrame of trips with columns "pid", "oact", "dact", "mode".
+        trips: DataFrame of trips with columns "pid", "oact", "dact".
 
     Returns:
         Tuple of (filtered attributes or None, filtered trips).
@@ -93,10 +93,8 @@ def missing_acts_or_modes(
         trips.filter(
             pl.col("oact").is_null()
             | pl.col("dact").is_null()
-            | pl.col("mode").is_null()
             | (pl.col("oact") == "unknown")
             | (pl.col("dact") == "unknown")
-            | (pl.col("mode") == "unknown")
         )
         .select("pid")
         .unique()
@@ -113,7 +111,7 @@ def missing_acts_or_modes(
     )
 
     print(
-        f"Removed {nn}/{n} plans due to missing activities or modes ({100 * nn / n:.1f}%)"
+        f"Removed {nn}/{n} plans due to missing activities ({100 * nn / n:.1f}%)"
     )
     return clean_attributes, clean_trips
 

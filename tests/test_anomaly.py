@@ -577,6 +577,21 @@ def test_flag_distribution_shift_outliers_markdown_empty_when_nothing_flagged():
     assert md == "No anomalies flagged."
 
 
+def test_flag_outliers_handle_matrix_with_no_scored_groups():
+    # the matrix builders return a column-less frame when every group is
+    # below min_group_n, e.g. a single-source run on toy data
+    empty = pl.DataFrame([])
+    for flag in (
+        anomaly.flag_distribution_shift_outliers,
+        anomaly.flag_conditionality_outliers,
+    ):
+        assert flag(empty, on=["source", "year"]).is_empty()
+        assert (
+            flag(empty, on=["source", "year"], markdown=True)
+            == "No anomalies flagged."
+        )
+
+
 def test_flag_distribution_shift_outliers_markdown():
     matrix = pl.DataFrame(
         {

@@ -1,0 +1,221 @@
+# Trip-level dictionary for TUS (India, Time Use Survey), covering both the
+# 2024 and 2019 rounds -- both use the same ICATUS 2016 3-digit activity
+# codes, so act_mappings/travel_codes below are shared across rounds (hence
+# the single "default" key, not a year-keyed one).
+#
+# TUS is a time-use diary, not a conventional trip survey: each person's day
+# is a sequence of ~15-45 minute activity episodes (tus106PER rows in 2024,
+# NSS Block 6 rows in 2019), coded with a 3-digit ICATUS 2016 activity code
+# (Activity_Code_3Digit in 2024, b6q10 in 2019). ICATUS
+# reserves one specific code per major division for "travelling time
+# related to <that division's activities>" -- travel_codes below lists all
+# 10 of them. tus.py treats every diary episode coded with one of those as
+# a trip, and every other episode as an activity; act_mappings classifies
+# every other code into the template's activity-purpose vocabulary. Since a
+# diary routinely has several different stationary activities in a row
+# between two trips (e.g. rest, then eat, then nap, all at home, with no
+# trip between them), a trip's oact/dact are not simply the nearest
+# episode -- every maximal run of consecutive non-travel episodes between
+# two trips is squashed into a single activity, picking the act type with
+# the longest *total* duration in that run (see tus.py::load_trips). Both
+# the preceding trip's dact and the following trip's oact are read off
+# that same squashed value, so by construction every trip's dact equals
+# the next trip's oact and filter.activity_consistency should never drop
+# a TUS plan.
+#
+# A diary time slot can hold several activities (one major, others minor,
+# done either simultaneously or one after another); see
+# tus.py::_resolve_slots for how travel among them becomes trips. The
+# diary columns themselves are mapped in person_dictionary.yaml.
+#
+# TUS captures no transport mode and no trip distance at all, so every
+# trip's mode is "unknown" and distance is always null -- both allowed by
+# the template (mode default: True; distance has no "set" constraint and
+# avg_speed/feasibility checks downstream degrade gracefully to null when
+# distance is null). `filter.missing_acts` (run.py) only checks activities,
+# not modes, so TUS plans are not dropped for having mode "unknown".
+#
+# ozone/dzone: TUS records only whether an activity happened inside/outside
+# the dwelling (Activity_Location), not an urban/rural classification of
+# *where* outside -- so there is no real per-trip zone signal. tus.py uses
+# the person's own household hh_zone (rural/urban) for both ozone and dzone
+# as the least-wrong available proxy, on the assumption that most within-day
+# travel does not cross the rural/urban boundary.
+
+# ICATUS 2016 3-digit activity code -> template act type.
+# default: {} since there is only one coding scheme (no year variants).
+act_mappings:
+  default:
+    "110": work  # Employment in corporations, government and non-profit institutions
+    "121": work  # Growing of crops for the market in household enterprises
+    "122": work  # Raising animals for the market in household enterprises
+    "123": work  # Forestry and logging for the market in household enterprises
+    "124": work  # Fishing for the market in household enterprises
+    "125": work  # Aquaculture for the market in household enterprises
+    "126": work  # Mining and quarrying for the market in household enterprises
+    "127": work  # Making and processing goods for the market in household enterprises
+    "128": work  # Construction activities for the market in household enterprises
+    "129": work  # Other activities related to employment in household enterprises to produce goods
+    "131": work  # Vending and trading of goods in household enterprises
+    "132": work  # Providing paid repair, installation, maintenance and disposal in households and household enterprises
+    "133": work  # Providing paid business and professional services in households and household enterprises
+    "134": work  # Transporting goods and passengers for pay or profit in households and household enterprises
+    "135": work  # Providing paid personal care services in households and household enterprises
+    "136": work  # Providing paid domestic services
+    "139": work  # Other activities related to employment in households and household enterprises providing services
+    "141": work  # Activities ancillary to employment
+    "142": work  # Breaks during working time within employment
+    "150": work  # Training and studies in relation to employment
+    "160": other  # Seeking employment
+    "170": other  # Setting up a business
+    "211": other  # Growing crops and kitchen gardening, for own final use
+    "212": other  # Farming of animals and production of animal products, for own final use
+    "213": other  # Hunting, trapping and production of animal skins, for own final use
+    "214": other  # Forestry and logging, for own final use
+    "215": other  # Gathering wild products, for own final use
+    "216": other  # Fishing, for own final use
+    "217": other  # Aquaculture, for own final use
+    "218": other  # Mining and quarrying, for own final use
+    "221": other  # Making, processing food products, beverages and tobacco for own final use
+    "222": other  # Making, processing textiles, wearing apparel, leather and related products, for own final use
+    "223": other  # Making, processing of wood and bark products, for own final use
+    "224": other  # Making, processing bricks, concrete slabs, hollow blocks, tiles for own final use
+    "225": other  # Making, processing herbal and medicinal preparations for own final use
+    "226": other  # Making, processing metals and metal products for own final use
+    "227": other  # Making, processing of products using other materials for own final use
+    "229": other  # Acquiring supplies and disposing of products and other activities related to making and processing goods for own final use
+    "230": other  # Construction activities for own final use
+    "241": home  # Gathering firewood and other natural products used as fuel for own final use
+    "242": home  # Fetching water from natural and other sources for own final use
+    "311": home  # Preparing meals/snacks
+    "312": home  # Serving meals/snacks
+    "313": home  # Cleaning up after food preparation/meals/snacks
+    "314": home  # Storing, arranging, preserving food stocks
+    "319": home  # Other activities related to food and meals management and preparation
+    "321": home  # Indoor cleaning
+    "322": home  # Outdoor cleaning
+    "323": home  # Recycling and disposal of garbage
+    "324": home  # Upkeep of in/outdoor plants, hedges, garden, grounds, landscape, etc.
+    "325": home  # Tending furnace, boiler, fireplace for heating and water supply
+    "329": home  # Other activities related to cleaning and upkeep of dwelling and surroundings
+    "331": home  # Do-it-yourself improvement, maintenance and repair of own dwelling
+    "332": home  # Installation, servicing and repair of personal and household goods including ICT equipment
+    "333": home  # Vehicle maintenance and repairs
+    "339": home  # Other activities related to do-it-yourself decoration, maintenance and repair
+    "341": home  # Hand/machine-washing
+    "342": home  # Drying; hanging out, bringing in wash
+    "343": home  # Ironing/pressing/folding
+    "344": home  # Mending/repairing and care of clothes and shoes; cleaning and polishing shoes
+    "349": home  # Other activities related to care of textiles and footwear
+    "351": home  # Paying household bills
+    "352": home  # Budgeting, planning, organizing duties and activities in the household
+    "359": home  # Other activities related to household management
+    "361": home  # Daily pet care
+    "362": home  # Using veterinary care or other pet care services (grooming, stabling, holiday or day care)
+    "369": home  # Other activities related to pet care
+    "371": shop  # Shopping for/purchasing of goods and related activities
+    "372": shop  # Shopping for/availing of services and related activity
+    "390": home  # Other unpaid domestic services for household and family members
+    "411": home  # Caring for children including feeding, cleaning, physical care
+    "412": home  # Providing medical care to children
+    "413": home  # Instructing, teaching, training, helping children
+    "414": home  # Talking with and reading to children
+    "415": home  # Playing and sports with children
+    "416": home  # Minding children (passive care)
+    "417": home  # Meetings and arrangements with schools and child care service providers
+    "419": home  # Other activities related to childcare and instruction
+    "421": home  # Assisting dependent adults with tasks of daily living
+    "422": home  # Assisting dependent adults with medical care
+    "423": home  # Assisting dependent adults with forms, administration, accounts
+    "424": home  # Affective/emotional support for dependent adults
+    "425": home  # Passive care of dependent adult
+    "426": home  # Meetings and arrangements with adult care service providers
+    "429": home  # Other activities related to care for dependent adults
+    "431": home  # Feeding, cleaning, physical care for non-dependent adult household and family members including for temporary illness
+    "432": home  # Affective/emotional support for non-dependent adult household and family members
+    "439": home  # Other activities related to care for non-dependent adult household and family members
+    "442": escort  # Accompanying own children
+    "443": escort  # Accompanying dependent adults
+    "444": escort  # Accompanying non-dependent adult household and family members
+    "490": home  # Other activities related to unpaid caregiving services for household and family members
+    "511": other  # Unpaid volunteer household maintenance, management, construction, renovation and repair
+    "512": other  # Unpaid volunteer shopping/purchasing goods and services
+    "513": other  # Unpaid volunteer childcare and instruction
+    "514": other  # Unpaid volunteer care for adults
+    "515": other  # Unpaid volunteer unpaid help in enterprises owned by other households
+    "519": other  # Other activities related to direct unpaid volunteering for other households
+    "521": other  # Unpaid volunteer work on road/building repair, clearing and preparing land, cleaning (streets, markets, etc.), and construction
+    "522": other  # Unpaid volunteer preparing/serving meals, cleaning up
+    "523": other  # Unpaid volunteer cultural activities, recreation and sports activities
+    "524": other  # Unpaid volunteer office/administrative work
+    "529": other  # Other activities related to community- and organization-based unpaid volunteering
+    "530": other  # Unpaid trainee work and related activities
+    "590": other  # Other unpaid work activities
+    "611": education  # School/university attendance
+    "612": education  # Extra-curricular activities
+    "613": education  # Breaks at place of formal education
+    "614": home  # Self-study for distance education course work (video, audio, online)
+    "619": education  # Other activities related to formal education
+    "620": home  # Homework, being tutored, course review, research and activities related to formal education
+    "630": education  # Additional study, non-formal education and courses
+    "690": education  # Other activities related to learning
+    "711": visit  # Talking, conversing, chatting
+    "712": visit  # Socializing/getting together/gathering activities
+    "713": home  # Reading and writing mail (including email)
+    "719": visit  # Other activities related to socializing and communication
+    "721": visit  # Participating in community celebrations of cultural/historic events
+    "722": visit  # Participating in community rites/events (non-religious) of weddings, funerals, births and similar rites-of-passage
+    "723": visit  # Participating in community social functions (music, dance, etc.)
+    "729": visit  # Other activities related to community participation
+    "730": visit  # Involvement in civic and related responsibilities
+    "741": home  # Private prayer, meditation and other spiritual activities
+    "742": visit  # Participating in collective religious practice
+    "749": visit  # Other activities related to religious practice
+    "790": visit  # Other activities related to socializing and communication, community participation and religious practice
+    "811": leisure  # Attendance at organized/mass cultural events, and shows
+    "812": leisure  # Attendance at parks/gardens
+    "813": leisure  # Attendance at sports events
+    "819": leisure  # Other activities related to attendance at cultural, entertainment and sports events
+    "821": leisure  # Visual, literary and performing arts (as hobby)
+    "822": leisure  # Hobbies
+    "823": leisure  # Playing games and other pastime activities
+    "829": leisure  # Other activities related to cultural participation, hobbies, games
+    "831": leisure  # Participating in sports
+    "832": leisure  # Exercising
+    "841": leisure  # Reading for leisure
+    "842": leisure  # Watching/listening to television and video
+    "843": leisure  # Listening to radio and audio devices
+    "849": leisure  # Other activities related to mass media use
+    "850": leisure  # Activities associated with reflecting, resting, relaxing
+    "890": leisure  # Other activities related to culture, leisure, mass-media and sports practices
+    "911": home  # Night sleep/essential sleep
+    "912": home  # Incidental sleep/naps
+    "913": home  # Sleeplessness
+    "919": home  # Other sleep and related activities
+    "921": home  # Eating meals/snack
+    "922": home  # Drinking other than with meal or snack
+    "931": home  # Personal hygiene and care
+    "932": other  # Health/medical care to oneself
+    "939": home  # Other activities related to personal hygiene and care
+    "941": home  # Receiving personal care from others
+    "942": other  # Receiving health/medical care from others
+    "949": home  # Other activities related to receiving personal and health/medical care
+    "990": home  # Other self-care and maintenance activities
+
+# Codes where the activity itself IS travel (ICATUS division-ending
+# 'travelling time related to...' groups). These rows become trips
+# instead of activities; mode is always 'unknown' (TUS captures no
+# transport mode) and distance is always null (TUS captures no trip
+# distance either).
+travel_codes:
+  default:
+    - "181"  # Employment-related travel
+    - "182"  # Commuting
+    - "250"  # Travelling, moving, transporting or accompanying goods or persons related to own-use production of goods
+    - "380"  # Travelling, moving, transporting or accompanying goods or persons related to unpaid domestic services for household and family members
+    - "441"  # Travelling related to care-giving services for household and family members
+    - "540"  # Travelling time related to unpaid volunteer, trainee and other unpaid work
+    - "640"  # Travelling time related to learning
+    - "750"  # Travelling time related to socializing and communication, community participation and religious practice
+    - "860"  # Travelling time related to culture, leisure, mass-media and sports practices
+    - "950"  # Travelling time related to self-care and maintenance activities

@@ -1,0 +1,166 @@
+division,code,title
+11,110,"Employment in corporations, government and non-profit institutions"
+12,121,Growing of crops for the market in household enterprises
+12,122,Raising animals for the market in household enterprises
+12,123,Forestry and logging for the market in household enterprises
+12,124,Fishing for the market in household enterprises
+12,125,Aquaculture for the market in household enterprises
+12,126,Mining and quarrying for the market in household enterprises
+12,127,Making and processing goods for the market in household enterprises
+12,128,Construction activities for the market in household enterprises
+12,129,Other activities related to employment in household enterprises to produce goods
+13,131,Vending and trading of goods in household enterprises
+13,132,"Providing paid repair, installation, maintenance and disposal in households and household enterprises"
+13,133,Providing paid business and professional services in households and household enterprises
+13,134,Transporting goods and passengers for pay or profit in households and household enterprises
+13,135,Providing paid personal care services in households and household enterprises
+13,136,Providing paid domestic services
+13,139,Other activities related to employment in households and household enterprises providing services
+14,141,Activities ancillary to employment
+14,142,Breaks during working time within employment
+15,150,Training and studies in relation to employment
+16,160,Seeking employment
+17,170,Setting up a business
+18,181,Employment-related travel
+18,182,Commuting
+21,211,"Growing crops and kitchen gardening, for own final use"
+21,212,"Farming of animals and production of animal products, for own final use"
+21,213,"Hunting, trapping and production of animal skins, for own final use"
+21,214,"Forestry and logging, for own final use"
+21,215,"Gathering wild products, for own final use"
+21,216,"Fishing, for own final use"
+21,217,"Aquaculture, for own final use"
+21,218,"Mining and quarrying, for own final use"
+22,221,"Making, processing food products, beverages and tobacco for own final use"
+22,222,"Making, processing textiles, wearing apparel, leather and related products, for own final use"
+22,223,"Making, processing of wood and bark products, for own final use"
+22,224,"Making, processing bricks, concrete slabs, hollow blocks, tiles for own final use"
+22,225,"Making, processing herbal and medicinal preparations for own final use"
+22,226,"Making, processing metals and metal products for own final use"
+22,227,"Making, processing of products using other materials for own final use"
+22,229,Acquiring supplies and disposing of products and other activities related to making and processing goods for own final use
+23,230,Construction activities for own final use
+24,241,Gathering firewood and other natural products used as fuel for own final use
+24,242,Fetching water from natural and other sources for own final use
+25,250,"Travelling, moving, transporting or accompanying goods or persons related to own-use production of goods"
+31,311,Preparing meals/snacks
+31,312,Serving meals/snacks
+31,313,Cleaning up after food preparation/meals/snacks
+31,314,"Storing, arranging, preserving food stocks"
+31,319,Other activities related to food and meals management and preparation
+32,321,Indoor cleaning
+32,322,Outdoor cleaning
+32,323,Recycling and disposal of garbage
+32,324,"Upkeep of in/outdoor plants, hedges, garden, grounds, landscape, etc."
+32,325,"Tending furnace, boiler, fireplace for heating and water supply"
+32,329,Other activities related to cleaning and upkeep of dwelling and surroundings
+33,331,"Do-it-yourself improvement, maintenance and repair of own dwelling"
+33,332,"Installation, servicing and repair of personal and household goods including ICT equipment"
+33,333,Vehicle maintenance and repairs
+33,339,"Other activities related to do-it-yourself decoration, maintenance and repair"
+34,341,Hand/machine-washing
+34,342,"Drying; hanging out, bringing in wash"
+34,343,Ironing/pressing/folding
+34,344,Mending/repairing and care of clothes and shoes; cleaning and polishing shoes
+34,349,Other activities related to care of textiles and footwear
+35,351,Paying household bills
+35,352,"Budgeting, planning, organizing duties and activities in the household"
+35,359,Other activities related to household management
+36,361,Daily pet care
+36,362,"Using veterinary care or other pet care services (grooming, stabling, holiday or day care)"
+36,369,Other activities related to pet care
+37,371,Shopping for/purchasing of goods and related activities
+37,372,Shopping for/availing of services and related activity
+38,380,"Travelling, moving, transporting or accompanying goods or persons related to unpaid domestic services for household and family members"
+39,390,Other unpaid domestic services for household and family members
+41,411,"Caring for children including feeding, cleaning, physical care"
+41,412,Providing medical care to children
+41,413,"Instructing, teaching, training, helping children"
+41,414,Talking with and reading to children
+41,415,Playing and sports with children
+41,416,Minding children (passive care)
+41,417,Meetings and arrangements with schools and child care service providers
+41,419,Other activities related to childcare and instruction
+42,421,Assisting dependent adults with tasks of daily living
+42,422,Assisting dependent adults with medical care
+42,423,"Assisting dependent adults with forms, administration, accounts"
+42,424,Affective/emotional support for dependent adults
+42,425,Passive care of dependent adult
+42,426,Meetings and arrangements with adult care service providers
+42,429,Other activities related to care for dependent adults
+43,431,"Feeding, cleaning, physical care for non-dependent adult household and family members including for temporary illness"
+43,432,Affective/emotional support for non-dependent adult household and family members
+43,439,Other activities related to care for non-dependent adult household and family members
+44,441,Travelling related to care-giving services for household and family members
+44,442,Accompanying own children
+44,443,Accompanying dependent adults
+44,444,Accompanying non-dependent adult household and family members
+49,490,Other activities related to unpaid caregiving services for household and family members
+51,511,"Unpaid volunteer household maintenance, management, construction, renovation and repair"
+51,512,Unpaid volunteer shopping/purchasing goods and services
+51,513,Unpaid volunteer childcare and instruction
+51,514,Unpaid volunteer care for adults
+51,515,Unpaid volunteer unpaid help in enterprises owned by other households
+51,519,Other activities related to direct unpaid volunteering for other households
+52,521,"Unpaid volunteer work on road/building repair, clearing and preparing land, cleaning (streets, markets, etc.), and construction"
+52,522,"Unpaid volunteer preparing/serving meals, cleaning up"
+52,523,"Unpaid volunteer cultural activities, recreation and sports activities"
+52,524,Unpaid volunteer office/administrative work
+52,529,Other activities related to community- and organization-based unpaid volunteering
+53,530,Unpaid trainee work and related activities
+54,540,"Travelling time related to unpaid volunteer, trainee and other unpaid work"
+59,590,Other unpaid work activities
+61,611,School/university attendance
+61,612,Extra-curricular activities
+61,613,Breaks at place of formal education
+61,614,"Self-study for distance education course work (video, audio, online)"
+61,619,Other activities related to formal education
+62,620,"Homework, being tutored, course review, research and activities related to formal education"
+63,630,"Additional study, non-formal education and courses"
+64,640,Travelling time related to learning
+69,690,Other activities related to learning
+71,711,"Talking, conversing, chatting"
+71,712,Socializing/getting together/gathering activities
+71,713,Reading and writing mail (including email)
+71,719,Other activities related to socializing and communication
+72,721,Participating in community celebrations of cultural/historic events
+72,722,"Participating in community rites/events (non-religious) of weddings, funerals, births and similar rites-of-passage"
+72,723,"Participating in community social functions (music, dance, etc.)"
+72,729,Other activities related to community participation
+73,730,Involvement in civic and related responsibilities
+74,741,"Private prayer, meditation and other spiritual activities"
+74,742,Participating in collective religious practice
+74,749,Other activities related to religious practice
+75,750,"Travelling time related to socializing and communication, community participation and religious practice"
+79,790,"Other activities related to socializing and communication, community participation and religious practice"
+81,811,"Attendance at organized/mass cultural events, and shows"
+81,812,Attendance at parks/gardens
+81,813,Attendance at sports events
+81,819,"Other activities related to attendance at cultural, entertainment and sports events"
+82,821,"Visual, literary and performing arts (as hobby)"
+82,822,Hobbies
+82,823,Playing games and other pastime activities
+82,829,"Other activities related to cultural participation, hobbies, games"
+83,831,Participating in sports
+83,832,Exercising
+84,841,Reading for leisure
+84,842,Watching/listening to television and video
+84,843,Listening to radio and audio devices
+84,849,Other activities related to mass media use
+85,850,"Activities associated with reflecting, resting, relaxing"
+86,860,"Travelling time related to culture, leisure, mass-media and sports practices"
+89,890,"Other activities related to culture, leisure, mass-media and sports practices"
+91,911,Night sleep/essential sleep
+91,912,Incidental sleep/naps
+91,913,Sleeplessness
+91,919,Other sleep and related activities
+92,921,Eating meals/snack
+92,922,Drinking other than with meal or snack
+93,931,Personal hygiene and care
+93,932,Health/medical care to oneself
+93,939,Other activities related to personal hygiene and care
+94,941,Receiving personal care from others
+94,942,Receiving health/medical care from others
+94,949,Other activities related to receiving personal and health/medical care
+95,950,Travelling time related to self-care and maintenance activities
+99,990,Other self-care and maintenance activities

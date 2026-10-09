@@ -1,0 +1,53 @@
+# Household-level dictionary for TUS (India, Time Use Survey), covering both
+# the 2024 (tus106HH) and 2019 (NSS Block 4) rounds. column_mappings is keyed
+# by year since the two rounds use entirely different raw table/column names;
+# everything else below (value mappings) is shared, since both rounds use the
+# same codes.
+#
+# TUS's household file has no equivalent of "dwelling" (house vs flat) or
+# "vehicles" (vehicle count) in either round -- those template fields are left
+# unmapped and are filled with null/"unknown" by fix.missing_columns. 2019 also
+# has no equivalent of "ownership" (dwelling tenure) at all -- unlike 2024's
+# Dwelling_Unit, NSS Block 4 only asks about dwelling *structure*
+# (kutcha/pucca), not tenure -- so tus.py sets ownership="unknown" directly
+# for 2019 rows.
+# hh_income has no direct equivalent in either round either: TUS asks about
+# household *consumer expenditure*, not income, so hh_income is a proxy (see
+# tus.py) built from monthly consumer expenditure (INR) annualised and
+# converted to EUR. hid is built from the FSU serial no. + sample household
+# no. (verified unique within each round; tus.py additionally prefixes by
+# round year so the two rounds don't collide once combined).
+
+column_mappings:
+  "2024":
+    FSU_Serial_No: hid_fsu          # intermediate -- combined into hid in tus.py
+    Sample_HH_No: hid_sample        # intermediate -- combined into hid in tus.py
+    Household_Size: hh_size
+    Sector: hh_zone
+    Dwelling_Unit: ownership
+    Monthly_Exp_E_Total: hh_income  # intermediate -- monthly INR expenditure; annualised+converted in tus.py
+    MULT: weight                    # NSS multiplier; absolute scale doesn't matter, utils.norm_weights renormalises to mean 1
+    Survey_Year: year
+  "2019":
+    fsu: hid_fsu                    # intermediate -- combined into hid in tus.py
+    b1q4: hid_sample                # intermediate -- combined into hid in tus.py (Sample hhld. No.)
+    b4q1: hh_size                   # Household size
+    sector: hh_zone
+    b4q9: hh_income                 # intermediate -- usual monthly consumer expenditure E: [A+B+C+(D/12)], INR; annualised+converted in tus.py
+    mult: weight                    # NSS multiplier; absolute scale doesn't matter, utils.norm_weights renormalises to mean 1
+    survey_yr: year
+
+# hh_zone mapping (shared across rounds)
+# Valid values: urban, suburban, rural, unknown
+hh_zone:
+  "1": rural
+  "2": urban
+
+# ownership mapping (from 2024's Dwelling_Unit: tenure of the dwelling)
+# Not available for 2019 -- tus.py sets ownership="unknown" for that round.
+# Valid values: owned, rented, other, unknown
+ownership:
+  "1": owned
+  "2": rented
+  "3": other
+  "9": other

@@ -12,6 +12,13 @@ differently based on redistribution licensing:
 
 - cmap, nhts, qhts, vista are public/open datasets: households are sampled
   directly and written with real, unmodified values.
+- tus (India Time Use Survey) is distributed as a proprietary Nesstar
+  binary + DDI XML rather than CSV, so its sample is decoded with
+  nesstar_converter and re-encoded into a minimal synthetic Nesstar
+  container by scripts/nesstar_writer.py + scripts/ddi_writer.py (ported
+  from the nesstar project), which the loader reads like any real file.
+  Real diary episodes are kept intact; education/employment are swapped
+  between the sampled household heads.
 - odin, ktdb, nts, ltds are restricted-access research datasets: real
   respondent IDs are never reused (replaced with fresh synthetic ids,
   consistent across each source's tables), and demographic/attribute columns
@@ -23,11 +30,29 @@ differently based on redistribution licensing:
 
 Run once from the project root with real data available:
     uv run python scripts/build_data_dir_template.py
+
+or regenerate only some sources:
+    uv run python scripts/build_data_dir_template.py tus odin
 """
 
+import mmap
+import sys
 from pathlib import Path
 
 import polars as pl
+from ddi_writer import build_ddi
+from nesstar_converter import (
+    COMPACT_FAMILIES,
+    NESSTAR_MAGIC,
+    _compact_payload_size,
+    _decode_compact_numeric_column,
+    _extract_char_column,
+    _extract_cstring_column,
+    _looks_like_raw_byte_numeric,
+    _parse_resource_layouts,
+    parse_ddi,
+)
+from nesstar_writer import build_nesstar_file
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
 TEMPLATE_ROOT = Path(__file__).parent.parent / "data_dir_template"
@@ -49,7 +74,7 @@ def shuffle_non_keys(
 
 
 def sample_ids(df: pl.DataFrame, col: str, n: int, seed: int) -> pl.Series:
-    unique_ids = df[col].unique()
+    unique_ids = df[col].unique().sort()  # unique() order is not stable
     return unique_ids.sample(n=min(n, len(unique_ids)), seed=seed)
 
 
@@ -372,6 +397,7 @@ def generate_ktdb():
     # codes would otherwise infer as int64 and break the strict-typed join
     # against configs/ktdb/zone_distances.parquet (which stores them as str)
     zone_cols = ["sTP1_1_5", "TP1_1_5"]
+    persons = persons.with_columns(pl.col("SQ1_5").cast(pl.Utf8))
     trips = pl.read_csv(
         src / "trips.csv",
         ignore_errors=True,
@@ -388,10 +414,11 @@ def generate_ktdb():
     trips = trips.filter(pl.col("idx").is_in(sampled_ids))
 
     # drop free-text address columns — not used by the loader, but literal
-    # home-address text
+    # home-address text. SQ1_5 (home administrative-dong code, used as
+    # home_zone) is kept: like the trip zone codes it is a coarse area code
+    # (~3.4k distinct values), and the household columns are shuffled anyway.
     address_cols = [
         "SQ1_4",
-        "SQ1_5",
         "SQ1_6",
         "SQ1_7",
         "SQ1_8",
@@ -647,6 +674,7 @@ ODIN_DATA_FILES = {
     2018: "ODiN2018_Databestand_v2.0.tab",
     2019: "ODiN2019_Databestand_v2.0.tab",
     2020: "ODiN2020_Databestand_v2.0.tab",
+    2021: "ODiN2021_Databestand.tab",
     2022: "ODiN2022_Databestand.tab",
     2023: "ODiN2023_Databestand.csv",  # tab-separated despite .csv
     2024: "ODiN2024_DANS_Databestand_v2.0.csv",  # tab-separated despite .csv
@@ -694,6 +722,11 @@ def generate_odin():
         # Verpl==1 selection. Force it off so attr_rows are only ever
         # picked up as attribute rows downstream.
         attr_rows = attr_rows.with_columns(pl.lit("").alias("Verpl"))
+        # ...and the converse: that same row kept intact as a trip row still
+        # carries OP == "1", which would give the respondent a second
+        # (unshuffled) attribute row and duplicate them in the loader's
+        # OP == "1" selection. "0" is the real file's non-first-row value.
+        trip_rows = trip_rows.with_columns(pl.lit("0").alias("OP"))
 
         mapping = id_map(sampled_ids, offset=900001)
         attr_rows = remap(attr_rows, "OPID", mapping)
@@ -707,16 +740,330 @@ def generate_odin():
 
 
 # ---------------------------------------------------------------------------
+# TUS (public data — real diaries intact, education/employment swapped)
+# ---------------------------------------------------------------------------
+
+
+def _nesstar_head(
+    data, block_info: dict, layout: dict, n: int, columns: set[str]
+) -> pl.DataFrame:
+    """Decode the first `n` records of `columns` from one resource-indexed
+    Nesstar block -- mirrors nesstar_converter's
+    extract_block_resource_indexed, but stops after `n` rows so sampling a
+    handful of households doesn't decode millions of diary rows.
+    """
+    nrecs = block_info["nrecs"]
+    n = min(n, nrecs)
+    result = {}
+    for var_spec in block_info["ddi_vars"]:
+        name = var_spec["name"]
+        if name not in columns:
+            continue
+        entry = layout["variables_by_name"][name]
+        start, size = entry["start"], entry["size"]
+        col_data = data[start : start + size]
+        format_code = entry["value_format_code"]
+        compact_size = _compact_payload_size(format_code, nrecs)
+        is_declared_numeric = var_spec.get("type") == "numeric"
+        if (
+            compact_size
+            and size == 2 * compact_size
+            and (entry["mode_code"] == 5 or is_declared_numeric)
+        ):
+            size = compact_size
+        is_numeric_format = (
+            compact_size == size and format_code in COMPACT_FAMILIES
+        )
+        if entry["mode_code"] == 5 or (
+            is_declared_numeric and is_numeric_format
+        ):
+            values = _decode_compact_numeric_column(
+                col_data,
+                format_code,
+                n,
+                dcml=var_spec.get("dcml", 0),
+                additive_offset=entry.get("value_offset_i64", 0),
+                apply_additive_offset=entry["mode_code"] == 5,
+            )
+        else:
+            declared_width = entry.get("width_value", 0)
+            expected_size = (
+                declared_width * nrecs if declared_width and nrecs else 0
+            )
+            if expected_size and size in (expected_size, 2 * expected_size):
+                width = declared_width
+            elif nrecs and size % nrecs == 0:
+                width = size // nrecs
+            else:
+                raise ValueError(f"cannot infer column width for {name}")
+            if is_declared_numeric and _looks_like_raw_byte_numeric(
+                col_data, nrecs, width
+            ):
+                values = _decode_compact_numeric_column(
+                    col_data,
+                    3,
+                    n,
+                    dcml=var_spec.get("dcml", 0),
+                    apply_additive_offset=False,
+                )
+            elif entry.get("mode_code") == 1:
+                values = _extract_cstring_column(col_data, width, n)
+            else:
+                values = _extract_char_column(col_data, width, n)
+        result[name] = [str(v) for v in values]
+    return pl.DataFrame(result)
+
+
+def _load_nesstar_heads(
+    nesstar_path: Path, ddi_path: Path, heads: dict[str, tuple[set[str], int]]
+) -> dict[str, pl.DataFrame]:
+    """heads: {block name: (columns, n rows)} -> {block name: DataFrame}"""
+    blocks = parse_ddi(str(ddi_path))
+    fid_by_name = {b["name"]: fid for fid, b in blocks.items()}
+    with (
+        open(nesstar_path, "rb") as f,
+        mmap.mmap(f.fileno(), 0, access=mmap.ACCESS_READ) as data,
+    ):
+        assert data[:8] == NESSTAR_MAGIC, f"not a Nesstar file: {nesstar_path}"
+        layouts = _parse_resource_layouts(data, blocks)
+        return {
+            name: _nesstar_head(
+                data,
+                blocks[fid_by_name[name]],
+                layouts[fid_by_name[name]],
+                n,
+                columns,
+            )
+            for name, (columns, n) in heads.items()
+        }
+
+
+def _swap_person_attrs(
+    df: pl.DataFrame,
+    key_cols: list[str],
+    key_a: tuple,
+    key_b: tuple,
+    cols: list[str],
+) -> pl.DataFrame:
+    """Swap `cols` between the two persons identified by key_a/key_b,
+    across every row of each (diary tables repeat a person over many
+    episode rows), so neither keeps their real attribute combination."""
+
+    def is_person(key):
+        return pl.all_horizontal(
+            [pl.col(c) == v for c, v in zip(key_cols, key)]
+        )
+
+    vals_a = df.filter(is_person(key_a)).select(cols).row(0)
+    vals_b = df.filter(is_person(key_b)).select(cols).row(0)
+    return df.with_columns(
+        pl.when(is_person(key_a))
+        .then(pl.lit(b))
+        .when(is_person(key_b))
+        .then(pl.lit(a))
+        .otherwise(pl.col(c))
+        .alias(c)
+        for c, a, b in zip(cols, vals_a, vals_b)
+    )
+
+
+def _nesstar_dataset(fid: str, name: str, df: pl.DataFrame) -> dict:
+    return {
+        "fid": fid,
+        "name": name,
+        "nrecs": df.height,
+        "variables": [
+            {
+                "name": col,
+                "label": col,
+                "values": df[col].to_list(),
+                "width": max(1, *(len(v) for v in df[col].to_list())),
+            }
+            for col in df.columns
+        ],
+    }
+
+
+def _write_nesstar_round(
+    dst: Path, nesstar_name: str, ddi_name: str, datasets: list[dict]
+):
+    dst.mkdir(parents=True, exist_ok=True)
+    (dst / nesstar_name).write_bytes(build_nesstar_file(datasets))
+    (dst / ddi_name).write_bytes(build_ddi(datasets))
+
+
+TUS_2024 = {
+    "nesstar": "TUS2024.Nesstar",
+    "ddi": "DDI-IND-NSO-TUS-2024-24.xml",
+    "hh": "tus106HH",
+    "person": "tus106PER",
+    "hh_cols": {
+        "FSU_Serial_No",
+        "Sample_HH_No",
+        "Household_Size",
+        "Sector",
+        "Dwelling_Unit",
+        "Monthly_Exp_E_Total",
+        "MULT",
+        "Survey_Year",
+    },
+    "person_cols": {
+        "FSU_Serial_No",
+        "Sample_HH_No",
+        "Person_Serial_No",
+        "Age",
+        "Gender",
+        "Relation_to_Head",
+        "Principal_Activity_Status",
+        "Highest_Education",
+        "Day_of_Week",
+        "Activity_Serial_No",
+        "Major_Activity_Flag",
+        "Simultaneous_Activity_Flag",
+        "Activity_Location",
+        "Time_From",
+        "Time_To",
+        "Activity_Code_3Digit",
+    },
+}
+TUS_2019 = {
+    "nesstar": "TUS2019.Nesstar",
+    "ddi": "DDI-IND-CSO-TUS-2019-19.xml",
+    "hh": "LEVEL - 03 (Block 4)",
+    "demographics": "LEVEL - 02 (Block 3)",
+    "day": "LEVEL - 04 (Block 5)",
+    "diary": "LEVEL - 05 (Block 6)",
+    "hh_cols": {"fsu", "b1q4", "b4q1", "sector", "b4q9", "mult", "survey_yr"},
+    "demographics_cols": {
+        "fsu",
+        "b1q4",
+        "b3q1",
+        "b3q5",
+        "b3q4",
+        "b3q3",
+        "b3q8",
+        "b3q7",
+    },
+    "day_cols": {"fsu", "b1q4", "b5q1", "b5q5"},
+    "diary_cols": {
+        "fsu",
+        "b1q4",
+        "b6q1",
+        "b6q3",
+        "b6q9",
+        "b6q7",
+        "b6q11",
+        "b6q4",
+        "b6q5",
+        "b6q10",
+    },
+}
+
+
+def generate_tus():
+    src = DATA_ROOT / "TUS"
+    dst = TEMPLATE_ROOT / "TUS"
+    print("Generating TUS...")
+
+    # 2024: the first two households of the first FSU, read off the head of
+    # each (FSU/household-sorted) table rather than decoding millions of rows
+    cfg = TUS_2024
+    raw = _load_nesstar_heads(
+        src / "TUS2024" / cfg["nesstar"],
+        src / "TUS2024" / cfg["ddi"],
+        {
+            cfg["hh"]: (cfg["hh_cols"], 10),
+            cfg["person"]: (cfg["person_cols"], 62),
+        },
+    )
+    in_sample = pl.col("Sample_HH_No").is_in(["01", "02"])
+    hhs = raw[cfg["hh"]].filter(in_sample)
+    persons = raw[cfg["person"]].filter(in_sample)
+    # swap education/employment between the two household heads -- leaves
+    # age/sex/relationship alone so each diary's demographics stay coherent
+    persons = _swap_person_attrs(
+        persons,
+        ["FSU_Serial_No", "Sample_HH_No", "Person_Serial_No"],
+        ("32223", "01", "001"),
+        ("32223", "02", "001"),
+        ["Highest_Education", "Principal_Activity_Status"],
+    )
+    _write_nesstar_round(
+        dst / "TUS2024",
+        cfg["nesstar"],
+        cfg["ddi"],
+        [
+            _nesstar_dataset("F1", cfg["hh"], hhs),
+            _nesstar_dataset("F2", cfg["person"], persons),
+        ],
+    )
+    print(f"  2024: households: {hhs.height}, person rows: {persons.height}")
+
+    # 2019: same idea across NSS Blocks 3/4/5/6
+    cfg = TUS_2019
+    raw = _load_nesstar_heads(
+        src / "TUS2019" / cfg["nesstar"],
+        src / "TUS2019" / cfg["ddi"],
+        {
+            cfg["hh"]: (cfg["hh_cols"], 10),
+            cfg["demographics"]: (cfg["demographics_cols"], 80),
+            cfg["day"]: (cfg["day_cols"], 80),
+            cfg["diary"]: (cfg["diary_cols"], 130),
+        },
+    )
+    in_sample = (pl.col("fsu") == "10202") & pl.col("b1q4").is_in(["01", "02"])
+    tables = {
+        block: raw[cfg[block]].filter(in_sample)
+        for block in ("hh", "demographics", "day", "diary")
+    }
+    tables["demographics"] = _swap_person_attrs(
+        tables["demographics"],
+        ["fsu", "b1q4", "b3q1"],
+        ("10202", "01", "001"),
+        ("10202", "02", "001"),
+        ["b3q7", "b3q8"],
+    )
+    _write_nesstar_round(
+        dst / "TUS2019",
+        cfg["nesstar"],
+        cfg["ddi"],
+        [
+            _nesstar_dataset(f"F{i + 1}", cfg[block], tables[block])
+            for i, block in enumerate(("hh", "demographics", "day", "diary"))
+        ],
+    )
+    print(
+        "  2019: "
+        + ", ".join(f"{block}: {df.height}" for block, df in tables.items())
+    )
+
+    # ICATUS 2016 code list -- reference only, not read by the loader
+    (dst / "icatus_2016_codes.csv").write_bytes(
+        (src / "icatus_2016_codes.csv").read_bytes()
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
+GENERATORS = {
+    "cmap": generate_cmap,
+    "nhts": generate_nhts,
+    "qhts": generate_qhts,
+    "vista": generate_vista,
+    "ktdb": generate_ktdb,
+    "nts": generate_nts,
+    "ltds": generate_ltds,
+    "odin": generate_odin,
+    "tus": generate_tus,
+}
+
 if __name__ == "__main__":
-    generate_cmap()
-    generate_nhts()
-    generate_qhts()
-    generate_vista()
-    generate_ktdb()
-    generate_nts()
-    generate_ltds()
-    generate_odin()
+    selected = sys.argv[1:] or list(GENERATORS)
+    unknown = set(selected) - set(GENERATORS)
+    if unknown:
+        sys.exit(f"Unknown sources: {sorted(unknown)}")
+    for name in selected:
+        GENERATORS[name]()
     print("Done.")

@@ -29,17 +29,18 @@ The base data directory needs to hold raw data downloaded from the various sourc
 
 The latest output using `uv run foundata run` is as follows:
 
-| Source    | Plans         | Missing attributes | Trips         | Trip kms (millions) |
-|-----------|---------------|--------------------|---------------|---------------------|
-| nts       | 2,483,044     | 20%                | 4,420,967     | 45.4                |
-| nhts      | 630,925       | 27%                | 2,201,088     | 24.9                |
-| odin      | 383,679       | 26%                | 886,686       | 9.6                 |
-| ktdb      | 120,100       | 35%                | 285,011       | 0.8                 |
-| vista     | 89,465        | 30%                | 235,847       | 2.0                 |
-| ltds      | 60,518        | 36%                | 108,321       | 0.9                 |
-| qhts      | 48,718        | 33%                | 117,885       | 1.2                 |
-| cmap      | 25,716        | 7%                 | 76,658        | 0.5                 |
-| **total** | **3,842,165** | **23%**            | **8,332,463** | **85.3**            |
+| Source    | Plans         | Missing attributes | Trips          | Trip kms (millions) |
+|-----------|---------------|--------------------|----------------|---------------------|
+| nts       | 2,483,044     | 20%                | 4,420,967      | 45.4                |
+| tus       | 875,798       | 50%                | 1,902,341      | n/a                 |
+| nhts      | 631,537       | 27%                | 2,203,880      | 24.9                |
+| odin      | 383,679       | 26%                | 886,686        | 9.6                 |
+| ktdb      | 120,100       | 35%                | 285,011        | 0.8                 |
+| vista     | 89,465        | 30%                | 235,847        | 2.0                 |
+| ltds      | 60,519        | 36%                | 108,338        | 0.9                 |
+| qhts      | 48,718        | 33%                | 117,885        | 1.2                 |
+| cmap      | 25,716        | 7%                 | 76,658         | 0.5                 |
+| **total** | **4,718,576** | **28%**            | **10,237,613** | **85.3**            |
 
 
 \* Plans: a sequence of activities and associated trips within a 24hr period starting at midnight.
@@ -61,6 +62,8 @@ Foundata makes use of open (safely available, either immediately, or available v
 | QHTS        | AUS | 2012-24     |          | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
 | VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
+| TUS         | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
+
 
 ### In progress/todo
 
@@ -69,7 +72,6 @@ Foundata makes use of open (safely available, either immediately, or available v
 | OVIN        | NL | 2010-17 | | [Request](https://ssh.datastations.nl/)     |
 | OM          | NL | 2004-07 | | [Request](https://ssh.datastations.nl/)     |
 | Various     | FR |         | | [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
-| TUS         | IN | 2019,24 | Time use survey but maybe useable | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
 | São Paulo OD 2017 | BR | 2017 | | [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075)     |
 | Mexico City EOD | BR | 2017 | | [data](https://www.inegi.org.mx/programas/eod/2017/#herramientas)     |
 | Buenos Aires | ARG |  | unverified | [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas)     |
@@ -230,7 +232,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`.
 
 ### Binning numeric attributes
 

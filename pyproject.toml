@@ -11,6 +11,7 @@ dependencies = [
     "ipykernel>=6.31.0",
     "ipython>=9.7.0",
     "matplotlib>=3.0",
+    "nesstar-converter>=1.0.7",
     "numpy>=1.24",
     "pip>=25.3",
     "polars>=1.35.2",
