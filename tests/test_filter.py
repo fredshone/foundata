@@ -543,3 +543,25 @@ def test_filter_attributes_numeric_key(tmp_path):
     out_attrs = pl.read_csv(out_dir / "attrs.csv")
     assert len(out_attrs) == 2
     assert set(out_attrs["pid"].to_list()) == {"b", "c"}
+
+
+# --- missing_acts ---
+
+
+def test_missing_acts_drops_unknown_or_null_activities_only():
+    # unknown mode is fine (e.g. TUS has no mode at all); unknown/null acts
+    # drop the whole plan
+    trips = pl.DataFrame(
+        {
+            "pid": ["a", "a", "b", "c"],
+            "oact": ["home", "work", "home", None],
+            "dact": ["work", "home", "unknown", "home"],
+            "mode": ["unknown", None, "car", "car"],
+        }
+    )
+    attrs = make_attrs(["a", "b", "c", "d"])
+
+    attrs_out, trips_out = filter.missing_acts(attrs, trips)
+
+    assert trips_out["pid"].to_list() == ["a", "a"]
+    assert attrs_out["pid"].to_list() == ["a", "d"]

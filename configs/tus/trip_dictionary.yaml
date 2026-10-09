@@ -23,19 +23,17 @@
 # the next trip's oact and filter.activity_consistency should never drop
 # a TUS plan.
 #
-# Columns used directly (not through column_mappings, since trips aren't a
-# separate raw file here): Activity_Serial_No (episode order),
-# Major_Activity_Flag (keep only "1" -- ICATUS lets a slot carry a second,
-# simultaneous "2" activity, which would otherwise double-count time or
-# create overlapping timestamps), Time_From/Time_To (HH:MM clock time).
+# A diary time slot can hold several activities (one major, others minor,
+# done either simultaneously or one after another); see
+# tus.py::_resolve_slots for how travel among them becomes trips. The
+# diary columns themselves are mapped in person_dictionary.yaml.
 #
 # TUS captures no transport mode and no trip distance at all, so every
 # trip's mode is "unknown" and distance is always null -- both allowed by
 # the template (mode default: True; distance has no "set" constraint and
 # avg_speed/feasibility checks downstream degrade gracefully to null when
-# distance is null). Because mode is never anything but "unknown",
-# `filter.missing_acts_or_modes` is deliberately NOT applied to TUS in
-# run.py -- it would drop every single plan.
+# distance is null). `filter.missing_acts` (run.py) only checks activities,
+# not modes, so TUS plans are not dropped for having mode "unknown".
 #
 # ozone/dzone: TUS records only whether an activity happened inside/outside
 # the dwelling (Activity_Location), not an urban/rural classification of
@@ -69,24 +67,24 @@ act_mappings:
     "142": work  # Breaks during working time within employment
     "150": work  # Training and studies in relation to employment
     "160": other  # Seeking employment
-    "170": work  # Setting up a business
-    "211": home  # Growing crops and kitchen gardening, for own final use
-    "212": home  # Farming of animals and production of animal products, for own final use
-    "213": home  # Hunting, trapping and production of animal skins, for own final use
-    "214": home  # Forestry and logging, for own final use
-    "215": home  # Gathering wild products, for own final use
-    "216": home  # Fishing, for own final use
-    "217": home  # Aquaculture, for own final use
-    "218": home  # Mining and quarrying, for own final use
-    "221": home  # Making, processing food products, beverages and tobacco for own final use
-    "222": home  # Making, processing textiles, wearing apparel, leather and related products, for own final use
-    "223": home  # Making, processing of wood and bark products, for own final use
-    "224": home  # Making, processing bricks, concrete slabs, hollow blocks, tiles for own final use
-    "225": home  # Making, processing herbal and medicinal preparations for own final use
-    "226": home  # Making, processing metals and metal products for own final use
-    "227": home  # Making, processing of products using other materials for own final use
-    "229": home  # Acquiring supplies and disposing of products and other activities related to making and processing goods for own final use
-    "230": home  # Construction activities for own final use
+    "170": other  # Setting up a business
+    "211": other  # Growing crops and kitchen gardening, for own final use
+    "212": other  # Farming of animals and production of animal products, for own final use
+    "213": other  # Hunting, trapping and production of animal skins, for own final use
+    "214": other  # Forestry and logging, for own final use
+    "215": other  # Gathering wild products, for own final use
+    "216": other  # Fishing, for own final use
+    "217": other  # Aquaculture, for own final use
+    "218": other  # Mining and quarrying, for own final use
+    "221": other  # Making, processing food products, beverages and tobacco for own final use
+    "222": other  # Making, processing textiles, wearing apparel, leather and related products, for own final use
+    "223": other  # Making, processing of wood and bark products, for own final use
+    "224": other  # Making, processing bricks, concrete slabs, hollow blocks, tiles for own final use
+    "225": other  # Making, processing herbal and medicinal preparations for own final use
+    "226": other  # Making, processing metals and metal products for own final use
+    "227": other  # Making, processing of products using other materials for own final use
+    "229": other  # Acquiring supplies and disposing of products and other activities related to making and processing goods for own final use
+    "230": other  # Construction activities for own final use
     "241": home  # Gathering firewood and other natural products used as fuel for own final use
     "242": home  # Fetching water from natural and other sources for own final use
     "311": home  # Preparing meals/snacks
@@ -119,15 +117,15 @@ act_mappings:
     "372": shop  # Shopping for/availing of services and related activity
     "390": home  # Other unpaid domestic services for household and family members
     "411": home  # Caring for children including feeding, cleaning, physical care
-    "412": other  # Providing medical care to children
+    "412": home  # Providing medical care to children
     "413": home  # Instructing, teaching, training, helping children
-    "414": escort  # Talking with and reading to children
+    "414": home  # Talking with and reading to children
     "415": home  # Playing and sports with children
     "416": home  # Minding children (passive care)
     "417": home  # Meetings and arrangements with schools and child care service providers
     "419": home  # Other activities related to childcare and instruction
     "421": home  # Assisting dependent adults with tasks of daily living
-    "422": other  # Assisting dependent adults with medical care
+    "422": home  # Assisting dependent adults with medical care
     "423": home  # Assisting dependent adults with forms, administration, accounts
     "424": home  # Affective/emotional support for dependent adults
     "425": home  # Passive care of dependent adult
@@ -156,21 +154,21 @@ act_mappings:
     "611": education  # School/university attendance
     "612": education  # Extra-curricular activities
     "613": education  # Breaks at place of formal education
-    "614": education  # Self-study for distance education course work (video, audio, online)
+    "614": home  # Self-study for distance education course work (video, audio, online)
     "619": education  # Other activities related to formal education
-    "620": education  # Homework, being tutored, course review, research and activities related to formal education
+    "620": home  # Homework, being tutored, course review, research and activities related to formal education
     "630": education  # Additional study, non-formal education and courses
     "690": education  # Other activities related to learning
     "711": visit  # Talking, conversing, chatting
     "712": visit  # Socializing/getting together/gathering activities
-    "713": visit  # Reading and writing mail (including email)
+    "713": home  # Reading and writing mail (including email)
     "719": visit  # Other activities related to socializing and communication
     "721": visit  # Participating in community celebrations of cultural/historic events
     "722": visit  # Participating in community rites/events (non-religious) of weddings, funerals, births and similar rites-of-passage
     "723": visit  # Participating in community social functions (music, dance, etc.)
     "729": visit  # Other activities related to community participation
     "730": visit  # Involvement in civic and related responsibilities
-    "741": visit  # Private prayer, meditation and other spiritual activities
+    "741": home  # Private prayer, meditation and other spiritual activities
     "742": visit  # Participating in collective religious practice
     "749": visit  # Other activities related to religious practice
     "790": visit  # Other activities related to socializing and communication, community participation and religious practice

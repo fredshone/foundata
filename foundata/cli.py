@@ -379,7 +379,7 @@ def filter_homebased(
 def filter_missing_acts_or_modes(
     attributes, trips, output, output_attributes, output_trips
 ):
-    """Remove plans with any missing or unknown activities or modes."""
+    """Remove plans with any missing or unknown activities."""
     suffix = "_clean_modes"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
     ot = _resolve_out(output_trips, output, trips, suffix)

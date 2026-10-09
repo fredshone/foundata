@@ -83,7 +83,7 @@ def missing_acts(
 
     Args:
         attributes: DataFrame of plan attributes. If None, only trips are filtered.
-        trips: DataFrame of trips with columns "pid", "oact", "dact", "mode".
+        trips: DataFrame of trips with columns "pid", "oact", "dact".
 
     Returns:
         Tuple of (filtered attributes or None, filtered trips).
@@ -111,7 +111,7 @@ def missing_acts(
     )
 
     print(
-        f"Removed {nn}/{n} plans due to missing activities or modes ({100 * nn / n:.1f}%)"
+        f"Removed {nn}/{n} plans due to missing activities ({100 * nn / n:.1f}%)"
     )
     return clean_attributes, clean_trips
 

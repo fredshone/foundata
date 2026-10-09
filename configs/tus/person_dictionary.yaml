@@ -31,7 +31,9 @@ column_mappings:
     Highest_Education: education
     Day_of_Week: day
     Activity_Serial_No: activity_serial_no      # intermediate -- diary episode order, used in tus.py
-    Major_Activity_Flag: major_activity_flag    # intermediate -- "1"=primary activity, "2"=simultaneous secondary (dropped)
+    Major_Activity_Flag: major_activity_flag    # intermediate -- "1"=major, "2"=minor activity of the time slot
+    Simultaneous_Activity_Flag: simultaneous_flag  # intermediate -- multi-activity slots: "1"=done at the same time, "2"=one after another
+    Activity_Location: location                 # intermediate -- "1"=within the dwelling premises, "2"=outside
     Time_From: time_from                        # intermediate -- episode start, HH:MM
     Time_To: time_to                            # intermediate -- episode end, HH:MM
     Activity_Code_3Digit: activity_code         # intermediate -- ICATUS 2016 3-digit code, mapped via trip_dictionary.yaml
@@ -55,7 +57,9 @@ column_mappings:
       b1q4: hid_sample            # intermediate -- combined into hid/pid in tus.py
       b6q1: pid_person            # intermediate -- combined into pid in tus.py (Serial no. of member)
       b6q3: activity_serial_no    # intermediate -- diary episode order, used in tus.py (srl. No of activity)
-      b6q9: major_activity_flag   # intermediate -- "1"=major, "2"=minor (dropped)
+      b6q9: major_activity_flag   # intermediate -- "1"=major, "2"=minor activity of the time slot
+      b6q7: simultaneous_flag     # intermediate -- multi-activity slots: "1"=done at the same time, "2"=one after another
+      b6q11: location             # intermediate -- "1"=within the dwelling premises, "2"=outside
       b6q4: time_from             # intermediate -- episode start, HH:MM
       b6q5: time_to               # intermediate -- episode end, HH:MM
       b6q10: activity_code        # intermediate -- ICATUS 2016 3-digit code, mapped via trip_dictionary.yaml

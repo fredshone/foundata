@@ -270,6 +270,9 @@ def flag_conditionality_outliers(
     source-level-only check would average away).
     """
     group_cols = _as_group_cols(on)
+    if "cramers_v" not in matrix.columns:
+        # no group had enough data to score (e.g. a tiny toy dataset)
+        return "No anomalies flagged." if markdown else matrix
 
     valid = matrix.filter(
         pl.col("cramers_v").is_not_null() & pl.col("cramers_v").is_finite()
@@ -545,6 +548,9 @@ def flag_distribution_shift_outliers(
     `on` must match whatever `on` was passed to `distribution_shift_matrix`.
     """
     group_cols = _as_group_cols(on)
+    if "jsd" not in matrix.columns:
+        # no group had enough data to score (e.g. a tiny toy dataset)
+        return "No anomalies flagged." if markdown else matrix
 
     valid = matrix.filter(
         pl.col("jsd").is_not_null() & pl.col("jsd").is_finite()

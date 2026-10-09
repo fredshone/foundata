@@ -5,6 +5,22 @@ from foundata import utils
 PROGRAMMATIC_FIELDS = {"country", "source", "year", "month", "day"}
 
 
+def _flatten_column_mappings(col_mappings: dict) -> list[tuple[str, str]]:
+    """Flatten column_mappings into (raw_col, mapped_col) pairs.
+
+    Handles flat mappings, year-keyed mappings (with or without a 'default'
+    key, e.g. NHTS/NTS/TUS) and further nesting such as TUS 2019's
+    per-raw-table sub-dicts, by recursing into any dict value.
+    """
+    pairs = []
+    for raw_col, mapped_col in col_mappings.items():
+        if isinstance(mapped_col, dict):
+            pairs.extend(_flatten_column_mappings(mapped_col))
+        elif isinstance(mapped_col, str):
+            pairs.append((str(raw_col), mapped_col))
+    return pairs
+
+
 def validate_column_mappings(config: dict, template_section: dict) -> list[str]:
     """Warn about column_mappings values that are not valid template field names.
 
@@ -13,27 +29,11 @@ def validate_column_mappings(config: dict, template_section: dict) -> list[str]:
     rather than hard errors.
     """
     warnings = []
-    col_mappings = config.get("column_mappings") or {}
-
-    # Collect all target field names across all year keys
-    # Handle year-keyed configs (NHTS/NTS style with 'default' key)
-    if isinstance(col_mappings, dict) and "default" in col_mappings:
-        all_targets: list[tuple[str, str]] = []
-        for year_key, year_mappings in col_mappings.items():
-            if isinstance(year_mappings, dict):
-                for raw_col, mapped_col in year_mappings.items():
-                    all_targets.append((str(raw_col), mapped_col))
-    else:
-        all_targets = [
-            (str(raw_col), mapped_col)
-            for raw_col, mapped_col in col_mappings.items()
-        ]
+    all_targets = _flatten_column_mappings(config.get("column_mappings") or {})
 
     valid_fields = set(template_section.keys())
     seen = set()
     for raw_col, mapped_col in all_targets:
-        if not isinstance(mapped_col, str):
-            continue
         if mapped_col in seen:
             continue
         seen.add(mapped_col)
@@ -90,15 +90,12 @@ def check_required_fields(hh_config: dict, person_config: dict) -> list[str]:
     warnings = []
 
     def get_mapped_fields(config: dict) -> set[str]:
-        fields = set()
-        col_mappings = config.get("column_mappings") or {}
-        if isinstance(col_mappings, dict) and "default" in col_mappings:
-            for year_key, year_mappings in col_mappings.items():
-                if isinstance(year_mappings, dict):
-                    fields.update(year_mappings.values())
-        else:
-            fields.update(col_mappings.values())
-        return fields
+        return {
+            mapped_col
+            for _, mapped_col in _flatten_column_mappings(
+                config.get("column_mappings") or {}
+            )
+        }
 
     hh_fields = get_mapped_fields(hh_config)
     person_fields = get_mapped_fields(person_config)
