@@ -13,7 +13,7 @@ from foundata.run import runner
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
 
-OPEN_SOURCES = ("nhts", "cmap", "vista", "qhts", "ktdb")
+OPEN_SOURCES = ("nhts", "cmap", "vista", "qhts", "ktdb", "mxod", "arg", "urug")
 
 
 def _default_out(input_path: str, suffix: str) -> Path:

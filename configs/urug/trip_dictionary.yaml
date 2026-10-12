@@ -1,0 +1,113 @@
+# Trip-level dictionary for urug (Montevideo EOD 2016).
+# Base Viajes.csv holds one row per trip (NFORM, nnper, nvj) and
+# Base Etapas.csv one row per stage (netp). Codes from "Dicc Base
+# Viajes.txt" and "Dicc Base Etapas.txt". Blank cells are missing values.
+# Each person reports the trips from 4am yesterday to 4am today.
+
+column_mappings:
+  Base Viajes:
+    NFORM: hid
+    nnper: pid
+    nvj: seq  # 1-indexed
+    origen: oact  # actividad en el origen (always the previous trip's purpose)
+    proposito: dact
+    VF5: tst  # "H,MM" with trailing zeros dropped (17,3 = 17:30); 4-28 h
+    VF6: tet
+    modoprincipal: mode
+    cuadras: blocks  # blocks walked (walk trips, and walks of 5+ blocks on others)
+    codsegorigen: ozone  # 2011 census segment of origin
+    codsegproposito: dzone  # 2011 census segment of destination
+  Base Etapas:
+    NFORM: hid
+    nnper: pid
+    nvj: seq
+    BL: stage_mode
+    EB0P1: blocks_to_vehicle  # cuadras caminadas hasta la parada o el vehículo
+    EB0P2: blocks_from_vehicle  # cuadras caminadas desde la parada o el vehículo
+    EB2P1: walk_stage_blocks  # cuadras de una etapa a pie (99 sin dato)
+
+# Interviews ran Tuesday to Saturday, August-October 2016, about the
+# previous day, so the travel day is a Monday-Friday. Neither the date nor
+# the weekday is recorded: day is unknown and month null.
+year: 2016
+
+# Times: hours count from 4am, with 24-28 the following night, so they are
+# already minutes since the diary day's midnight once converted.
+unknown_times: ["88,88", "99,99"]  # sin dato
+
+# dact mapping (proposito). oact uses the same codes (origen).
+  # Valid values: home, work, education, shop, leisure, visit, escort, other, unknown
+dact:
+  1: home  # regreso al hogar / hogar
+  2: work  # trabajo
+  3: work  # trámites trabajo
+  4: other  # trámites personal
+  5: education  # estudios
+  6: shop  # compras (hogar)
+  7: shop  # compras
+  8: other  # asistencia médica
+  9: other  # culto
+  10: shop  # ir a comer
+  11: escort  # dejar/recoger niños
+  12: escort  # dejar/recoger a alguien
+  13: visit  # visitar a alguien
+  14: escort  # acompañar a alguien
+  15: leisure  # entretenimiento / ocio
+  16: other  # otro
+  99: unknown  # sin dato
+
+# mode mapping (modoprincipal, the survey's own main-mode classification)
+  # Valid values: walk, bike, car, bus, rail, other, unknown
+mode:
+  0: walk  # a pie hasta 10 cuadras
+  1: walk  # a pie
+  2: bike  # bicicleta
+  3: other  # otro, animal
+  4: car  # remise
+  5: car  # otro, Uber
+  6: car  # taxi
+  7: car  # auto pasajero
+  8: car  # auto conductor
+  9: car  # moto pasajero
+  10: car  # moto conductor
+  11: bus  # bus escolar
+  12: bus  # bus de la empresa
+  13: bus  # bus
+  14: rail  # ferrocarril
+  15: other  # otros, sin especificar
+
+# Distance (km), in order of preference:
+# 1. walk trips: blocks walked x block_km (a Montevideo cuadra is ~100 m);
+# 2. trips between different census segments: straight line between the
+#    segment centroids (configs/urug/segments.csv) x circuity;
+# 3. otherwise (same segment, or a segment outside the lookup): trip
+#    duration x the mode's speed below.
+block_km: 0.1
+circuity: 1.3
+walk_modes: [0, 1]
+speed:  # km/h, door to door
+  0: 4.5  # a pie hasta 10 cuadras
+  1: 4.5  # a pie
+  2: 12  # bicicleta
+  3: 6  # animal
+  4: 20  # remise
+  5: 20  # Uber
+  6: 20  # taxi
+  7: 20  # auto pasajero
+  8: 20  # auto conductor
+  9: 22  # moto pasajero
+  10: 22  # moto conductor
+  11: 12  # bus escolar
+  12: 20  # bus de la empresa
+  13: 12  # bus
+  14: 25  # ferrocarril
+  15: 12  # otro
+
+# Access/egress distance for trips with a bus or train stage: blocks walked
+# to and from vehicles (EB0P1, EB0P2) plus walk stages (EB2P1), x block_km.
+transit_stage_modes:  # BL codes
+  - 51  # bus
+  - 52  # ferrocarril
+  - 53  # bus escolar
+  - 54  # bus de la empresa
+unknown_blocks: [99]

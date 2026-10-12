@@ -1,0 +1,209 @@
+FOUNDATA: ADDING A NEW SOURCE (instructions for an LLM agent)
+================================================================
+
+Goal: turn a raw travel / time-use survey into (attributes, trips) polars
+DataFrames that match configs/core/template.yaml, then register the source in
+the pipeline. Raw formats vary (CSV, DBF, SPSS .sav, Nesstar, Excel, one
+table or many), so investigate the data first and don't assume a layout.
+
+RUNNING THINGS
+- Tests: `uv run pytest` (pytest is in the dev extra). Lint: `uv run ruff check foundata/`.
+- Validate configs: `uv run foundata validate-config <src>`. WARNs for
+  intermediate columns are expected; ERRORs mean a mapped value isn't in the
+  template's set.
+- Run one source: `uv run foundata run -d ~/Data/foundata -s <src> -o <scratch>/out`
+- Template smoke run: `uv run foundata run -d data_dir_template -o <scratch>/out`
+  This runs EVERY source by default, so a new source must have template data
+  or this run breaks.
+- Raw data lives under ~/Data/foundata/<Folder>/. Use the user's folder name
+  everywhere: the data_root subdirectory in run.py, the DATA_ROOT paths in
+  both generators, and data_dir_template/<Folder>/. If these drift apart
+  (e.g. after the user renames the folder), the template run breaks.
+- Regenerate one source only: `uv run python scripts/build_data_dir_template.py <src>`
+  takes source names; generate_fixtures.py runs everything, so call its
+  function directly: `cd scripts && uv run python -c "import generate_fixtures as g; g.generate_<src>()"`.
+- Put exploration scripts in the scratchpad, in their own folder. Never name a
+  scratch file after a stdlib module: an `inspect.py` in the scratchpad broke
+  the polars import.
+
+REPO MAP
+- configs/core/template.yaml: the output schema. Lists the fields, dtypes,
+  allowed value sets, and whether unknown/null is allowed. Read it first.
+- configs/<src>/{hh,person,trip}_dictionary.yaml: column_mappings (raw ->
+  template or intermediate name) plus per-field value maps. Keys named after
+  a template field (sex, mode, dact, employment, ...) are checked by the
+  validator, so use those names where possible. Put other source parameters
+  in the YAML too (exchange rate, thresholds, circuity, ...) rather than
+  hard-coding them.
+  - column_mappings can nest one dict per raw table (TVIAJE: {...},
+    TTRANSPORTE: {...} in mxod); the validator flattens them.
+  - Multi-year sources nest a `default:` key plus per-year keys; read them
+    with utils.config_for_year.
+  - The validator rejects `ft-employed`/`pt-employed` even though
+    utils.split_employment_type supports them. Existing qhts configs fail on
+    this. Prefer `employed` unless the ft/pt split really matters.
+- foundata/<src>.py: the loader. Exposes `load(...)` or `load_years(...)` and
+  returns (attributes, trips).
+- foundata/run.py: add the import, add the name to the `sources` set, and add
+  an `if "<src>" in sources:` block (load the 3 configs, call the loader, then
+  process_source). process_source does the shared cleaning: avg_speed,
+  employment split, child employment, time/activity filters, missing columns,
+  type fixes, weight normalisation.
+- foundata/utils.py: table_joiner, config_for_year, sample_to_euro
+  (samples within income brackets), assign_retired, get_config_path, ...
+- foundata/fix.py: day_wrap (call it after computing tst/tet), missing_columns,
+  fix_types.
+- foundata/cli.py: OPEN_SOURCES drives --open and the published
+  open_foundata.zip. Ask the user before adding to it.
+- scripts/scaffold_source.py <src>: stub configs and loader. Optional; copying
+  the closest existing loader is often faster.
+- scripts/generate_fixtures.py -> tests/fixtures/<src>/ (~50 households).
+- scripts/build_data_dir_template.py -> data_dir_template/<Folder>/ (a handful
+  of households). Register the generator in GENERATORS. Licensing decides the
+  treatment: open data is sampled unmodified; restricted data gets fresh
+  synthetic ids and shuffled attribute columns, with trip rows kept intact.
+- Format helpers already written: scripts/dbf_writer.py (byte-exact DBF
+  subset; sample_spod for one flat table, sample_mxod for linked tables
+  sampled hh -> persons -> trips -> stages), scripts/nesstar_writer.py + ddi_writer.py (Nesstar),
+  spod.read_dbf (numpy DBF reader).
+- tests/test_<src>.py: load test on the fixtures (env var
+  FOUNDATA_<SRC>_DATA overrides the path), plus unit tests on small
+  hand-built inputs for each tricky transform.
+- README.md: add a row to the Data Sources table (and remove it from
+  "In progress/todo"), and add the name to the "Available sources" list.
+- Example loaders: spod (one flat table with hh, family, person and trip
+  levels), ktdb (no hh id, zone lookups, staged modes), qhts/vista (separate
+  hh/person/trip CSVs over several years), tus (time-use diary), nts/ltds
+  (stages), mxod (linked DBF tables, weekday + Saturday diary per person,
+  distance from stage durations x mode speed), nts (several diary days per
+  person split into person-days), arg (several surveys in one source,
+  SPSS .sav via pyreadstat, per-survey column_mappings and value maps).
+
+OUTPUT CONTRACT (check template.yaml for the full list)
+- attributes: one row per person. pid and hid are strings prefixed with the
+  source name (e.g. "spod" + raw id). Include people who made no trips: they
+  get a home-all-day plan downstream.
+  - Set programmatically: source, country (existing codes are mixed: "kr",
+    "nl", "uk", "br", "mx", "usa", "aus", "ind"), year, month, and day (lowercase
+    weekday name).
+  - hh_income: annual EUR as Int32. Convert currency and period (monthly x12)
+    and record the rate in the config. Use null when unknown, never 0
+    (0 means a real zero income).
+  - Columns the source lacks: fill categoricals with "unknown". Use "void"
+    where the field doesn't apply, e.g. occupation for people not employed.
+  - weight: Float32.
+  - access_egress_distance: optional; km of walking or other access stages on
+    transit trips, averaged per person.
+- trips: pid, seq (Int8, 0-indexed), ozone/dzone (urban|suburban|rural|unknown),
+  oact/dact, mode (walk|bike|car|bus|rail|other|unknown), tst/tet (Int, minutes
+  since midnight, may go above 1440 after day_wrap), distance (Float32, km).
+  Drop helper columns before returning.
+- Activities: home, work, education, shop, leisure, visit, escort, other.
+  There is no "medical" in the template, so map medical to other. Meals ->
+  shop. Motorbike -> car. Taxi / ride-hail -> car.
+- oact of trip n should equal dact of trip n-1;
+  filter.activity_consistency drops plans where it doesn't.
+
+WORKFLOW
+0. If the user asks whether a dataset is usable, or it's a new candidate,
+   follow llm_verify_source.txt first and bring back a verdict. Its checks
+   cover most of step 1.
+1. Inspect the raw data before writing any code:
+   - list the files and find the codebook / layout doc (often xlsx or docx,
+     possibly not in English);
+   - read the schema and row counts;
+   - work out the entity hierarchy and the id columns, and check them:
+     hh-level fields constant within hh, person count == stated hh size,
+     trips per person == stated trip count;
+   - check how people with no trips are represented;
+   - check how missing values are encoded;
+   - check time formats, distance units (metres? miles? straight-line?), the
+     date vs travel-day relationship, and how weights are named.
+   Report findings and ask before building if anything is ambiguous.
+2. Write the configs from the codebook, putting the original label in a
+   comment next to each code. Validate.
+3. Write the loader and smoke-test it on the real data. Print value_counts
+   for every categorical and describe() for the numerics. Look for unexpected
+   unknowns, nulls, unit errors, and odd weekday/month distributions.
+4. Run the pipeline for the source alone. Check the attribute availability
+   table and how many plans each filter drops: >5% dropped usually means a
+   mapping or timing bug.
+5. Add fixture and template generators, run them, then add tests and run the
+   full suite and the data_dir_template run.
+6. Update run.py and the README. Summarise the judgement calls to the user.
+   Do not commit unless asked.
+
+GOTCHAS SEEN SO FAR
+- Missing values may be encoded as sentinels: "*"/"**" padding (SP DBF),
+  "Missing/Refused", 99/98/97, blanks, negative codes. A pandas to_numeric
+  with coerce hides these; polars strict casts expose them. Prefer that.
+- replace_strict with integer YAML keys needs the column cast to int first.
+  Use default="unknown" for unmapped codes, or polars raises.
+- Times: may be split into hour and minute columns, offset from a non-midnight
+  anchor (QHTS counts from 04:00), given as HHMM integers, or given as
+  durations. Always call fix.day_wrap.
+- Travel day vs interview date: they can differ (SP interviews happen the
+  day after travel). Derive day/month/year from the travel day.
+- Intermediate levels: a household can contain several families (SP).
+  Aggregate income and vehicles to the household and say how you did it.
+  Some sources have no household id at all (KTDB): set hid = pid.
+- Income is often imputed by the survey, or recorded per person rather than
+  per household. Flag imputation shares to the user and make inclusion
+  configurable.
+- Zone urbanity: there is rarely a direct field. Options: a lookup CSV in
+  configs/<src>/, the zone name suffix (KTDB), or density = weighted residents
+  / zone area (SP, area taken from the shapefile's .dbf, so no geometry
+  library is needed). Non-residential zones end up as unknown; that's fine.
+- Distances given as straight-line are multiplied by a circuity of 1.3. If
+  there is no distance, use zone-centroid distances (KTDB) or
+  duration x mode speed.
+- Escort purpose may be a separate flag rather than a purpose code (SP
+  SERVIR_O/SERVIR_D).
+- Persons without trips: keep them in attributes. The "Missing N% of 'pid'
+  keys in 'trips'" warning is expected.
+- The many "ERROR: Column X has dtype ..." lines during run are reported
+  before fix_types runs and are present for existing sources too. Still cast
+  your own columns to the template dtypes.
+- The template-run sample is tiny, so derived statistics (e.g. zone density)
+  differ from the real data. Tests should check structure, not values that
+  depend on the sample.
+- Don't add heavy dependencies for one file format if a ~40-line reader will
+  do (DBF). pyproject's `scripts` dependency group (geopandas) is available
+  to scripts only, not to loaders.
+- The codebook is often not in the user's download. Look on the publisher's
+  page for an open-data / "datos abiertos" bundle: INEGI's CSV zip carried
+  diccionario_de_datos/ and catalogos/ for every table even though the user
+  only had the DBFs. Download into its own scratch folder.
+- Publisher pages are often JS-rendered (WebFetch returns only the title).
+  curl the HTML and grep for .zip/.pdf/.xlsx links instead. Don't probe
+  guessed URLs with HEAD: some servers answer 200 for everything.
+- Several diaries per person (weekday + Saturday in mxod, 7 days in nts):
+  ask whether to keep all of them. If yes, make one attributes row per
+  person-day, with pid = raw id + diary suffix and the same hid, and set day
+  per diary. A day that's only known as "a Tue-Thu" is day "unknown".
+- Persons not asked the travel questions (mxod: under 6, P4_2 blank) are
+  different from persons who reported no trips. Drop them from attributes
+  rather than giving them a home-all-day plan, but still count them in
+  hh_size.
+- Stage tables (one row per mode used): pick the trip mode by a priority list
+  in the config (rail > bus > car > other > bike > walk) rather than by
+  longest stage, otherwise a long walk to the metro makes it a walk trip.
+  When distance comes from stage duration x speed, share an unknown stage's
+  duration from the trip time the known stages don't cover. Stage times
+  that include waiting need lower, door-to-door transit speeds.
+- Zone urbanity from a locality-size field (mxod TLOC): map it to hh_zone
+  directly, and classify trip zones by the weighted modal hh_zone of the
+  households living in each zone.
+- Run the source on its own (-s <src>) as well as with the rest: the
+  plotting and summary steps can fail when an attribute is null for every
+  row (the hh_income heatmap did until it was guarded).
+- polars: Expr.sum() has no min_count, so for a null-if-any-null sum use
+  pl.when(col.is_not_null().all()).then(col.sum()). Passing a Series to
+  is_in is deprecated; pass series.implode().
+- SPSS .sav (pyreadstat): `usecols` silently skips variable names it can't
+  decode, so check the returned columns. Names or strings in the wrong
+  encoding: try encoding="latin1", else transliterate the names in a copy
+  (arg.ascii_long_names).
+- A filter like ~(age < 3) drops rows with null age; add fill_null(False).
+- If a test fails after an intended code change, ask the user or fix the
+  test. Don't revert the change on the assumption it was a regression.

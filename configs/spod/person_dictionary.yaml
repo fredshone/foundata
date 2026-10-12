@@ -1,0 +1,66 @@
+# Person-level dictionary for spod (São Paulo Pesquisa Origem Destino 2017).
+
+column_mappings:
+  ID_PESS: pid
+  ID_DOM: hid
+  FE_PESS: weight
+  IDADE: age
+  SEXO: sex
+  SIT_FAM: relationship
+  GRAU_INS: education
+  CD_ATIVI: employment
+  OCUP1: occupation
+  DIA_SEM: day
+
+# sex mapping
+  # Valid values: male, female, other, unknown
+sex:
+  1: male
+  2: female
+
+# relationship mapping (SIT_FAM, relative to the family's reference person)
+  # Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+relationship:
+  1: self
+  2: partner
+  3: child  # includes stepchildren
+  4: relative
+  5: unrelated  # agregado (lodger)
+  6: unrelated  # resident employee
+  7: unrelated  # relative of resident employee
+
+# education mapping
+  # Valid values: some, none, school, high-school, degree, unknown, void
+education:
+  1: none  # illiterate / primary I incomplete
+  2: school  # primary I complete / primary II incomplete
+  3: school  # primary II complete / secondary incomplete
+  4: high-school  # secondary complete / higher incomplete
+  5: degree
+
+# employment mapping
+  # Valid values: employed, unemployed, retired, student, unknown, void
+employment:
+  1: employed  # regular work
+  2: employed  # bico (odd jobs)
+  3: employed  # on medical leave
+  4: retired  # retired / pensioner
+  5: unemployed
+  6: unemployed  # never worked
+  7: unemployed  # homemaker
+  8: student
+
+# occupation mapping (OCUP1, main job)
+  # Valid values: clerical, manual, managerial, operator, professional, service, other, technical, unknown, void
+occupation:
+  1: managerial
+  2: professional
+  3: technical
+  4: clerical
+  5: service
+  6: service  # shop / market sales
+  7: manual  # agriculture, forestry, fishing
+  8: operator  # industrial production
+  9: manual  # repair and maintenance
+  10: other  # armed forces, police, fire
+  11: other

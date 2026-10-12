@@ -15,6 +15,10 @@ import shutil
 from pathlib import Path
 
 import polars as pl
+from csv_writer import sample_urug
+from dbf_writer import sample_mxod, sample_spod
+from mong_writer import sample_mong
+from sav_writer import sample_arg
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
 FIXTURE_ROOT = Path(__file__).parent.parent / "tests" / "fixtures"
@@ -22,17 +26,23 @@ N_HOUSEHOLDS = 50
 SEED = 42
 
 
-def shuffle_non_keys(df: pl.DataFrame, key_cols: list[str], seed: int) -> pl.DataFrame:
+def shuffle_non_keys(
+    df: pl.DataFrame, key_cols: list[str], seed: int
+) -> pl.DataFrame:
     """Return df with every non-key column independently shuffled."""
     non_keys = [c for c in df.columns if c not in key_cols]
     shuffled = {
         col: df[col].sample(fraction=1.0, shuffle=True, seed=seed + i)
         for i, col in enumerate(non_keys)
     }
-    return df.with_columns([pl.Series(name=c, values=v) for c, v in shuffled.items()])
+    return df.with_columns(
+        [pl.Series(name=c, values=v) for c, v in shuffled.items()]
+    )
 
 
-def sample_hh_ids(df: pl.DataFrame, hh_col: str, n: int, seed: int) -> pl.Series:
+def sample_hh_ids(
+    df: pl.DataFrame, hh_col: str, n: int, seed: int
+) -> pl.Series:
     unique_ids = df[hh_col].unique()
     return unique_ids.sample(n=min(n, len(unique_ids)), seed=seed)
 
@@ -65,7 +75,10 @@ def generate_cmap():
         .sample(n=1, seed=SEED)
     )
     extra_ids = sample_hh_ids(
-        hhs.filter(~pl.col("sampno").is_in(must_include)), "sampno", N_HOUSEHOLDS - 1, SEED
+        hhs.filter(~pl.col("sampno").is_in(must_include)),
+        "sampno",
+        N_HOUSEHOLDS - 1,
+        SEED,
     )
     sampled_ids = pl.concat([must_include, extra_ids]).unique()
 
@@ -75,17 +88,34 @@ def generate_cmap():
     locations = locations.filter(pl.col("sampno").is_in(sampled_ids))
 
     hhs = shuffle_non_keys(hhs, key_cols=["sampno"], seed=SEED)
-    persons = shuffle_non_keys(persons, key_cols=["sampno", "perno"], seed=SEED + 10)
+    persons = shuffle_non_keys(
+        persons, key_cols=["sampno", "perno"], seed=SEED + 10
+    )
     places = shuffle_non_keys(
         places,
         # Keep FIPS-linked locno, sequence cols, and distance (avoid spurious negatives).
-        key_cols=["sampno", "perno", "placeno", "locno", "placeGroup", "traveldayno", "distance"],
+        key_cols=[
+            "sampno",
+            "perno",
+            "placeno",
+            "locno",
+            "placeGroup",
+            "traveldayno",
+            "distance",
+        ],
         seed=SEED + 20,
     )
     locations = shuffle_non_keys(
         locations,
         # Keep FIPS and home flag so the rurality join and home-location lookup work.
-        key_cols=["sampno", "locno", "state_fips", "county_fips", "tract_fips", "home"],
+        key_cols=[
+            "sampno",
+            "locno",
+            "state_fips",
+            "county_fips",
+            "tract_fips",
+            "home",
+        ],
         seed=SEED + 30,
     )
 
@@ -93,7 +123,9 @@ def generate_cmap():
     persons.write_csv(dst / "person.csv")
     places.write_csv(dst / "place.csv")
     locations.write_csv(dst / "location.csv")
-    print(f"  households: {len(hhs)}, persons: {len(persons)}, places: {len(places)}, locations: {len(locations)}")
+    print(
+        f"  households: {len(hhs)}, persons: {len(persons)}, places: {len(places)}, locations: {len(locations)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -118,21 +150,33 @@ def generate_nts():
 
     sampled_hh_ids = sample_hh_ids(hhs, "HouseholdID", N_HOUSEHOLDS, SEED)
     hhs = hhs.filter(pl.col("HouseholdID").is_in(sampled_hh_ids))
-    individuals = individuals.filter(pl.col("HouseholdID").is_in(sampled_hh_ids))
+    individuals = individuals.filter(
+        pl.col("HouseholdID").is_in(sampled_hh_ids)
+    )
     sampled_ind_ids = individuals["IndividualID"].unique()
     trips = trips.filter(pl.col("IndividualID").is_in(sampled_ind_ids))
     days = days.filter(pl.col("IndividualID").is_in(sampled_ind_ids))
 
     hhs = shuffle_non_keys(hhs, key_cols=["HouseholdID"], seed=SEED)
-    individuals = shuffle_non_keys(individuals, key_cols=["IndividualID", "HouseholdID"], seed=SEED + 10)
-    trips = shuffle_non_keys(trips, key_cols=["TripID", "JourSeq", "DayID", "IndividualID"], seed=SEED + 20)
-    days = shuffle_non_keys(days, key_cols=["DayID", "IndividualID"], seed=SEED + 30)
+    individuals = shuffle_non_keys(
+        individuals, key_cols=["IndividualID", "HouseholdID"], seed=SEED + 10
+    )
+    trips = shuffle_non_keys(
+        trips,
+        key_cols=["TripID", "JourSeq", "DayID", "IndividualID"],
+        seed=SEED + 20,
+    )
+    days = shuffle_non_keys(
+        days, key_cols=["DayID", "IndividualID"], seed=SEED + 30
+    )
 
     hhs.write_csv(dst / "household_eul_2002-2023.tab", separator="\t")
     individuals.write_csv(dst / "individual_eul_2002-2023.tab", separator="\t")
     trips.write_csv(dst / "trip_eul_2002-2023.tab", separator="\t")
     days.write_csv(dst / "day_eul_2002-2023.tab", separator="\t")
-    print(f"  households: {len(hhs)}, individuals: {len(individuals)}, trips: {len(trips)}, days: {len(days)}")
+    print(
+        f"  households: {len(hhs)}, individuals: {len(individuals)}, trips: {len(trips)}, days: {len(days)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -147,9 +191,16 @@ def generate_vista():
     dst.mkdir(parents=True, exist_ok=True)
     print("Generating VISTA fixtures...")
 
-    hhs = pl.read_csv(src / "households_vista_2012_2020_lga_v1.csv", null_values="Missing/Refused")
-    persons = pl.read_csv(src / "persons_vista_2012_2020_lga_v1.csv", ignore_errors=True)
-    trips = pl.read_csv(src / "trips_vista_2012_2020_lga_v1.csv", ignore_errors=True)
+    hhs = pl.read_csv(
+        src / "households_vista_2012_2020_lga_v1.csv",
+        null_values="Missing/Refused",
+    )
+    persons = pl.read_csv(
+        src / "persons_vista_2012_2020_lga_v1.csv", ignore_errors=True
+    )
+    trips = pl.read_csv(
+        src / "trips_vista_2012_2020_lga_v1.csv", ignore_errors=True
+    )
 
     sampled_hh_ids = sample_hh_ids(hhs, "hhid", N_HOUSEHOLDS, SEED)
     hhs = hhs.filter(pl.col("hhid").is_in(sampled_hh_ids))
@@ -158,13 +209,19 @@ def generate_vista():
     trips = trips.filter(pl.col("persid").is_in(sampled_pers_ids))
 
     hhs = shuffle_non_keys(hhs, key_cols=["hhid"], seed=SEED)
-    persons = shuffle_non_keys(persons, key_cols=["hhid", "persid"], seed=SEED + 10)
-    trips = shuffle_non_keys(trips, key_cols=["hhid", "persid", "tripno"], seed=SEED + 20)
+    persons = shuffle_non_keys(
+        persons, key_cols=["hhid", "persid"], seed=SEED + 10
+    )
+    trips = shuffle_non_keys(
+        trips, key_cols=["hhid", "persid", "tripno"], seed=SEED + 20
+    )
 
     hhs.write_csv(dst / "households_vista_2012_2020_lga_v1.csv")
     persons.write_csv(dst / "persons_vista_2012_2020_lga_v1.csv")
     trips.write_csv(dst / "trips_vista_2012_2020_lga_v1.csv")
-    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}")
+    print(
+        f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -190,13 +247,19 @@ def generate_qhts():
     trips = trips.filter(pl.col("PERSID").is_in(sampled_pers_ids))
 
     hhs = shuffle_non_keys(hhs, key_cols=["HHID"], seed=SEED)
-    persons = shuffle_non_keys(persons, key_cols=["HHID", "PERSID"], seed=SEED + 10)
-    trips = shuffle_non_keys(trips, key_cols=["HHID", "PERSID", "STARTSTOP"], seed=SEED + 20)
+    persons = shuffle_non_keys(
+        persons, key_cols=["HHID", "PERSID"], seed=SEED + 10
+    )
+    trips = shuffle_non_keys(
+        trips, key_cols=["HHID", "PERSID", "STARTSTOP"], seed=SEED + 20
+    )
 
     hhs.write_csv(dst / "1_QTS_HOUSEHOLDS.csv")
     persons.write_csv(dst / "2_QTS_PERSONS.csv")
     trips.write_csv(dst / "5_QTS_TRIPS.csv")
-    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}")
+    print(
+        f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -229,10 +292,18 @@ def generate_ltds():
     stages = stages.filter(pl.col("spid").is_in(sampled_ppid))
 
     hhs = shuffle_non_keys(hhs, key_cols=["hhid"], seed=SEED)
-    persons = shuffle_non_keys(persons, key_cols=["phid", "ppid"], seed=SEED + 10)
-    person_data = shuffle_non_keys(person_data, key_cols=["phid", "ppid"], seed=SEED + 20)
-    trips = shuffle_non_keys(trips, key_cols=["thid", "tpid", "ttid"], seed=SEED + 30)
-    stages = shuffle_non_keys(stages, key_cols=["shid", "spid", "stid"], seed=SEED + 40)
+    persons = shuffle_non_keys(
+        persons, key_cols=["phid", "ppid"], seed=SEED + 10
+    )
+    person_data = shuffle_non_keys(
+        person_data, key_cols=["phid", "ppid"], seed=SEED + 20
+    )
+    trips = shuffle_non_keys(
+        trips, key_cols=["thid", "tpid", "ttid"], seed=SEED + 30
+    )
+    stages = shuffle_non_keys(
+        stages, key_cols=["shid", "spid", "stid"], seed=SEED + 40
+    )
 
     hhs.write_csv(dst / "Household.csv")
     persons.write_csv(dst / "person.csv")
@@ -240,7 +311,9 @@ def generate_ltds():
     trips.write_csv(dst / "Trip.csv")
     stages.write_csv(dst / "Stage.csv")
     shutil.copy(src / "HABORO_T.csv", dst / "HABORO_T.csv")
-    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}, stages: {len(stages)}")
+    print(
+        f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}, stages: {len(stages)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -266,13 +339,21 @@ def generate_nhts():
     trips = trips.filter(pl.col("HOUSEID").is_in(sampled_hh_ids))
 
     hhs = shuffle_non_keys(hhs, key_cols=["HOUSEID"], seed=SEED)
-    persons = shuffle_non_keys(persons, key_cols=["HOUSEID", "PERSONID"], seed=SEED + 10)
-    trips = shuffle_non_keys(trips, key_cols=["HOUSEID", "PERSONID", "TRIPID", "SEQ_TRIPID"], seed=SEED + 20)
+    persons = shuffle_non_keys(
+        persons, key_cols=["HOUSEID", "PERSONID"], seed=SEED + 10
+    )
+    trips = shuffle_non_keys(
+        trips,
+        key_cols=["HOUSEID", "PERSONID", "TRIPID", "SEQ_TRIPID"],
+        seed=SEED + 20,
+    )
 
     hhs.write_csv(dst / "hhv2pub.csv")
     persons.write_csv(dst / "perv2pub.csv")
     trips.write_csv(dst / "tripv2pub.csv")
-    print(f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}")
+    print(
+        f"  households: {len(hhs)}, persons: {len(persons)}, trips: {len(trips)}"
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -286,19 +367,83 @@ def generate_ktdb():
     dst.mkdir(parents=True, exist_ok=True)
     print("Generating KTDB fixtures...")
 
-    persons = pl.read_csv(src / "persons.csv", ignore_errors=True, encoding="euc-kr")
-    trips = pl.read_csv(src / "trips.csv", ignore_errors=True, encoding="euc-kr")
+    persons = pl.read_csv(
+        src / "persons.csv", ignore_errors=True, encoding="euc-kr"
+    )
+    trips = pl.read_csv(
+        src / "trips.csv", ignore_errors=True, encoding="euc-kr"
+    )
 
-    sampled_ids = persons["idx"].unique().sample(n=min(N_HOUSEHOLDS, persons["idx"].n_unique()), seed=SEED)
+    sampled_ids = (
+        persons["idx"]
+        .unique()
+        .sample(n=min(N_HOUSEHOLDS, persons["idx"].n_unique()), seed=SEED)
+    )
     persons = persons.filter(pl.col("idx").is_in(sampled_ids))
     trips = trips.filter(pl.col("idx").is_in(sampled_ids))
 
     persons = shuffle_non_keys(persons, key_cols=["idx"], seed=SEED)
     trips = shuffle_non_keys(trips, key_cols=["idx", "th_seq"], seed=SEED + 10)
 
-    (dst / "persons.csv").write_bytes(persons.write_csv().encode("euc-kr", errors="replace"))
-    (dst / "trips.csv").write_bytes(trips.write_csv().encode("euc-kr", errors="replace"))
+    (dst / "persons.csv").write_bytes(
+        persons.write_csv().encode("euc-kr", errors="replace")
+    )
+    (dst / "trips.csv").write_bytes(
+        trips.write_csv().encode("euc-kr", errors="replace")
+    )
     print(f"  persons: {len(persons)}, trips: {len(trips)}")
+
+
+# ---------------------------------------------------------------------------
+# SPOD (open data, so sampled unshuffled)
+# ---------------------------------------------------------------------------
+
+
+def generate_spod():
+    print("Generating SPOD fixtures...")
+    sample_spod(
+        DATA_ROOT / "Sao Paulo", FIXTURE_ROOT / "spod", N_HOUSEHOLDS, SEED
+    )
+
+
+# ---------------------------------------------------------------------------
+# MXOD (open data, so sampled unshuffled)
+# ---------------------------------------------------------------------------
+
+
+def generate_mxod():
+    print("Generating MXOD fixtures...")
+    sample_mxod(DATA_ROOT / "MEX", FIXTURE_ROOT / "mxod", N_HOUSEHOLDS, SEED)
+
+
+# ---------------------------------------------------------------------------
+# ARG (open data, so sampled unshuffled)
+# ---------------------------------------------------------------------------
+
+
+def generate_arg():
+    print("Generating ARG fixtures...")
+    sample_arg(DATA_ROOT / "ARG", FIXTURE_ROOT / "arg", N_HOUSEHOLDS, SEED)
+
+
+# ---------------------------------------------------------------------------
+# URUG (open data, so sampled unshuffled)
+# ---------------------------------------------------------------------------
+
+
+def generate_urug():
+    print("Generating URUG fixtures...")
+    sample_urug(DATA_ROOT / "URUG", FIXTURE_ROOT / "urug", N_HOUSEHOLDS, SEED)
+
+
+# ---------------------------------------------------------------------------
+# MONG (restricted, so fresh ids and shuffled attributes)
+# ---------------------------------------------------------------------------
+
+
+def generate_mong():
+    print("Generating MONG fixtures...")
+    sample_mong(DATA_ROOT / "MONG", FIXTURE_ROOT / "mong", N_HOUSEHOLDS, SEED)
 
 
 # ---------------------------------------------------------------------------
@@ -323,8 +468,7 @@ def generate_post_process():
     shuffled_pids = pids_sorted.sample(fraction=1.0, shuffle=True, seed=SEED)
     pid_map = pl.DataFrame({"pid": pids_sorted, "pid_new": shuffled_pids})
     trips = (
-        trips
-        .join(pid_map, on="pid", how="left")
+        trips.join(pid_map, on="pid", how="left")
         .drop("pid")
         .rename({"pid_new": "pid"})
         .select(["pid"] + [c for c in trips.columns if c != "pid"])
@@ -346,5 +490,10 @@ if __name__ == "__main__":
     generate_ltds()
     generate_nhts()
     generate_ktdb()
+    generate_spod()
+    generate_mxod()
+    generate_arg()
+    generate_urug()
+    generate_mong()
     generate_post_process()
     print("Done.")

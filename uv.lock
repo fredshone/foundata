@@ -505,6 +505,7 @@ dependencies = [
     { name = "pip" },
     { name = "polars" },
     { name = "pyarrow" },
+    { name = "pyreadstat" },
     { name = "pyyaml" },
     { name = "rapidfuzz" },
     { name = "ruff" },
@@ -536,6 +537,7 @@ requires-dist = [
     { name = "polars", specifier = ">=1.35.2" },
     { name = "pre-commit", marker = "extra == 'dev'", specifier = ">=4.0" },
     { name = "pyarrow", specifier = ">=22.0.0" },
+    { name = "pyreadstat", specifier = ">=1.3.6" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=8.0" },
     { name = "pytest-cov", marker = "extra == 'dev'", specifier = ">=5.0" },
     { name = "pyyaml", specifier = ">=6.0.3" },
@@ -923,6 +925,15 @@ source = { registry = "https://pypi.org/simple" }
 sdist = { url = "https://files.pythonhosted.org/packages/d6/54/cfe61301667036ec958cb99bd3efefba235e65cdeb9c84d24a8293ba1d90/mdurl-0.1.2.tar.gz", hash = "sha256:bb413d29f5eea38f31dd4754dd7377d4465116fb207585f97bf925588687c1ba", size = 8729 }
 wheels = [
     { url = "https://files.pythonhosted.org/packages/b3/38/89ba8ad64ae25be8de66a6d463314cf1eb366222074cfda9ee839c56a4b4/mdurl-0.1.2-py3-none-any.whl", hash = "sha256:84008a41e51615a49fc9966191ff91509e3c40b939176e643fd50a5c2196b8f8", size = 9979 },
+]
+
+[[package]]
+name = "narwhals"
+version = "2.27.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/bf/21/f64d6b2dbea7bf3f8c38cdc786dcc6ef012ca3d173ad208c782c9a7bedf6/narwhals-2.27.1.tar.gz", hash = "sha256:aed93076a3ea42d9c32c88e4eb5ea422a21937011cbe1f480f9572a523c82094", size = 735013 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/d1/89/5d4c86da1130d9059681e5b6cd7645df5c10279a6a079c5c37dcb2cc6f3f/narwhals-2.27.1-py3-none-any.whl", hash = "sha256:d057df13f5852b8e157596e82eb5e955fad267425df5e420e0ee9863da483b31", size = 483211 },
 ]
 
 [[package]]
@@ -1407,6 +1418,33 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/e8/8b/a3f0618b03957de9db5489a04558a8826f43906628bb0b766033aa3b5548/pyproj-3.7.2-cp314-cp314t-win32.whl", hash = "sha256:c9b6f1d8ad3e80a0ee0903a778b6ece7dca1d1d40f6d114ae01bc8ddbad971aa", size = 6056848 },
     { url = "https://files.pythonhosted.org/packages/bc/56/413240dd5149dd3291eda55aa55a659da4431244a2fd1319d0ae89407cfb/pyproj-3.7.2-cp314-cp314t-win_amd64.whl", hash = "sha256:1914e29e27933ba6f9822663ee0600f169014a2859f851c054c88cf5ea8a333c", size = 6517676 },
     { url = "https://files.pythonhosted.org/packages/15/73/a7141a1a0559bf1a7aa42a11c879ceb19f02f5c6c371c6d57fd86cefd4d1/pyproj-3.7.2-cp314-cp314t-win_arm64.whl", hash = "sha256:d9d25bae416a24397e0d85739f84d323b55f6511e45a522dd7d7eae70d10c7e4", size = 6391844 },
+]
+
+[[package]]
+name = "pyreadstat"
+version = "1.3.6"
+source = { registry = "https://pypi.org/simple" }
+dependencies = [
+    { name = "narwhals" },
+    { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/7a/46/5da098432b075d5ddadaf3d2f1f9f7abe1477a5be06697528ceb30337301/pyreadstat-1.3.6.tar.gz", hash = "sha256:c7b3bde1d86d5b4bd93b8a783d306a1cc6b9cc64adc4b892754f24caa8270aa5", size = 519810 }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/7c/5f/ee640e28413703e87989ed2f06c43d56c8021239bc51c88ebce9846a7510/pyreadstat-1.3.6-cp312-cp312-macosx_10_13_x86_64.whl", hash = "sha256:cd3c1b6b948ec8c7ac4cd140f4542a5fd076ef814a1e252d26b218624e975457", size = 772771 },
+    { url = "https://files.pythonhosted.org/packages/a4/70/f7d84cea3b4134cab1e2199ac5e0fd961203073c76672b28f8d4c1ed0712/pyreadstat-1.3.6-cp312-cp312-macosx_11_0_arm64.whl", hash = "sha256:6949c7535dc57115f3d5620b3f381ca76589f0fb079c20c26b7cbcdd5fca54db", size = 736578 },
+    { url = "https://files.pythonhosted.org/packages/e9/73/8e8a1ebca7cef372fc3615db6d943a40c6a3a5c444a64d38ac00814b929e/pyreadstat-1.3.6-cp312-cp312-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:a9806877e74e17b65142526799e48e83c6d534423f80c2bca9d76836f9733aab", size = 2600229 },
+    { url = "https://files.pythonhosted.org/packages/da/74/8986d34b4a0d99bf2dfdb822d1f1c564be6ad6ea55bac26e73dd44b7864b/pyreadstat-1.3.6-cp312-cp312-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:93182fc101e2adf27c36fb935e8144e5bc92a3da8d7577a1dabfcacf29b672e8", size = 2677736 },
+    { url = "https://files.pythonhosted.org/packages/25/32/5fb250eb7f0f3eb4eef0f1f2f10571c9705f3ddbe48cb973e5b2f99118c9/pyreadstat-1.3.6-cp312-cp312-win_amd64.whl", hash = "sha256:3d48c59ab77b6e39df1cf846ef343eba274af4a536f54491c78f4f4e8d2bc984", size = 2034889 },
+    { url = "https://files.pythonhosted.org/packages/af/97/4814041fda04c71a12b5ef2b25dd6110e06735693f7a829661d9be9457bc/pyreadstat-1.3.6-cp313-cp313-macosx_10_13_x86_64.whl", hash = "sha256:88b412b7c339f0d174eb50dff7478905a9cac72409b0fe98ebe3b203d1c48271", size = 771763 },
+    { url = "https://files.pythonhosted.org/packages/7f/13/16fc131b14d775fa69755bb988479553c8a077e10dd16a567dbc90257272/pyreadstat-1.3.6-cp313-cp313-macosx_11_0_arm64.whl", hash = "sha256:c683a98862a47de2fefafb28c197c724c632a0223214eca7c96b2f4774dc6346", size = 735668 },
+    { url = "https://files.pythonhosted.org/packages/2d/38/d9a205ad3972a32dca530a22036f6e5006565deb71c884cff17d14ec3cdf/pyreadstat-1.3.6-cp313-cp313-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:ed79f7acdb96c4df99cd53e4c87aaa750c369acb3d58ca305315dbc8ed75ed29", size = 2577621 },
+    { url = "https://files.pythonhosted.org/packages/a3/24/6acc5097dbb755e811f34de11700ca741c219b3aa24f08a6757d96d162c6/pyreadstat-1.3.6-cp313-cp313-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:3ac231771dc038e0a42a4d14599af3112684f7eba680983b3ef9581db3e3b163", size = 2659007 },
+    { url = "https://files.pythonhosted.org/packages/63/1e/9baec73c687d2eee2ff6c8de2ec2862b81bd9a2d84a5f726cd4aab04f1b4/pyreadstat-1.3.6-cp313-cp313-win_amd64.whl", hash = "sha256:4f524d0da5183d3507ff57cc00e82d4fdee46c33066e904a1186566b0fa95b7c", size = 2035573 },
+    { url = "https://files.pythonhosted.org/packages/b7/78/0d00cd24b1a1a4f6b567186361517e0d2f8b95696edd0e5d32c4805b0671/pyreadstat-1.3.6-cp314-cp314-macosx_10_15_x86_64.whl", hash = "sha256:4d54d1f7353942ac94220069a8dcc34b3b38af53d98a24dcc9a28742ca153c6c", size = 779160 },
+    { url = "https://files.pythonhosted.org/packages/b2/7b/da0cb3aa581be9ae1d6f2d21b0aece37513eb53f445c1e80819d2aae4892/pyreadstat-1.3.6-cp314-cp314-macosx_11_0_arm64.whl", hash = "sha256:744cc52a6d14ffd2930c684bf07d4a19c5342f41f92c4604b445137f7a4628af", size = 743692 },
+    { url = "https://files.pythonhosted.org/packages/f2/3a/c58518c19dbb3b27d52dba7e386ab6ebbd7f1018657d4286f89e5add1d63/pyreadstat-1.3.6-cp314-cp314-manylinux2014_aarch64.manylinux_2_17_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:1b4f32d4a8ef996a5c3ee6ba2d6790a0ca93e7a4c1f7611e94e610d945e0788b", size = 2573814 },
+    { url = "https://files.pythonhosted.org/packages/ab/a3/3f233e2036329ffc6d96b8d6bd854c757558aad32390ad34dfddf528bc2a/pyreadstat-1.3.6-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:c8d665437b39d4788c2854f09b352ada9e70e166dd96ab68225b81214abe8645", size = 2641549 },
+    { url = "https://files.pythonhosted.org/packages/af/96/ae391570291876b3b53c53b4c9032a432e04c3c67b30fc1bab8b61d796f6/pyreadstat-1.3.6-cp314-cp314-win_amd64.whl", hash = "sha256:822551e12c83c4e8e0f757060297b459d38bfb3860bb6c7419f71288ddd94690", size = 2054905 },
 ]
 
 [[package]]

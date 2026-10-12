@@ -1,0 +1,52 @@
+# Household-level dictionary for urug (Encuesta de Movilidad del Área
+# Metropolitana de Montevideo, EOD 2016, Intendencia de Montevideo /
+# Universidad de la República, CAF, PNUD). Open data from
+# catalogodatos.gub.uy (eod2016.zip).
+# Raw data: EOD2016/Base Hogar Habitos.csv, one row per hogar (NFORM).
+# Codes from "Dicc Base Hog_Hab.txt". Blank cells are missing values.
+# The survey has no income question (only the INSE socioeconomic index), so
+# hh_income is null.
+
+column_mappings:
+  NFORM: hid
+  C1: dwelling  # tipo de vivienda
+  C2: ownership  # el hogar es propietario?
+  D1G: has_cars  # automóvil (1 sí, 2 no, 9 sin dato)
+  D1GCAN: cars  # cantidad de automóviles (99 sin dato)
+  D1F: has_mopeds  # ciclomotor (1 sí, 2 no, 9 sin dato)
+  D1FCAN: mopeds  # cantidad de ciclomotores (99 sin dato)
+  D5: hh_size  # personas que viven habitualmente en el hogar (99 sin dato)
+  d5a: hh_size_surveyed  # cantidad efectiva de personas relevadas
+  codloc: hh_zone  # INE 2011 locality code of the dwelling
+
+# dwelling mapping (C1)
+  # Valid values: house, flat, other, unknown
+dwelling:
+  1: house  # casa
+  2: flat  # apartamento o casa en complejo
+  3: flat  # apartamento en edificio de altura
+  4: flat  # apartamento en edificio de una planta
+  5: other  # local no construido para vivienda
+  9: unknown  # sin dato
+
+# ownership mapping (C2). Non-owners aren't split into renters and other
+# tenures (e.g. occupied free of charge); they map to rented.
+  # Valid values: owned, rented, other, unknown
+ownership:
+  1: owned  # sí
+  2: rented  # no
+  9: unknown  # sin dato
+
+# hh_size is D5; where it's unknown, the number of persons surveyed (d5a).
+hh_size_unknown_codes: [99]
+
+# vehicles = cars + mopeds/motorcycles (ciclomotores). A "no" on the
+# yes/no question means 0; these count codes mean unknown.
+vehicle_unknown_codes: [9, 99]
+
+# hh_zone from the INE locality code (codloc, also used for trip zones via
+# configs/urug/segments.csv). Montevideo city is urban, the dispersed rural
+# area of each department (codloc ending 900) is rural, and every other
+# locality (Ciudad de la Costa, Las Piedras, Pando, ...) is suburban.
+urban_localities: [1020]  # Montevideo
+rural_locality_suffix: 900  # <depto>900 RURAL

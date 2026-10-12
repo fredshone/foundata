@@ -1,0 +1,96 @@
+# Person-level dictionary for urug (Montevideo EOD 2016).
+# Raw data: EOD2016/Base Personas.csv, one row per person (NFORM, nnper).
+# Codes from "Dicc Base Personas.txt". Blank cells are missing values.
+# Children aged 0-3 weren't asked the travel questions (E19 blank) and
+# persons with E19 = 9 (sin dato) didn't say whether they travelled; both
+# are dropped from attributes but still counted in hh_size (D5).
+# Employment and licence questions are only asked of persons aged 14+.
+
+column_mappings:
+  NFORM: hid
+  nnper: pid
+  wcal0: weight  # ponderador (decimal comma); constant within a household
+  EDAD: age
+  SEXO: sex
+  PARENTESCO: relationship
+  E3: attended  # asiste o asistió a un establecimiento de enseñanza?
+  E4: education  # nivel más alto que cursa o alcanzó
+  E6: completed  # finalizó el nivel más alto alcanzado?
+  E8: worked  # trabajó la semana pasada (al menos una hora)?
+  E9: has_job  # tiene un trabajo al que volverá?
+  E10: employment  # actividad principal (for those not working)
+  E15: has_licence  # tiene licencia de conducir?
+  E19: travelled  # fue a algún lugar entre las 4am de ayer y las 4am de hoy?
+
+# Persons kept in attributes (E19)
+travelled_codes: [1, 2]  # 1 sí, 2 no; null (age 0-3) and 9 sin dato dropped
+
+# sex mapping
+  # Valid values: male, female, other, unknown
+sex:
+  1: male  # masculino
+  2: female  # femenino
+
+# relationship mapping (PARENTESCO, relative to the jefe de hogar)
+  # Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+relationship:
+  1: self  # jefe
+  2: partner  # esposo/a o compañero/a
+  3: child  # hijo/a de ambos
+  4: child  # hijo/a solo del jefe
+  5: child  # hijo/a solo del esposo/a o compañero/a
+  6: relative  # yerno/nuera
+  7: parent  # padre/madre
+  8: relative  # suegro/a
+  9: sibling  # hermano/a
+  10: relative  # cuñado/a
+  11: relative  # nieto/a
+  12: relative  # otro pariente
+  13: unrelated  # otro no pariente
+  14: unrelated  # servicio doméstico o familiares del mismo
+  99: unknown  # sin dato
+
+# education mapping (E4, level attending or highest reached). Uruguayan
+# secundaria covers lower and upper secondary, so it counts as high-school
+# only when finished (E6 = 1); an unfinished tertiary level counts as
+# high-school. Persons who never attended (E3 = 3) have no education.
+  # Valid values: some, none, school, high-school, degree, unknown, void
+education:
+  1: none  # preescolar
+  2: school  # primaria
+  3: school  # secundaria
+  4: high-school  # enseñanza técnica
+  5: degree  # magisterio, profesorado
+  6: degree  # universidad o similar
+  7: degree  # posgrado
+  9: unknown  # sin dato
+education_if_completed:
+  3: high-school  # secundaria completa
+education_if_incomplete:
+  5: high-school  # magisterio incompleto
+  6: high-school  # universidad incompleta
+never_attended_code: 3  # E3 no asistió
+
+# employment: employed if E8 = 1 (worked last week) or E9 = 2 (has a job to
+# return to); otherwise from the main activity (E10).
+worked_code: 1  # E8 sí
+has_job_code: 2  # E9 sí
+  # Valid values: employed, unemployed, retired, student, unknown, void
+employment:
+  1: unemployed  # está buscando trabajo
+  2: student  # estudiante
+  3: unemployed  # realiza quehaceres del hogar
+  4: retired  # jubilado/pensionista
+  5: unknown  # sin dato
+  6: unknown  # sin dato
+  7: unknown  # sin dato
+  8: unemployed  # rentista
+  9: unemployed  # ninguna
+
+# has_licence mapping (E15). Blank (under 14) -> void.
+  # Valid values: yes, no, unknown, void
+has_licence:
+  1: "yes"  # sí
+  2: "no"  # sí, pero está vencida
+  3: "no"  # no
+  9: unknown  # sin dato
