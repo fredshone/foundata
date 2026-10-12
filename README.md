@@ -352,10 +352,6 @@ Activity duration distributions, faceted by activity type:
 
 ![Activity duration by type](assets/activity_duration_by_type.png)
 
-Mean per-person activity durations:
-
-![Activity duration by type](assets/activity_duration_by_type.png)
-
 Activity participations by employment, income and age:
 
 ![Activity heatmap by age](assets/activity_counts_grid.png)
