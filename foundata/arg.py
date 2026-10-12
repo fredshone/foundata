@@ -329,7 +329,7 @@ def load_households(
         vehicles = vehicles + c  # null if any count is missing
 
     rate = config["eur_per_ars"].get(survey)
-    if "hh_income_band" in hhs:
+    if "hh_income_band" in hhs and rate is not None:
         income = income_from_band(config["hh_income_bands"][survey], rate)
     elif "hh_income" in hhs and rate is not None:
         income = (
@@ -682,8 +682,13 @@ def trip_modes_and_distances(
             )
         )
         .first(),
-        # null when a stage time couldn't be imputed (unknown trip time)
-        distance=pl.when(pl.col("distance").is_not_null().all())
+        # null when a stage's duration couldn't be imputed (unknown trip
+        # time) or no stage had a mapped speed; a stage with an unmapped
+        # mode just contributes no distance to an otherwise-known trip
+        distance=pl.when(
+            pl.col("duration").is_not_null().all()
+            & pl.col("distance").is_not_null().any()
+        )
         .then(pl.col("distance").sum())
         .cast(pl.Float32),
     )

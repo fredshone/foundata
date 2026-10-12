@@ -370,17 +370,17 @@ def filter_homebased(
     click.echo(f"Wrote {ot}")
 
 
-@filter_group.command("missing-acts-or-modes")
+@filter_group.command("missing-acts")
 @_ATTR_OPT
 @_TRIPS_OPT
 @_OUT_DIR_OPT
 @_OUT_ATTR_OPT
 @_OUT_TRIPS_OPT
-def filter_missing_acts_or_modes(
+def filter_missing_acts(
     attributes, trips, output, output_attributes, output_trips
 ):
     """Remove plans with any missing or unknown activities."""
-    suffix = "_clean_modes"
+    suffix = "_clean_acts"
     oa = _resolve_out(output_attributes, output, attributes, suffix)
     ot = _resolve_out(output_trips, output, trips, suffix)
 

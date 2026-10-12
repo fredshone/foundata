@@ -603,17 +603,16 @@ def runner(
         save_path=output / "activity_heatmap_by_employment.png",
     )
 
-    # sources such as mxod have no income at all, so a run of only those
-    # has nothing to bin
-    if all_attributes["hh_income"].is_not_null().any():
-        plots.attribute_activity_heatmap(
-            all_attributes,
-            activities,
-            attribute_col="hh_income",
-            n_bins=8,
-            on="source",
-            save_path=output / "activity_heatmap_by_hh_income.png",
-        )
+    # sources such as mxod have no income at all; attribute_activity_heatmap
+    # skips plotting (rather than raising) when a column is all null
+    plots.attribute_activity_heatmap(
+        all_attributes,
+        activities,
+        attribute_col="hh_income",
+        n_bins=8,
+        on="source",
+        save_path=output / "activity_heatmap_by_hh_income.png",
+    )
 
     plots.attribute_activity_heatmap(
         all_attributes,
@@ -624,14 +623,13 @@ def runner(
     )
 
     # likewise urug never records the travel day
-    if all_attributes["day"].is_not_null().any():
-        plots.attribute_activity_heatmap(
-            all_attributes,
-            activities,
-            attribute_col="day",
-            on="source",
-            save_path=output / "activity_heatmap_by_day.png",
-        )
+    plots.attribute_activity_heatmap(
+        all_attributes,
+        activities,
+        attribute_col="day",
+        on="source",
+        save_path=output / "activity_heatmap_by_day.png",
+    )
 
     plots.activities_attributes_grid(
         all_attributes,

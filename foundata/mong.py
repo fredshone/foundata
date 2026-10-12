@@ -30,7 +30,12 @@ from pathlib import Path
 import polars as pl
 import pyreadstat
 
-from foundata.utils import config_for_year, table_joiner, table_stacker
+from foundata.utils import (
+    add_implied_trips,
+    config_for_year,
+    table_joiner,
+    table_stacker,
+)
 
 SOURCE = "mong"
 COUNTRY = "mng"
@@ -560,8 +565,8 @@ def _add_implied_trips(episodes: pl.DataFrame, config: dict) -> pl.DataFrame:
 
     fixed = pl.col("location").is_in(config["fixed_places"])
     loose_trip_act = ~fixed & pl.col("act").is_in(implied["acts"])
-    episodes = episodes.with_columns(
-        implied_trip=~pl.col("is_travel")
+    implied_trip = (
+        ~pl.col("is_travel")
         & ~prev("is_travel")
         & (pl.col("location") != prev("location"))
         & (
@@ -570,28 +575,15 @@ def _add_implied_trips(episodes: pl.DataFrame, config: dict) -> pl.DataFrame:
                 (pl.col("act") != prev("act"))
                 & (loose_trip_act | prev(loose_trip_act))
             )
-        ),
-        trip_mins=pl.min_horizontal(
-            implied["minutes"], (prev("tet") - prev("tst")) // 2
-        ),
+        )
     )
-    trips = episodes.filter(pl.col("implied_trip")).with_columns(
-        tet=pl.col("tst"),
-        tst=pl.col("tst") - pl.col("trip_mins"),
-        is_travel=pl.lit(True),
-        act=pl.lit(None, dtype=pl.String),
-        mode=pl.lit(None, dtype=pl.String),
+    trip_mins = pl.min_horizontal(
+        implied["minutes"], (prev("tet") - prev("tst")) // 2
     )
-    print(f"Added {trips.height} MONG trips implied by a change of place")
-    # make room for each trip at the end of the episode before it
-    episodes = episodes.with_columns(
-        tet=pl.col("tet")
-        - pl.when(pl.col("implied_trip").shift(-1).over("pid"))
-        .then(pl.col("trip_mins").shift(-1).over("pid"))
-        .otherwise(0)
-    )
-    return (
-        pl.concat([episodes, trips.select(episodes.columns)])
-        .sort("pid", "tst", "tet")
-        .drop("implied_trip", "trip_mins")
+    return add_implied_trips(
+        episodes,
+        implied_trip,
+        trip_mins,
+        "MONG trips implied by a change of place",
+        null_cols=("act", "mode"),
     )

@@ -44,6 +44,24 @@ def validate_column_mappings(config: dict, template_section: dict) -> list[str]:
     return warnings
 
 
+# Several sources name their value mapping with a "<field>_mapping(s)"
+# key rather than the template field name itself (e.g. NHTS/QHTS/VISTA/MONG/
+# TUS "act_mappings", "mode_mappings"). "act" covers both oact and dact,
+# since the same code -> activity map is used for both trip ends.
+_VALUE_MAPPING_ALIASES = {"mode": ("mode",), "act": ("oact", "dact")}
+
+
+def _value_mapping_target_fields(key: str, template_section: dict) -> list[str]:
+    """Template field names a config key's value mapping should be checked
+    against, resolving the "<field>_mapping(s)" naming convention."""
+    if key in template_section:
+        return [key]
+    base = key.removesuffix("_mappings").removesuffix("_mapping")
+    return [
+        f for f in _VALUE_MAPPING_ALIASES.get(base, ()) if f in template_section
+    ]
+
+
 def validate_value_mappings(config: dict, template_section: dict) -> list[str]:
     """Check that mapped string values are in the template's allowed set."""
     errors = []
@@ -51,36 +69,33 @@ def validate_value_mappings(config: dict, template_section: dict) -> list[str]:
         if key == "column_mappings":
             continue
 
-        # Skip if this field is not in the template
-        if key not in template_section:
-            continue
-
-        field_config = template_section[key]
-        if "set" not in field_config:
-            continue
-
-        allowed = set(field_config["set"])
-
-        # Handle year-keyed configs
-        if isinstance(mapping, dict) and "default" in mapping:
-            all_values = {}
-            for year_key, year_mapping in mapping.items():
-                if isinstance(year_mapping, dict):
-                    all_values.update(year_mapping)
-        else:
-            all_values = mapping
-
-        if not isinstance(all_values, dict):
-            continue
-
-        for coded_val, mapped_val in all_values.items():
-            # Skip non-string values (e.g. income bounds [0, 10000])
-            if not isinstance(mapped_val, str):
+        for field in _value_mapping_target_fields(key, template_section):
+            field_config = template_section[field]
+            if "set" not in field_config:
                 continue
-            if mapped_val not in allowed:
-                errors.append(
-                    f"'{key}': value '{mapped_val}' (for code {coded_val!r}) not in allowed set {sorted(allowed)}"
-                )
+
+            allowed = set(field_config["set"])
+
+            # Handle year-keyed configs
+            if isinstance(mapping, dict) and "default" in mapping:
+                all_values = {}
+                for year_key, year_mapping in mapping.items():
+                    if isinstance(year_mapping, dict):
+                        all_values.update(year_mapping)
+            else:
+                all_values = mapping
+
+            if not isinstance(all_values, dict):
+                continue
+
+            for coded_val, mapped_val in all_values.items():
+                # Skip non-string values (e.g. income bounds [0, 10000])
+                if not isinstance(mapped_val, str):
+                    continue
+                if mapped_val not in allowed:
+                    errors.append(
+                        f"'{key}' -> '{field}': value '{mapped_val}' (for code {coded_val!r}) not in allowed set {sorted(allowed)}"
+                    )
     return errors
 
 

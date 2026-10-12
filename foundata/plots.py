@@ -1170,6 +1170,11 @@ def attribute_activity_heatmap(
     counts = counts.join(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
+    if counts.select(attribute_col).drop_nulls().height == 0:
+        print(
+            f"Skipping activity heatmap for '{attribute_col}': all values are null."
+        )
+        return
     groups = _non_null_groups(counts, on)
 
     edges = None
