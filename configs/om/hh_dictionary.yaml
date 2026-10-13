@@ -13,6 +13,11 @@ column_mappings:
   Sted: hh_zone
   WoGem: home_gemeente
 
+# AantPers top code ("10 personen of meer"). Household income completeness
+# compares it with the number of person records capped at this value, so a
+# 10+ household with 10 or more records counts as complete.
+hh_size_top_code: 10
+
 # Sted (stedelijkheidsgraad woongemeente)
 hh_zone:
   1: urban      # Zeer sterk stedelijk
