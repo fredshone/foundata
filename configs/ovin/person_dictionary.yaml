@@ -1,0 +1,80 @@
+# Person-level dictionary for OViN (2010-2017).
+# OPID serves as both pid and hid (hid is set = pid in the loader).
+
+column_mappings:
+  OPID: pid
+  Leeftijd: age          # 99 = "99 jaar of ouder"
+  Geslacht: sex
+  MaatsPart: employment
+  Opleiding: education
+  Rijbewijs: has_licence
+  HHPlOP: relationship
+  Herkomst: race         # migration background
+  Weggeweest: away       # intermediate: used to drop non-regular travellers
+  FactorP: weight
+
+# Weggeweest (OP is weggeweest). Respondents whose only travel that day was
+# professional, foreign, truck or holiday travel have no regular trips
+# (AantVpl = 0) but did leave home, so they are dropped rather than given a
+# home-all-day plan.
+away_non_regular: [2, 3, 4, 5]
+#   2: Normale beroepsmatige verplaatsingen
+#   3: Verplaatsingen geheel in het buitenland
+#   4: Beroepsmatige vrachtwagenverplaatsingen
+#   5: Vakantieverplaatsingen
+
+# Geslacht
+sex:
+  1: male     # Man
+  2: female   # Vrouw
+
+# MaatsPart (maatschappelijke participatie)
+employment:
+  1: pt-employed   # Werkzaam 12-30 uur per week
+  2: ft-employed   # Werkzaam >= 30 uur per week
+  3: unemployed    # Eigen huishouding
+  4: student       # Scholier/student
+  5: unemployed    # Werkloos
+  6: unemployed    # Arbeidsongeschikt
+  7: retired       # Gepensioneerd/VUT
+  8: unknown       # Overig
+  9: unknown       # Onbekend
+  10: void         # Niet van toepassing; OP jonger dan 6 jaar
+
+# Opleiding (hoogst voltooide opleiding)
+education:
+  0: none          # Geen opleiding voltooid
+  1: school        # Basisonderwijs, lager onderwijs
+  2: school        # Lager beroepsonderwijs of vglo, lavo, mavo, mulo, vmbo
+  3: high-school   # Middelbaar beroepsonderwijs of havo, atheneum, gymnasium, mms, hbs
+  4: degree        # Hoger beroepsonderwijs, universiteit
+  5: some          # Andere opleiding
+  6: unknown       # Onbekend
+  7: unknown       # Niet gevraagd; OP jonger dan 15 jaar (as in odin)
+
+# Rijbewijs (OP bezit rijbewijs)
+has_licence:
+  0: "no"       # Nee
+  1: "yes"      # Ja
+  2: unknown    # Onbekend
+  3: "no"       # Niet gevraagd; OP jonger dan 17 (2010: 18) jaar
+
+# HHPlOP (plaats OP in huishouden t.o.v. huishoudkern)
+relationship:
+  1: self        # Alleenstaande (eenpersoonshuishouden)
+  2: self        # Eenpersoonshuishoudkern (meerpersoonshuishouden)
+  3: partner     # Echtgeno(o)t(e)/partner (lid huishoudkern)
+  4: child       # Kind
+  5: parent      # Vader/moeder of schoonvader/schoonmoeder
+  6: sibling     # Broer/zus of zwager/schoonzus
+  7: relative    # Schoonzoon/schoondochter
+  8: relative    # Kleinkind
+  9: relative    # Overig: familie of schoonfamilie
+  10: unrelated  # Overig: geen familie of schoonfamilie
+
+# Herkomst (migration background — nearest proxy for race, as in odin)
+race:
+  1: white       # Autochtoon
+  2: white       # Westerse allochtoon
+  3: non-white   # Niet-westerse allochtoon
+  4: unknown     # Onbekend

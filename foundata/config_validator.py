@@ -51,6 +51,12 @@ def validate_column_mappings(config: dict, template_section: dict) -> list[str]:
 _VALUE_MAPPING_ALIASES = {"mode": ("mode",), "act": ("oact", "dact")}
 
 
+# Values a config may map to that aren't in the template's set because
+# process_source rewrites them: utils.split_employment_type turns
+# "ft-employed"/"pt-employed" into "employed" plus an employed_type.
+_PRE_PROCESS_VALUES = {"employment": {"ft-employed", "pt-employed"}}
+
+
 def _value_mapping_target_fields(key: str, template_section: dict) -> list[str]:
     """Template field names a config key's value mapping should be checked
     against, resolving the "<field>_mapping(s)" naming convention."""
@@ -74,7 +80,9 @@ def validate_value_mappings(config: dict, template_section: dict) -> list[str]:
             if "set" not in field_config:
                 continue
 
-            allowed = set(field_config["set"])
+            allowed = set(field_config["set"]) | _PRE_PROCESS_VALUES.get(
+                field, set()
+            )
 
             # Handle year-keyed configs
             if isinstance(mapping, dict) and "default" in mapping:

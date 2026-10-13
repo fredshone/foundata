@@ -1,0 +1,82 @@
+# Person-level dictionary for OM / MON (2005-2007). One row per person has
+# Persoon == 1. The diary date is per person: in a few households members
+# filled in different days.
+
+column_mappings:
+  PersID: pid           # HHID * 100 + RegelNr
+  HHID: hid
+  Leeftijd: age         # 99 = "99 jaar of ouder"
+  Geslacht: sex
+  MaatPart: employment
+  Opleid: education
+  Rijbewij: has_licence
+  Inkomen: personal_income   # intermediate: summed to hh_income
+  Responsc: away             # intermediate: used to drop truck-only travellers
+  Weekdag: day
+  Jaar: year
+  Maand: month
+  Dag: day_of_month
+  FactorP: weight
+
+# Responsc 3: "Nulvervoer vanwege verpl. uitsluitend m.e. vrachtwagen" —
+# the person's only travel was in a truck, so they have no regular trips but
+# did leave home. Dropped rather than given a home-all-day plan.
+away_non_regular: [3]
+
+# Inkomen (persoonlijk netto-inkomen), annual EUR. A value is sampled in the
+# band; the open top band is sampled from the Pareto tail in
+# configs/core/nl_income.yaml (2011's, the nearest year), capped at the
+# disposable equivalent of the shared max_income.
+personal_income:
+  0: [0, 0]          # Jonger dan 12 jaar (no own income)
+  1: [0, 0]          # Geen eigen inkomen
+  2: [0, 7500]       # Minder dan €7 500
+  3: [7500, 15000]   # €7 500 tot €15 000
+  4: [15000, 22500]  # €15 000 tot €22 500
+  5: [22500, 30000]  # €22 500 tot €30 000
+  6: [30000, null]   # €30 000 of meer (open)
+  7: [0]             # Onbekend → null
+
+# Geslacht
+sex:
+  1: male     # Man
+  2: female   # Vrouw
+
+# MaatPart (maatschappelijke participatie); there is no code 3
+employment:
+  0: void          # Jonger dan 6 jaar
+  1: pt-employed   # Werkzaam 12 - 30 uur p.w.
+  2: ft-employed   # Werkzaam >= 30 uur p.w.
+  4: unemployed    # Eigen huishouding
+  5: student       # Student/scholier
+  6: unemployed    # Werkloos
+  7: unemployed    # WAO (arbeidsongeschikt)
+  8: retired       # Gepensioneerd/VUT
+  9: unknown       # Overig/onbekend
+
+# Opleid (hoogst voltooide opleiding)
+education:
+  0: unknown       # Jonger dan 12 jaar (as in odin/ovin)
+  1: school        # BO/LO
+  2: school        # LBO/VGLO/LAVO/MAVO/MULO
+  3: high-school   # MBO/HAVO/Atheneum/Gymnasium/MMS/HBS
+  4: degree        # HBO/Universiteit
+  5: some          # Overig
+  6: unknown       # Onbekend
+
+# Rijbewij (rijbewijs auto)
+has_licence:
+  0: "no"       # Jonger dan 18 jaar
+  1: "yes"      # Ja
+  2: "no"       # Nee
+  3: unknown    # Onbekend
+
+# Weekdag
+day:
+  1: sunday     # Zondag
+  2: monday     # Maandag
+  3: tuesday    # Dinsdag
+  4: wednesday  # Woensdag
+  5: thursday   # Donderdag
+  6: friday     # Vrijdag
+  7: saturday   # Zaterdag

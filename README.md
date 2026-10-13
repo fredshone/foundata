@@ -59,7 +59,9 @@ Foundata makes use of open (safely available, either immediately, or available v
 
 |  Name             | Location  | ~Years    | Note              | Source             |
 | ----------------- |---------- |-----------|-------------------|--------------------|
-| ODIN        | NL | 2018-24 | | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
+| ODIN        | NL | 2018-24 | household income deciles converted to gross | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
+| OVIN        | NL | 2010-17 | ODiN's predecessor; respondents with foreign, truck or holiday trips are dropped, and professional travel (no trip detail) is kept only as time at work; disposable income bands converted to gross | [Request](https://ssh.datastations.nl/)     |
+| OM          | NL | 2005-07 | MON, OViN's predecessor; whole households; household income summed from members' net income bands and converted to gross (null for ~24% of persons); no migration background or household position | [Request](https://ssh.datastations.nl/)     |
 | KTDB        | KR |  2021        | Mostly Thursdays, no income info for young people | Open [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
 | NTS         | UK      | 2002-24     |                   | [Request](https://ukdataservice.ac.uk/)            |
 | CMAP        | US      | 17-19     | Small but good attribute availability | Open [data](https://github.com/CMAP-REPOS/mydailytravel) |
@@ -75,10 +77,8 @@ Foundata makes use of open (safely available, either immediately, or available v
 | MONG        | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
 
 
-### In progress/todo
+### In progress or todo
 
-- OVIN (NL) 2010-17 [Request](https://ssh.datastations.nl/)     |
-- OM (NL) 2004-07 [Request](https://ssh.datastations.nl/)     |
 - Various FR [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
 - Bogotá EM 2023 / 2019
 - Santiago EOD 2012
@@ -233,7 +233,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`, `braz`, `mxod`, `arg`, `urug`, `mong`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `tus`, `braz`, `mxod`, `arg`, `urug`, `mong`.
 
 ### Binning numeric attributes
 

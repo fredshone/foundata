@@ -26,20 +26,26 @@ column_mappings:
     Week: week
     Wogem_DANS24: home_gemeente
 
-# Approximate Dutch household disposable income decile boundaries (CBS 2018, EUR)
+# HHBestInkG (2018-2023) / HHGestInkG (2024): household income 10%-group,
+# from CBS register data. Decile k is given the gross household income band
+# between that year's CBS gross deciles k-1 and k, i.e. converted to gross by
+# rank like ovin and om (see configs/core/nl_income.yaml). The top decile is
+# sampled from that year's Pareto tail, capped at the shared max_income.
+# 2024 ranks households by standardised (equivalised) income, so its deciles
+# only approximate the gross ranking.
 hh_income:
   default:
-    "1":  [0, 16000]
-    "2":  [16000, 22000]
-    "3":  [22000, 29000]
-    "4":  [29000, 36000]
-    "5":  [36000, 44000]
-    "6":  [44000, 54000]
-    "7":  [54000, 63000]
-    "8":  [63000, 78000]
-    "9":  [78000, 115000]
-    "10": [115000, 200000]
-    "11": [0]   # unknown → None via sample_to_euro
+    "1": 1    # 1e 10%-groep (laag inkomen)
+    "2": 2
+    "3": 3
+    "4": 4
+    "5": 5
+    "6": 6
+    "7": 7
+    "8": 8
+    "9": 9
+    "10": 10  # 10e 10%-groep (hoog inkomen)
+    "11": null  # onbekend
 
 # Sted (stedelijkheidsklasse): 1=very urban .. 5=not urban
 hh_zone:

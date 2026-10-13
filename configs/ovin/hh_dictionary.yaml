@@ -1,0 +1,54 @@
+# Household-level dictionary for OViN (Onderzoek Verplaatsingen in Nederland,
+# 2010-2017), the predecessor of ODiN. Value codes are identical in every
+# year, so there is no per-year nesting.
+# OViN has no household ID: OPID (person ID) serves as both hid and pid.
+# One row per respondent is identified by OP == 1.
+# Column names are matched case-insensitively (WoGem in 2010, Wogem after).
+
+column_mappings:
+  OPID: hid
+  HHPers: hh_size
+  HHBestInk: hh_income
+  HHAuto: vehicles
+  Sted: hh_zone
+  WoGem: home_gemeente
+  Weekdag: day
+  Jaar: year
+  Maand: month
+  Dag: day_of_month  # travel day of the month (Jaar/Maand/Dag is the diary date)
+
+# HHBestInk (besteedbaar inkomen van het huishouden): annual disposable
+# household income in EUR bands. A disposable income is sampled in the band
+# and converted to gross household income by rank, as for odin and om (see
+# configs/core/nl_income.yaml). The top band is open (26-40% of respondents
+# depending on year) and is sampled from that year's Pareto tail, capped at
+# the shared max_income.
+hh_income:
+  1: [0, 10000]        # Tot € 10.000
+  2: [10000, 20000]    # € 10.000 tot € 20.000
+  3: [20000, 30000]    # € 20.000 tot € 30.000
+  4: [30000, 40000]    # € 30.000 tot € 40.000
+  5: [40000, 50000]    # € 40.000 tot € 50.000
+  6: [50000, null]     # € 50.000 of meer (open)
+  7: [0]               # Inkomen onbekend → null
+
+# HHAuto: number of cars in household; 9 = "9 auto's of meer"
+vehicles_unknown: 10   # Onbekend
+
+# Sted (stedelijkheidsklasse woongemeente)
+hh_zone:
+  1: urban      # Zeer sterk stedelijk
+  2: urban      # Sterk stedelijk
+  3: suburban   # Matig stedelijk
+  4: rural      # Weinig stedelijk
+  5: rural      # Niet stedelijk
+
+# Weekdag (rapportage weekdag)
+day:
+  1: sunday     # Zondag
+  2: monday     # Maandag
+  3: tuesday    # Dinsdag
+  4: wednesday  # Woensdag
+  5: thursday   # Donderdag
+  6: friday     # Vrijdag
+  7: saturday   # Zaterdag

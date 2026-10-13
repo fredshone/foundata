@@ -106,6 +106,25 @@ def test_validate_value_mappings_invalid_value(attr_template):
     assert "Male" in errors[0]
 
 
+def test_validate_value_mappings_accepts_ft_pt_employment(attr_template):
+    # split_employment_type turns these into employed + employed_type
+    config = {
+        "column_mappings": {"RAW_EMP": "employment"},
+        "employment": {1: "ft-employed", 2: "pt-employed", 3: "retired"},
+    }
+    errors = validate_value_mappings(config, attr_template)
+    assert errors == []
+
+
+def test_validate_value_mappings_ft_pt_only_for_employment(attr_template):
+    config = {
+        "column_mappings": {"RAW_SEX": "sex"},
+        "sex": {1: "ft-employed"},
+    }
+    errors = validate_value_mappings(config, attr_template)
+    assert len(errors) == 1
+
+
 def test_validate_value_mappings_skips_non_string(attr_template):
     config = {
         "column_mappings": {"RAW_INC": "hh_income"},

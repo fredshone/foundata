@@ -36,6 +36,15 @@ differently based on redistribution licensing:
   scripts/mong_writer.py writes only the columns the loader reads, with
   fresh synthetic ids and shuffled household/person attributes, keeping
   diary rows intact.
+- ovin (OViN 2010-2017, ODiN's predecessor) is restricted (DANS) and
+  distributed as SPSS .sav; scripts/ovin_writer.py writes only the columns
+  the loader reads, with fresh synthetic ids and shuffled respondent
+  attributes, keeping trip rows intact.
+- om (MON 2005-2007, OViN's predecessor) is restricted (DANS) and
+  distributed as SPSS .sav; scripts/ovin_writer.py samples whole
+  households, writing only the columns the loader reads, with fresh
+  synthetic ids and shuffled household and person attributes, keeping trip
+  rows intact.
 - odin, ktdb, nts, ltds are restricted-access research datasets: real
   respondent IDs are never reused (replaced with fresh synthetic ids,
   consistent across each source's tables), and demographic/attribute columns
@@ -73,6 +82,7 @@ from nesstar_converter import (
     parse_ddi,
 )
 from nesstar_writer import build_nesstar_file
+from ovin_writer import sample_om, sample_ovin
 from sav_writer import sample_arg
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
@@ -1121,6 +1131,28 @@ def generate_mong():
 
 
 # ---------------------------------------------------------------------------
+# OVIN (restricted — anonymized: shuffled attributes, intact trips, fresh ids)
+# ---------------------------------------------------------------------------
+
+
+def generate_ovin():
+    print("Generating OVIN...")
+    sample_ovin(
+        DATA_ROOT / "OVIN", TEMPLATE_ROOT / "OVIN", 5, SEED, min_trips=2
+    )
+
+
+# ---------------------------------------------------------------------------
+# OM (restricted — anonymized: shuffled attributes, intact trips, fresh ids)
+# ---------------------------------------------------------------------------
+
+
+def generate_om():
+    print("Generating OM...")
+    sample_om(DATA_ROOT / "OM", TEMPLATE_ROOT / "OM", 5, SEED, min_trips=2)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1133,6 +1165,8 @@ GENERATORS = {
     "nts": generate_nts,
     "ltds": generate_ltds,
     "odin": generate_odin,
+    "ovin": generate_ovin,
+    "om": generate_om,
     "tus": generate_tus,
     "braz": generate_braz,
     "mxod": generate_mxod,

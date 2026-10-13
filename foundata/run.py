@@ -19,6 +19,8 @@ from foundata import (
     nhts,
     nts,
     odin,
+    om,
+    ovin,
     plots,
     post_process,
     qhts,
@@ -90,6 +92,8 @@ def runner(
         "nts",
         "ktdb",
         "odin",
+        "ovin",
+        "om",
         "tus",
         "braz",
         "mxod",
@@ -322,6 +326,56 @@ def runner(
             trips_config=trips_config,
         )
         attributes, trips = process_source(attributes, trips, "ODIN")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # OVIN
+    # ------------------------------------------------------------------
+    if "ovin" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "ovin" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "ovin" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "ovin" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = ovin.load(
+            data_root=data_root / "OVIN",
+            years=list(ovin.DATA_FILES),
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "OVIN")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # OM
+    # ------------------------------------------------------------------
+    if "om" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "om" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "om" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "om" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = om.load(
+            data_root=data_root / "OM",
+            years=list(om.DATA_FILES),
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "OM")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
