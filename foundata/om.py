@@ -138,10 +138,14 @@ def load_households(
         .rename(column_mapping)
         .join(household_income(persons), on="hid", how="left")
     )
+    # complete if every member has a person record; AantPers tops out at a
+    # "10 or more" code, so the respondent count is capped the same way.
+    # Unknown member incomes are already null via household_income.
+    complete = pl.col("respondents").clip(
+        upper_bound=config["hh_size_top_code"]
+    ) == pl.col("hh_size")
     hhs = hhs.with_columns(
-        hh_income=pl.when(pl.col("respondents") == pl.col("hh_size")).then(
-            pl.col("hh_income")
-        )
+        hh_income=pl.when(complete).then(pl.col("hh_income"))
     )
     return hhs.with_columns(
         hh_income=nl_income.to_gross(

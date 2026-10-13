@@ -36,6 +36,11 @@ personal_income:
   5: [22500, 30000]  # €22 500 tot €30 000
   6: [30000, null]   # €30 000 of meer (open)
   7: [0]             # Onbekend → null
+# Onbekend is non-response, not zero income: ~17% of persons, spread evenly
+# across working adults (~20% of full- and part-time workers), while children
+# and students are mostly coded 0/1 already. Most cases are whole households
+# (12.4k of 17.3k households with an unknown member). Kept as null, not
+# imputed.
 
 # Geslacht
 sex:

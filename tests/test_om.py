@@ -153,3 +153,48 @@ def test_household_income_summed_and_nulled():
     assert hhs["hh_zone"].to_list() == ["urban", "suburban", "rural"]
     assert hhs["vehicles"].to_list() == [1, 0, 2]
     assert "respondents" not in hhs.columns
+
+
+def test_household_income_large_households_capped_size():
+    hh_cfg, person_cfg, _ = load_configs()
+    # AantPers 10 = "10 or more". Household 1: 11 members, all on file;
+    # 2: only 9 on file; 3: 11 on file but one income unknown.
+    sizes = {1: 11, 2: 9, 3: 11}
+    pids = [h * 100 + r for h, n in sizes.items() for r in range(1, n + 1)]
+    n = len(pids)
+    persons = om.load_persons(
+        persons_raw(
+            Persoon=[1] * n,
+            PersID=pids,
+            HHID=[p // 100 for p in pids],
+            Leeftijd=[30] * n,
+            Geslacht=[1] * n,
+            MaatPart=[2] * n,
+            Opleid=[3] * n,
+            Rijbewij=[1] * n,
+            Inkomen=[3 if p != 311 else 7 for p in pids],
+            Responsc=[1] * n,
+            Weekdag=[2] * n,
+            Jaar=[2006] * n,
+            Maand=[5] * n,
+            Dag=[1] * n,
+            FactorP=[100.0] * n,
+        ),
+        person_cfg,
+        2006,
+    )
+    data = raw(
+        Huishoud=[1, 1, 1],
+        HHID=[1, 2, 3],
+        AantPers=[10, 10, 10],
+        HAuto=[1, 1, 1],
+        Sted=[1, 1, 1],
+        WoGem=[363, 363, 363],
+    )
+
+    hhs = om.load_households(data, hh_cfg, persons, 2006).sort("hid")
+
+    income = hhs["hh_income"].to_list()
+    assert income[0] is not None  # 11 records, capped to 10 == AantPers
+    assert income[1] is None  # 9 records < 10
+    assert income[2] is None  # a member's income unknown
