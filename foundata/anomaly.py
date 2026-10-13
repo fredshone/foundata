@@ -171,7 +171,7 @@ def conditionality_matrix(
     numeric_cols = [
         c
         for c in attribute_cols
-        if c != "age" and attributes[c].dtype in pl.NUMERIC_DTYPES
+        if c != "age" and attributes[c].dtype.is_numeric()
     ]
 
     binned = attributes
@@ -403,7 +403,7 @@ def attribute_distribution_shift_matrix(
     numeric_cols = [
         c
         for c in attribute_cols
-        if c != "age" and attributes[c].dtype in pl.NUMERIC_DTYPES
+        if c != "age" and attributes[c].dtype.is_numeric()
     ]
 
     binned = attributes

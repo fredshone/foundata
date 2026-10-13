@@ -5,7 +5,6 @@ from typing import Iterable, Sequence
 
 import polars as pl
 
-_NUMERIC_DTYPES = set(pl.NUMERIC_DTYPES)
 _CATEGORICAL_DTYPES = {pl.Utf8, pl.Categorical, pl.Enum, pl.Boolean}
 
 
@@ -16,7 +15,7 @@ class TableRef:
 
 
 def _dtype_kind(dtype: pl.DataType) -> str:
-    if dtype in _NUMERIC_DTYPES:
+    if dtype.is_numeric():
         return "numeric"
     if dtype in _CATEGORICAL_DTYPES:
         return "categorical"

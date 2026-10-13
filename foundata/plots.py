@@ -37,7 +37,7 @@ def numeric_hist_grid(
     num_cols = [
         c
         for c, dt in zip(df.columns, df.dtypes)
-        if dt in pl.NUMERIC_DTYPES and c != on and c not in ignore_cols
+        if dt.is_numeric() and c != on and c not in ignore_cols
     ]
 
     if len(num_cols) == 0:
