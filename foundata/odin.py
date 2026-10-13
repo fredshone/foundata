@@ -2,7 +2,7 @@ from pathlib import Path
 
 import polars as pl
 
-from foundata import fix
+from foundata import fix, nl_income
 from foundata.utils import (
     bounds_from_list,
     config_for_year,
@@ -92,6 +92,24 @@ def load(
     return attributes, trips
 
 
+def household_income(codes: pl.Expr, deciles: dict, year: int) -> pl.Expr:
+    """Gross household income sampled within the CBS gross band of each
+    household's income decile (see foundata.nl_income)."""
+    income_config = nl_income.load_config()
+    bands = nl_income.gross_decile_bands(income_config, year)
+    alpha = nl_income.year_table(income_config, year)["tail_alpha"]
+    cap = income_config["max_income"]
+    code_bands = {
+        code: bands[k] if k is not None else [0] for code, k in deciles.items()
+    }
+    return codes.replace_strict(
+        code_bands, return_dtype=pl.List(pl.Int64)
+    ).map_elements(
+        lambda bounds: nl_income.sample_band(bounds, alpha, cap),
+        return_dtype=pl.Int32,
+    )
+
+
 def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     root = expand_root(root)
     year_config = config_for_year(config, year)
@@ -111,9 +129,9 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     week1_monday = jan4 - pl.duration(days=jan4.dt.weekday() - 1)
 
     data = data.with_columns(
-        hh_income=pl.col("hh_income")
-        .replace_strict(year_config["hh_income"])
-        .map_elements(sample_to_euro, return_dtype=pl.Int32),
+        hh_income=household_income(
+            pl.col("hh_income"), year_config["hh_income"], year
+        ),
         hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
         vehicles=pl.col("vehicles").cast(pl.Int32, strict=False),
         hh_zone=pl.col("hh_zone").replace_strict(year_config["hh_zone"]),

@@ -18,6 +18,7 @@ import polars as pl
 from csv_writer import sample_urug
 from dbf_writer import sample_braz, sample_mxod
 from mong_writer import sample_mong
+from ovin_writer import sample_om, sample_ovin
 from sav_writer import sample_arg
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
@@ -425,6 +426,28 @@ def generate_arg():
 
 
 # ---------------------------------------------------------------------------
+# OVIN (restricted — shuffled attributes, intact trips, fresh ids)
+# ---------------------------------------------------------------------------
+
+
+def generate_ovin():
+    print("Generating OVIN fixtures...")
+    # 20 respondents per survey year, 160 across the eight years
+    sample_ovin(DATA_ROOT / "OVIN", FIXTURE_ROOT / "ovin", 20, SEED)
+
+
+# ---------------------------------------------------------------------------
+# OM (restricted — shuffled attributes, intact trips, fresh ids)
+# ---------------------------------------------------------------------------
+
+
+def generate_om():
+    print("Generating OM fixtures...")
+    # 20 households per survey year, 60 across the three years
+    sample_om(DATA_ROOT / "OM", FIXTURE_ROOT / "om", 20, SEED)
+
+
+# ---------------------------------------------------------------------------
 # URUG (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
@@ -491,6 +514,8 @@ if __name__ == "__main__":
     generate_braz()
     generate_mxod()
     generate_arg()
+    generate_ovin()
+    generate_om()
     generate_urug()
     generate_mong()
     generate_post_process()

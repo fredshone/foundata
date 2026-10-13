@@ -1,0 +1,85 @@
+# Dutch household income reference used by odin, ovin and om to put
+# hh_income on one scale: annual GROSS household income (bruto inkomen,
+# CBS definition: primary income plus transfers received, before income tax
+# and social contributions).
+#
+# The surveys record disposable household income (ODiN, OViN) or personal
+# net income (OM). Those are converted to gross by rank: a household at
+# disposable percentile p gets the gross income at percentile p, by linear
+# interpolation between that year's CBS decile boundaries below. Above P90
+# the gross/disposable ratio at P90 (~1.8) is applied. Years outside the
+# table use the nearest year (OM 2005-07 and OViN 2010 use 2011).
+#
+# Source: CBS StatLine, all private households incl. students:
+#   83934NED "Welvaart; grenzen van 10%-groepen inkomen & vermogen"
+#     (P10..P90 of besteedbaar and bruto inkomen, x 1 000 EUR);
+#   83932NED "Inkomen van huishoudens; inkomensklassen" (mean gross income
+#     of the top 10% group, for tail_alpha).
+# 2011-2023 definitive, 2024 provisional (fetched 2026-10).
+
+# Open-ended top bands (ODiN's top decile, OViN's EUR 50 000+, OM's
+# personal EUR 30 000+) are sampled from a Pareto tail truncated at this
+# gross value, the same for every source.
+max_income: 500000
+
+# Per year: P10..P90 boundaries in EUR, and the Pareto shape of the top
+# tail, alpha = m / (m - P90) from the gross top-decile mean m. The same
+# shape is used for every open band in that year: it agrees within ~0.1 with
+# the shape fitted to OViN's disposable EUR 50 000+ band (2011-2017).
+years:
+  2011:
+    disposable: [13700, 18100, 22200, 26400, 31300, 36900, 42900, 50700, 63400]
+    gross: [17200, 23500, 30300, 38700, 48400, 59300, 71900, 88200, 114500]
+    tail_alpha: 3.03   # top-decile gross mean 170.8k
+  2012:
+    disposable: [13700, 18100, 22300, 26500, 31400, 36900, 43100, 50900, 63700]
+    gross: [17200, 23500, 30200, 38700, 48400, 59700, 72800, 89800, 117100]
+    tail_alpha: 3.08   # top-decile gross mean 173.5k
+  2013:
+    disposable: [13700, 18100, 22300, 26500, 31400, 37100, 43500, 51500, 64500]
+    gross: [17400, 23600, 30300, 38700, 48600, 60000, 73400, 90800, 118700]
+    tail_alpha: 3.08   # top-decile gross mean 175.9k
+  2014:
+    disposable: [14200, 18700, 23000, 27200, 32200, 38100, 44800, 53100, 66700]
+    gross: [17900, 24100, 30800, 39300, 49300, 61000, 74800, 92800, 122200]
+    tail_alpha: 2.75   # top-decile gross mean 192.0k
+  2015:
+    disposable: [14400, 18800, 23200, 27400, 32500, 38600, 45500, 54000, 67500]
+    gross: [18100, 24100, 30900, 39300, 49200, 60900, 74600, 92500, 121100]
+    tail_alpha: 3.08   # top-decile gross mean 179.3k
+  2016:
+    disposable: [14800, 19400, 23800, 28200, 33400, 39900, 47300, 56200, 70400]
+    gross: [18500, 24600, 31500, 40100, 50300, 62400, 76600, 95200, 125000]
+    tail_alpha: 3.05   # top-decile gross mean 185.9k
+  2017:
+    disposable: [15100, 19800, 24300, 28800, 34100, 40800, 48400, 57600, 72400]
+    gross: [18900, 25100, 32200, 41100, 51800, 64300, 79200, 98500, 129800]
+    tail_alpha: 2.85   # top-decile gross mean 200.1k
+  2018:
+    disposable: [15500, 20200, 24800, 29500, 35000, 42000, 49800, 59200, 74300]
+    gross: [19300, 25800, 33200, 42400, 53400, 66500, 81800, 101600, 133400]
+    tail_alpha: 2.96   # top-decile gross mean 201.3k
+  2019:
+    disposable: [16200, 21100, 25900, 30900, 36700, 44000, 52200, 62100, 78200]
+    gross: [20000, 26800, 34500, 44100, 55600, 69400, 85600, 106400, 140100]
+    tail_alpha: 2.65   # top-decile gross mean 225.1k
+  2020:
+    disposable: [16700, 21900, 26900, 32000, 38100, 45800, 54400, 64700, 81200]
+    gross: [20600, 27700, 35600, 45500, 57300, 71700, 88400, 109800, 144400]
+    tail_alpha: 2.95   # top-decile gross mean 218.5k
+  2021:
+    disposable: [17300, 22600, 27900, 33300, 39700, 47700, 56800, 67700, 85200]
+    gross: [21000, 28400, 36700, 46800, 59100, 73900, 91300, 113700, 150000]
+    tail_alpha: 2.92   # top-decile gross mean 228.1k
+  2022:
+    disposable: [19100, 24000, 29400, 35000, 41700, 50200, 59800, 71300, 89500]
+    gross: [23000, 30300, 39000, 49700, 62700, 78800, 97500, 121500, 159900]
+    tail_alpha: 2.92   # top-decile gross mean 243.3k
+  2023:
+    disposable: [20600, 26200, 31700, 37500, 44700, 53900, 64300, 76500, 95900]
+    gross: [24400, 32500, 41800, 53100, 66900, 84000, 104100, 129900, 171500]
+    tail_alpha: 2.36   # top-decile gross mean 297.3k
+  2024:
+    disposable: [20900, 27500, 33500, 39900, 47600, 57300, 68500, 81600, 102100]
+    gross: [25100, 34500, 44600, 56500, 70900, 88900, 110400, 137800, 182000]
+    tail_alpha: 2.51   # top-decile gross mean 302.4k

@@ -1,0 +1,31 @@
+# Household-level dictionary for OM / MON (Mobiliteitsonderzoek Nederland,
+# 2005-2007), the predecessor of OViN. Value codes are identical in every
+# year, so there is no per-year nesting. Column names are matched
+# case-insensitively (all lower case in 2005-06, mixed case in 2007).
+# Unlike OViN, MON samples whole households: one row per household has
+# Huishoud == 1. (The 2004 MSB file in the download is a separate attitude
+# survey without a travel diary and isn't used.)
+
+column_mappings:
+  HHID: hid
+  AantPers: hh_size   # 10 = "10 personen of meer"
+  HAuto: vehicles     # 9 = "9 of meer"
+  Sted: hh_zone
+  WoGem: home_gemeente
+
+# Sted (stedelijkheidsgraad woongemeente)
+hh_zone:
+  1: urban      # Zeer sterk stedelijk
+  2: urban      # Sterk stedelijk
+  3: suburban   # Matig stedelijk
+  4: rural      # Weinig stedelijk
+  5: rural      # Niet stedelijk
+
+# Household income is the sum of the members' sampled personal net incomes
+# (see personal_income in person_dictionary.yaml), taken as disposable
+# household income and converted to gross by rank like odin and ovin (see
+# configs/core/nl_income.yaml; 2005-07 use the 2011 table, the earliest).
+# The sum leaves out household-level transfers (e.g. huurtoeslag), so it
+# slightly understates disposable income. It is null if any member didn't
+# respond (fewer person records than AantPers, 2-4% of households) or has an
+# unknown income.

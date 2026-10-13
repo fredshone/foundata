@@ -1,0 +1,102 @@
+# Trip-level dictionary for OViN (2010-2017).
+# Rows are rides (ritten); a trip's first ride row has Verpl set. Regular
+# trips are Verpl == 1. Respondents who also made foreign, truck or holiday
+# trips (Verpl 3-5) are dropped, since their regular trips alone don't form
+# a complete day. Verpl 2 (professional travel) rows are placeholders, not
+# trips: see work_travel_block.
+# OViN has no per-trip departure location (ODiN's VertLoc): the first trip's
+# oact comes from the person-level Vertrekp, later trips chain from the
+# previous trip's dact.
+# ozone/dzone: Sted is the stedelijkheidsklasse of the respondent's home
+# gemeente, so a per-year gemeente -> Sted lookup is built from the
+# respondents themselves and joined on VertGem/AankGem (0 = abroad).
+
+column_mappings:
+  OPID: pid
+  Verpl: trip_type
+  VerplNr: seq
+  Hvm: mode
+  Vertrekp: oact
+  Doel: dact
+  VertUur: tst_hour
+  VertMin: tst_min
+  AankUur: tet_hour   # runs past 23 for trips ending after midnight
+  AankMin: tet_min
+  AfstV: distance     # hectometres
+  VertGem: origin_gemeente
+  AankGem: destination_gemeente
+
+regular_trip: 1        # Verpl: Nieuwe verplaatsing
+# Verpl 2 (normale beroepsmatige verplaatsingen): one row per stretch of
+# travel made as part of work (Doel 4, no times, mode or distance), placed
+# in VerplNr order among the regular trips. When the row before it ends at
+# work, the block is treated as time at work: it is removed and the
+# respondent kept. Otherwise (block at the start of the day or after a
+# non-work activity) the respondent is dropped. Of ~6,000 respondents with
+# blocks across 2010-17, ~1,800 have no regular trips at all (Weggeweest 2)
+# and stay dropped.
+work_travel_block: 2
+distance_scale: 0.1    # hectometres -> km
+
+# Hvm (hoofdvervoermiddel verplaatsing) — codes differ from ODiN's
+mode:
+  1: rail    # Trein
+  2: bus     # Touringcar/bus (alleen besloten busvervoer)
+  3: rail    # Metro
+  4: rail    # Tram
+  5: bus     # Bus (alleen openbaar vervoer)
+  6: car     # Bestuurder auto
+  7: car     # Bestelauto
+  8: car     # Vrachtwagen
+  9: car     # Camper
+  10: car    # Passagier auto
+  11: car    # Taxi
+  12: car    # Motor
+  13: car    # Bromfiets
+  14: car    # Snorfiets
+  15: bike   # Fiets (elektrisch of niet-elektrisch)
+  16: bike   # Fiets als passagier
+  17: other  # Landbouwvoertuig
+  18: other  # Boot (lijndienst, veerdienst)
+  19: other  # Vliegtuig
+  20: other  # Skates/skeelers/step
+  21: other  # Gehandicaptenvervoermiddel
+  22: walk   # Te voet
+  23: walk   # Kinderwagen
+  24: other  # Anders
+
+# Vertrekp (vertrekpunt 1e verplaatsing) → origin activity of the first trip.
+# In 2010-2014, 350-470 respondents a year (~1% of those with trips) have
+# trips but Vertrekp 0. Their first oact is unknown, so
+# filter.missing_activities drops the plan (~0.8% of OViN plans). This is
+# accepted rather than guessing the origin.
+oact:
+  0: unknown   # Geen; OP heeft geen verplaatsing(en)
+  1: home      # Eigen woonadres
+  2: other     # Ander adres
+
+# Doel (bestemming/doel) → destination activity. Same codes as ODiN.
+dact:
+  1: home        # Naar huis
+  2: work        # Werken
+  3: work        # Zakelijk bezoek in werksfeer
+  4: work        # Vervoer als beroep
+  5: escort      # Afhalen/brengen personen
+  6: other       # Afhalen/brengen goederen
+  7: education   # Onderwijs/cursus volgen
+  8: shop        # Winkelen/boodschappen doen
+  9: visit       # Visite/logeren
+  10: null       # Toeren/wandelen — round trip, resolved in the loader
+  11: leisure    # Sport/hobby
+  12: leisure    # Overige vrijetijdsbesteding
+  13: other      # Diensten/persoonlijke verzorging
+  14: other      # Ander doel
+
+# Stedelijkheidsklasse of the trip's origin/destination gemeente (same scale
+# as Sted / hh_zone)
+stedelijkheidsklasse:
+  1: urban
+  2: urban
+  3: suburban
+  4: rural
+  5: rural

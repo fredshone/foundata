@@ -1,0 +1,87 @@
+# Trip-level dictionary for OM / MON (2005-2007). Same ride-level layout as
+# OViN and loaded by the same code (foundata.ovin.load_trips): a trip's
+# first ride row has Verpl set, and regular trips are Verpl == 1. Verpl 2
+# (vrachtwagen verplaatsing, 2006-07 only) marks truck trips; respondents
+# with any are dropped, since their regular trips alone don't form a
+# complete day.
+# The first trip's oact comes from the person-level Vertrekp, later trips
+# chain from the previous trip's dact. ozone/dzone use the per-year
+# gemeente -> Sted lookup built from the respondents' home gemeenten
+# (VertGem/AankGem 0 = abroad).
+
+column_mappings:
+  PersID: pid
+  HHID: hid
+  Verpl: trip_type
+  VerplNr: seq
+  Hv: mode
+  Vertrekp: oact
+  AankBzh: dact
+  VertUur: tst_hour   # 24-29 = after midnight, the next day
+  VertMin: tst_min
+  AankUur: tet_hour   # 24-30 = after midnight, the next day
+  AankMin: tet_min
+  AfstV: distance     # hectometres, Dutch part of the trip
+  VertGem: origin_gemeente
+  AankGem: destination_gemeente
+
+regular_trip: 1        # Verpl: Nieuwe verplaatsing
+distance_scale: 0.1    # hectometres -> km
+
+# Hv (hoofdvervoermiddel)
+mode:
+  1: walk    # Te voet
+  2: bike    # Fiets
+  3: car     # Bestuurder auto
+  4: car     # Passagier auto
+  5: bus     # Bus
+  6: rail    # Tram/Metro
+  7: rail    # Trein
+  8: car     # Taxi
+  9: bike    # Fiets als passagier
+  10: car    # Snorfiets
+  11: car    # Bromfiets
+  12: car    # Motor
+  13: other  # Traktor
+  14: car    # Bestelauto
+  15: car    # Vrachtauto
+  16: bus    # Touringcar
+  17: bus    # Besloten busvervoer (schoolbus, bedrijfsbus)
+  18: other  # Boot (lijndienst/veerdienst)
+  19: other  # Vliegtuig
+  20: walk   # Kinderwagen
+  21: other  # Skates/Skeelers/Step
+  22: other  # Gehandicaptenvervoermiddel
+  26: other  # Anders
+
+# Vertrekp (vertrekpunt 1e verplaatsing) → origin activity of the first trip
+oact:
+  0: unknown   # Nulvervoer
+  1: home      # Eigen woonadres
+  2: other     # Elders
+
+# AankBzh (aankomstbezigheid) → destination activity; there is no code 6
+dact:
+  1: home        # Naar huis
+  2: work        # Werken
+  3: work        # Zakelijk bezoek in werksfeer
+  4: work        # Vervoer als beroep
+  5: escort      # Afhalen/brengen personen
+  7: education   # Onderwijs/cursus volgen
+  8: shop        # Winkelen, boodschappen doen
+  9: visit       # Visite/logeren
+  10: null       # Toeren/wandelen — round trip, resolved in the loader
+  11: leisure    # Sport/hobby
+  12: leisure    # Overige vrijetijdsbesteding
+  13: other      # Diensten/persoonlijke verzorging
+  14: escort     # Meegaan met begeleider (CBS groups it under afhalen/brengen personen)
+  15: other      # Overig
+
+# Stedelijkheidsklasse of the trip's origin/destination gemeente (same scale
+# as Sted / hh_zone)
+stedelijkheidsklasse:
+  1: urban
+  2: urban
+  3: suburban
+  4: rural
+  5: rural
