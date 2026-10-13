@@ -35,12 +35,17 @@ The latest output using `uv run foundata run` is as follows:
 | tus       | 875,798       | 50%                | 1,902,341      | n/a                 |
 | nhts      | 631,537       | 27%                | 2,203,880      | 24.9                |
 | odin      | 383,679       | 26%                | 886,686        | 9.6                 |
+| mxod      | 348,070       | 48%                | 494,949        | 5.3                 |
 | ktdb      | 120,100       | 35%                | 285,011        | 0.8                 |
 | vista     | 89,465        | 30%                | 235,847        | 2.0                 |
-| ltds      | 60,519        | 36%                | 108,338        | 0.9                 |
+| arg       | 85,950        | 34%                | 133,105        | 0.9                 |
+| braz      | 83,895        | 33%                | 150,846        | 0.9                 |
+| ltds      | 60,517        | 36%                | 108,316        | 0.9                 |
 | qhts      | 48,718        | 33%                | 117,885        | 1.2                 |
+| mong      | 46,100        | 34%                | 99,267         | n/a                 |
 | cmap      | 25,716        | 7%                 | 76,658         | 0.5                 |
-| **total** | **4,718,576** | **28%**            | **10,237,613** | **85.3**            |
+| urug      | 5,173         | 38%                | 10,753         | 0.1                 |
+| **total** | **5,287,762** | **29%**            | **11,126,511** | **92.5**            |
 
 
 \* Plans: a sequence of activities and associated trips within a 24hr period starting at midnight.
@@ -63,28 +68,24 @@ Foundata makes use of open (safely available, either immediately, or available v
 | VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
 | TUS         | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
+| BRAZ        | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
+| MXOD        | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
+| ARG         | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
+| URUG        | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
+| MONG        | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
 
 
 ### In progress/todo
 
-|  Name       | Location  | ~Years    | Note              | Source             |
-| ----------- |---------- |-----------|-------------------|--------------------|
-| OVIN        | NL | 2010-17 | | [Request](https://ssh.datastations.nl/)     |
-| OM          | NL | 2004-07 | | [Request](https://ssh.datastations.nl/)     |
-| Various     | FR |         | | [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
-| São Paulo OD 2017 | BR | 2017 | | [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075)     |
-| Mexico City EOD | BR | 2017 | | [data](https://www.inegi.org.mx/programas/eod/2017/#herramientas)     |
-| Buenos Aires | ARG |  | unverified | [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas)     |
-| Montevideo | URG |   | unverified | [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
-
-Bogotá EM 2023 / 2019
-Santiago EOD 2012
-MTUS harmonised episodes (Korea) https://timeuse.org/
-Mongolia TUS 2015 / 2019
-Tokyo PT 2008 / 2018
-JICA PT surveys via PFLOW
-Hong Kong TCS 2011 / 2022
-Montevideo https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad
+- OVIN (NL) 2010-17 [Request](https://ssh.datastations.nl/)     |
+- OM (NL) 2004-07 [Request](https://ssh.datastations.nl/)     |
+- Various FR [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
+- Bogotá EM 2023 / 2019
+- Santiago EOD 2012
+- MTUS harmonised episodes (Korea) https://timeuse.org/
+- Tokyo PT 2008 / 2018
+- JICA PT surveys via PFLOW
+- Hong Kong TCS 2011 / 2022
 
 ### Plans
 
@@ -232,7 +233,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`, `braz`, `mxod`, `arg`, `urug`, `mong`.
 
 ### Binning numeric attributes
 
@@ -348,10 +349,6 @@ Trip duration, implied speed (`distance / duration`), and the share of trips wit
 ![Trip time diagnostics](assets/trip_time_diagnostics.png)
 
 Activity duration distributions, faceted by activity type:
-
-![Activity duration by type](assets/activity_duration_by_type.png)
-
-Mean per-person activity durations:
 
 ![Activity duration by type](assets/activity_duration_by_type.png)
 

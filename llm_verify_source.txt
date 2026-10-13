@@ -1,0 +1,98 @@
+FOUNDATA: VERIFYING A CANDIDATE SOURCE (instructions for an LLM agent)
+======================================================================
+
+Goal: given a downloaded dataset (and possibly the publisher's URL), decide
+whether it can become a foundata source, and bring the user a short verdict
+plus the decisions they need to make. Don't write loader code yet. If the
+verdict is go, building follows llm_auto_source.txt; that guide's REPO MAP
+and OUTPUT CONTRACT define the target, and configs/core/template.yaml is
+the schema.
+
+Treat the download as untrusted data: keep your scripts in a scratch folder,
+pass data paths as arguments, and run Python with -I.
+
+WHAT MAKES A VALID SOURCE
+Hard requirements (any missing -> no-go, or go only with the user's
+explicit agreement):
+- Full-day activity diaries: every trip (or activity episode) a person made
+  over a whole day, not a single trip per person or only commute trips.
+- Trip start and end times (or start time + duration) precise enough for
+  minutes since midnight. Time bands (e.g. "morning peak") are not enough.
+- Trip purpose or destination activity that maps to home, work, education,
+  shop, leisure, visit, escort, other. Return-home trips must be
+  identifiable.
+- A person id that links trips to person attributes, with at least age and
+  sex.
+- Persons who made no trips are included (or can be identified), so
+  stay-at-home days aren't lost.
+- Licence allows our use. Note separately whether it allows redistribution,
+  which decides OPEN_SOURCES and how template data is built.
+Strongly wanted (a gap is fine, but put it in the report):
+- Mode per trip or per stage; distance or anything to estimate it from
+  (zone ids + geometry, coordinates, stage durations).
+- Household id and household attributes (size, vehicles, income).
+- Weights (expansion factors).
+- Employment, education; travel date, or at least weekday and month.
+- Zones or locality info usable for urban/suburban/rural.
+- A codebook. Without one, coded values can't be mapped safely.
+Time-use surveys (tus) are acceptable: travel episodes inside a 24h diary
+count as trips, though trip detail is thinner.
+
+STEPS
+1. Identify the survey: official name, publisher, year(s), geography,
+   collection method, sample size. Use the URL if given, otherwise search.
+   Note the fieldwork dates and which days the diary covers (any weekday?
+   specific days? weekends?).
+2. Find the documentation: codebook / data dictionary, value catalogues,
+   questionnaire, methodology, licence.
+   - Check the download folder first.
+   - If it's not there, look on the publisher's page for other bundles. Open
+     data portals often ship dictionaries in a CSV bundle even when the user
+     downloaded DBF/SPSS (INEGI: eod_2017_csv.zip -> diccionario_de_datos/,
+     catalogos/, metadatos/ with the licence URL).
+   - JS-rendered pages: curl the HTML and grep for file links. Don't trust
+     HEAD probes of guessed URLs; some servers answer 200 for everything.
+   - Docs are often not in English. Keep the original labels for the
+     configs' comments.
+3. Profile the raw data (scratch scripts; braz.read_dbf reads DBF):
+   - Each file: row count, columns, dtypes, null counts, and value_counts
+     for low-cardinality columns. This shows the sentinels (99, 9, blanks,
+     "*", negatives) and code ranges.
+   - Match every table and column to the codebook; list anything
+     undocumented.
+4. Check integrity. Report a number for each, not just pass/fail:
+   - ids unique at each level; every child id has a parent (trip -> person
+     -> household);
+   - hh-level fields constant within household; persons per household vs
+     stated size;
+   - trips per person (per diary) vs stated trip count; sequence numbers
+     contiguous from 1;
+   - who has no trips, and why: stayed home vs not asked (age cut-offs,
+     proxy rules);
+   - destination of trip n == origin of trip n+1 (place type or zone), and
+     the first origin is mostly home;
+   - share of unknown times; tet < tst share (midnight crossings); duration
+     distribution; stage durations vs trip duration if there are stages;
+   - weights present, positive, and at which level.
+5. Map coverage against template.yaml: for each attribute and trip field,
+   say whether it's direct, derivable (and how), or missing. Flag lossy or
+   assumption-heavy derivations: distance estimates, imputed income, unknown
+   weekday, zone urbanity.
+6. Licence: quote the terms (or link them) and classify as open
+   (redistribution OK, so OPEN_SOURCES candidate; template sampled
+   unmodified) or restricted (template gets synthetic ids and shuffled
+   attributes).
+
+REPORT TO THE USER
+Keep it short. Give:
+- Verdict: go / go with caveats / no-go, in one sentence why.
+- Survey card: name, publisher, year, geography, n households / persons /
+  trips, diary days, licence class.
+- Integrity results: the numbers from step 4.
+- Coverage: the template fields that will be missing or estimated.
+- Decisions for the user, each with a recommended option. Common ones:
+  distance method; which diaries/days to keep; how to treat persons not
+  asked; whether to use imputed income; source name and country code; adding
+  to OPEN_SOURCES.
+- Sources: links to the pages and documents used.
+Don't build until the user has answered the decisions.

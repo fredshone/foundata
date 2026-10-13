@@ -7,11 +7,15 @@ import polars as pl
 
 from foundata import (
     anomaly,
+    arg,
+    braz,
     cmap,
     filter,
     fix,
     ktdb,
     ltds,
+    mong,
+    mxod,
     nhts,
     nts,
     odin,
@@ -20,6 +24,7 @@ from foundata import (
     qhts,
     tables,
     tus,
+    urug,
     utils,
     verify,
     vista,
@@ -86,6 +91,11 @@ def runner(
         "ktdb",
         "odin",
         "tus",
+        "braz",
+        "mxod",
+        "arg",
+        "urug",
+        "mong",
     }
     if select:
         sources = set(select)
@@ -341,6 +351,127 @@ def runner(
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
+    # BRAZ (SAO PAULO)
+    # ------------------------------------------------------------------
+    if "braz" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "braz" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "braz" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "braz" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = braz.load(
+            data_root=data_root / "BRAZ",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "BRAZ")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # MXOD (MEXICO CITY)
+    # ------------------------------------------------------------------
+    if "mxod" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mxod" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mxod" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mxod" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = mxod.load(
+            data_root=data_root / "MEX",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "MXOD")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # ARG (ARGENTINA)
+    # ------------------------------------------------------------------
+    if "arg" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "arg" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "arg" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "arg" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = arg.load(
+            data_root=data_root / "ARG",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "ARG")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # URUG (MONTEVIDEO)
+    # ------------------------------------------------------------------
+    if "urug" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "urug" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "urug" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "urug" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = urug.load(
+            data_root=data_root / "URUG",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "URUG")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # MONG (MONGOLIA TIME USE SURVEY)
+    # ------------------------------------------------------------------
+    if "mong" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mong" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mong" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "mong" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = mong.load_years(
+            data_root=data_root / "MONG",
+            years=(2023, 2019, 2011),
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "MONG")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
     # Concat and write
     # ------------------------------------------------------------------
 
@@ -472,6 +603,8 @@ def runner(
         save_path=output / "activity_heatmap_by_employment.png",
     )
 
+    # sources such as mxod have no income at all; attribute_activity_heatmap
+    # skips plotting (rather than raising) when a column is all null
     plots.attribute_activity_heatmap(
         all_attributes,
         activities,
@@ -489,6 +622,7 @@ def runner(
         save_path=output / "activity_heatmap_by_year.png",
     )
 
+    # likewise urug never records the travel day
     plots.attribute_activity_heatmap(
         all_attributes,
         activities,

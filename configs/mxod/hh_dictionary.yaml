@@ -1,0 +1,23 @@
+# Household-level dictionary for mxod (Encuesta Origen Destino en Hogares de
+# la Zona Metropolitana del Valle de México, EOD 2017, INEGI).
+# Raw data: THOGAR.DBF, one row per hogar (a dwelling, TVIVIENDA, can hold
+# several hogares; the hogar is used as the household). Codes are documented
+# in the INEGI open-data bundle (eod_2017_csv.zip: diccionario_de_datos/ and
+# catalogos/).
+
+column_mappings:
+  ID_HOG: hid
+  FACTOR: hh_weight  # expansion factor, used to classify district urbanity
+  P2_1_1: cars  # autos o camionetas
+  P2_1_2: motorcycles  # motocicletas o motonetas
+  TLOC: hh_zone  # tamaño de localidad of the dwelling
+  DISTRITO: home_district
+
+# hh_zone mapping (TLOC, locality size). Trip ozone/dzone use the
+# weighted modal hh_zone of the households resident in each district.
+  # Valid values: urban, suburban, rural, unknown
+hh_zone:
+  1: urban  # localidades mayores de 100,000 habitantes
+  2: suburban  # 15,000 a 99,999 habitantes
+  3: suburban  # 2,500 a 14,999 habitantes
+  4: rural  # menores de 2,500 habitantes

@@ -36,7 +36,7 @@ from nesstar_converter import (
     parse_ddi,
 )
 
-from foundata.utils import table_joiner, table_stacker
+from foundata.utils import add_implied_trips, table_joiner, table_stacker
 
 SOURCE = "tus"
 COUNTRY = "ind"
@@ -470,9 +470,10 @@ def _resolve_slots(episodes: pl.DataFrame) -> pl.DataFrame:
     """
     slot = ["pid", "tst", "tet"]
     is_major = pl.col("major_activity_flag") == "1"
-    slot_has_travel = pl.col("is_travel").any().over(slot)
+    is_simultaneous = pl.col("simultaneous_flag") == "1"
     whole_slot_travel = (pl.col("is_travel") & is_major).any().over(slot) | (
-        slot_has_travel & (pl.col("simultaneous_flag") == "1").any().over(slot)
+        (pl.col("is_travel") & is_simultaneous).any().over(slot)
+        & (is_major & is_simultaneous).any().over(slot)
     )
 
     episodes = (
@@ -538,36 +539,23 @@ def _add_implied_trips(episodes: pl.DataFrame) -> pl.DataFrame:
     outside_trip_act = (pl.col("location") == "2") & pl.col("act").is_in(
         IMPLIED_TRIP_ACTS
     )
-    episodes = episodes.with_columns(
-        implied_trip=~pl.col("is_travel")
+    implied_trip = (
+        ~pl.col("is_travel")
         & ~prev("is_travel")
         & pl.col("location").is_in(["1", "2"])
         & prev("location").is_in(["1", "2"])
         & (pl.col("location") != prev("location"))
         & (pl.col("act") != prev("act"))
-        & (outside_trip_act | outside_trip_act.shift(1).over("pid")),
-        trip_mins=pl.min_horizontal(
-            IMPLIED_TRIP_MINS, (prev("tet") - prev("tst")) // 2
-        ),
+        & (outside_trip_act | outside_trip_act.shift(1).over("pid"))
     )
-    trips = episodes.filter(pl.col("implied_trip")).with_columns(
-        tet=pl.col("tst"),
-        tst=pl.col("tst") - pl.col("trip_mins"),
-        is_travel=pl.lit(True),
-        act=pl.lit(None, dtype=pl.String),
+    trip_mins = pl.min_horizontal(
+        IMPLIED_TRIP_MINS, (prev("tet") - prev("tst")) // 2
     )
-    print(f"Added {trips.height} TUS trips implied by a change of location")
-    # make room for each trip at the end of the episode before it
-    episodes = episodes.with_columns(
-        tet=pl.col("tet")
-        - pl.when(pl.col("implied_trip").shift(-1).over("pid"))
-        .then(pl.col("trip_mins").shift(-1).over("pid"))
-        .otherwise(0)
-    )
-    return (
-        pl.concat([episodes, trips])
-        .sort("pid", "tst")
-        .drop("implied_trip", "trip_mins")
+    return add_implied_trips(
+        episodes,
+        implied_trip,
+        trip_mins,
+        "TUS trips implied by a change of location",
     )
 
 

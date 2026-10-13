@@ -465,3 +465,38 @@ def norm_weights(
         .cast(pl.Float32)
         .alias(weight_col)
     )
+
+
+def add_implied_trips(
+    episodes: pl.DataFrame,
+    implied_trip: pl.Expr,
+    trip_mins: pl.Expr,
+    message: str,
+    null_cols: tuple[str, ...] = ("act",),
+) -> pl.DataFrame:
+    """Splice a trip between two consecutive stationary episodes wherever
+    `implied_trip` is true, taking `trip_mins` minutes (already clipped to
+    at most half the earlier episode's duration) from the end of the
+    earlier episode. `episodes` must be sorted by pid, tst."""
+    episodes = episodes.with_columns(
+        implied_trip=implied_trip, trip_mins=trip_mins
+    )
+    trips = episodes.filter(pl.col("implied_trip")).with_columns(
+        tet=pl.col("tst"),
+        tst=pl.col("tst") - pl.col("trip_mins"),
+        is_travel=pl.lit(True),
+        **{c: pl.lit(None, dtype=pl.String) for c in null_cols},
+    )
+    print(f"Added {trips.height} {message}")
+    # make room for each trip at the end of the episode before it
+    episodes = episodes.with_columns(
+        tet=pl.col("tet")
+        - pl.when(pl.col("implied_trip").shift(-1).over("pid"))
+        .then(pl.col("trip_mins").shift(-1).over("pid"))
+        .otherwise(0)
+    )
+    return (
+        pl.concat([episodes, trips.select(episodes.columns)])
+        .sort("pid", "tst", "tet")
+        .drop("implied_trip", "trip_mins")
+    )

@@ -12,6 +12,18 @@ differently based on redistribution licensing:
 
 - cmap, nhts, qhts, vista are public/open datasets: households are sampled
   directly and written with real, unmodified values.
+- braz (São Paulo OD 2017) is open data distributed as a single dBase
+  table; sampled households' records are copied byte for byte by
+  scripts/dbf_writer.py, along with the zone attribute table.
+- mxod (Mexico City EOD 2017) is open data distributed as linked dBase
+  tables; sampled households' rows in each table are copied byte for byte
+  by scripts/dbf_writer.py.
+- arg (Argentine household mobility surveys) is open data distributed as
+  SPSS .sav tables; sampled households' rows in each table are written with
+  real values by scripts/sav_writer.py.
+- urug (Montevideo EOD 2016) is open data distributed as ;-separated CSVs;
+  sampled households' lines in each table are copied byte for byte by
+  scripts/csv_writer.py, along with the codebooks.
 - tus (India Time Use Survey) is distributed as a proprietary Nesstar
   binary + DDI XML rather than CSV, so its sample is decoded with
   nesstar_converter and re-encoded into a minimal synthetic Nesstar
@@ -19,6 +31,11 @@ differently based on redistribution licensing:
   from the nesstar project), which the loader reads like any real file.
   Real diary episodes are kept intact; education/employment are swapped
   between the sampled household heads.
+- mong (Mongolia Time Use Survey 2011/2019/2023) is restricted (registered
+  download) and distributed as Stata .dta (2023) and SPSS .sav tables;
+  scripts/mong_writer.py writes only the columns the loader reads, with
+  fresh synthetic ids and shuffled household/person attributes, keeping
+  diary rows intact.
 - odin, ktdb, nts, ltds are restricted-access research datasets: real
   respondent IDs are never reused (replaced with fresh synthetic ids,
   consistent across each source's tables), and demographic/attribute columns
@@ -40,7 +57,10 @@ import sys
 from pathlib import Path
 
 import polars as pl
+from csv_writer import sample_urug
+from dbf_writer import sample_braz, sample_mxod
 from ddi_writer import build_ddi
+from mong_writer import sample_mong
 from nesstar_converter import (
     COMPACT_FAMILIES,
     NESSTAR_MAGIC,
@@ -53,6 +73,7 @@ from nesstar_converter import (
     parse_ddi,
 )
 from nesstar_writer import build_nesstar_file
+from sav_writer import sample_arg
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
 TEMPLATE_ROOT = Path(__file__).parent.parent / "data_dir_template"
@@ -1044,6 +1065,62 @@ def generate_tus():
 
 
 # ---------------------------------------------------------------------------
+# BRAZ (public data — direct sample, unmodified)
+# ---------------------------------------------------------------------------
+
+
+def generate_braz():
+    print("Generating BRAZ...")
+    sample_braz(DATA_ROOT / "BRAZ", TEMPLATE_ROOT / "BRAZ", 5, SEED)
+
+
+# ---------------------------------------------------------------------------
+# MXOD (public data — direct sample, unmodified)
+# ---------------------------------------------------------------------------
+
+
+def generate_mxod():
+    print("Generating MXOD...")
+    sample_mxod(DATA_ROOT / "MEX", TEMPLATE_ROOT / "MEX", 5, SEED)
+
+
+# ---------------------------------------------------------------------------
+# ARG (public data — direct sample, unmodified)
+# ---------------------------------------------------------------------------
+
+
+def generate_arg():
+    print("Generating ARG...")
+    sample_arg(DATA_ROOT / "ARG", TEMPLATE_ROOT / "ARG", 5, SEED)
+
+
+# ---------------------------------------------------------------------------
+# URUG (public data — direct sample, unmodified)
+# ---------------------------------------------------------------------------
+
+
+def generate_urug():
+    print("Generating URUG...")
+    sample_urug(DATA_ROOT / "URUG", TEMPLATE_ROOT / "URUG", 5, SEED)
+
+
+# ---------------------------------------------------------------------------
+# MONG (restricted — anonymized: shuffled attributes, intact diaries, fresh ids)
+# ---------------------------------------------------------------------------
+
+
+def generate_mong():
+    print("Generating MONG...")
+    sample_mong(
+        DATA_ROOT / "MONG",
+        TEMPLATE_ROOT / "MONG",
+        5,
+        SEED,
+        require_road_travel=True,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1057,6 +1134,11 @@ GENERATORS = {
     "ltds": generate_ltds,
     "odin": generate_odin,
     "tus": generate_tus,
+    "braz": generate_braz,
+    "mxod": generate_mxod,
+    "arg": generate_arg,
+    "urug": generate_urug,
+    "mong": generate_mong,
 }
 
 if __name__ == "__main__":
