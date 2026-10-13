@@ -5,7 +5,7 @@ import polars as pl
 import pytest
 
 from foundata import mxod
-from foundata.spod import read_dbf
+from foundata.braz import read_dbf
 from foundata.utils import get_config_path, load_yaml_config
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"

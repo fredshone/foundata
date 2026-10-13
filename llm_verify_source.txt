@@ -54,7 +54,7 @@ STEPS
      HEAD probes of guessed URLs; some servers answer 200 for everything.
    - Docs are often not in English. Keep the original labels for the
      configs' comments.
-3. Profile the raw data (scratch scripts; spod.read_dbf reads DBF):
+3. Profile the raw data (scratch scripts; braz.read_dbf reads DBF):
    - Each file: row count, columns, dtypes, null counts, and value_counts
      for low-cardinality columns. This shows the sentinels (99, 9, blanks,
      "*", negatives) and code ranges.

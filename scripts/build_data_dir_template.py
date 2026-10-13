@@ -12,7 +12,7 @@ differently based on redistribution licensing:
 
 - cmap, nhts, qhts, vista are public/open datasets: households are sampled
   directly and written with real, unmodified values.
-- spod (São Paulo OD 2017) is open data distributed as a single dBase
+- braz (São Paulo OD 2017) is open data distributed as a single dBase
   table; sampled households' records are copied byte for byte by
   scripts/dbf_writer.py, along with the zone attribute table.
 - mxod (Mexico City EOD 2017) is open data distributed as linked dBase
@@ -58,7 +58,7 @@ from pathlib import Path
 
 import polars as pl
 from csv_writer import sample_urug
-from dbf_writer import sample_mxod, sample_spod
+from dbf_writer import sample_braz, sample_mxod
 from ddi_writer import build_ddi
 from mong_writer import sample_mong
 from nesstar_converter import (
@@ -1065,13 +1065,13 @@ def generate_tus():
 
 
 # ---------------------------------------------------------------------------
-# SPOD (public data — direct sample, unmodified)
+# BRAZ (public data — direct sample, unmodified)
 # ---------------------------------------------------------------------------
 
 
-def generate_spod():
-    print("Generating SPOD...")
-    sample_spod(DATA_ROOT / "Sao Paulo", TEMPLATE_ROOT / "Sao Paulo", 5, SEED)
+def generate_braz():
+    print("Generating BRAZ...")
+    sample_braz(DATA_ROOT / "BRAZ", TEMPLATE_ROOT / "BRAZ", 5, SEED)
 
 
 # ---------------------------------------------------------------------------
@@ -1134,7 +1134,7 @@ GENERATORS = {
     "ltds": generate_ltds,
     "odin": generate_odin,
     "tus": generate_tus,
-    "spod": generate_spod,
+    "braz": generate_braz,
     "mxod": generate_mxod,
     "arg": generate_arg,
     "urug": generate_urug,

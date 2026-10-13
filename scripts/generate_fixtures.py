@@ -16,7 +16,7 @@ from pathlib import Path
 
 import polars as pl
 from csv_writer import sample_urug
-from dbf_writer import sample_mxod, sample_spod
+from dbf_writer import sample_braz, sample_mxod
 from mong_writer import sample_mong
 from sav_writer import sample_arg
 
@@ -395,15 +395,13 @@ def generate_ktdb():
 
 
 # ---------------------------------------------------------------------------
-# SPOD (open data, so sampled unshuffled)
+# BRAZ (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
 
-def generate_spod():
-    print("Generating SPOD fixtures...")
-    sample_spod(
-        DATA_ROOT / "Sao Paulo", FIXTURE_ROOT / "spod", N_HOUSEHOLDS, SEED
-    )
+def generate_braz():
+    print("Generating BRAZ fixtures...")
+    sample_braz(DATA_ROOT / "BRAZ", FIXTURE_ROOT / "braz", N_HOUSEHOLDS, SEED)
 
 
 # ---------------------------------------------------------------------------
@@ -490,7 +488,7 @@ if __name__ == "__main__":
     generate_ltds()
     generate_nhts()
     generate_ktdb()
-    generate_spod()
+    generate_braz()
     generate_mxod()
     generate_arg()
     generate_urug()

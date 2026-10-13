@@ -6,17 +6,17 @@ from pathlib import Path
 import polars as pl
 import pytest
 
-from foundata import spod
+from foundata import braz
 from foundata.utils import get_config_path, load_yaml_config
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
-DATA_ROOT = os.getenv("FOUNDATA_SPOD_DATA", str(FIXTURE_ROOT / "spod"))
+DATA_ROOT = os.getenv("FOUNDATA_BRAZ_DATA", str(FIXTURE_ROOT / "braz"))
 CONFIGS_ROOT = get_config_path()
 
 
 def load_configs():
     return [
-        load_yaml_config(CONFIGS_ROOT / "spod" / name)
+        load_yaml_config(CONFIGS_ROOT / "braz" / name)
         for name in (
             "hh_dictionary.yaml",
             "person_dictionary.yaml",
@@ -52,29 +52,29 @@ def test_read_dbf_blank_and_asterisk_fields_are_null(tmp_path):
         [["001", "12.5", "**"], ["002", "", "7"], ["003", "****", "*"]],
     )
 
-    result = spod.read_dbf(path)
+    result = braz.read_dbf(path)
 
     assert result["ID"].to_list() == ["001", "002", "003"]
     assert result["N"].to_list() == ["12.5", None, None]
     assert result["X"].to_list() == [None, "7", None]
-    assert spod.read_dbf(path, columns=["X"]).columns == ["X"]
+    assert braz.read_dbf(path, columns=["X"]).columns == ["X"]
 
 
-def test_spod_load():
+def test_braz_load():
     hh_cfg, person_cfg, trips_cfg = load_configs()
 
-    attrs, trips = spod.load(Path(DATA_ROOT), hh_cfg, person_cfg, trips_cfg)
+    attrs, trips = braz.load(Path(DATA_ROOT), hh_cfg, person_cfg, trips_cfg)
 
-    raw = spod.read_dbf(
-        Path(DATA_ROOT) / spod.OD_PATH, columns=["ID_PESS", "N_VIAG"]
+    raw = braz.read_dbf(
+        Path(DATA_ROOT) / braz.OD_PATH, columns=["ID_PESS", "N_VIAG"]
     )
     assert attrs["pid"].is_unique().all()
     assert len(attrs) == raw["ID_PESS"].n_unique()
     assert len(trips) == raw["N_VIAG"].is_not_null().sum()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("spod").all()
-    assert attrs["hid"].str.starts_with("spod").all()
-    assert attrs["source"].unique().to_list() == ["spod"]
+    assert attrs["pid"].str.starts_with("braz").all()
+    assert attrs["hid"].str.starts_with("braz").all()
+    assert attrs["source"].unique().to_list() == ["braz"]
     assert trips.group_by("pid").agg(pl.col("seq").min())["seq"].max() == 0
     assert set(attrs["day"]) <= {
         "monday",
@@ -109,7 +109,7 @@ def raw_families(**overrides) -> pl.DataFrame:
 def test_load_households_aggregates_families():
     hh_cfg, _, _ = load_configs()
 
-    hhs = spod.load_households(raw_families(), hh_cfg, {1: "urban"})
+    hhs = braz.load_households(raw_families(), hh_cfg, {1: "urban"})
 
     assert len(hhs) == 1
     row = hhs.row(0, named=True)
@@ -123,7 +123,7 @@ def test_load_households_aggregates_families():
 def test_load_households_unknown_family_values_null_household():
     hh_cfg = {**load_configs()[0], "income_codes": [1, 2]}
 
-    hhs = spod.load_households(
+    hhs = braz.load_households(
         raw_families(CD_RENFA=["1", "3"], QT_AUTO=["1", None]), hh_cfg, {}
     )
 
@@ -147,7 +147,7 @@ def test_travel_date():
         }
     )
 
-    result = spod.travel_date(attributes, hh_cfg["day"])
+    result = braz.travel_date(attributes, hh_cfg["day"])
 
     assert result["day"].to_list() == [
         "tuesday",
@@ -182,7 +182,7 @@ def test_load_trips_times_escort_and_access_egress():
         }
     )
 
-    trips = spod.load_trips(raw, trips_cfg, {1: "urban", 2: "rural"})
+    trips = braz.load_trips(raw, trips_cfg, {1: "urban", 2: "rural"})
 
     assert trips["seq"].to_list() == [0, 1, 2]
     assert trips["oact"].to_list() == ["home", "escort", "home"]

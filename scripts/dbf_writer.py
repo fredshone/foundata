@@ -26,7 +26,7 @@ def write_dbf_subset(src: str | Path, dst: str | Path, rows) -> int:
     return len(subset)
 
 
-def sample_spod(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
+def sample_braz(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """Write a São Paulo OD sample of `n` households, plus the zone table.
 
     The data is openly published, so records are copied unmodified. One
@@ -35,7 +35,7 @@ def sample_spod(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """
     import polars as pl
 
-    from foundata.spod import OD_PATH, ZONES_PATH, read_dbf
+    from foundata.braz import OD_PATH, ZONES_PATH, read_dbf
 
     ids = read_dbf(src_root / OD_PATH, columns=["ID_DOM", "TOT_FAM"])
     ids = ids.with_row_index("row")
@@ -60,13 +60,13 @@ def sample_mxod(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """
     import polars as pl
 
+    from foundata.braz import read_dbf
     from foundata.mxod import (
         HOUSEHOLDS_PATH,
         PERSONS_PATH,
         STAGES_PATH,
         TRIPS_PATH,
     )
-    from foundata.spod import read_dbf
 
     def rows(path: str, id_col: str, ids, child_id: str | None = None):
         """Row numbers (and child ids) of records whose id_col is in ids."""

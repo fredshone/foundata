@@ -15,7 +15,7 @@ from pathlib import Path
 import polars as pl
 
 from foundata import fix
-from foundata.spod import read_dbf
+from foundata.braz import read_dbf
 
 SOURCE = "mxod"
 COUNTRY = "mx"

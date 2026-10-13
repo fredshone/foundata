@@ -39,7 +39,7 @@ The latest output using `uv run foundata run` is as follows:
 | ktdb      | 120,100       | 35%                | 285,011        | 0.8                 |
 | vista     | 89,465        | 30%                | 235,847        | 2.0                 |
 | arg       | 85,950        | 34%                | 133,105        | 0.9                 |
-| spod      | 83,895        | 33%                | 150,846        | 0.9                 |
+| braz      | 83,895        | 33%                | 150,846        | 0.9                 |
 | ltds      | 60,517        | 36%                | 108,316        | 0.9                 |
 | qhts      | 48,718        | 33%                | 117,885        | 1.2                 |
 | mong      | 46,100        | 34%                | 99,267         | n/a                 |
@@ -68,7 +68,7 @@ Foundata makes use of open (safely available, either immediately, or available v
 | VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
 | TUS         | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
-| SPOD        | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
+| BRAZ        | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
 | MXOD        | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
 | ARG         | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
 | URUG        | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
@@ -233,7 +233,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`, `spod`, `mxod`, `arg`, `urug`, `mong`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `tus`, `braz`, `mxod`, `arg`, `urug`, `mong`.
 
 ### Binning numeric attributes
 

@@ -8,6 +8,7 @@ import polars as pl
 from foundata import (
     anomaly,
     arg,
+    braz,
     cmap,
     filter,
     fix,
@@ -21,7 +22,6 @@ from foundata import (
     plots,
     post_process,
     qhts,
-    spod,
     tables,
     tus,
     urug,
@@ -91,7 +91,7 @@ def runner(
         "ktdb",
         "odin",
         "tus",
-        "spod",
+        "braz",
         "mxod",
         "arg",
         "urug",
@@ -351,26 +351,26 @@ def runner(
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # SPOD (SAO PAULO)
+    # BRAZ (SAO PAULO)
     # ------------------------------------------------------------------
-    if "spod" in sources:
+    if "braz" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "spod" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "braz" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "spod" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "braz" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "spod" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "braz" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = spod.load(
-            data_root=data_root / "SPOD",
+        attributes, trips = braz.load(
+            data_root=data_root / "BRAZ",
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "SPOD")
+        attributes, trips = process_source(attributes, trips, "BRAZ")
         all_attributes.append(attributes)
         all_trips.append(trips)
 

@@ -16,7 +16,7 @@ import polars as pl
 
 from foundata import fix, utils
 
-SOURCE = "spod"
+SOURCE = "braz"
 COUNTRY = "br"
 
 OD_PATH = Path("OD-2017") / "Banco de Dados-OD2017" / "OD_2017_v1.dbf"

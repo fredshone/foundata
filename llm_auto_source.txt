@@ -63,15 +63,15 @@ REPO MAP
   treatment: open data is sampled unmodified; restricted data gets fresh
   synthetic ids and shuffled attribute columns, with trip rows kept intact.
 - Format helpers already written: scripts/dbf_writer.py (byte-exact DBF
-  subset; sample_spod for one flat table, sample_mxod for linked tables
+  subset; sample_braz for one flat table, sample_mxod for linked tables
   sampled hh -> persons -> trips -> stages), scripts/nesstar_writer.py + ddi_writer.py (Nesstar),
-  spod.read_dbf (numpy DBF reader).
+  braz.read_dbf (numpy DBF reader).
 - tests/test_<src>.py: load test on the fixtures (env var
   FOUNDATA_<SRC>_DATA overrides the path), plus unit tests on small
   hand-built inputs for each tricky transform.
 - README.md: add a row to the Data Sources table (and remove it from
   "In progress/todo"), and add the name to the "Available sources" list.
-- Example loaders: spod (one flat table with hh, family, person and trip
+- Example loaders: braz (one flat table with hh, family, person and trip
   levels), ktdb (no hh id, zone lookups, staged modes), qhts/vista (separate
   hh/person/trip CSVs over several years), tus (time-use diary), nts/ltds
   (stages), mxod (linked DBF tables, weekday + Saturday diary per person,
@@ -81,7 +81,7 @@ REPO MAP
 
 OUTPUT CONTRACT (check template.yaml for the full list)
 - attributes: one row per person. pid and hid are strings prefixed with the
-  source name (e.g. "spod" + raw id). Include people who made no trips: they
+  source name (e.g. "braz" + raw id). Include people who made no trips: they
   get a home-all-day plan downstream.
   - Set programmatically: source, country (existing codes are mixed: "kr",
     "nl", "uk", "br", "mx", "usa", "aus", "ind"), year, month, and day (lowercase

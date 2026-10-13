@@ -1,4 +1,4 @@
-# Person-level dictionary for spod (São Paulo Pesquisa Origem Destino 2017).
+# Person-level dictionary for braz (São Paulo Pesquisa Origem Destino 2017).
 
 column_mappings:
   ID_PESS: pid

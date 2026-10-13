@@ -1,4 +1,4 @@
-# Household-level dictionary for spod (São Paulo Pesquisa Origem Destino 2017).
+# Household-level dictionary for braz (São Paulo Pesquisa Origem Destino 2017).
 # The raw data is a single flat table (one row per trip, or per person for
 # non-travellers), so household, family, person and trip columns all come from
 # OD_2017_v1.dbf. Codes are documented in "LAYOUT OD2017_v1.xlsx".

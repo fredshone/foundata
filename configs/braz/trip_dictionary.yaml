@@ -1,4 +1,4 @@
-# Trip-level dictionary for spod (São Paulo Pesquisa Origem Destino 2017).
+# Trip-level dictionary for braz (São Paulo Pesquisa Origem Destino 2017).
 
 column_mappings:
   ID_PESS: pid
