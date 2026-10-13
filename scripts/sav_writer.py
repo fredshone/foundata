@@ -1,4 +1,4 @@
-"""Write samples of SPSS .sav tables (the arg source's raw format).
+"""Write samples of SPSS .sav tables (the argentina source's raw format).
 
 The Argentine surveys are open data, so the sampled rows are written with
 their real values, all columns, and the original variable and value labels.
@@ -11,9 +11,9 @@ import pyreadstat
 
 
 def read_full(path: Path):
-    """All columns and metadata of a .sav file (see arg.read_sav for the
+    """All columns and metadata of a .sav file (see argentina.read_sav for the
     long-variable-name workaround)."""
-    from foundata.arg import ascii_long_names
+    from foundata.argentina import ascii_long_names
 
     try:
         df, meta = pyreadstat.read_sav(str(path))
@@ -50,12 +50,12 @@ def raw_column(column_mapping: dict, target: str) -> str:
     return next(raw for raw, new in column_mapping.items() if new == target)
 
 
-def sample_arg(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
-    """Write `n` households per arg survey across its four tables."""
-    from foundata.arg import SURVEYS
+def sample_argentina(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
+    """Write `n` households per argentina survey across its four tables."""
+    from foundata.argentina import SURVEYS
     from foundata.utils import get_config_path, load_yaml_config
 
-    configs = get_config_path() / "arg"
+    configs = get_config_path() / "argentina"
     hh_cfg, person_cfg, trip_cfg = (
         load_yaml_config(configs / f"{name}_dictionary.yaml")["column_mappings"]
         for name in ("hh", "person", "trip")

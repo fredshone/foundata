@@ -1,0 +1,106 @@
+# Person-level dictionary for chile (Santiago EOD 2012).
+# Raw data: CHILE/personas.parquet, one row per person (Persona, which is
+# Hogar + a 2-digit person number). Codes from codigos.parquet.
+# Every member of the household is surveyed, including young children.
+# Persons with Viajes = 0 made no trips and get a home-all-day plan.
+
+column_mappings:
+  Hogar: hid
+  Persona: pid
+  Edad: age
+  Sexo: sex
+  Relacion: relationship
+  Estudios: education
+  Actividad: activity  # multi-valued, ";"-separated letters (e.g. "A;B")
+  JornadaTrabajo: work_hours
+  Ocupacion: occupation
+  LicenciaConducir: has_licence  # multi-valued, ";"-separated codes
+  Discapacidad: disability  # multi-valued, ";"-separated letters
+  IngresoImputado: income_imputed
+  Factor: weight  # expands the person to the population (all day types)
+
+# sex mapping
+  # Valid values: male, female, other, unknown
+sex:
+  1: male  # hombre
+  2: female  # mujer
+
+# relationship mapping (Relacion, relative to the jefe de hogar)
+  # Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+relationship:
+  1: self  # jefe(a) de hogar
+  2: partner  # cónyuge o pareja
+  3: child  # hijo o hija
+  4: relative  # otro pariente
+  5: unrelated  # no familiar
+  6: unrelated  # pensionista
+  7: unrelated  # trabajadora de casa particular
+
+# education mapping (Estudios, highest level attended)
+  # Valid values: some, none, school, high-school, degree, unknown, void
+education:
+  1: none  # ninguno o nunca estudió
+  2: none  # preescolar/parvularia
+  3: school  # especial/diferencial
+  4: school  # básica/primaria
+  5: high-school  # media científica-humanista
+  6: high-school  # humanidades (older secondary system)
+  7: high-school  # media técnico-profesional
+  8: degree  # normalista (teacher training)
+  9: degree  # centro de formación técnica
+  10: degree  # instituto profesional
+  11: degree  # universitaria
+  98: unknown
+  99: unknown
+
+# employment from Actividad. A person can declare several activities; the
+# first listed here that the person declared wins. Workers are split into
+# full and part time by JornadaTrabajo.
+  # Valid values: employed, unemployed, retired, student, unknown, void
+employment:
+  A: employed  # trabaja
+  B: student  # estudia
+  C: retired  # jubilado(a)
+  D: unemployed  # dueña(o) de casa
+  E: unemployed  # busca trabajo por primera vez
+  F: unemployed  # desempleado
+  G: unknown  # otro (especifique)
+employment_priority: [A, B, C, D, E, F, G]
+
+# employment type for workers (JornadaTrabajo)
+work_hours:
+  1: ft-employed  # jornada completa (40 o más horas semanales)
+  2: pt-employed  # jornada parcial (menos de 40 horas)
+  3: pt-employed  # sólo fines de semana
+  4: pt-employed  # ocasional
+
+# occupation mapping (Ocupacion). The survey records the employment
+# relationship rather than an occupation, so only domestic service and the
+# armed forces/police map to a category; other workers are unknown and
+# non-workers void.
+  # Valid values: clerical, manual, managerial, operator, professional, service, other, technical, unknown, void
+occupation:
+  1: unknown  # patrón o empleador
+  2: unknown  # trabajador por cuenta propia
+  3: unknown  # empleado u obrero del sector público
+  4: unknown  # empleado u obrero de empresas públicas
+  5: unknown  # empleado u obrero del sector privado
+  6: service  # servicio doméstico puertas adentro
+  7: service  # servicio doméstico puertas afuera
+  8: unknown  # familiar no remunerado
+  9: service  # FF.AA. y del orden
+
+# has_licence: "yes" if any declared licence class is listed here, "no" if
+# none is (code 1 is "no tiene licencia", 5 is machinery/animal traction).
+licence_codes:
+  - 2  # profesional A1-A5
+  - 3  # no profesional clase B (cars, vans)
+  - 4  # no profesional clase C (motorcycles)
+  - 6  # especial FF.AA., Carabineros, Investigaciones y Gendarmería
+
+# disability: the data codes Discapacidad as letters A-J while the codebook
+# numbers its options 1-9 (ceguera, sordera, mudez, lisiado/parálisis,
+# deficiencia mental, obesidad, embarazo, edad avanzada, ninguna) with no
+# declared correspondence. J holds 92% of persons, so it is taken as
+# "ninguna"; any other letter is a disability.
+no_disability_code: J

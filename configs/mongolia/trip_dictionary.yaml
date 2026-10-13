@@ -1,0 +1,563 @@
+# Trip-level dictionary for mongolia (Time Use Survey, NSO), rounds
+# 2023, 2019 and 2011. Every key is year-keyed (utils.config_for_year).
+#
+# Raw diary tables (one row per episode):
+#   2023: 2023/dairy_main_1.dta -- one 24h diary per respondent
+#   2019: 2019/dairy [en].sav   -- 2-3 diary days per respondent
+#   2011: 2011/TUS HD_en.sav    -- 2-3 diary days per respondent
+# Every diary day runs 04:00 to 04:00 the next day on a 10-minute grid;
+# consecutive slots with the same activity are merged into one episode.
+# Respondents keep their diaries on assigned weekdays (Wed+Thu, Fri+Sat or
+# Sun+Mon+Tue in 2011/2019), and each diary day becomes its own plan.
+#
+# The diary has no trips as such. mongolia.py builds them like the India TUS
+# (india.py): travel episodes (travel_codes / escort_travel_codes) become
+# trips, and the stationary episodes between two trips are squashed into the
+# one activity with the most time. Each episode also has a place, used to
+# add trips the diary leaves out (implied_trip) and to re-type "home"
+# activities done somewhere else (home_act_away). The place code also gives
+# the mode of travel: separately asked in 2023 (A9, for episodes on the
+# road), part of the place code in 2011, and not recorded at all in 2019.
+#
+# There is no distance and no trip-level geography: distance is null and
+# ozone/dzone are the household's own hh_zone.
+
+column_mappings:
+  "2023":
+    pid: pid               # intermediate -- person id, prefixed in mongolia.py
+    ID: episode            # intermediate -- episode number within the diary, 1..n
+    A1STARTH: start_h      # intermediate -- Start time (hour)
+    A1STARTM: start_m      # intermediate -- Starting minute
+    A1FINISHH: end_h       # intermediate -- Finished time (hour)
+    A1FINISHM: end_m       # intermediate -- Finished minute
+    A2CODE: activity_code  # intermediate -- Main activity, ICATUS 2016 3-digit code
+    A8: location           # intermediate -- Where was it?
+    A9: mode_code          # intermediate -- How did you travel? (asked only when A8 = 8)
+    HD7: day               # Diary Day (matches NSO's own derived weekday column)
+    D1M: month             # Diary date (month)
+  "2019":
+    HD02: hid_cluster      # intermediate -- Primary sampling unit
+    HD03: hid_hh           # intermediate -- Household number
+    HD05: pid_line         # intermediate -- Respondent line number
+    DAYID: day             # Diary weekday (1=Mon .. 7=Sun; "712" households keep Sun, Mon, Tue)
+    ID: episode            # intermediate -- episode number, running across the person's diary days
+    STARTHOUR: start_h     # intermediate -- main activity: start hour
+    STARTMINUT: start_m    # intermediate -- main activity: start minute
+    ENDHOUR: end_h         # intermediate -- main activity: end hour
+    ENDMINUT: end_m        # intermediate -- main activity: end minute
+    ACTIVITY_CODE: activity_code  # intermediate -- WHAT DO YOU DO? (Main activity), ICATUS 2016
+    ID7: location          # intermediate -- WHERE HAVE YOU BEEN?
+    HD10A_M: month         # Date of 1st visit (month), when the diary was handed out
+  "2011":
+    HH1: hid_cluster       # intermediate -- Cluster number
+    HH2: hid_hh            # intermediate -- HH number
+    HL1: pid_line          # intermediate -- Line number
+    DAYID: day             # Diary weekday (1=Mon .. 7=Sun)
+    ID: episode            # intermediate -- episode number, running across the person's diary days
+    TOTALDURATION: duration  # intermediate -- episode duration (minutes); no clock times are given
+    ID3_ACTIVITY: activity_code  # intermediate -- Main activity, national classification
+    ID6: location          # intermediate -- Where/ mode of transportation
+    HD9_1_MONTH: month     # First visit: month, when the diary was handed out
+
+# How episode times are given: "clock" (start/end hour and minute) or
+# "duration" (episodes in order from the 04:00 diary start).
+time_format:
+  default: clock
+  "2011": duration
+
+# Which column holds an episode's mode code (mapped by `mode`), read only
+# for episodes at a road_locations place; null when no mode is recorded.
+mode_column:
+  default: null
+  "2023": mode_code
+  "2011": location
+
+# Valid values: walk, bike, car, bus, rail, other, unknown
+mode:
+  default: {}
+  "2023":   # A9: How did you travel?
+    1: walk   # Алхсан -- Walked
+    2: car    # Машинаар -- By car
+    3: car    # Такси үйлчилгээгээр -- By taxi service
+    4: bus    # Нийтийн тээврээр -- By public transport (bus/trolleybus)
+    5: bike   # Унадаг дугуйгаар -- By bicycle
+    6: car    # Мотоцикл, скүүтер, мопедоор -- By motorcycle, scooter, moped
+    7: other  # Ердийн хөсгөөр (морь, тэмээ гэх мэт) -- Riding animals (horses, camels, etc.)
+    8: other  # Бусад -- Other
+  "2011":   # ID6: Where/ mode of transportation (transport codes)
+    20: unknown  # Undefinable transport
+    21: bus      # Bus
+    22: car      # Car
+    23: car      # Taxi
+    24: rail     # Plane, train
+    25: car      # Motorcycle
+    26: other    # Horse, cart
+    27: walk     # Walk
+    28: other    # Other transport
+
+# A trip's mode: the first of these used by any of its on-the-road
+# episodes. A trip with no recorded mode (travel noted at another place, or
+# an implied trip) takes the first of these the person used on any trip that
+# diary day; failing that, the household's mode_availability (2023 only).
+mode_priority:
+  default: [rail, car, bus, other, bike, walk]
+
+# Valid values: monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown
+day:
+  default:
+    1: monday
+    2: tuesday
+    3: wednesday
+    4: thursday
+    5: friday
+    6: saturday
+    7: sunday
+
+# Diary days are separate plans (pid = person id + weekday digit) where a
+# respondent kept more than one.
+pid_day_suffix:
+  default: true
+  "2023": false
+
+# Place codes ("location" above).
+#   2023 A8: 1 At home; 2 At work/school; 3 At someone else's home ("Family"
+#     in the DDI); 4 Restaurant/bar/diner/karaoke; 5 In a store; 6 Church/
+#     monastery; 7 Elsewhere; 8 On the road / in the countryside, steppe.
+#   2019 ID7: 1 At home; 2 In work/ school; 3 On the way/ in transportation;
+#     4 Other place.
+#   2011 ID6: 0 Undefinable place/transport; 10 Undefinable place; 11 At
+#     home; 12 Resting place, cottage; 13 Work, school; 14 Other's home;
+#     15 Restaurant, eating house; 16 Market, shop; 17 Hotel, tourist camp;
+#     18 Other place; 20-28 in transport (see mode).
+# On the road / in transport: modes are read here, and the escort codes
+# count as travel here.
+road_locations:
+  default: []
+  "2023": [8]
+  "2019": [3]
+  "2011": [20, 21, 22, 23, 24, 25, 26, 27, 28]
+# Places that are buildings: a move between two different ones always
+# means a trip (see implied_trip).
+fixed_places:
+  "2023": [1, 2, 3, 4, 5, 6]
+  "2019": [1, 2]
+  "2011": [11, 12, 13, 14, 15, 16, 17]
+
+# The place is not asked for most sleep and personal hygiene in 2023 (26% of
+# episodes); a missing place is taken as home.
+missing_location:
+  default: 1
+  "2011": 11
+
+# A "home" activity (eating, sleeping, childcare, ...) done away from home is
+# re-typed by where it happened.
+home_act_away:
+  "2023":
+    2: other   # at work/school
+    3: visit   # at someone else's home
+    4: shop    # restaurant/bar (meals -> shop)
+    5: shop    # in a store
+    6: visit   # church/monastery (as religious practice, 742)
+    7: other   # elsewhere
+    8: other   # on the road / in the countryside
+  "2019":
+    2: other   # at work/school
+    3: other   # on the way
+    4: other   # other place
+  "2011":
+    0: other     # undefinable place/transport
+    10: other    # undefinable place
+    12: leisure  # resting place, cottage
+    13: other    # work, school
+    14: visit    # other's home
+    15: shop     # restaurant (meals -> shop)
+    16: shop     # market, shop
+    17: leisure  # hotel, tourist camp
+    18: other    # other place
+    20: other
+    21: other
+    22: other
+    23: other
+    24: other
+    25: other
+    26: other
+    27: other
+    28: other
+
+# Implied trips (see mongolia._add_implied_trips): a move between two
+# consecutive stationary episodes at different places with no travel
+# recorded. Between fixed_places it is always a trip; to or from anywhere
+# else (elsewhere, on the road / countryside), only if the activity changes
+# and the activity away is one of implied_trip.acts. The trip takes the last
+# implied_trip.minutes of the earlier episode (at most half of it).
+implied_trip:
+  default:
+    acts: [work, education, shop, leisure, visit, escort]
+    minutes: 10
+
+# Activity codes that are travel, wherever they were recorded.
+travel_codes:
+  default:  # ICATUS 2016 "travelling related to ..." codes (2023, 2019)
+    - 181  # Employment-related travel
+    - 182  # Commuting
+    - 250  # Travelling, moving, transporting or accompanying goods or persons related to own-use production of goods
+    - 380  # Travelling, moving, transporting or accompanying goods or persons related to unpaid domestic services for household and family members
+    - 441  # Travelling related to care-giving services for household and family members
+    - 540  # Travelling time related to unpaid volunteer, trainee and other unpaid work
+    - 640  # Travelling time related to learning
+    - 750  # Travelling time related to socializing and communication, community participation and religious practice
+    - 860  # Travelling time related to culture, leisure, mass-media and sports practices
+    - 950  # Travelling time related to self-care and maintenance activities
+  "2011":  # national classification: "... холбоотойгоор явах" (going for ...)
+    - 119  # Ажилдаа явах, ажил хайхаар явах
+    - 219  # Газар тариалан эрхлэхтэй холбоотой тээвэрлэх, явах
+    - 229  # Мал маллах, хариулахтай холбоотойгоор явах
+    - 239  # МАА-н гаралтай бїтээгдэхїїн хийхтэй холбоотойгоор явах
+    - 249  # Дээрх їйл ажиллагаатай холбоотойгоор явах
+    - 319  # Дээрх їйл ажиллагаатай холбоотойгоор явах
+    - 419  # Дээрх ажлуудтай холбоотойгоор явах
+    - 519  # Цэцэрлэг, ясли, эмнэлэг бусад газар хїргэх, авах болон бусад
+    - 529  # Сургуульд нь хїргэх, авах болон бусад зорилгоор явах
+    - 539  # Єрхийн гишїїдийг асрахтай холбоотойгоор явах
+    - 549  # Зочин хїлээн авах, їйлчлэхтэй холбоотойгоор явах
+    - 619  # Олон нийт, сайн дурын ажилтай холбоотойгоор явах
+    - 719  # Хичээлдээ явах
+    - 729  # Сургуулиас гадуурх їйл ажиллагаатай холбоотойгоор явах
+    - 739  # Сургалт, дамжаанд суралцахтай холбоотойгоор явах
+    - 819  # Дээрх їйл ажиллагаатай холбоотойгоор явах
+    - 829  # Їзвэр їзэхээр явах
+    - 839  # Спорттой холбоотойгоор явах
+    - 850  # Дээрх їйл ажиллагаануудтай холбоотойгоор явах
+    - 919  # Хэвлэл, мэдээллийн хэрэгсэл ашиглахтай холбоотойгоор явах
+    - 1029  # Хооллохоор гадагш явах
+    - 1039  # Дээрх їйл ажиллагаатай холбоотойгоор явах
+    - 1049  # Эрїїл мэндтэй холбоотойгоор явах
+
+# "Accompanying" codes are travel only when done on the road (road_locations,
+# where a mode is recorded); elsewhere they are an escort activity. 2011's
+# classification has explicit escort travel codes (519, 529) instead.
+escort_travel_codes:
+  default:
+    - 442  # Accompanying own children
+    - 443  # Accompanying dependent adults
+    - 444  # Accompanying non-dependent adult household and family members
+  "2011": []
+
+# Activity code -> template act type.
+act_mappings:
+  default:  # ICATUS 2016 3-digit codes (2023, 2019; as configs/india)
+    110: work  # Employment in corporations, government and non-profit institutions
+    121: work  # Growing of crops for the market in household enterprises
+    122: work  # Raising animals for the market in household enterprises
+    123: work  # Forestry and logging for the market in household enterprises
+    124: work  # Fishing for the market in household enterprises
+    125: work  # Aquaculture for the market in household enterprises
+    126: work  # Mining and quarrying for the market in household enterprises
+    127: work  # Making and processing goods for the market in household enterprises
+    128: work  # Construction activities for the market in household enterprises
+    129: work  # Other activities related to employment in household enterprises to produce goods
+    131: work  # Vending and trading of goods in household enterprises
+    132: work  # Providing paid repair, installation, maintenance and disposal in households and household enterprises
+    133: work  # Providing paid business and professional services in households and household enterprises
+    134: work  # Transporting goods and passengers for pay or profit in households and household enterprises
+    135: work  # Providing paid personal care services in households and household enterprises
+    136: work  # Providing paid domestic services
+    139: work  # Other activities related to employment in households and household enterprises providing services
+    141: work  # Activities ancillary to employment
+    142: work  # Breaks during working time within employment
+    150: work  # Training and studies in relation to employment
+    160: other  # Seeking employment
+    170: other  # Setting up a business
+    211: other  # Growing crops and kitchen gardening, for own final use
+    212: other  # Farming of animals and production of animal products, for own final use
+    213: other  # Hunting, trapping and production of animal skins, for own final use
+    214: other  # Forestry and logging, for own final use
+    215: other  # Gathering wild products, for own final use
+    216: other  # Fishing, for own final use
+    217: other  # Aquaculture, for own final use
+    218: other  # Mining and quarrying, for own final use
+    221: other  # Making, processing food products, beverages and tobacco for own final use
+    222: other  # Making, processing textiles, wearing apparel, leather and related products, for own final use
+    223: other  # Making, processing of wood and bark products, for own final use
+    224: other  # Making, processing bricks, concrete slabs, hollow blocks, tiles for own final use
+    225: other  # Making, processing herbal and medicinal preparations for own final use
+    226: other  # Making, processing metals and metal products for own final use
+    227: other  # Making, processing of products using other materials for own final use
+    229: other  # Acquiring supplies and disposing of products and other activities related to making and processing goods for own final use
+    230: other  # Construction activities for own final use
+    241: home  # Gathering firewood and other natural products used as fuel for own final use
+    242: home  # Fetching water from natural and other sources for own final use
+    311: home  # Preparing meals/snacks
+    312: home  # Serving meals/snacks
+    313: home  # Cleaning up after food preparation/meals/snacks
+    314: home  # Storing, arranging, preserving food stocks
+    319: home  # Other activities related to food and meals management and preparation
+    321: home  # Indoor cleaning
+    322: home  # Outdoor cleaning
+    323: home  # Recycling and disposal of garbage
+    324: home  # Upkeep of in/outdoor plants, hedges, garden, grounds, landscape, etc.
+    325: home  # Tending furnace, boiler, fireplace for heating and water supply
+    329: home  # Other activities related to cleaning and upkeep of dwelling and surroundings
+    331: home  # Do-it-yourself improvement, maintenance and repair of own dwelling
+    332: home  # Installation, servicing and repair of personal and household goods including ICT equipment
+    333: home  # Vehicle maintenance and repairs
+    339: home  # Other activities related to do-it-yourself decoration, maintenance and repair
+    341: home  # Hand/machine-washing
+    342: home  # Drying; hanging out, bringing in wash
+    343: home  # Ironing/pressing/folding
+    344: home  # Mending/repairing and care of clothes and shoes; cleaning and polishing shoes
+    349: home  # Other activities related to care of textiles and footwear
+    351: home  # Paying household bills
+    352: home  # Budgeting, planning, organizing duties and activities in the household
+    359: home  # Other activities related to household management
+    361: home  # Daily pet care
+    362: home  # Using veterinary care or other pet care services (grooming, stabling, holiday or day care)
+    369: home  # Other activities related to pet care
+    371: shop  # Shopping for/purchasing of goods and related activities
+    372: shop  # Shopping for/availing of services and related activity
+    390: home  # Other unpaid domestic services for household and family members
+    411: home  # Caring for children including feeding, cleaning, physical care
+    412: home  # Providing medical care to children
+    413: home  # Instructing, teaching, training, helping children
+    414: home  # Talking with and reading to children
+    415: home  # Playing and sports with children
+    416: home  # Minding children (passive care)
+    417: home  # Meetings and arrangements with schools and child care service providers
+    419: home  # Other activities related to childcare and instruction
+    421: home  # Assisting dependent adults with tasks of daily living
+    422: home  # Assisting dependent adults with medical care
+    423: home  # Assisting dependent adults with forms, administration, accounts
+    424: home  # Affective/emotional support for dependent adults
+    425: home  # Passive care of dependent adult
+    426: home  # Meetings and arrangements with adult care service providers
+    429: home  # Other activities related to care for dependent adults
+    431: home  # Feeding, cleaning, physical care for non-dependent adult household and family members including for temporary illness
+    432: home  # Affective/emotional support for non-dependent adult household and family members
+    439: home  # Other activities related to care for non-dependent adult household and family members
+    442: escort  # Accompanying own children
+    443: escort  # Accompanying dependent adults
+    444: escort  # Accompanying non-dependent adult household and family members
+    490: home  # Other activities related to unpaid caregiving services for household and family members
+    511: other  # Unpaid volunteer household maintenance, management, construction, renovation and repair
+    512: other  # Unpaid volunteer shopping/purchasing goods and services
+    513: other  # Unpaid volunteer childcare and instruction
+    514: other  # Unpaid volunteer care for adults
+    515: other  # Unpaid volunteer unpaid help in enterprises owned by other households
+    519: other  # Other activities related to direct unpaid volunteering for other households
+    521: other  # Unpaid volunteer work on road/building repair, clearing and preparing land, cleaning (streets, markets, etc.), and construction
+    522: other  # Unpaid volunteer preparing/serving meals, cleaning up
+    523: other  # Unpaid volunteer cultural activities, recreation and sports activities
+    524: other  # Unpaid volunteer office/administrative work
+    529: other  # Other activities related to community- and organization-based unpaid volunteering
+    530: other  # Unpaid trainee work and related activities
+    590: other  # Other unpaid work activities
+    611: education  # School/university attendance
+    612: education  # Extra-curricular activities
+    613: education  # Breaks at place of formal education
+    614: home  # Self-study for distance education course work (video, audio, online)
+    619: education  # Other activities related to formal education
+    620: home  # Homework, being tutored, course review, research and activities related to formal education
+    630: education  # Additional study, non-formal education and courses
+    690: education  # Other activities related to learning
+    711: visit  # Talking, conversing, chatting
+    712: visit  # Socializing/getting together/gathering activities
+    713: home  # Reading and writing mail (including email)
+    719: visit  # Other activities related to socializing and communication
+    721: visit  # Participating in community celebrations of cultural/historic events
+    722: visit  # Participating in community rites/events (non-religious) of weddings, funerals, births and similar rites-of-passage
+    723: visit  # Participating in community social functions (music, dance, etc.)
+    729: visit  # Other activities related to community participation
+    730: visit  # Involvement in civic and related responsibilities
+    741: home  # Private prayer, meditation and other spiritual activities
+    742: visit  # Participating in collective religious practice
+    749: visit  # Other activities related to religious practice
+    790: visit  # Other activities related to socializing and communication, community participation and religious practice
+    811: leisure  # Attendance at organized/mass cultural events, and shows
+    812: leisure  # Attendance at parks/gardens
+    813: leisure  # Attendance at sports events
+    819: leisure  # Other activities related to attendance at cultural, entertainment and sports events
+    821: leisure  # Visual, literary and performing arts (as hobby)
+    822: leisure  # Hobbies
+    823: leisure  # Playing games and other pastime activities
+    829: leisure  # Other activities related to cultural participation, hobbies, games
+    831: leisure  # Participating in sports
+    832: leisure  # Exercising
+    841: leisure  # Reading for leisure
+    842: leisure  # Watching/listening to television and video
+    843: leisure  # Listening to radio and audio devices
+    849: leisure  # Other activities related to mass media use
+    850: leisure  # Activities associated with reflecting, resting, relaxing
+    890: leisure  # Other activities related to culture, leisure, mass-media and sports practices
+    911: home  # Night sleep/essential sleep
+    912: home  # Incidental sleep/naps
+    913: home  # Sleeplessness
+    919: home  # Other sleep and related activities
+    921: home  # Eating meals/snack
+    922: home  # Drinking other than with meal or snack
+    931: home  # Personal hygiene and care
+    932: other  # Health/medical care to oneself
+    939: home  # Other activities related to personal hygiene and care
+    941: home  # Receiving personal care from others
+    942: other  # Receiving health/medical care from others
+    949: home  # Other activities related to receiving personal and health/medical care
+    990: home  # Other self-care and maintenance activities
+  "2011":  # national classification (DDI-EN-NSO-TUS-2011.xml; Mongolian labels).
+    # Herding, farming and processing for the household are "other" (as
+    # ICATUS own-use production in 2023); selling the produce is work.
+    111: work  # Їндсэн ажил
+    112: work  # Давхар ажил
+    113: work  # Дагалдан, цалин хєлстэй дадлагын ажил
+    114: work  # Ажлын завсарлага
+    115: other  # Ажил хайх
+    116: work  # Сул зогсолт
+    117: work  # Албан ёсны ажил эрхлэлт болон сургалттай холбоотой їйл ажилл
+    118: work  # Байгууллагад ажил эрхлэхтэй холбоотой бусад їйл ажиллагаа
+    211: other  # Їр суулгахад бэлтгэх, газрыг тариалалтанд бэлтгэх
+    212: other  # Їр суулгах, тарих
+    213: other  # Бордох, услах, хортон шавьж устгах, бордоо бэлтгэх, хог урга
+    214: other  # Талбай манах, хамгаалах
+    215: other  # Ургац хураах, хадгалах
+    216: other  # Тээрэмдэх, цайруулах, хальслах, цэвэрлэх, сортлох, гэх мэт а
+    217: work  # Газар тариалан эрхлэхтэй холбоотой худалдан авах, борлуулах
+    218: other  # Газар тариалан эрхлэхтэй холбоотой бусад їйл ажиллагаа
+    221: other  # Мал, амьтан хариулах, бэлчээх, хотлуулах
+    222: other  # Мал, амьтанд тэжээл єгєх, услах, хашаа хороо, байрыг цэвэрлэ
+    223: other  # Агтлах, хєнгєлєх, эмчлэх, угаах, тахлах, тамгалах, эмнэг сур
+    224: other  # Євс хадлан авах, тэжээл бэлтгэх
+    225: other  # Тєл бойжуулах
+    226: other  # Малын хашаа, хороо барих, засах
+    227: work  # Мал маллах, хариулахтай холбоотой худалдан авах, борлуулах а
+    228: other  # Мал маллах, хариулахтай холбоотой бусад їйл ажиллагаа
+    231: other  # Мал саах
+    232: other  # Ноос хяргах, ямаа самнах
+    233: other  # Мал тєхєєрєх
+    234: other  # Цагаан идээ хийх
+    235: other  # Уналга эдэлгээний болон гэрийн эдлэл, хэрэгсэл хийх
+    236: other  # Мал аж ахуйн гаралтай бусад бїтээгдэхїїн хийх
+    237: work  # МАА-н гаралтай бїтээгдэхїїн худалдах ажил
+    238: other  # МАА-н гаралтай бїтээгдэхїїн хийх бусад ажил
+    241: other  # Ойн аж ахуй, ан агнуур, загас агнуур, жимс, самар, мєєг тїїх
+    242: work  # Малтах, олборлох, бутлах, ухах гэх зэрэг уурхай, газар шороо
+    243: work  # Эдгээр їйл ажиллагаатай холбоотой бараа бїтээгдэхїїн худалда
+    244: other  # Хєємєл, цутгамал, сийлбэр хийх
+    248: other  # Анхан шатны боловсруулах їйлдвэрлэл эрхлэхтэй холбоотой буса
+    311: work  # Хїнсний зїйл їйлдвэрлэх, худалдах
+    312: work  # Эм, бэлдмэл бэлтгэх, худалдах
+    313: work  # Нэхмэл, сїлжмэл эдлэл, гутал, хувцас їйлдвэрлэх, худалдах
+    314: other  # Байшин барилга барих, єргєтгєх, засах
+    315: other  # Єрх, гэрийн їйл ажиллагааг удирдах, зохицуулах
+    316: work  # Гудамж, зах дээр худалдаа хийх, їйлчилгээ їзїїлэх
+    317: work  # Суурь машин, багаж хэрэгсэл угсрах, суурилуулах, тохируулах,
+    318: work  # Худалдаа їйлчилгээ, їйлдвэрлэл эрхлэхтэй холбоотой бусад ажи
+    411: home  # Хоол, цай хийх, ширээ засах, аяга, таваг угаах, гэр цэвэрлэх
+    412: home  # Хувцас, гутал, нэхмэл, сїлжмэл эдлэл угаах, арчлах, оёх, инд
+    413: home  # Гэр, сууцны гаднах болон доторх эд хогшлыг цэвэрлэх
+    414: shop  # Дэлгїїр, зах явах, хїнсний болон гэр ахуйн бараа худалдан ав
+    415: home  # Гэр, байшин болон эд хогшил засах
+    416: home  # Машин халаах, засвар хийх
+    417: home  # Ус авах, тїлш бэлтгэх, гал тїлэх
+    418: home  # Єрх гэрийн їйл ажиллагаатай холбоотой бусад їйл ажиллагаа
+    421: home  # Гэр, малын хашаа, хороо буулгах, нїїдэлд бэлтгэх
+    422: home  # Гэр, эд хогшлоо зєєх, ачаалах
+    423: other  # Нїїх
+    424: home  # Ачилгаа буулгах, гэр барих
+    425: home  # Нїїхтэй холбоотой бусад ажил
+    511: home  # Сургуулийн ємнєх насны хїїхэд асрах
+    512: home  # Хїїхдэд ном уншиж єгєх, тоглуулах, салхилуулах
+    518: home  # Сургуулийн ємнєх насны хїїхэд асрахтай холбоотой бусад їйл а
+    521: home  # Сургуулийн насны хїїхдэд анхаарал тавих
+    522: home  # Хичээл давтах, даалгавар хийхэд нь туслах
+    523: home  # Багштай нь уулзах, хуралд суух
+    528: home  # Сургуулийн насны хїїхэдтэй ажиллах бусад їйл ажиллагаа
+    531: home  # Эцэг, эх болон єндєр настанг асрах
+    532: home  # Євчтєн асрах
+    533: home  # Хєгжлийн бэрхшээлтэй єрхийн гишїїнийг асрах
+    534: home  # Хэвтрийн євчтєн асрах
+    538: home  # Єрхийн гишїїдийг асрахтай холбоотой бусад їйл ажиллагаа
+    541: home  # Зочин хїлээн авах, їйлчлэх
+    548: home  # Зочин хїлээн авах, їйлчлэхтэй холбоотой бусад їйл ажиллагаа
+    611: other  # Сайн дураар барилга барих, засвар хийх
+    612: visit  # Нийтийн баяр ёслолын їйл ажиллагаанд оролцох
+    613: other  # Байгууллагаас зохиосон сайн дурын ажилд оролцох
+    614: other  # Байгууллагаар дамжуулан хувь хїн, бїлэгт чиглэсэн сайн дурын
+    615: visit  # Олон нийтийн хурал, цуглаанд оролцох
+    616: visit  # Иргэний їїрэгтэй холбоотой ажилд оролцох
+    617: other  # Бусад єрх, хїмїїст туслах
+    618: other  # Олон нийт, сайн дурын ажилтай холбоотой бусад їйл ажиллагаа
+    711: education  # Хичээл, лекц, семинарт суух
+    712: education  # Завсарлага
+    713: education  # Бие даалт
+    714: education  # Хичээлээс гадуурх арга хэмжээнд оролцох
+    718: education  # Сургууль дээрх бусад їйл ажиллагаа
+    721: home  # Гэрийн даалгавар хийх
+    722: education  # Хичээлтэй холбоотой сургалтанд хамрагдах
+    723: home  # Гэрийн багшаар хичээл заалгах
+    724: shop  # Хичээлийн хэрэгсэл, ном, сурах бичиг худалдан авах
+    728: education  # Сургуулиас гадуурх бусад їйл ажиллагаа
+    731: education  # Хэлний дамжаа
+    732: education  # Компьютерийн дамжаа
+    733: education  # Жолооны дамжаа
+    734: education  # Мэргэжил эзэмшїїлэх болон дээшлїїлэх бусад дамжаа
+    735: education  # Хобби, чєлєєт цагийн сургалт, дамжаа
+    738: education  # Сургалт, дамжаанд суралцахтай холбоотой бусад їйл ажиллагаа
+    811: home  # Утсаар ярих
+    812: visit  # Єрхийн болон єрхєєс гадуурх аливаа арга хэмжээнд оролцох
+    813: visit  # Шашин шїтлэгтэй холбоотой їйл ажиллагаа
+    814: visit  # Хурим, найранд оролцох
+    815: visit  # Гэрийнхэнтэйгээ болон бусад хїмїїстэй ярилцах
+    816: visit  # Айлд зочлох, євчтєн, амаржсан эхчїїдийг эргэж очих
+    817: visit  # Уулзалтад оролцох
+    818: visit  # Хїмїїстэй харилцах бусад їйл ажиллагаа
+    821: leisure  # Кинотеатрт кино їзэх
+    822: leisure  # Концерт, дуурь, балет, хошин урлагийн тоглолт їзэх
+    823: leisure  # Музей, їзэсгэлэн, галерей їзэх
+    824: leisure  # Спортын тэмцээн, арга хэмжээ їзэх
+    825: leisure  # Наадам їзэх
+    826: leisure  # Салбар, байгууллагын ойн баяр, арга хэмжээнд оролцох
+    828: leisure  # Бусад їзвэр їзэх
+    831: leisure  # Явган явах, гїйх
+    832: leisure  # Явган аялал/уулын спорт
+    833: leisure  # Дасгал хийх (гимнастик, аэробик, иог, фитнес хєтєлбєр)
+    834: leisure  # Бусад спорт  (сагсан бємбєг, гар бємбєг, хєл бємбєг, теннис,
+    835: leisure  # Машин, морь, тэмээгээр зугаалах
+    836: leisure  # Дугуйгаар явах, цана, чаргаар гулгах
+    837: leisure  # Спортын уралдаан, тэмцээн зохион байгуулах, їзэх
+    838: leisure  # Спорттой холбоотой бусад їйл ажиллагаа
+    841: leisure  # Ном унших
+    842: leisure  # Компьютер тоглоом, шатар, даам, хєзєр тоглох
+    843: leisure  # Хобби, гар урлал эрхлэх, урлагийн бїтээл хийх
+    844: leisure  # Баар, караокегоор їйлчлїїлэх
+    845: leisure  # Тамхилах
+    846: leisure  # Бїжиг диско-д явах
+    847: leisure  # Цагийг хоосон єнгєрєєх
+    848: leisure  # Ан хийх, загасчлах, жимс жимсгэнэ, мєєг тїїх
+    849: leisure  # Чєлєєт цагийн бусад їйл ажиллагаа
+    911: leisure  # Сонин, сэтгїїл унших
+    912: leisure  # Ном унших
+    913: leisure  # Телевиз, видео, аудио бичлэг їзэх
+    914: leisure  # Радио, хуурцаг, “CD”,” MP” сонсох
+    915: leisure  # Номын санд суух
+    916: leisure  # Интернетэд орох, чаатлах
+    917: leisure  # Видео бичлэг хийх
+    918: leisure  # Хэвлэл, мэдээллийн хэрэгсэл ашиглах бусад їйл ажиллагаа
+    1011: home  # Унтах, амрах
+    1012: home  # Хэвтэх, амрах
+    1013: home  # Сэрэх, босох
+    1014: home  # Ор засах, хураах
+    1021: home  # Гэртээ хооллох, цай уух
+    1022: shop  # Гэрээс гадуур хооллох, цай уух
+    1023: shop  # Зоогийн газар, кафе, ресторанд хооллох, цай уух
+    1031: home  # Хувцас ємсєх, солих
+    1032: home  # Хувийн ариун цэвэр, эрїїл ахуйг сахих
+    1033: home  # Нїїр будах
+    1034: shop  # Їсчин, гоо сайхан, саун, массажаар їйлчлїїлэх
+    1035: shop  # Хувийн хэрэгцээнд тєлбєрт їйлчилгээгээр їйлчлїїлэх
+    1038: home  # Хувийн ариун цэвэр, эрїїл ахуйг сахихтай холбоотой бусад їйл
+    1041: home  # Єєрийгєє эмчлэх, єєртєє їйлчлэх
+    1042: other  # Эрїїл мэндийн їйлчилгээ авах
+    1043: other  # Эм тариа авах
+    1044: home  # Євдєж хэвтэх
+    1045: other  # Рашаан, сувилалд сувилуулах
+    1046: other  # Эмнэлэгт хэвтэж эмчлїїлэх
+    1048: other  # Эрїїл мэндтэй холбоотой бусад їйл ажиллагаа
+    2221: home  # Малын хєрзєн ховхлох, аргал тїїх

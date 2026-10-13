@@ -7,15 +7,17 @@ import polars as pl
 
 from foundata import (
     anomaly,
-    arg,
-    braz,
+    argentina,
+    brazil,
+    chile,
     cmap,
     filter,
     fix,
+    india,
     ktdb,
     ltds,
-    mong,
-    mxod,
+    mexico,
+    mongolia,
     nhts,
     nts,
     odin,
@@ -25,8 +27,7 @@ from foundata import (
     post_process,
     qhts,
     tables,
-    tus,
-    urug,
+    uruguay,
     utils,
     verify,
     vista,
@@ -94,12 +95,13 @@ def runner(
         "odin",
         "ovin",
         "om",
-        "tus",
-        "braz",
-        "mxod",
-        "arg",
-        "urug",
-        "mong",
+        "india",
+        "brazil",
+        "mexico",
+        "argentina",
+        "uruguay",
+        "mongolia",
+        "chile",
     }
     if select:
         sources = set(select)
@@ -380,148 +382,172 @@ def runner(
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # TUS (INDIA)
+    # INDIA (TIME USE SURVEY)
     # ------------------------------------------------------------------
-    if "tus" in sources:
+    if "india" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "tus" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "india" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "tus" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "india" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "tus" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "india" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = tus.load_years(
-            data_root=data_root / "TUS",
+        attributes, trips = india.load_years(
+            data_root=data_root / "INDIA",
             years=[2019, 2024],
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "TUS")
+        attributes, trips = process_source(attributes, trips, "INDIA")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # BRAZ (SAO PAULO)
+    # BRAZIL (SAO PAULO)
     # ------------------------------------------------------------------
-    if "braz" in sources:
+    if "brazil" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "braz" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "brazil" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "braz" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "brazil" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "braz" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "brazil" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = braz.load(
-            data_root=data_root / "BRAZ",
+        attributes, trips = brazil.load(
+            data_root=data_root / "BRAZIL",
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "BRAZ")
+        attributes, trips = process_source(attributes, trips, "BRAZIL")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # MXOD (MEXICO CITY)
+    # MEXICO (MEXICO CITY)
     # ------------------------------------------------------------------
-    if "mxod" in sources:
+    if "mexico" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mxod" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "mexico" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mxod" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "mexico" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mxod" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "mexico" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = mxod.load(
-            data_root=data_root / "MEX",
+        attributes, trips = mexico.load(
+            data_root=data_root / "MEXICO",
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "MXOD")
+        attributes, trips = process_source(attributes, trips, "MEXICO")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # ARG (ARGENTINA)
+    # ARGENTINA (HOUSEHOLD MOBILITY SURVEYS)
     # ------------------------------------------------------------------
-    if "arg" in sources:
+    if "argentina" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "arg" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "argentina" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "arg" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "argentina" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "arg" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "argentina" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = arg.load(
-            data_root=data_root / "ARG",
+        attributes, trips = argentina.load(
+            data_root=data_root / "ARGENTINA",
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "ARG")
+        attributes, trips = process_source(attributes, trips, "ARGENTINA")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # URUG (MONTEVIDEO)
+    # URUGUAY (MONTEVIDEO)
     # ------------------------------------------------------------------
-    if "urug" in sources:
+    if "uruguay" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "urug" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "uruguay" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "urug" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "uruguay" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "urug" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "uruguay" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = urug.load(
-            data_root=data_root / "URUG",
+        attributes, trips = uruguay.load(
+            data_root=data_root / "URUGUAY",
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "URUG")
+        attributes, trips = process_source(attributes, trips, "URUGUAY")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
     # ------------------------------------------------------------------
-    # MONG (MONGOLIA TIME USE SURVEY)
+    # MONGOLIA (TIME USE SURVEY)
     # ------------------------------------------------------------------
-    if "mong" in sources:
+    if "mongolia" in sources:
         hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mong" / "hh_dictionary.yaml"
+            CONFIGS_ROOT / "mongolia" / "hh_dictionary.yaml"
         )
         person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mong" / "person_dictionary.yaml"
+            CONFIGS_ROOT / "mongolia" / "person_dictionary.yaml"
         )
         trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mong" / "trip_dictionary.yaml"
+            CONFIGS_ROOT / "mongolia" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = mong.load_years(
-            data_root=data_root / "MONG",
+        attributes, trips = mongolia.load_years(
+            data_root=data_root / "MONGOLIA",
             years=(2023, 2019, 2011),
             hh_config=hh_config,
             person_config=person_config,
             trips_config=trips_config,
         )
-        attributes, trips = process_source(attributes, trips, "MONG")
+        attributes, trips = process_source(attributes, trips, "MONGOLIA")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # CHILE (SANTIAGO EOD 2012)
+    # ------------------------------------------------------------------
+    if "chile" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "chile" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "chile" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "chile" / "trip_dictionary.yaml"
+        )
+
+        attributes, trips = chile.load(
+            data_root=data_root / "CHILE",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "CHILE")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -657,7 +683,7 @@ def runner(
         save_path=output / "activity_heatmap_by_employment.png",
     )
 
-    # sources such as mxod have no income at all; attribute_activity_heatmap
+    # sources such as mexico have no income at all; attribute_activity_heatmap
     # skips plotting (rather than raising) when a column is all null
     plots.attribute_activity_heatmap(
         all_attributes,
@@ -676,7 +702,7 @@ def runner(
         save_path=output / "activity_heatmap_by_year.png",
     )
 
-    # likewise urug never records the travel day
+    # likewise uruguay never records the travel day
     plots.attribute_activity_heatmap(
         all_attributes,
         activities,

@@ -45,7 +45,7 @@ def validate_column_mappings(config: dict, template_section: dict) -> list[str]:
 
 
 # Several sources name their value mapping with a "<field>_mapping(s)"
-# key rather than the template field name itself (e.g. NHTS/QHTS/VISTA/MONG/
+# key rather than the template field name itself (e.g. NHTS/QHTS/VISTA/MONGOLIA/
 # TUS "act_mappings", "mode_mappings"). "act" covers both oact and dact,
 # since the same code -> activity map is used for both trip ends.
 _VALUE_MAPPING_ALIASES = {"mode": ("mode",), "act": ("oact", "dact")}

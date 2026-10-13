@@ -1,0 +1,49 @@
+# Household-level dictionary for brazil (São Paulo Pesquisa Origem Destino 2017).
+# The raw data is a single flat table (one row per trip, or per person for
+# non-travellers), so household, family, person and trip columns all come from
+# OD_2017_v1.dbf. Codes are documented in "LAYOUT OD2017_v1.xlsx".
+
+column_mappings:
+  ID_DOM: hid
+  ZONA: home_zone
+  NO_MORAD: hh_size
+  DATA: date  # interview date, ddmmyyyy
+  # family-level (a household can hold several families), aggregated to hh
+  FAMILIA: family
+  RENDA_FA: income  # monthly family income, BRL
+  CD_RENFA: income_code
+  QT_AUTO: cars
+  QT_MOTO: motorcycles
+  CONDMORA: ownership
+
+# CD_RENFA codes whose RENDA_FA is used. 1: declared > 0, 2: declared zero,
+# 3: imputed from the Critério Brasil asset score, 4: imputed from zone mean.
+# Codes 3 and 4 cover ~56% of families.
+income_codes: [1, 2, 3, 4]
+
+# 2017 average BRL -> EUR
+brl_to_euro: 0.277
+
+# hh_zone from weighted residential population density of the home OD zone
+# (persons per km², zone areas from Zonas_2017_region.dbf)
+density_thresholds:
+  urban: 5000
+  suburban: 1000
+
+# ownership mapping
+  # Valid values: owned, rented, other, unknown
+ownership:
+  1: rented
+  2: owned
+  3: other  # cedida (provided rent-free)
+  4: other
+  5: unknown
+
+# day mapping (DIA_SEM, travel day; weekdays only)
+  # Valid values: monday, tuesday, wednesday, thursday, friday, saturday, sunday, unknown
+day:
+  2: monday
+  3: tuesday
+  4: wednesday
+  5: thursday
+  6: friday

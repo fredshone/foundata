@@ -17,7 +17,7 @@ Options:
   -o, --output PATH                                   Directory where CSVs and PNGs are written, defaults to ./output  [default: output]
   -s, --select TEXT                                   Comma-separated list of sources to process (e.g. --select nhts --select ktdb).
   -x, --omit TEXT                                     Comma-separated list of sources to omit (e.g. --omit nhts --omit ktdb).
-  --open                                               Run only the open-data sources (nhts, cmap, vista, qhts, ktdb). Overrides --select and --omit.
+  --open                                               Run only the open-data sources (nhts, cmap, vista, qhts, ktdb, mexico, argentina, uruguay, chile). Overrides --select and --omit.
   -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
   -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities. [default: filter-consecutive]
   --help                                              Show this message and exit.
@@ -32,20 +32,23 @@ The latest output using `uv run foundata run` is as follows:
 | Source    | Plans         | Missing attributes | Trips          | Trip kms (millions) |
 |-----------|---------------|--------------------|----------------|---------------------|
 | nts       | 2,483,044     | 20%                | 4,420,967      | 45.4                |
-| tus       | 875,798       | 50%                | 1,902,341      | n/a                 |
+| india     | 875,802       | 50%                | 1,903,711      | n/a                 |
 | nhts      | 631,537       | 27%                | 2,203,880      | 24.9                |
 | odin      | 383,679       | 26%                | 886,686        | 9.6                 |
-| mxod      | 348,070       | 48%                | 494,949        | 5.3                 |
+| mexico    | 348,070       | 48%                | 494,949        | 5.3                 |
+| ovin      | 290,618       | 33%                | 722,782        | 7.5                 |
+| om        | 158,503       | 41%                | 421,213        | 4.1                 |
 | ktdb      | 120,100       | 35%                | 285,011        | 0.8                 |
 | vista     | 89,465        | 30%                | 235,847        | 2.0                 |
-| arg       | 85,950        | 34%                | 133,105        | 0.9                 |
-| braz      | 83,895        | 33%                | 150,846        | 0.9                 |
-| ltds      | 60,517        | 36%                | 108,316        | 0.9                 |
+| argentina | 85,950        | 34%                | 133,105        | 0.9                 |
+| brazil    | 83,895        | 33%                | 150,846        | 0.9                 |
+| ltds      | 60,523        | 36%                | 108,339        | 0.9                 |
+| chile     | 56,574        | 25%                | 104,749        | 0.8                 |
 | qhts      | 48,718        | 33%                | 117,885        | 1.2                 |
-| mong      | 46,100        | 34%                | 99,267         | n/a                 |
+| mongolia  | 46,100        | 34%                | 99,267         | n/a                 |
 | cmap      | 25,716        | 7%                 | 76,658         | 0.5                 |
-| urug      | 5,173         | 38%                | 10,753         | 0.1                 |
-| **total** | **5,287,762** | **29%**            | **11,126,511** | **92.5**            |
+| uruguay   | 5,173         | 38%                | 10,753         | 0.1                 |
+| **total** | **5,793,467** | **30%**            | **12,376,648** | **104.8**           |
 
 
 \* Plans: a sequence of activities and associated trips within a 24hr period starting at midnight.
@@ -69,19 +72,19 @@ Foundata makes use of open (safely available, either immediately, or available v
 | QHTS        | AUS | 2012-24     |          | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
 | VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
-| TUS         | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
-| BRAZ        | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
-| MXOD        | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
-| ARG         | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
-| URUG        | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
-| MONG        | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
+| INDIA       | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
+| BRAZIL      | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
+| MEXICO      | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
+| ARGENTINA   | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
+| URUGUAY     | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
+| MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
+| CHILE       | CL | 2012-13 | Santiago metro region (EOD 2012), all days of the week incl. summer season, ~68% of households have some member income imputed by the survey, distances from straight-line block or zone centroids | Open [data](https://github.com/PLUMAS-research/palomatrix-dtpm/tree/main/src/palomatrix/eod/datos) (SECTRA EOD 2012 as parquet) |
 
 
 ### In progress or todo
 
 - Various FR [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
 - Bogotá EM 2023 / 2019
-- Santiago EOD 2012
 - MTUS harmonised episodes (Korea) https://timeuse.org/
 - Tokyo PT 2008 / 2018
 - JICA PT surveys via PFLOW
@@ -233,7 +236,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `tus`, `braz`, `mxod`, `arg`, `urug`, `mong`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`.
 
 ### Binning numeric attributes
 

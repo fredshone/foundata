@@ -15,11 +15,12 @@ import shutil
 from pathlib import Path
 
 import polars as pl
-from csv_writer import sample_urug
-from dbf_writer import sample_braz, sample_mxod
-from mong_writer import sample_mong
+from csv_writer import sample_uruguay
+from dbf_writer import sample_brazil, sample_mexico
+from mongolia_writer import sample_mongolia
 from ovin_writer import sample_om, sample_ovin
-from sav_writer import sample_arg
+from parquet_writer import sample_chile
+from sav_writer import sample_argentina
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
 FIXTURE_ROOT = Path(__file__).parent.parent / "tests" / "fixtures"
@@ -396,33 +397,39 @@ def generate_ktdb():
 
 
 # ---------------------------------------------------------------------------
-# BRAZ (open data, so sampled unshuffled)
+# BRAZIL (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
 
-def generate_braz():
-    print("Generating BRAZ fixtures...")
-    sample_braz(DATA_ROOT / "BRAZ", FIXTURE_ROOT / "braz", N_HOUSEHOLDS, SEED)
+def generate_brazil():
+    print("Generating BRAZIL fixtures...")
+    sample_brazil(
+        DATA_ROOT / "BRAZIL", FIXTURE_ROOT / "brazil", N_HOUSEHOLDS, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
-# MXOD (open data, so sampled unshuffled)
+# MEXICO (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
 
-def generate_mxod():
-    print("Generating MXOD fixtures...")
-    sample_mxod(DATA_ROOT / "MEX", FIXTURE_ROOT / "mxod", N_HOUSEHOLDS, SEED)
+def generate_mexico():
+    print("Generating MEXICO fixtures...")
+    sample_mexico(
+        DATA_ROOT / "MEXICO", FIXTURE_ROOT / "mexico", N_HOUSEHOLDS, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
-# ARG (open data, so sampled unshuffled)
+# ARGENTINA (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
 
-def generate_arg():
-    print("Generating ARG fixtures...")
-    sample_arg(DATA_ROOT / "ARG", FIXTURE_ROOT / "arg", N_HOUSEHOLDS, SEED)
+def generate_argentina():
+    print("Generating ARGENTINA fixtures...")
+    sample_argentina(
+        DATA_ROOT / "ARGENTINA", FIXTURE_ROOT / "argentina", N_HOUSEHOLDS, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -448,23 +455,39 @@ def generate_om():
 
 
 # ---------------------------------------------------------------------------
-# URUG (open data, so sampled unshuffled)
+# URUGUAY (open data, so sampled unshuffled)
 # ---------------------------------------------------------------------------
 
 
-def generate_urug():
-    print("Generating URUG fixtures...")
-    sample_urug(DATA_ROOT / "URUG", FIXTURE_ROOT / "urug", N_HOUSEHOLDS, SEED)
+def generate_uruguay():
+    print("Generating URUGUAY fixtures...")
+    sample_uruguay(
+        DATA_ROOT / "URUGUAY", FIXTURE_ROOT / "uruguay", N_HOUSEHOLDS, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
-# MONG (restricted, so fresh ids and shuffled attributes)
+# MONGOLIA (restricted, so fresh ids and shuffled attributes)
 # ---------------------------------------------------------------------------
 
 
-def generate_mong():
-    print("Generating MONG fixtures...")
-    sample_mong(DATA_ROOT / "MONG", FIXTURE_ROOT / "mong", N_HOUSEHOLDS, SEED)
+def generate_mongolia():
+    print("Generating MONGOLIA fixtures...")
+    sample_mongolia(
+        DATA_ROOT / "MONGOLIA", FIXTURE_ROOT / "mongolia", N_HOUSEHOLDS, SEED
+    )
+
+
+# ---------------------------------------------------------------------------
+# CHILE (open data, so sampled unshuffled)
+# ---------------------------------------------------------------------------
+
+
+def generate_chile():
+    print("Generating CHILE fixtures...")
+    sample_chile(
+        DATA_ROOT / "CHILE", FIXTURE_ROOT / "chile", N_HOUSEHOLDS, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -511,12 +534,13 @@ if __name__ == "__main__":
     generate_ltds()
     generate_nhts()
     generate_ktdb()
-    generate_braz()
-    generate_mxod()
-    generate_arg()
+    generate_brazil()
+    generate_mexico()
+    generate_argentina()
     generate_ovin()
     generate_om()
-    generate_urug()
-    generate_mong()
+    generate_uruguay()
+    generate_mongolia()
+    generate_chile()
     generate_post_process()
     print("Done.")

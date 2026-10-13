@@ -1,0 +1,96 @@
+# Trip-level dictionary for chile (Santiago EOD 2012).
+# CHILE/viajes.parquet holds one row per trip (Viaje = Persona + 2-digit
+# trip number) and CHILE/etapas.parquet one row per stage (Etapa). Codes
+# from codigos.parquet. Each person reports one assigned day (Fecha), Monday
+# to Sunday, in the normal season and the summer (estival) season.
+
+column_mappings:
+  viajes:
+    Persona: pid
+    Viaje: trip_id  # trip number is Viaje % 100 (1-indexed)
+    ZonaOrigen: ozone  # EOD zone; 0 and 999 are outside the zoning
+    ZonaDestino: dzone
+    Proposito: dact
+    HoraIni: tst  # "H:MM"
+    HoraFin: tet
+    TiempoViaje: duration  # minutes, HoraFin - HoraIni
+    DistEuclidiana: straight_line  # metres between block centroids, -1 unknown
+    CuadrasDespues: blocks_after  # blocks walked after the last stage
+  etapas:
+    Viaje: trip_id
+    Modo: stage_mode
+    CuadrasAntes: blocks_before  # blocks walked before boarding the stage
+
+# dact mapping (Proposito). oact is the previous trip's dact; a day's first
+# trip starts at home if its origin zone is the home zone, else other.
+  # Valid values: home, work, education, shop, leisure, visit, escort, other, unknown
+dact:
+  1: work  # al trabajo
+  2: work  # por trabajo
+  3: education  # al estudio
+  4: education  # por estudio
+  5: other  # de salud
+  6: visit  # visitar a alguien
+  7: home  # volver a casa
+  8: escort  # buscar o dejar a alguien
+  9: shop  # comer o tomar algo
+  10: other  # buscar o dejar algo
+  11: shop  # de compras
+  12: other  # trámites
+  13: leisure  # recreación
+  14: other  # otra actividad
+
+# mode mapping (etapas.Modo). The trip mode is the first mode in
+# mode_priority used by any stage, so a car-then-metro trip is rail.
+  # Valid values: walk, bike, car, bus, rail, other, unknown
+mode:
+  1: car  # auto chofer
+  2: bus  # bus alimentador (Transantiago feeder)
+  3: bus  # bus troncal (Transantiago trunk)
+  4: rail  # metro
+  5: car  # taxi colectivo
+  6: bus  # furgón escolar, como pasajero
+  7: car  # taxi o radiotaxi
+  8: walk  # enteramente a pie
+  9: bike  # bicicleta
+  10: car  # motocicleta
+  11: bus  # bus institucional
+  12: bus  # bus interurbano o rural
+  13: car  # furgón escolar, como chofer o acompañante
+  14: bus  # bus urbano con pago al conductor (Metrobus y otros)
+  15: other  # servicio informal
+  16: rail  # tren
+  17: car  # auto acompañante
+  18: car  # motocicleta acompañante
+mode_priority: [rail, bus, car, other, bike, walk]
+
+# Distance (km), in order of preference:
+# 1. DistEuclidiana (straight line between the block centroids of origin
+#    and destination; imputed within the zone for trips without
+#    coordinates, viajes.Imputada = 1) x circuity, when > 0;
+# 2. trips between two different EOD zones: straight line between the zone
+#    centroids (configs/chile/zones.csv) x circuity;
+# 3. otherwise (same block or zone, or outside the zoning): trip duration x
+#    the mode's door-to-door speed below.
+circuity: 1.3
+speed:  # km/h, door to door (TiempoViaje includes walking and waiting)
+  walk: 4.5
+  bike: 12
+  car: 22
+  bus: 13
+  rail: 20
+  other: 15
+
+# Access/egress distance for trips with a transit stage: blocks walked
+# before each stage (etapas.CuadrasAntes) plus after the last one
+# (viajes.CuadrasDespues), x block_km (a Santiago cuadra is ~110 m).
+block_km: 0.11
+unknown_blocks: [98, 99]
+transit_stage_modes:  # Modo codes
+  - 2  # bus alimentador
+  - 3  # bus troncal
+  - 4  # metro
+  - 11  # bus institucional
+  - 12  # bus interurbano o rural
+  - 14  # bus urbano con pago al conductor
+  - 16  # tren

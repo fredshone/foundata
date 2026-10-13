@@ -12,28 +12,31 @@ differently based on redistribution licensing:
 
 - cmap, nhts, qhts, vista are public/open datasets: households are sampled
   directly and written with real, unmodified values.
-- braz (São Paulo OD 2017) is open data distributed as a single dBase
+- brazil (São Paulo OD 2017) is open data distributed as a single dBase
   table; sampled households' records are copied byte for byte by
   scripts/dbf_writer.py, along with the zone attribute table.
-- mxod (Mexico City EOD 2017) is open data distributed as linked dBase
+- mexico (Mexico City EOD 2017) is open data distributed as linked dBase
   tables; sampled households' rows in each table are copied byte for byte
   by scripts/dbf_writer.py.
-- arg (Argentine household mobility surveys) is open data distributed as
+- argentina (Argentine household mobility surveys) is open data distributed as
   SPSS .sav tables; sampled households' rows in each table are written with
   real values by scripts/sav_writer.py.
-- urug (Montevideo EOD 2016) is open data distributed as ;-separated CSVs;
+- uruguay (Montevideo EOD 2016) is open data distributed as ;-separated CSVs;
   sampled households' lines in each table are copied byte for byte by
   scripts/csv_writer.py, along with the codebooks.
-- tus (India Time Use Survey) is distributed as a proprietary Nesstar
+- chile (Santiago EOD 2012) is open data distributed as parquet tables;
+  sampled households' rows in each table are written unmodified by
+  scripts/parquet_writer.py, along with the code tables.
+- india (India Time Use Survey) is distributed as a proprietary Nesstar
   binary + DDI XML rather than CSV, so its sample is decoded with
   nesstar_converter and re-encoded into a minimal synthetic Nesstar
   container by scripts/nesstar_writer.py + scripts/ddi_writer.py (ported
   from the nesstar project), which the loader reads like any real file.
   Real diary episodes are kept intact; education/employment are swapped
   between the sampled household heads.
-- mong (Mongolia Time Use Survey 2011/2019/2023) is restricted (registered
+- mongolia (Mongolia Time Use Survey 2011/2019/2023) is restricted (registered
   download) and distributed as Stata .dta (2023) and SPSS .sav tables;
-  scripts/mong_writer.py writes only the columns the loader reads, with
+  scripts/mongolia_writer.py writes only the columns the loader reads, with
   fresh synthetic ids and shuffled household/person attributes, keeping
   diary rows intact.
 - ovin (OViN 2010-2017, ODiN's predecessor) is restricted (DANS) and
@@ -58,7 +61,7 @@ Run once from the project root with real data available:
     uv run python scripts/build_data_dir_template.py
 
 or regenerate only some sources:
-    uv run python scripts/build_data_dir_template.py tus odin
+    uv run python scripts/build_data_dir_template.py india odin
 """
 
 import mmap
@@ -66,10 +69,10 @@ import sys
 from pathlib import Path
 
 import polars as pl
-from csv_writer import sample_urug
-from dbf_writer import sample_braz, sample_mxod
+from csv_writer import sample_uruguay
+from dbf_writer import sample_brazil, sample_mexico
 from ddi_writer import build_ddi
-from mong_writer import sample_mong
+from mongolia_writer import sample_mongolia
 from nesstar_converter import (
     COMPACT_FAMILIES,
     NESSTAR_MAGIC,
@@ -83,7 +86,8 @@ from nesstar_converter import (
 )
 from nesstar_writer import build_nesstar_file
 from ovin_writer import sample_om, sample_ovin
-from sav_writer import sample_arg
+from parquet_writer import sample_chile
+from sav_writer import sample_argentina
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
 TEMPLATE_ROOT = Path(__file__).parent.parent / "data_dir_template"
@@ -771,7 +775,7 @@ def generate_odin():
 
 
 # ---------------------------------------------------------------------------
-# TUS (public data — real diaries intact, education/employment swapped)
+# INDIA (public data — real diaries intact, education/employment swapped)
 # ---------------------------------------------------------------------------
 
 
@@ -991,10 +995,10 @@ TUS_2019 = {
 }
 
 
-def generate_tus():
-    src = DATA_ROOT / "TUS"
-    dst = TEMPLATE_ROOT / "TUS"
-    print("Generating TUS...")
+def generate_india():
+    src = DATA_ROOT / "INDIA"
+    dst = TEMPLATE_ROOT / "INDIA"
+    print("Generating INDIA...")
 
     # 2024: the first two households of the first FSU, read off the head of
     # each (FSU/household-sorted) table rather than decoding millions of rows
@@ -1075,55 +1079,57 @@ def generate_tus():
 
 
 # ---------------------------------------------------------------------------
-# BRAZ (public data — direct sample, unmodified)
+# BRAZIL (public data — direct sample, unmodified)
 # ---------------------------------------------------------------------------
 
 
-def generate_braz():
-    print("Generating BRAZ...")
-    sample_braz(DATA_ROOT / "BRAZ", TEMPLATE_ROOT / "BRAZ", 5, SEED)
+def generate_brazil():
+    print("Generating BRAZIL...")
+    sample_brazil(DATA_ROOT / "BRAZIL", TEMPLATE_ROOT / "BRAZIL", 5, SEED)
 
 
 # ---------------------------------------------------------------------------
-# MXOD (public data — direct sample, unmodified)
+# MEXICO (public data — direct sample, unmodified)
 # ---------------------------------------------------------------------------
 
 
-def generate_mxod():
-    print("Generating MXOD...")
-    sample_mxod(DATA_ROOT / "MEX", TEMPLATE_ROOT / "MEX", 5, SEED)
+def generate_mexico():
+    print("Generating MEXICO...")
+    sample_mexico(DATA_ROOT / "MEXICO", TEMPLATE_ROOT / "MEXICO", 5, SEED)
 
 
 # ---------------------------------------------------------------------------
-# ARG (public data — direct sample, unmodified)
+# ARGENTINA (public data — direct sample, unmodified)
 # ---------------------------------------------------------------------------
 
 
-def generate_arg():
-    print("Generating ARG...")
-    sample_arg(DATA_ROOT / "ARG", TEMPLATE_ROOT / "ARG", 5, SEED)
+def generate_argentina():
+    print("Generating ARGENTINA...")
+    sample_argentina(
+        DATA_ROOT / "ARGENTINA", TEMPLATE_ROOT / "ARGENTINA", 5, SEED
+    )
 
 
 # ---------------------------------------------------------------------------
-# URUG (public data — direct sample, unmodified)
+# URUGUAY (public data — direct sample, unmodified)
 # ---------------------------------------------------------------------------
 
 
-def generate_urug():
-    print("Generating URUG...")
-    sample_urug(DATA_ROOT / "URUG", TEMPLATE_ROOT / "URUG", 5, SEED)
+def generate_uruguay():
+    print("Generating URUGUAY...")
+    sample_uruguay(DATA_ROOT / "URUGUAY", TEMPLATE_ROOT / "URUGUAY", 5, SEED)
 
 
 # ---------------------------------------------------------------------------
-# MONG (restricted — anonymized: shuffled attributes, intact diaries, fresh ids)
+# MONGOLIA (restricted — anonymized: shuffled attributes, intact diaries, fresh ids)
 # ---------------------------------------------------------------------------
 
 
-def generate_mong():
-    print("Generating MONG...")
-    sample_mong(
-        DATA_ROOT / "MONG",
-        TEMPLATE_ROOT / "MONG",
+def generate_mongolia():
+    print("Generating MONGOLIA...")
+    sample_mongolia(
+        DATA_ROOT / "MONGOLIA",
+        TEMPLATE_ROOT / "MONGOLIA",
         5,
         SEED,
         require_road_travel=True,
@@ -1153,6 +1159,16 @@ def generate_om():
 
 
 # ---------------------------------------------------------------------------
+# CHILE (public data — direct sample, unmodified)
+# ---------------------------------------------------------------------------
+
+
+def generate_chile():
+    print("Generating CHILE...")
+    sample_chile(DATA_ROOT / "CHILE", TEMPLATE_ROOT / "CHILE", 5, SEED)
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1167,12 +1183,13 @@ GENERATORS = {
     "odin": generate_odin,
     "ovin": generate_ovin,
     "om": generate_om,
-    "tus": generate_tus,
-    "braz": generate_braz,
-    "mxod": generate_mxod,
-    "arg": generate_arg,
-    "urug": generate_urug,
-    "mong": generate_mong,
+    "india": generate_india,
+    "brazil": generate_brazil,
+    "mexico": generate_mexico,
+    "argentina": generate_argentina,
+    "uruguay": generate_uruguay,
+    "mongolia": generate_mongolia,
+    "chile": generate_chile,
 }
 
 if __name__ == "__main__":

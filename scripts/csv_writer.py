@@ -1,7 +1,7 @@
 """Sample delimited text tables by household id, copying lines byte for byte.
 
 Used for open-data sources whose raw tables are CSVs linked by a household
-id in the first column (urug), so the sample keeps the original encoding,
+id in the first column (uruguay), so the sample keeps the original encoding,
 BOM, delimiter and line endings.
 """
 
@@ -22,13 +22,13 @@ def write_csv_subset(src: Path, dst: Path, ids: set[bytes], sep: bytes) -> int:
     return len(kept)
 
 
-def sample_urug(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
+def sample_uruguay(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """Write a Montevideo EOD 2016 sample of `n` households across its tables.
 
     The data is openly published, so records are copied unmodified, along
     with the codebooks.
     """
-    from foundata.urug import (
+    from foundata.uruguay import (
         HOUSEHOLDS_PATH,
         PERSONS_PATH,
         STAGES_PATH,

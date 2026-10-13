@@ -26,7 +26,7 @@ def write_dbf_subset(src: str | Path, dst: str | Path, rows) -> int:
     return len(subset)
 
 
-def sample_braz(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
+def sample_brazil(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """Write a São Paulo OD sample of `n` households, plus the zone table.
 
     The data is openly published, so records are copied unmodified. One
@@ -35,7 +35,7 @@ def sample_braz(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """
     import polars as pl
 
-    from foundata.braz import OD_PATH, ZONES_PATH, read_dbf
+    from foundata.brazil import OD_PATH, ZONES_PATH, read_dbf
 
     ids = read_dbf(src_root / OD_PATH, columns=["ID_DOM", "TOT_FAM"])
     ids = ids.with_row_index("row")
@@ -51,7 +51,7 @@ def sample_braz(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     print(f"  households: {len(sampled)}, rows: {n_rows}")
 
 
-def sample_mxod(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
+def sample_mexico(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """Write a Mexico City EOD sample of `n` households across its tables.
 
     The data is openly published, so records are copied unmodified: the
@@ -60,8 +60,8 @@ def sample_mxod(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
     """
     import polars as pl
 
-    from foundata.braz import read_dbf
-    from foundata.mxod import (
+    from foundata.brazil import read_dbf
+    from foundata.mexico import (
         HOUSEHOLDS_PATH,
         PERSONS_PATH,
         STAGES_PATH,

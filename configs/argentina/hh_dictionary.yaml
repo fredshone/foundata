@@ -1,0 +1,208 @@
+# Household-level dictionary for argentina: Argentine household mobility surveys
+# published by the Ministerio de Transporte (DGPPSE), see
+# https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas
+# Five surveys are combined into one source; each is keyed by a short name:
+#   salta   EMD Área Metropolitana de Salta (2012)
+#   rc      EMD Resistencia - Corrientes (2013)
+#   nq      EMD Neuquén - Cipolletti (2012)
+#   sfp     EMD Santa Fe - Paraná (2012)
+#   enmodo  ENMODO, Región Metropolitana de Buenos Aires (2009-2010)
+# Raw data is SPSS .sav, one table per level. Value maps hold a `default`
+# (the shared EMD questionnaire codes) plus per-survey overrides. Codes and
+# labels come from the value labels embedded in the .sav files.
+
+column_mappings:
+  salta:
+    ID_HOGAR: hid
+    Tipo_Vivienda: dwelling
+    Dominio: hh_zone  # dominio de estimación
+    Cantidad_veh_mot: cars  # null when the hogar has none
+    Cantidas_motos_ciclom: motorcycles  # null when the hogar has none
+    Ingresos_Imputados: hh_income  # monthly ARS; Ingresos_declarados is the unimputed answer
+  rc:
+    ID_HOGAR: hid
+    Fecha: interview_date
+    II_A_tipo_vivienda: dwelling
+    DOMINIO: hh_zone
+    III_A_vehic_mot_cant: cars
+    III_B_moto1_propiedad: moto_1  # motos are counted from the per-moto rows
+    III_B_moto2_propiedad: moto_2
+    III_B_moto3_propiedad: moto_3
+    III_B_moto4_propiedad: moto_4
+    II_B_ingreso_total: hh_income  # monthly ARS, no missing values
+  nq:
+    ID_HOGAR: hid
+    Dia: interview_day
+    Mes: interview_month
+    Ano: interview_year  # "Año" in the raw file, see argentina.read_sav
+    Vivienda: dwelling
+    Loc: hh_zone  # localidad
+    Veh_Mot: cars
+    Mot_Cicl: motorcycles
+    Ing_tot_declarados: hh_income  # monthly ARS, declared (-98 NS/NC)
+  sfp:
+    ID_HOGAR: hid
+    C02A01: dwelling
+    DOMINIO: hh_zone
+    C03A01B: cars
+    C03B09B: motorcycles
+    ING_IMP: hh_income  # monthly ARS imputed; C02B01 is the unimputed answer
+  enmodo:
+    IDH: hid
+    TIPOVIVI: dwelling
+    PARTIDO: hh_zone
+    CANAUTOS: cars
+    MOTO: motorcycles
+    CICLOMO: mopeds
+    z_Quintil_ing_per_capita_AD_EQUIV: hh_income_band  # no income amount
+
+# Survey year, used when a person's diary date is unknown (ENMODO records
+# none: fieldwork ran 2009-2010).
+year:
+  salta: 2012
+  rc: 2013
+  nq: 2012
+  sfp: 2012
+  enmodo: 2009
+
+# Missing-value codes for counts and income (Ns/Nc, sin respuesta).
+missing_codes: [-998, -999, -99, -98, -95, 99999]
+
+# Incomes are monthly pesos. Annual EUR = monthly x 12 x eur_per_ars, using
+# the average exchange rate of the fieldwork year (2012 ~5.85 ARS/EUR,
+# 2013 ~7.27 ARS/EUR). Salta and Santa Fe-Paraná use the survey's imputed
+# income (40% and 49% of households imputed); swap the column_mappings to the
+# declared columns to drop imputation.
+eur_per_ars:
+  salta: 0.171
+  rc: 0.138
+  nq: 0.171
+  sfp: 0.171
+  enmodo: 0.192  # 2009-2010 ~5.2 ARS/EUR
+
+# ENMODO records only the quintile of income per adult equivalent, so annual
+# household income (ARS) is sampled uniformly from a range per quintile and
+# converted with eur_per_ars. The publication gives no cut-points, only mean
+# monthly household income per quintile (Tabla 2.2.14: $1,320.95, $2,193.23,
+# $2,986.77, $4,116.48, $7,424.34). Ranges meet at the midpoints between
+# adjacent means; Q1's lower and Q5's upper bound centre those ranges on
+# their means. Monthly x 12.
+hh_income_bands:
+  enmodo:
+    1: [10618, 21085]
+    2: [21085, 31080]
+    3: [31080, 42620]
+    4: [42620, 69245]
+    5: [69245, 108939]
+
+# dwelling mapping (tipo de vivienda particular)
+  # Valid values: house, flat, other, unknown
+dwelling:
+  default:
+    -97: other  # otro
+    1: house  # casa
+    2: other  # rancho
+    3: other  # casilla
+    4: flat  # departamento
+    5: other  # pieza(s) en inquilinato
+    6: other  # pieza en hotel familiar / pensión
+    7: other  # local no construido para habitación
+  enmodo:
+    1: flat  # departamento
+    2: house  # casa
+    3: house  # casa en barrio cerrado/country
+    4: flat  # departamento "tipo casa" (PH) o "de pasillo"
+    5: other  # casilla/rancho aislado
+    6: other  # casilla/rancho en villa de emergencia
+    7: other  # pieza de inquilinato
+    8: other  # pieza en pensión u hotel
+    9: other  # local no construido para habitación
+    10: other  # otra
+
+# hh_zone mapping, from the estimation domain (or locality / partido).
+# Localities are classed by approximate 2010 census population: urban
+# >= 100,000, suburban 2,500-99,999, rural < 2,500.
+  # Valid values: urban, suburban, rural, unknown
+hh_zone:
+  default: {}
+  salta:
+    CC: urban  # centro departamento Capital
+    RC: urban  # resto departamento Capital
+    CO: suburban  # conurbano de Salta
+  rc:
+    1: urban  # macrocentro Corrientes
+    2: urban  # resto de Corrientes
+    3: urban  # macrocentro Resistencia
+    4: suburban  # conurbano Resistencia
+    5: urban  # resto Resistencia
+  nq:
+    1: urban  # Neuquén
+    2: suburban  # Cipolletti
+    3: suburban  # Centenario
+    4: suburban  # Allen
+    5: suburban  # Plottier
+    6: suburban  # Cinco Saltos
+    7: suburban  # General Fernández Oro
+    8: suburban  # Senillosa
+    9: suburban  # San Patricio del Chañar
+    10: suburban  # Campo Grande
+    11: suburban  # Vista Alegre
+    12: rural  # Contraalmirante Cordero
+  sfp:
+    1: urban  # Santa Fe centro
+    2: urban  # Santa Fe resto
+    3: suburban  # Santa Fe conurbano
+    4: urban  # Paraná centro
+    5: urban  # Paraná resto
+    6: suburban  # Paraná conurbano
+  enmodo:
+    # Ciudad de Buenos Aires (distritos escolares 1-21) and the 24 partidos
+    # of Gran Buenos Aires are urban; the outer partidos are suburban.
+    901: urban
+    902: urban
+    903: urban
+    904: urban
+    905: urban
+    906: urban
+    907: urban
+    908: urban
+    909: urban
+    910: urban
+    911: urban
+    912: urban
+    913: urban
+    914: urban
+    915: urban
+    916: urban
+    917: urban
+    918: urban
+    919: urban
+    920: urban
+    921: urban
+    28: urban  # Alte. Brown
+    35: urban  # Avellaneda
+    91: urban  # Berazategui
+    252: suburban  # Escobar
+    260: urban  # E. Echeverría
+    270: urban  # Ezeiza
+    274: urban  # Florencio Varela
+    371: urban  # General San Martín
+    408: urban  # Hurlingham
+    410: urban  # Ituzaingó
+    412: urban  # José C. Paz
+    427: urban  # La Matanza
+    434: urban  # Lanús
+    490: urban  # Lomas de Zamora
+    515: urban  # Malvinas Argentinas
+    539: urban  # Merlo
+    560: urban  # Moreno
+    568: urban  # Morón
+    638: suburban  # Pilar
+    648: suburban  # Pte. Perón
+    658: urban  # Quilmes
+    749: urban  # San Fernando
+    756: urban  # San Isidro
+    760: urban  # San Miguel
+    805: urban  # Tigre
+    840: urban  # Tres de Febrero
+    861: urban  # Vicente López

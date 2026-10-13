@@ -1,0 +1,60 @@
+# Household-level dictionary for chile (Encuesta Origen-Destino de Santiago
+# 2012, SECTRA / Ministerio de Transportes y Telecomunicaciones). Open data,
+# taken as parquet from github.com/PLUMAS-research/palomatrix-dtpm
+# (src/palomatrix/eod/datos), a lossless conversion of the original CSVs.
+# Raw data: CHILE/hogares.parquet, one row per hogar (Hogar), and
+# CHILE/vehiculos.parquet, one row per vehicle. Codes from codigos.parquet.
+
+column_mappings:
+  hogares:
+    Hogar: hid
+    Zona: hh_zone  # EOD zone of the dwelling (1-866)
+    Fecha: date  # travel day, "DD-MM-YYYY" (matches DiaAsig)
+    NumPer: hh_size
+    Propiedad: ownership
+    IngresoHogar: hh_income  # monthly CLP, sum of members' IngresoFinal
+  vehiculos:
+    Hogar: hid
+    TipoVeh: vehicle_type
+
+# ownership mapping (Propiedad)
+  # Valid values: owned, rented, other, unknown
+ownership:
+  1: owned  # propia (pagada totalmente)
+  2: owned  # propia (pagándose a plazo)
+  3: rented  # arrendada
+  4: other  # cedida por trabajo o servicio
+  5: other  # cedida gratuitamente
+  6: other  # ocupación irregular
+  7: other  # otra
+
+# vehicles counts the household's vehicles of these types (TipoVeh). Work
+# vehicles (furgón escolar, camión, bus, taxi) are left out.
+vehicle_types:
+  - 1  # auto
+  - 2  # motocicleta
+  - 3  # camioneta o vehículo todo terreno
+  - 5  # van, minivan u otro tipo de furgón
+  - 9  # otro vehículo motorizado
+
+# hh_income: IngresoHogar is the sum of the members' monthly income
+# (IngresoFinal), in which the survey imputes missing amounts
+# (personas.IngresoImputado: 0 sin imputar, 1 imputed with no amount or
+# bracket given, 2 amount imputed within the bracket given). ~68% of
+# households have at least one imputed member. A household's income is null
+# if any member's IngresoImputado is not listed here.
+income_imputation_codes: [0, 1, 2]
+
+# Annual EUR = monthly CLP x 12 x eur_per_clp, at the average exchange rate
+# of the travel year (2012 ~624 CLP/EUR, 2013 ~658 CLP/EUR).
+eur_per_clp:
+  2012: 0.001603
+  2013: 0.001520
+
+# hh_zone (and trip ozone/dzone) from the weighted residential population
+# density of the EOD zone (persons per km², zone areas in
+# configs/chile/zones.csv from scripts/compute_chile_zones.py). Zones with no
+# sampled residents, and the external zones (0, 999), are unknown.
+density_thresholds:
+  urban: 5000
+  suburban: 1000
