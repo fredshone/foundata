@@ -27,6 +27,10 @@ differently based on redistribution licensing:
 - chile (Santiago EOD 2012) is open data distributed as parquet tables;
   sampled households' rows in each table are written unmodified by
   scripts/parquet_writer.py, along with the code tables.
+- france (MobiSurvStd-standardised French surveys) mixes surveys under
+  different licences, so it is treated as restricted: scripts/parquet_writer.py
+  writes only the columns the loader reads, with fresh ids and shuffled
+  household/person attributes, keeping trip and leg rows intact.
 - india (India Time Use Survey) is distributed as a proprietary Nesstar
   binary + DDI XML rather than CSV, so its sample is decoded with
   nesstar_converter and re-encoded into a minimal synthetic Nesstar
@@ -88,7 +92,7 @@ from nesstar_converter import (
 )
 from nesstar_writer import build_nesstar_file
 from ovin_writer import sample_om, sample_ovin
-from parquet_writer import sample_chile
+from parquet_writer import sample_chile, sample_france
 from sav_writer import sample_argentina
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
@@ -1180,6 +1184,22 @@ def generate_chile():
 
 
 # ---------------------------------------------------------------------------
+# FRANCE (mixed licences — fresh ids, shuffled attributes)
+# ---------------------------------------------------------------------------
+
+
+def generate_france():
+    print("Generating FRANCE...")
+    sample_france(
+        DATA_ROOT / "FRANCE",
+        TEMPLATE_ROOT / "FRANCE",
+        ["lyon_2015", "angouleme_2012", "EGT2020"],
+        3,
+        SEED,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Main
 # ---------------------------------------------------------------------------
 
@@ -1201,6 +1221,7 @@ GENERATORS = {
     "uruguay": generate_uruguay,
     "mongolia": generate_mongolia,
     "chile": generate_chile,
+    "france": generate_france,
 }
 
 if __name__ == "__main__":

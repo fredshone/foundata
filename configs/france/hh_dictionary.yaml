@@ -1,0 +1,67 @@
+# Household-level dictionary for france: French household travel surveys
+# standardised by MobiSurvStd (https://mobisurvstd.github.io/MobiSurvStd/).
+# Raw data: FRANCE/<survey>/, one folder per survey (CEREMA EMD/EDGT/EDVM/EMC²
+# city surveys, the national EMP 2019 and the Île-de-France EGT 2020), each
+# with households.parquet, persons.parquet, trips.parquet, legs.parquet and
+# metadata.json. Every survey uses the same columns and modalities, so one
+# dictionary covers them all. households.parquet has one row per household
+# (household_id, 1..N within each survey).
+
+column_mappings:
+  household_id: hid
+  nb_persons: hh_size  # all members, including those not surveyed for trips
+  nb_cars: cars
+  nb_motorcycles: motorcycles  # null in some surveys: counted as 0
+  housing_type: dwelling
+  housing_status: ownership
+  home_insee_density: hh_zone  # INSEE grille de densité (1-7) of the home commune
+  income_lower_bound: income_lower  # monthly net EUR, EGT 2020 only
+  income_upper_bound: income_upper  # null for the open top band
+  trips_weekday: hh_weekday  # null when household trips span several weekdays
+  interview_date: interview_date
+
+# Survey folders to skip (folder names under FRANCE/). EMP 2019 is left out:
+# its diary day is drawn among the days the person travelled, so people who
+# stay home are under-represented (only those who didn't travel all week),
+# and it has no travel dates.
+exclude_surveys: [EMP2019]
+
+# dwelling mapping (housing_type)
+  # Valid values: house, flat, other, unknown
+dwelling:
+  house: house  # maison individuelle
+  apartment: flat  # appartement dans un immeuble collectif
+  other: other  # autre type de logement
+
+# ownership mapping (housing_status)
+  # Valid values: owned, rented, other, unknown
+ownership:
+  "owner:ongoing_loan": owned  # accédant à la propriété
+  "owner:fully_repaid": owned  # propriétaire, sans emprunt
+  "owner:usufructuary": owned  # usufruitier
+  "owner:unspecified": owned  # propriétaire
+  "tenant:public_housing": rented  # locataire HLM
+  "tenant:private": rented  # locataire du parc privé
+  "tenant:unspecified": rented  # locataire
+  rent_free: other  # logé gratuitement
+  university_resident: rented  # résidence universitaire
+  other: other  # autre
+
+# hh_zone (and trip ozone/dzone) from the INSEE density grid of the commune
+# (grille communale de densité, 7 levels).
+  # Valid values: urban, suburban, rural, unknown
+hh_zone:
+  1: urban  # commune densément peuplée
+  2: urban  # centre urbain intermédiaire
+  3: suburban  # ceinture urbaine
+  4: suburban  # petite ville
+  5: rural  # bourg rural
+  6: rural  # rural à habitat dispersé
+  7: rural  # rural à habitat très dispersé
+
+# hh_income: only EGT 2020 records income, as a band of monthly NET household
+# income in EUR (0-800, ..., 4500-5500, 5500+). Annual income is sampled
+# uniformly within the band x 12. The open top band (5500+) is sampled up to
+# open_band_upper. Other surveys have no income: null.
+open_band_upper: 10000
+eur_rate: 1.0

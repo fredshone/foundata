@@ -565,3 +565,37 @@ def test_missing_acts_drops_unknown_or_null_activities_only():
 
     assert trips_out["pid"].to_list() == ["a", "a"]
     assert attrs_out["pid"].to_list() == ["a", "d"]
+
+
+def make_mode_trip(mode: str, distance: float, duration: int) -> pl.DataFrame:
+    return pl.DataFrame(
+        {
+            "pid": ["a"],
+            "seq": [0],
+            "mode": [mode],
+            "tst": [600],
+            "tet": [600 + duration],
+            "distance": [distance],
+        }
+    )
+
+
+def feasible(df: pl.DataFrame) -> bool:
+    _, result = filter.feasible_trips(None, df)
+    return len(result) == 1
+
+
+def test_feasible_trips_rail_allows_high_speed():
+    # 500 km in 2 hours is 250 km/h: fine for rail, too fast by car
+    assert feasible(make_mode_trip("rail", 500, 120))
+    assert not feasible(make_mode_trip("car", 500, 120))
+
+
+def test_feasible_trips_rail_speed_limit():
+    # 700 km in 2 hours is 350 km/h, over the rail limit
+    assert not feasible(make_mode_trip("rail", 700, 120))
+
+
+def test_feasible_trips_max_distance():
+    assert feasible(make_mode_trip("rail", 900, 240))
+    assert not feasible(make_mode_trip("rail", 1100, 300))

@@ -1,0 +1,17 @@
+{
+  "name": "lyon_2015",
+  "type": "EDGT",
+  "survey_method": "mixed",
+  "nb_households": 16361,
+  "nb_cars": 21148,
+  "nb_motorcycles": 709,
+  "nb_persons": 36564,
+  "nb_trips": 99585,
+  "nb_legs": 167115,
+  "nb_special_locations": 99,
+  "nb_detailed_zones": 1191,
+  "nb_draw_zones": 169,
+  "start_date": "2014-10-08",
+  "end_date": "2015-03-29",
+  "insee": "69123"
+}

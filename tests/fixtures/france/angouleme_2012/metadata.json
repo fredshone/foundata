@@ -1,0 +1,17 @@
+{
+  "name": "angouleme_2012",
+  "type": "EDVM",
+  "survey_method": "phone",
+  "nb_households": 2403,
+  "nb_cars": 1786,
+  "nb_motorcycles": 0,
+  "nb_persons": 5542,
+  "nb_trips": 11300,
+  "nb_legs": 11420,
+  "nb_special_locations": 24,
+  "nb_detailed_zones": 126,
+  "nb_draw_zones": 18,
+  "start_date": "2012-03-14",
+  "end_date": "2012-05-26",
+  "insee": "16015"
+}

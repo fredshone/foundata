@@ -1,0 +1,17 @@
+{
+  "name": "EGT2020",
+  "type": "EGT2020",
+  "survey_method": "mixed",
+  "nb_households": 4766,
+  "nb_cars": 4862,
+  "nb_motorcycles": 431,
+  "nb_persons": 10470,
+  "nb_trips": 35656,
+  "nb_legs": 62398,
+  "nb_special_locations": 0,
+  "nb_detailed_zones": 0,
+  "nb_draw_zones": 0,
+  "start_date": "2018-01-23",
+  "end_date": "2020-03-14",
+  "insee": "75056"
+}

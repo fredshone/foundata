@@ -1,0 +1,137 @@
+# Person-level dictionary for france (MobiSurvStd-standardised surveys).
+# Raw data: FRANCE/<survey>/persons.parquet, one row per household member
+# (person_id, 1..N within each survey). Only persons with is_surveyed = true
+# reported a travel day; the others are dropped from attributes but still
+# counted in hh_size (nb_persons). CEREMA telephone surveys (EDVM, EMC²)
+# survey one or two members per household, EMP 2019 one member, face-to-face
+# EMD/EDGT and EGT everyone aged 5+ (11+ in some EDVM).
+
+column_mappings:
+  person_id: pid
+  household_id: hid
+  age: age
+  woman: sex  # boolean
+  reference_person_link: relationship
+  education_level: education
+  detailed_professional_occupation: employment
+  pcs_category_code2020: pcs2020
+  pcs_category_code2003: pcs2003
+  pcs_group_code: pcs_group
+  work_only_at_home: work_only_at_home
+  telework: telework
+  has_driving_license: has_licence
+  has_travel_inconvenience: disability  # boolean, only asked in a few surveys
+  is_surveyed: is_surveyed
+  sample_weight_surveyed: weight  # expands surveyed persons to the population
+
+# sex mapping (woman)
+  # Valid values: male, female, other, unknown
+sex:
+  true: female
+  false: male
+
+# relationship mapping (reference_person_link)
+  # Valid values: self, partner, child, parent, sibling, unrelated, relative, other, unknown
+relationship:
+  reference_person: self  # personne de référence
+  spouse: partner  # conjoint
+  child: child  # enfant
+  roommate_or_tenant: unrelated  # colocataire, locataire, sous-locataire
+  "other:relative": relative  # autre membre de la famille
+  "other:non_relative": unrelated  # autre (hors famille)
+
+# education mapping (education_level, highest level reached; null for
+# current students)
+  # Valid values: some, none, school, high-school, degree, unknown, void
+education:
+  no_studies_or_no_diploma: none  # pas d'études ou aucun diplôme
+  primary: school  # école primaire / CEP
+  "secondary:no_bac": school  # collège ou lycée, sans le baccalauréat
+  "secondary:bac": high-school  # baccalauréat
+  "higher:at_most_bac+2": degree  # BAC+2 au plus (BTS, DUT, DEUG, ...)
+  "higher:at_least_bac+3": degree  # BAC+3 ou plus
+
+# employment mapping (detailed_professional_occupation)
+  # Valid values: employed, unemployed, retired, student, unknown, void
+employment:
+  "worker:full_time": ft-employed  # travail à temps plein
+  "worker:part_time": pt-employed  # travail à temps partiel
+  "worker:unspecified": employed  # travail
+  "student:primary_or_secondary": student  # élève (primaire, secondaire)
+  "student:higher": student  # étudiant (supérieur)
+  "student:apprenticeship": student  # apprentissage, formation en alternance
+  "student:unspecified": student
+  "other:unemployed": unemployed  # chômeur, recherche un emploi
+  "other:retired": retired  # retraité
+  "other:homemaker": unemployed  # au foyer
+  "other:unspecified": unknown  # autre situation
+
+# occupation for workers, from the PCS category (2-digit, 2020 codes where
+# the survey uses them, else 2003), falling back to the PCS group (1 digit).
+# Non-workers are void.
+  # Valid values: clerical, manual, managerial, operator, professional, service, other, technical, unknown, void
+occupation:
+  10: other  # agriculteurs exploitants
+  21: other  # artisans
+  22: other  # commerçants et assimilés
+  23: managerial  # chefs d'entreprise de 10 salariés ou plus
+  31: professional  # professions libérales
+  32: professional  # cadres de la fonction publique, professions intellectuelles et artistiques (2003)
+  33: professional  # cadres de la fonction publique
+  34: professional  # professeurs, professions scientifiques
+  35: professional  # professions de l'information, des arts et des spectacles
+  36: managerial  # cadres d'entreprise (2003)
+  37: managerial  # cadres administratifs et commerciaux d'entreprise
+  38: professional  # ingénieurs et cadres techniques d'entreprise
+  41: technical  # professions intermédiaires (2003)
+  42: professional  # professeurs des écoles, instituteurs
+  43: technical  # professions intermédiaires de la santé et du travail social
+  44: other  # clergé, religieux
+  45: clerical  # professions intermédiaires administratives de la fonction publique
+  46: clerical  # professions intermédiaires administratives et commerciales des entreprises
+  47: technical  # techniciens
+  48: technical  # contremaîtres, agents de maîtrise
+  51: clerical  # employés de la fonction publique (2003)
+  52: clerical  # employés civils et agents de service de la fonction publique
+  53: service  # policiers, militaires
+  54: clerical  # employés administratifs d'entreprise
+  55: service  # employés de commerce
+  56: service  # personnels des services directs aux particuliers
+  61: manual  # ouvriers qualifiés (2003)
+  62: manual  # ouvriers qualifiés de type industriel
+  63: manual  # ouvriers qualifiés de type artisanal
+  64: operator  # chauffeurs
+  65: operator  # ouvriers qualifiés de la manutention, du magasinage et du transport
+  66: manual  # ouvriers non qualifiés (2003)
+  67: manual  # ouvriers non qualifiés de type industriel
+  68: manual  # ouvriers non qualifiés de type artisanal
+  69: manual  # ouvriers agricoles
+occupation_group:
+  1: other  # agriculteurs exploitants
+  2: other  # artisans, commerçants et chefs d'entreprise
+  3: professional  # cadres et professions intellectuelles supérieures
+  4: technical  # professions intermédiaires
+  5: clerical  # employés
+  6: manual  # ouvriers
+
+# can_wfh for workers: yes if they telework (any frequency) or work only at
+# home, no if they never telework. Non-workers are void.
+  # Valid values: yes, no, unknown, void
+can_wfh:
+  "yes:weekly": "yes"
+  "yes:monthly": "yes"
+  "yes:occasionally": "yes"
+  "no": "no"
+
+# has_licence mapping (has_driving_license, car licence)
+  # Valid values: yes, no, unknown, void
+has_licence:
+  "yes": "yes"
+  "no": "no"
+  in_progress: "no"  # apprentissage, conduite accompagnée
+
+# disability mapping (has_travel_inconvenience: gêne dans les déplacements)
+  # Valid values: yes, no, unknown
+disability:
+  true: "yes"
+  false: "no"

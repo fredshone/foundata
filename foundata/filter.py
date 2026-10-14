@@ -156,20 +156,24 @@ def feasible_trips(
     attributes: Optional[pl.DataFrame],
     trips: pl.DataFrame,
     on: str = "pid",
-    max_distance: float = 200,
+    max_distance: float = 1000,
     max_duration: float = 720,
     max_speed: float = 3,
+    max_rail_speed: float = 5,
 ) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
     """Filter out plans containing trips long too long distances or durations or
     that are too fast.
 
     Args:
         attributes: DataFrame of plan attributes. If None, only trips are filtered.
-        trips: DataFrame of trips with columns matching `on`, "tst", "tet".
+        trips: DataFrame of trips with columns matching `on`, "tst", "tet",
+            "distance" and "mode".
         on: Column name to join on (default "pid").
-        max_distance: Maximum allowed trip distance in km (default 200).
+        max_distance: Maximum allowed trip distance in km (default 1000).
         max_duration: Maximum allowed trip duration in minutes (default 720).
         max_speed: Maximum allowed average speed in km/min (default 3).
+        max_rail_speed: Maximum allowed average speed in km/min for rail
+            trips (default 5, ~300 km/h, so high-speed rail is kept).
 
     Returns:
         Tuple of (filtered attributes or None, filtered trips).
@@ -181,7 +185,9 @@ def feasible_trips(
             | (pl.col("tet") - pl.col("tst") > max_duration)
             | (
                 (pl.col("distance") / (pl.col("tet") - pl.col("tst")))
-                > max_speed
+                > pl.when(pl.col("mode") == "rail")
+                .then(max_rail_speed)
+                .otherwise(max_speed)
             )
         )
         .select(on)

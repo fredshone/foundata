@@ -31,24 +31,25 @@ The latest output using `uv run foundata run` is as follows:
 
 | Source    | Plans         | Missing attributes | Trips          | Trip kms (millions) |
 |-----------|---------------|--------------------|----------------|---------------------|
-| nts       | 2,483,044     | 20%                | 4,420,967      | 45.4                |
-| ktdb      | 2,223,232     | 30%                | 4,344,040      | 36.2                |
+| nts       | 2,496,735     | 20%                | 4,438,809      | 47.7                |
+| ktdb      | 2,225,798     | 30%                | 4,350,059      | 37.4                |
 | india     | 875,802       | 50%                | 1,903,711      | n/a                 |
-| nhts      | 631,537       | 27%                | 2,203,880      | 24.9                |
-| odin      | 383,679       | 26%                | 886,686        | 9.6                 |
-| mexico    | 348,070       | 48%                | 494,949        | 5.3                 |
-| ovin      | 290,618       | 33%                | 722,782        | 7.5                 |
-| om        | 158,503       | 41%                | 421,213        | 4.1                 |
-| vista     | 89,465        | 30%                | 235,847        | 2.0                 |
+| nhts      | 634,627       | 27%                | 2,216,636      | 26.4                |
+| france    | 581,344       | 28%                | 2,046,694      | 15.3                |
+| odin      | 384,215       | 26%                | 887,774        | 9.7                 |
+| mexico    | 348,072       | 48%                | 494,953        | 5.3                 |
+| ovin      | 291,125       | 33%                | 724,075        | 7.7                 |
+| om        | 158,815       | 41%                | 421,908        | 4.2                 |
+| vista     | 89,507        | 30%                | 235,983        | 2.0                 |
 | argentina | 85,950        | 34%                | 133,105        | 0.9                 |
 | brazil    | 83,895        | 33%                | 150,846        | 0.9                 |
-| ltds      | 60,522        | 36%                | 108,337        | 0.9                 |
-| chile     | 56,574        | 25%                | 104,749        | 0.8                 |
-| qhts      | 48,718        | 33%                | 117,885        | 1.2                 |
+| ltds      | 60,626        | 36%                | 108,603        | 0.9                 |
+| chile     | 56,580        | 25%                | 104,761        | 0.8                 |
+| qhts      | 48,739        | 33%                | 117,936        | 1.2                 |
 | mongolia  | 46,100        | 34%                | 99,267         | n/a                 |
-| cmap      | 25,716        | 7%                 | 76,658         | 0.5                 |
+| cmap      | 25,733        | 7%                 | 76,739         | 0.5                 |
 | uruguay   | 5,173         | 38%                | 10,753         | 0.1                 |
-| **total** | **7,896,598** | **30%**            | **16,435,675** | **140.2**           |
+| **total** | **8,498,836** | **30%**            | **18,522,612** | **161.0**           |
 
 
 \* Plans: a sequence of activities and associated trips within a 24hr period starting at midnight.
@@ -62,15 +63,15 @@ Foundata makes use of open (safely available, either immediately, or available v
 
 |  Name             | Location  | ~Years    | Note              | Source             |
 | ----------------- |---------- |-----------|-------------------|--------------------|
-| ODIN        | NL | 2018-24 | household income deciles converted to gross | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
+| ODIN        | NL | 2018-24 | Household income deciles converted to gross | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
 | OVIN        | NL | 2010-17 | ODiN's predecessor; respondents with foreign, truck or holiday trips are dropped, and professional travel (no trip detail) is kept only as time at work; disposable income bands converted to gross | [Request](https://ssh.datastations.nl/)     |
 | OM          | NL | 2005-07 | MON, OViN's predecessor; whole households; household income summed from members' net income bands and converted to gross (null for ~24% of persons); no migration background or household position | [Request](https://ssh.datastations.nl/)     |
 | KTDB        | KR |  2010,16,21  | National surveys, no weights. 2021 personal survey: mostly Thursdays, no income info for young people. 2016 household (mostly Thursdays) and weekend (Saturday and Sunday diaries) surveys. 2010 household (weekday, date unknown) and weekend (Sat/Sun) surveys with trip ends at 시군구 level only, so distances come from district centroids or duration x speed | Open [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
-| NTS         | UK      | 2002-24     |                   | [Request](https://ukdataservice.ac.uk/)            |
+| NTS         | UK      | 2002-24     | UK multi-day responses are split into separate persons and schedules    | [Request](https://ukdataservice.ac.uk/)            |
 | CMAP        | US      | 17-19     | Small but good attribute availability | Open [data](https://github.com/CMAP-REPOS/mydailytravel) |
 | NHTS        | US      | 2001,09,17,22 |               | Open [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
-| QHTS        | AUS | 2012-24     |          | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
-| VISTA       | AUS | 2012-25  |             | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
+| QHTS        | AUS | 2012-24     | Queensland Australia         | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
+| VISTA       | AUS | 2012-25  | Victoria Australia            | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
 | LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
 | INDIA       | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
 | BRAZIL      | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
@@ -79,11 +80,11 @@ Foundata makes use of open (safely available, either immediately, or available v
 | URUGUAY     | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
 | MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
 | CHILE       | CL | 2012-13 | Santiago metro region (EOD 2012), all days of the week incl. summer season, ~68% of households have some member income imputed by the survey, distances from straight-line block or zone centroids | Open [data](https://github.com/PLUMAS-research/palomatrix-dtpm/tree/main/src/palomatrix/eod/datos) (SECTRA EOD 2012 as parquet) |
+| FRANCE      | FR | 2008-23 | 85 surveys standardised by [MobiSurvStd](https://mobisurvstd.github.io/MobiSurvStd/): CEREMA city surveys (EMD, EDGT, EDVM, EMC²) and Île-de-France EGT 2020 (national EMP 2019 excluded: its diary day is always a travel day); mostly weekdays; phone surveys cover 1-2 members per household; income in EGT 2020 only; weights normalised within each survey; distances from survey travel distances or straight line x 1.3 | Via [MobiSurvStd](https://github.com/MobiSurvStd/MobiSurvStd) (each survey has its own licence) |
 
 
 ### In progress or todo
 
-- Various FR [repo](https://github.com/MobiSurvStd/MobiSurvStd)     |
 - Bogotá EM 2023 / 2019
 - MTUS harmonised episodes (Korea) https://timeuse.org/
 - Tokyo PT 2008 / 2018
@@ -143,35 +144,34 @@ A sample of some trends:
 
 Data availability (non null or unknown) by source and attribute:
 
-| Attribute              | argentina | brazil | chile | cmap | india | ktdb | ltds | mexico | mongolia | nhts | nts  | odin | om   | ovin | qhts | uruguay | vista | all  |
-|------------------------|-----------|--------|-------|------|-------|------|------|--------|----------|------|------|------|------|------|------|---------|-------|------|
-| country                | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| year                   | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| weight                 | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| sex                    | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| hh_zone                | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| age                    | 100%      | 100%   | 100%  | 100% | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| hh_size                | 100%      | 100%   | 100%  | 100% | 100%  | 99%  | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
-| employment             | 100%      | 100%   | 99%   | 100% | 99%   | 100% | 100% | 100%   | 96%      | 96%  | 100% | 95%  | 98%  | 98%  | 96%  | 98%     | 90%   | 99%  |
-| hh_income              | 99%       | 100%   | 100%  | 99%  | 100%  | 98%  | 45%  | 0%     | 0%       | 95%  | 92%  | 98%  | 75%  | 99%  | 39%  | 0%      | 96%   | 90%  |
-| vehicles               | 100%      | 98%    | 100%  | 100% | 0%    | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 89%  |
-| relationship           | 100%      | 100%   | 100%  | 100% | 100%  | 95%  | 100% | 100%   | 100%     | 100% | 56%  | 84%  | 0%   | 100% | 100% | 99%     | 100%  | 82%  |
-| employed_type          | 59%       | 53%    | 99%   | 45%  | 57%   | 82%  | 53%  | 49%    | 40%      | 50%  | 100% | 95%  | 98%  | 98%  | 96%  | 54%     | 90%   | 81%  |
-| day                    | 26%       | 100%   | 100%  | 100% | 100%  | 39%  | 100% | 50%    | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 0%      | 100%  | 80%  |
-| has_licence            | 95%       | 0%     | 100%  | 100% | 0%    | 99%  | 100% | 0%     | 0%       | 88%  | 80%  | 100% | 100% | 100% | 100% | 93%     | 82%   | 75%  |
-| ownership              | 0%        | 100%   | 100%  | 100% | 50%   | 69%  | 0%   | 0%     | 100%     | 100% | 100% | 0%   | 0%   | 0%   | 0%   | 100%    | 100%  | 68%  |
-| avg_speed              | 65%       | 70%    | 76%   | 78%  | 0%    | 82%  | 63%  | 64%    | 0%       | 81%  | 65%  | 78%  | 82%  | 79%  | 78%  | 73%     | 74%   | 65%  |
-| month                  | 26%       | 100%   | 100%  | 100% | 0%    | 31%  | 0%   | 0%     | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 0%      | 100%  | 64%  |
-| dwelling               | 100%      | 0%     | 0%    | 100% | 0%    | 99%  | 0%   | 0%     | 100%     | 0%   | 90%  | 0%   | 0%   | 0%   | 84%  | 100%    | 100%  | 60%  |
-| education              | 99%       | 100%   | 100%  | 100% | 100%  | 4%   | 0%   | 100%   | 100%     | 100% | 67%  | 91%  | 83%  | 80%  | 0%   | 100%    | 0%    | 59%  |
-| occupation             | 59%       | 100%   | 43%   | 100% | 0%    | 97%  | 100% | 48%    | 99%      | 0%   | 65%  | 0%   | 0%   | 0%   | 48%  | 56%     | 100%  | 55%  |
-| race                   | 0%        | 0%     | 0%    | 99%  | 0%    | 0%   | 83%  | 0%     | 0%       | 99%  | 100% | 84%  | 0%   | 100% | 0%   | 0%      | 0%    | 48%  |
-| access_egress_distance | 0%        | 29%    | 33%   | 0%   | 0%    | 6%   | 24%  | 29%    | 0%       | 0%   | 89%  | 0%   | 0%   | 0%   | 0%   | 27%     | 0%    | 32%  |
-| disability             | 98%       | 0%     | 100%  | 100% | 0%    | 0%   | 0%   | 0%     | 69%      | 91%  | 58%  | 0%   | 0%   | 0%   | 100% | 0%      | 0%    | 29%  |
-| can_wfh                | 0%        | 0%     | 0%    | 98%  | 0%    | 51%  | 100% | 0%     | 0%       | 0%   | 13%  | 0%   | 0%   | 0%   | 0%   | 0%      | 0%    | 20%  |
-| max_temp_c             | 0%        | 0%     | 0%    | 100% | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 14%  |
-| rain                   | 0%        | 0%     | 0%    | 100% | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 14%  |
-
+| Attribute              | argentina | brazil | chile | cmap | france | india | ktdb | ltds | mexico | mongolia | nhts | nts  | odin | om   | ovin | qhts | uruguay | vista | all  |
+|------------------------|-----------|--------|-------|------|--------|-------|------|------|--------|----------|------|------|------|------|------|------|---------|-------|------|
+| country                | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| year                   | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| weight                 | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| sex                    | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| hh_zone                | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| age                    | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| hh_size                | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 99%  | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
+| employment             | 100%      | 100%   | 99%   | 100% | 98%    | 99%   | 100% | 100% | 100%   | 96%      | 96%  | 100% | 95%  | 98%  | 98%  | 96%  | 98%     | 90%   | 99%  |
+| vehicles               | 100%      | 98%    | 100%  | 100% | 100%   | 0%    | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 90%  |
+| hh_income              | 99%       | 100%   | 100%  | 99%  | 1%     | 100%  | 98%  | 45%  | 0%     | 0%       | 95%  | 92%  | 98%  | 75%  | 99%  | 39%  | 0%      | 96%   | 84%  |
+| relationship           | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 95%  | 100% | 100%   | 100%     | 100% | 56%  | 84%  | 0%   | 100% | 100% | 99%     | 100%  | 83%  |
+| employed_type          | 59%       | 53%    | 99%   | 45%  | 98%    | 57%   | 82%  | 53%  | 49%    | 40%      | 50%  | 100% | 95%  | 98%  | 98%  | 96%  | 54%     | 90%   | 83%  |
+| day                    | 26%       | 100%   | 100%  | 100% | 98%    | 100%  | 39%  | 100% | 50%    | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 0%      | 100%  | 81%  |
+| has_licence            | 95%       | 0%     | 100%  | 100% | 100%   | 0%    | 99%  | 100% | 0%     | 0%       | 88%  | 80%  | 100% | 100% | 100% | 100% | 93%     | 82%   | 77%  |
+| ownership              | 0%        | 100%   | 100%  | 100% | 74%    | 50%   | 69%  | 0%   | 0%     | 100%     | 100% | 100% | 0%   | 0%   | 0%   | 0%   | 100%    | 100%  | 69%  |
+| avg_speed              | 65%       | 70%    | 76%   | 78%  | 87%    | 0%    | 82%  | 63%  | 64%    | 0%       | 81%  | 65%  | 78%  | 82%  | 79%  | 78%  | 73%     | 74%   | 67%  |
+| month                  | 26%       | 100%   | 100%  | 100% | 94%    | 0%    | 31%  | 0%   | 0%     | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 0%      | 100%  | 66%  |
+| dwelling               | 100%      | 0%     | 0%    | 100% | 72%    | 0%    | 99%  | 0%   | 0%     | 100%     | 0%   | 90%  | 0%   | 0%   | 0%   | 84%  | 100%    | 100%  | 61%  |
+| education              | 99%       | 100%   | 100%  | 100% | 80%    | 100%  | 4%   | 0%   | 100%   | 100%     | 100% | 67%  | 91%  | 83%  | 80%  | 0%   | 100%    | 0%    | 60%  |
+| occupation             | 59%       | 100%   | 43%   | 100% | 97%    | 0%    | 97%  | 100% | 48%    | 99%      | 0%   | 65%  | 0%   | 0%   | 0%   | 48%  | 56%     | 100%  | 58%  |
+| race                   | 0%        | 0%     | 0%    | 99%  | 0%     | 0%    | 0%   | 83%  | 0%     | 0%       | 99%  | 100% | 84%  | 0%   | 100% | 0%   | 0%      | 0%    | 45%  |
+| access_egress_distance | 0%        | 29%    | 33%   | 0%   | 13%    | 0%    | 6%   | 24%  | 29%    | 0%       | 0%   | 89%  | 0%   | 0%   | 0%   | 0%   | 27%     | 0%    | 30%  |
+| disability             | 98%       | 0%     | 100%  | 100% | 3%     | 0%    | 0%   | 0%   | 0%     | 69%      | 91%  | 58%  | 0%   | 0%   | 0%   | 100% | 0%      | 0%    | 27%  |
+| can_wfh                | 0%        | 0%     | 0%    | 98%  | 64%    | 0%    | 51%  | 100% | 0%     | 0%       | 0%   | 13%  | 0%   | 0%   | 0%   | 0%   | 0%      | 0%    | 23%  |
+| max_temp_c             | 0%        | 0%     | 0%    | 100% | 0%     | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 13%  |
+| rain                   | 0%        | 0%     | 0%    | 100% | 0%     | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 13%  |
 
 
 ## Usage
@@ -238,7 +238,7 @@ foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`, `france`.
 
 ### Binning numeric attributes
 

@@ -13,6 +13,7 @@ from foundata import (
     cmap,
     filter,
     fix,
+    france,
     india,
     ktdb,
     ltds,
@@ -102,6 +103,7 @@ def runner(
         "uruguay",
         "mongolia",
         "chile",
+        "france",
     }
     if select:
         sources = set(select)
@@ -550,6 +552,32 @@ def runner(
             trips_config=trips_config,
         )
         attributes, trips = process_source(attributes, trips, "CHILE")
+        all_attributes.append(attributes)
+        all_trips.append(trips)
+
+    # ------------------------------------------------------------------
+    # FRANCE (MOBISURVSTD-STANDARDISED SURVEYS)
+    # ------------------------------------------------------------------
+    if "france" in sources:
+        hh_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "france" / "hh_dictionary.yaml"
+        )
+        person_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "france" / "person_dictionary.yaml"
+        )
+        trips_config = utils.load_yaml_config(
+            CONFIGS_ROOT / "france" / "trip_dictionary.yaml"
+        )
+
+        # every survey folder under FRANCE/ (CEREMA city surveys, EMP 2019,
+        # EGT 2020)
+        attributes, trips = france.load(
+            data_root=data_root / "FRANCE",
+            hh_config=hh_config,
+            person_config=person_config,
+            trips_config=trips_config,
+        )
+        attributes, trips = process_source(attributes, trips, "FRANCE")
         all_attributes.append(attributes)
         all_trips.append(trips)
 

@@ -20,7 +20,7 @@ from dbf_writer import sample_brazil, sample_mexico
 from ktdb_writer import sample_ktdb_2010, sample_ktdb_2016
 from mongolia_writer import sample_mongolia
 from ovin_writer import sample_om, sample_ovin
-from parquet_writer import sample_chile
+from parquet_writer import sample_chile, sample_france
 from sav_writer import sample_argentina
 
 DATA_ROOT = Path.home() / "Data" / "foundata"
@@ -503,6 +503,26 @@ def generate_chile():
 
 
 # ---------------------------------------------------------------------------
+# FRANCE
+# ---------------------------------------------------------------------------
+
+# a CEREMA face-to-face survey, a CEREMA phone survey (1-2 members per
+# household, approximate dates) and the EGT (the only survey with income)
+FRANCE_SURVEYS = ["lyon_2015", "angouleme_2012", "EGT2020"]
+
+
+def generate_france():
+    print("Generating FRANCE fixtures...")
+    sample_france(
+        DATA_ROOT / "FRANCE",
+        FIXTURE_ROOT / "france",
+        FRANCE_SURVEYS,
+        N_HOUSEHOLDS // len(FRANCE_SURVEYS),
+        SEED,
+    )
+
+
+# ---------------------------------------------------------------------------
 # Post-process
 # ---------------------------------------------------------------------------
 
@@ -554,5 +574,6 @@ if __name__ == "__main__":
     generate_uruguay()
     generate_mongolia()
     generate_chile()
+    generate_france()
     generate_post_process()
     print("Done.")

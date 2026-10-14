@@ -1,0 +1,133 @@
+# Trip-level dictionary for france (MobiSurvStd-standardised surveys).
+# Raw data: FRANCE/<survey>/trips.parquet, one row per trip (trip_index
+# 1-indexed within person), and legs.parquet, one row per leg. Each surveyed
+# person reports one day: usually the day before the interview (Monday to
+# Friday for the CEREMA surveys and EGT; any day for EMP 2019, where the day
+# is drawn among the days the person travelled in the previous week).
+# Times are minutes after midnight and already run past 1440 after midnight.
+
+column_mappings:
+  trips:
+    trip_id: trip_id
+    person_id: pid
+    household_id: hid
+    trip_index: seq  # 1-indexed
+    origin_purpose: oact
+    destination_purpose: dact
+    main_mode: mode  # survey-defined main mode
+    origin_insee_density: ozone  # INSEE density grid (1-7), see hh_dictionary
+    destination_insee_density: dzone
+    departure_time: tst
+    arrival_time: tet
+    trip_travel_distance_km: travel_distance  # network distance, survey-computed
+    trip_euclidean_distance_km: euclidean_distance
+    trip_weekday: weekday
+    trip_date: date  # approximate for some CEREMA surveys; null for EMP 2019
+  legs:
+    trip_id: trip_id
+    person_id: pid
+    mode_group: leg_mode_group
+    leg_travel_distance_km: leg_travel_distance
+    leg_euclidean_distance_km: leg_euclidean_distance
+    leg_travel_time: leg_travel_time  # minutes
+
+# act mapping (origin_purpose / destination_purpose, detailed purposes)
+  # Valid values: home, work, education, shop, leisure, visit, escort, other, unknown
+act:
+  "home:main": home  # domicile
+  "home:secondary": other  # résidence secondaire, autre logement
+  "work:usual": work  # lieu de travail habituel
+  "work:telework": work  # télétravail
+  "work:secondary": work  # autre lieu de travail
+  "work:business_meal": work  # repas d'affaires
+  "work:other": work  # autre motif professionnel
+  "work:professional_tour": work  # tournée professionnelle
+  "education:childcare": education  # crèche, nourrice
+  "education:usual": education  # lieu d'études habituel
+  "education:other": education  # autre lieu d'études
+  "shopping:daily": shop  # achats quotidiens
+  "shopping:weekly": shop  # achats hebdomadaires
+  "shopping:specialized": shop  # achats occasionnels
+  "shopping:unspecified": shop  # achats
+  "shopping:pickup": shop  # retrait de commande (drive, point relais)
+  "shopping:no_purchase": shop  # lèche-vitrine, sans achat
+  "shopping:tour_no_purchase": shop  # tournée de magasins sans achat
+  "task:healthcare:hospital": other  # hôpital
+  "task:healthcare:doctor": other  # rendez-vous médical
+  "task:healthcare": other  # santé
+  "task:procedure": other  # démarches administratives
+  "task:job_search": other  # recherche d'emploi
+  "task:other": other  # autres démarches
+  "leisure:sport_or_culture": leisure  # loisirs sportifs, culturels, associatifs
+  "leisure:walk_or_driving_lesson": leisure  # promenade, leçon de conduite
+  "leisure:lunch_break": shop  # pause déjeuner (meal)
+  "leisure:restaurant": shop  # restaurant (meal)
+  "leisure:visiting": visit  # visite à des parents ou amis
+  "leisure:visiting:parents": visit  # visite à la famille
+  "leisure:visiting:friends": visit  # visite à des amis
+  "leisure:other": leisure  # autres loisirs
+  "escort:activity:drop_off": escort  # accompagner quelqu'un à une activité
+  "escort:activity:pick_up": escort  # aller chercher quelqu'un à une activité
+  "escort:transport:drop_off": escort  # accompagner quelqu'un à un mode de transport
+  "escort:transport:pick_up": escort  # aller chercher quelqu'un à un mode de transport
+  "escort:unspecified:drop_off": escort  # accompagner quelqu'un
+  "escort:unspecified:pick_up": escort  # aller chercher quelqu'un
+  other: other  # autre motif
+
+# mode mapping (main_mode)
+  # Valid values: walk, bike, car, bus, rail, other, unknown
+mode:
+  walking: walk  # marche à pied
+  "bicycle:driver": bike
+  "bicycle:driver:shared": bike  # vélo en libre service
+  "bicycle:driver:traditional": bike
+  "bicycle:driver:traditional:shared": bike
+  "bicycle:driver:electric": bike  # vélo à assistance électrique
+  "bicycle:driver:electric:shared": bike
+  "bicycle:passenger": bike
+  "motorcycle:driver": car  # deux-roues motorisé
+  "motorcycle:passenger": car
+  "motorcycle:driver:moped": car  # cyclomoteur < 50 cm³
+  "motorcycle:passenger:moped": car
+  "motorcycle:driver:moto": car  # moto >= 50 cm³
+  "motorcycle:passenger:moto": car
+  "car:driver": car  # voiture, conducteur
+  "car:passenger": car  # voiture, passager
+  taxi: car
+  VTC: car  # voiture de transport avec chauffeur
+  taxi_or_VTC: car
+  "public_transit:urban": bus  # transport collectif urbain (non précisé)
+  "public_transit:urban:bus": bus
+  "public_transit:urban:coach": bus  # autocar (hors longue distance)
+  "public_transit:urban:tram": rail  # tramway
+  "public_transit:urban:metro": rail  # métro
+  "public_transit:urban:funicular": rail  # funiculaire
+  "public_transit:urban:rail": rail  # RER, train express
+  "public_transit:urban:TER": rail  # TER
+  "public_transit:urban:demand_responsive": bus  # transport à la demande
+  "public_transit:interurban:coach": bus  # car interurbain
+  "public_transit:interurban:TGV": rail
+  "public_transit:interurban:intercités": rail
+  "public_transit:interurban:other_train": rail
+  "public_transit:school": bus  # ramassage scolaire
+  reduced_mobility_transport: other  # transport PMR
+  employer_transport: bus  # transport employeur
+  "truck:driver": car  # fourgon, camionnette, camion
+  "truck:passenger": car
+  water_transport: other  # transport fluvial ou maritime
+  airplane: other
+  wheelchair: other  # fauteuil roulant
+  "personal_transporter:non_motorized": other  # trottinette, roller, skate
+  "personal_transporter:motorized": other  # trottinette électrique, gyroroue
+  "personal_transporter:unspecified": other
+  other: other
+
+# Distance (km): trip_travel_distance_km where the survey gives it, else the
+# euclidean distance between origin and destination x circuity. Some older
+# EDVM, EGT 2020 and EMP 2019 (partly) have no travel distance.
+circuity: 1.3
+
+# access_egress_distance: per transit trip (any public_transit leg), the
+# walking legs' distance (travel distance, else euclidean x circuity, else
+# leg_travel_time x walk_speed); averaged per person over transit trips.
+walk_speed: 4.5  # km/h
