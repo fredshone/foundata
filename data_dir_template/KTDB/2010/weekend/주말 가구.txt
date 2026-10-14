@@ -1,0 +1,7 @@
+sheet_code	sheet_type	home_memno	home_childno	car_yesno	car1	car2	car3	car4	car5	car6	car7	car_etc	home_type	home_jumyou	home_income	subway_time	busstop_time
+010090749000	2	2	0	2	0	0	0	0	0	0	0	0	1	1	2	0	4
+010230679001	2	3	0	2	1	0	0	0	0	1	0	0	1	1	6	30	5
+050600739003	2	3	0	2	1	0	0	0	0	0	0	0	1	1	3	25	2
+060670659005	2	2	0	2	0	0	0	0	0	0	0	0	1	1	3	0	5
+101370609002	2	4	0	1	2	0	0	0	0	0	0	0	1	1	4	5	3
+152360559004	2	2	0	1	0	0	0	0	0	0	0	0	2	1	1	5	5

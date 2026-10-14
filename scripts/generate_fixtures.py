@@ -17,6 +17,7 @@ from pathlib import Path
 import polars as pl
 from csv_writer import sample_uruguay
 from dbf_writer import sample_brazil, sample_mexico
+from ktdb_writer import sample_ktdb_2010, sample_ktdb_2016
 from mongolia_writer import sample_mongolia
 from ovin_writer import sample_om, sample_ovin
 from parquet_writer import sample_chile
@@ -364,8 +365,8 @@ def generate_nhts():
 
 
 def generate_ktdb():
-    src = DATA_ROOT / "KTDB"
-    dst = FIXTURE_ROOT / "ktdb"
+    src = DATA_ROOT / "KTDB" / "2021"
+    dst = FIXTURE_ROOT / "ktdb" / "2021"
     dst.mkdir(parents=True, exist_ok=True)
     print("Generating KTDB fixtures...")
 
@@ -394,6 +395,17 @@ def generate_ktdb():
         trips.write_csv().encode("euc-kr", errors="replace")
     )
     print(f"  persons: {len(persons)}, trips: {len(trips)}")
+
+    for year, sample in [
+        ("2016", sample_ktdb_2016),
+        ("2010", sample_ktdb_2010),
+    ]:
+        sample(
+            DATA_ROOT / "KTDB" / year,
+            FIXTURE_ROOT / "ktdb" / year,
+            N_HOUSEHOLDS,
+            SEED,
+        )
 
 
 # ---------------------------------------------------------------------------

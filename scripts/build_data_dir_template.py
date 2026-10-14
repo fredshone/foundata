@@ -48,7 +48,8 @@ differently based on redistribution licensing:
   households, writing only the columns the loader reads, with fresh
   synthetic ids and shuffled household and person attributes, keeping trip
   rows intact.
-- odin, ktdb, nts, ltds are restricted-access research datasets: real
+- odin, ktdb, nts, ltds are treated as restricted-access research datasets
+  (ktdb's 2016 and 2010 surveys via scripts/ktdb_writer.py): real
   respondent IDs are never reused (replaced with fresh synthetic ids,
   consistent across each source's tables), and demographic/attribute columns
   are independently shuffled across the sampled group so no real
@@ -72,6 +73,7 @@ import polars as pl
 from csv_writer import sample_uruguay
 from dbf_writer import sample_brazil, sample_mexico
 from ddi_writer import build_ddi
+from ktdb_writer import sample_ktdb_2010, sample_ktdb_2016
 from mongolia_writer import sample_mongolia
 from nesstar_converter import (
     COMPACT_FAMILIES,
@@ -419,8 +421,8 @@ def generate_vista():
 
 
 def generate_ktdb():
-    src = DATA_ROOT / "KTDB"
-    dst = TEMPLATE_ROOT / "KTDB"
+    src = DATA_ROOT / "KTDB" / "2021"
+    dst = TEMPLATE_ROOT / "KTDB" / "2021"
     dst.mkdir(parents=True, exist_ok=True)
     print("Generating KTDB...")
 
@@ -500,6 +502,15 @@ def generate_ktdb():
         trips.write_csv().encode("euc-kr", errors="replace")
     )
     print(f"  persons: {len(persons)}, trips: {len(trips)}")
+
+    # 2016 and 2010 household and weekend surveys, in their raw formats
+    for year, sample in [
+        ("2016", sample_ktdb_2016),
+        ("2010", sample_ktdb_2010),
+    ]:
+        sample(
+            DATA_ROOT / "KTDB" / year, TEMPLATE_ROOT / "KTDB" / year, 6, SEED
+        )
 
 
 # ---------------------------------------------------------------------------

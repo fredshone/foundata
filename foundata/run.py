@@ -127,7 +127,9 @@ def runner(
             CONFIGS_ROOT / "ktdb" / "trip_dictionary.yaml"
         )
 
-        attributes, trips = ktdb.load(
+        # 2021 personal survey, plus the 2016 and 2010 household (weekday)
+        # and weekend surveys
+        attributes, trips = ktdb.load_years(
             data_root=data_root / "KTDB",
             person_config=person_config,
             trips_config=trips_config,

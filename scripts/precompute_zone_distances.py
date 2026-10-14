@@ -19,17 +19,23 @@ import numpy as np
 import polars as pl
 
 DEFAULT_CENTROIDS = (
-    Path(__file__).resolve().parent.parent / "configs" / "ktdb" / "zone_centroids.csv"
+    Path(__file__).resolve().parent.parent
+    / "configs"
+    / "ktdb"
+    / "zone_centroids.csv"
 )
 DEFAULT_OUT = (
-    Path(__file__).resolve().parent.parent / "configs" / "ktdb" / "zone_distances.parquet"
+    Path(__file__).resolve().parent.parent
+    / "configs"
+    / "ktdb"
+    / "zone_distances.parquet"
 )
 
 
 def haversine_matrix(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     """Return N×N distance matrix (km, float32) for the given lat/lon arrays."""
     R = 6371.0
-    lat_r = np.radians(lat[:, None])   # (N, 1)
+    lat_r = np.radians(lat[:, None])  # (N, 1)
     lon_r = np.radians(lon[:, None])
     lat_r2 = np.radians(lat[None, :])  # (1, N)
     lon_r2 = np.radians(lon[None, :])
@@ -44,7 +50,10 @@ def haversine_matrix(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
 
 
 def main(centroids_path: Path, out_path: Path) -> None:
-    df = pl.read_csv(centroids_path, schema_overrides={"zone": pl.String})
+    # sort so the upper triangle really has ozone <= dzone
+    df = pl.read_csv(centroids_path, schema_overrides={"zone": pl.String}).sort(
+        "zone"
+    )
     zones = df["zone"].to_list()
     lat = df["lat"].to_numpy()
     lon = df["lon"].to_numpy()
@@ -63,7 +72,11 @@ def main(centroids_path: Path, out_path: Path) -> None:
 
     out_df = pl.DataFrame(
         {"ozone": oz, "dzone": dz, "distance_km": d},
-        schema={"ozone": pl.String, "dzone": pl.String, "distance_km": pl.Float32},
+        schema={
+            "ozone": pl.String,
+            "dzone": pl.String,
+            "distance_km": pl.Float32,
+        },
     )
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

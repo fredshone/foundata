@@ -39,6 +39,10 @@ REPO MAP
     TTRANSPORTE: {...} in mexico); the validator flattens them.
   - Multi-year sources nest a `default:` key plus per-year keys; read them
     with utils.config_for_year.
+  - Waves with very different layouts (ktdb 2010/2016/2021) still share
+    one nested dictionary: give a key a per-year value for every year (no
+    `default` needed), or `default: {}` / `default: null` when only some
+    years use it. The loader then keeps one load_<year> path per wave.
   - The validator accepts `ft-employed`/`pt-employed` for employment, since
     utils.split_employment_type turns them into employed + employed_type.
 - foundata/<src>.py: the loader. Exposes `load(...)` or `load_years(...)` and

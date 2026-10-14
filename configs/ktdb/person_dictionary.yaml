@@ -1,128 +1,354 @@
-# Person-level dictionary for <source>
-# Map raw CSV column names to template field names under column_mappings.
-# Add value mappings for categorical fields below.
+# Person-level dictionary for KTDB (all years). Read with
+# utils.config_for_year: a year's key wins over `default`.
+#
+# 2021: personal travel survey (개인통행실태조사), separate person and trip
+#   CSVs (EUC-KR). No household id linking respondents.
+# 2016: household (가구통행실태조사) and weekend (주말통행실태조사) surveys.
+#   Both ship one row per linked trip (목적통행기준정렬) with household and
+#   person fields repeated on every row; persons who didn't travel have a
+#   single row with blank trip fields. Codes are from
+#   "0. 2016년 가구통행실태조사_데이터정의서.xlsx" (identical in the weekend
+#   definition). The weekend file spells some headers with "/" where the
+#   household file has a space (e.g. "출발시각(오전/오후)"); the loader
+#   replaces "/" with " " before applying column_mappings.
+# 2010: household and weekend surveys. Use the national (전국지역간) files
+#   only: they contain every household of the regional files, but code trip
+#   ends as 251 시군구 zones. Extract them from 전국지역간_가구.7z and
+#   전국지역간_주말.zip into household/ and weekend/. Codes are from
+#   "데이터 정의서(가구통행실태조사)_배포용.hwp". The two surveys share one
+#   layout; the weekend person table repeats every member twice: members 1-6
+#   are day 1 (taken to be Saturday) and 7-12 day 2 (Sunday).
+
+files:
+  default: {}
+  2016:
+    household: 가구통행실태조사(2016년기준)_190201/1. 가구통행실태조사_전국_목적통행기준정렬.txt
+    weekend: 주말통행실태조사(2016년기준)_190408/1. 주말통행실태조사_전국_목적통행기준정렬.csv
+  2010:
+    household:
+      households: household/가구.txt
+      persons: household/가구원.txt
+      trips: household/통행_시군구.txt
+    weekend:
+      households: weekend/주말 가구.txt
+      persons: weekend/주말 가구원.txt
+      trips: weekend/주말통행(시군구).xlsx
+
+krw_to_euro:
+  2021: 0.00058
+  2016: 0.000779  # average 2016 ECB reference rate, 1 EUR = 1284.18 KRW
+  2010: 0.000653  # average 2010 ECB reference rate, 1 EUR = 1531.82 KRW
+
+# 2010 weekend person rows: member numbers above this are the day-2 diary
+weekend_day2_offset:
+  default: null
+  2010: 6
 
 column_mappings:
-  idx: pid
-  SQ3_1: age
-  SQ2: sex
-  R1: has_licence
-  R2: student
-  R3: employed
-  R3_2: occupation
-  # RAW_COL_NAME: education
-  # RAW_COL_NAME: disability
-  R3_4_a: can_wfh
-  # RAW_COL_NAME: relationship
-  # RAW_COL_NAME: race
-  DATE: date
+  2021:
+    idx: pid
+    SQ3_1: age
+    SQ2: sex
+    R1: has_licence
+    R2: student
+    R3: employed
+    R3_2: occupation
+    R3_4_a: can_wfh
+    DATE: date
 
-  ### HH attributes ###
-  Q1: hh_size
-  Q3: hh_income  # monthly
-  Q2: dwelling
-  # RAW_COL_NAME: ownership
-  SQ1_5: home_zone
-  Q4_1: cars
-  Q4_2: vans
-  Q4_6: motorcycles
-  # RAW_COL_NAME: weight
+    ### HH attributes ###
+    Q1: hh_size
+    Q3: hh_income  # monthly
+    Q2: dwelling
+    SQ1_5: home_zone
+    Q4_1: cars
+    Q4_2: vans
+    Q4_6: motorcycles
+  2016:
+    토일구분: weekend_day  # weekend survey only: 1 토요일, 2 일요일
+    IDX: idx
+    행정구역번호: district  # (IDX, 행정구역번호) identifies a household
+    가구원구분: member
+    출생연도: birth_year
+    성 별: sex
+    운전면허증: has_licence
+    정규교육기관: education
+    직업: occupation
+    재택근무(집): can_wfh
+    근무시간: work_hours
+    가구주관계: relationship
+    통행일자(년): travel_year
+    통행일자(월): travel_month
+    통행일자(일): travel_dom
+    통행일자(요일): weekday
 
+    ### HH attributes ###
+    총가구원: hh_size
+    가구_행정동코드: home_zone
+    주택종류: dwelling
+    월평균소득: hh_income  # monthly
+    종류1: vehicle1  # one column per vehicle owned, coded by type
+    종류2: vehicle2
+    종류3: vehicle3
+    종류4: vehicle4
+    종류5: vehicle5
+    종류6: vehicle6
+    오토바이 50cc미만(대): motorcycles1  # counts
+    오토바이 50cc이상 100cc미만(대): motorcycles2
+    오토바이 100cc이상 260cc미만(대): motorcycles3
+    오토바이 260cc이상(대): motorcycles4
+  2010:
+    households:
+      sheet_code: sheet_code  # SS-GGG-DDD-NNNN: 시도, 251 zone, 읍면동, serial
+      home_memno: hh_size
+      car1: cars  # 7인이하 승용차
+      car2: vans  # 9인이상 승합차
+      car3: small_trucks  # 화물차(2.5톤미만)
+      car4: taxis  # 택시
+      car5: motorcycles  # 오토바이
+      car7: trucks  # 화물차(2.5톤이상)
+      home_type: dwelling
+      home_jumyou: ownership
+      home_income: hh_income  # monthly
+    persons:
+      sheet_code: sheet_code
+      seq: member
+      relation: relationship
+      birth_year: birth_year
+      sex: sex
+      drive_license: has_licence
+      job_type: occupation
+      employee_type: employee_type
+
+# 2021: polars weekday number. 2016: fallback for rows without a full travel
+# date, from 통행일자(요일).
 weekday:
-  1: monday
-  2: tuesday
-  3: wednesday
-  4: thursday
-  5: friday
-  6: saturday
-  7: sunday
+  default: {}
+  2021:
+    1: monday
+    2: tuesday
+    3: wednesday
+    4: thursday
+    5: friday
+    6: saturday
+    7: sunday
+  2016:
+    월: monday
+    화: tuesday
+    수: wednesday
+    목: thursday
+    금: friday
+    토: saturday
+    일: sunday
+    "2": tuesday  # a few rows carry a numeric code (1 = Monday)
+    "4": thursday
 
-# sex mapping
-  # Valid values: male, female, other, unknown
+# 2016 weekend survey 토일구분
+weekend_day:
+  default: {}
+  2016:
+    1: saturday
+    2: sunday
+
 sex:
-  1: male
-  2: female
+  default:
+    1: male  # 남자
+    2: female  # 여자
 
-# has_licence mapping
-  # Valid values: void, yes, no, unknown
 has_licence:
-  1: "yes"
-  2: "no"
-  99: "no"
+  default:
+    1: "yes"  # 있음
+    2: "no"  # 없음
+  2021:
+    1: "yes"
+    2: "no"
+    99: "no"
 
-# student mapping
+# 2021 R2 (student)
 student:
-  0: void
-  1: "yes"
-  2: "yes"
-  3: "yes"
-  4: "yes"
-  98: void
-  99: unknown
+  default: {}
+  2021:
+    0: void
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    98: void
+    99: unknown
 
+# 2021 R3 (employed)
 employed:
-  1: "yes"
-  2: "yes"
-  3: "no"
+  default: {}
+  2021:
+    1: "yes"
+    2: "yes"
+    3: "no"
 
-# occupation mapping
-  # Valid values: void, clerical, manual, managerial, operator, professional, service, other, technical, unknown
+# 2016 정규교육기관 records the school level of current students, not
+# attainment; a student's attainment is taken as the level below.
+# Non-students: unknown.
+education:
+  default: {}
+  2016:
+    1: none  # 미취학
+    2: none  # 초등학생
+    3: school  # 중고등학생
+    4: high-school  # 대학/대학원생
+    5: unknown  # 학생아님
+
 occupation:
-  1: other # self employed
-  2: service
-  3: operator
-  4: manual
-  5: technical
-  6: clerical
-  7: managerial
-  8: professional
-  9: other  # freelance
-  10: manual
-  11: manual
-  96: other
+  2021:
+    1: other # self employed
+    2: service
+    3: operator
+    4: manual
+    5: technical
+    6: clerical
+    7: managerial
+    8: professional
+    9: other  # freelance
+    10: manual
+    11: manual
+    96: other
+  # 직업. 0 (weekend file only) is a preschool child.
+  2016:
+    0: void
+    1: professional  # 전문가 및 관련 종사자
+    2: service  # 서비스 종사자
+    3: service  # 판매 종사자
+    4: clerical  # 관리자 및 사무 종사자
+    5: manual  # 농림어업 숙련 종사자
+    6: manual  # 기능원/장치기계조작/단순노무종사자
+    7: void  # 전업주부
+    8: void  # 무직, 학생
+    9: other  # 기타
+  # job_type (직업종류)
+  2010:
+    1: void  # 학생
+    2: void  # 전업주부/무직(미취학아동)
+    3: professional  # 전문가 및 관련 종사자
+    4: service  # 서비스 종사자
+    5: service  # 판매 종사자
+    6: clerical  # 관리자 및 사무 종사자
+    7: manual  # 농림어업 숙련 종사자
+    8: manual  # 기능원/장치기계조작/단순노무종사자
+    9: other  # 기타
 
-# can_wfh mapping
-  # Valid values: yes, no, unknown, void
+# employment from the occupation code; work_hours (2016) or employee_type
+# (2010) then splits the employed into ft/pt. 2021 derives employment from
+# the student and employed flags instead.
+employment:
+  default: {}
+  # 2016: students (정규교육기관 2-4) take precedence
+  2016:
+    0: void
+    1: employed
+    2: employed
+    3: employed
+    4: employed
+    5: employed
+    6: employed
+    7: unemployed  # 전업주부
+    8: unemployed  # 무직, 학생 (students are picked out by 정규교육기관)
+    9: employed
+  2010:
+    1: student  # 학생
+    2: unemployed  # 전업주부/무직(미취학아동)
+    3: employed
+    4: employed
+    5: employed
+    6: employed
+    7: employed
+    8: employed
+    9: employed
+
+# 2016 근무시간
+work_hours:
+  default: {}
+  2016:
+    1: ft-employed  # 전일제(8시간 이상)
+    2: pt-employed  # 시간제(8시간 미만)
+    3: employed  # 기타(불규칙 포함)
+
+# 2010 employee_type (고용형태)
+employee_type:
+  default: {}
+  2010:
+    1: employed  # 재택근무
+    2: ft-employed  # 전일제 직장근무
+    3: pt-employed  # 시간제 직장근무
+    4: employed  # 자영업
+    5: employed  # 기타
+
+# 2016 재택근무(집) is ticked (1) by those who work at home and blank
+# otherwise; 2010 employee_type 1 (재택근무) works from home. For other
+# workers it's unknown.
 can_wfh:
-  1: "yes"
-  2: "yes"
-  3: "yes"
-  4: "yes"
-  97: "void"
-  98: "no"
-  99: "unknown"
+  default:
+    1: "yes"
+  2021:
+    1: "yes"
+    2: "yes"
+    3: "yes"
+    4: "yes"
+    97: "void"
+    98: "no"
+    99: "unknown"
 
+relationship:
+  default:
+    1: self  # 가구주
+    2: partner  # 배우자
+    3: child  # 자녀
+    4: parent  # 부모
+    5: other  # 기타
+
+# million KRW per month
 hh_income:
-  1: [0,1]  # million KRW
-  2: [1,3]
-  3: [3,5]
-  4: [5,10]
-  5: [10,15]
-  6: [15,25]
-  99: [0]
+  2021:
+    1: [0, 1]
+    2: [1, 3]
+    3: [3, 5]
+    4: [5, 10]
+    5: [10, 15]
+    6: [15, 25]
+    99: [0]
+  2016:
+    1: [0, 1]  # 100만원 미만
+    2: [1, 2]  # 100~200만원
+    3: [2, 3]  # 200~300만원
+    4: [3, 5]  # 300~500만원
+    5: [5, 10]  # 500~1,000만원
+    6: [10, 20]  # 1,000만원 이상 (upper bound assumed)
+    9: [0]  # undocumented code -> unknown
+  2010:
+    1: [0, 1]  # 100만원 미만
+    2: [1, 2]  # 100~200만원 미만
+    3: [2, 3]  # 200~300만원 미만
+    4: [3, 5]  # codebook says 300~400만원, a typo for 300~500 (5 starts at 500)
+    5: [5, 10]  # 500~1,000만원 미만
+    6: [10, 20]  # 1,000만원 이상 (upper bound assumed)
 
-# dwelling mapping
-  # Valid values: house, flat, other, unknown
 dwelling:
-  1: flat
-  2: house
-  3: house
-  4: house
-  5: other
-  97: other
+  default:
+    1: flat  # 아파트
+    2: flat  # 연립주택(빌라): low-rise multi-unit
+    3: flat  # 다세대/다가구: low-rise multi-unit
+    4: house  # 단독주택
+    5: flat  # 오피스텔(주상복합)
+    6: other  # 기타
+  2021:
+    1: flat
+    2: house
+    3: house
+    4: house
+    5: other
+    97: other
 
-# ownership mapping
-  # Valid values: owned, rented, other, unknown
 ownership:
-  # 1: owned
-  # 1: rented
-  # 1: other
-  # 1: unknown
-
-# hh_zone mapping
-  # Valid values: urban, suburban, rural, unknown
-hh_zone:
-  # 1: urban
-  # 1: suburban
-  # 1: rural
-  # 1: unknown
+  default: {}
+  2010:
+    1: owned  # 자가
+    2: rented  # 전세 (lump-sum deposit lease)
+    3: rented  # 월세
+    4: other  # 기타

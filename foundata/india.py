@@ -111,7 +111,7 @@ def load_years(
     trips_config: dict,
     years: tuple[int, ...] = (2024, 2019),
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """Load and stack several TUS rounds found under `data_root`.
+    """Load and stack several India TUS rounds found under `data_root`.
 
     Returns:
         (attributes, trips) DataFrames conforming to configs/core/template.yaml.
@@ -140,16 +140,16 @@ def load(
     trips_config: dict,
     year: int = 2024,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """Load one TUS round (2024 or 2019) from its .Nesstar + DDI XML files.
+    """Load one India TUS round (2024 or 2019) from its .Nesstar + DDI XML files.
 
     Returns:
         (attributes, trips) DataFrames conforming to configs/core/template.yaml.
     """
     if year not in ROUNDS:
         raise ValueError(
-            f"Unsupported TUS year: {year} (expected 2024 or 2019)"
+            f"Unsupported India TUS year: {year} (expected 2024 or 2019)"
         )
-    print(f"Loading TUS {year}...")
+    print(f"Loading India TUS {year}...")
 
     blocks = ROUNDS[year]["blocks"]
     hh_mapping = hh_config["column_mappings"][str(year)]
@@ -354,7 +354,7 @@ def _diary_respondents_only(
     )
     nn = n - attributes.height
     print(
-        f"Removed {nn}/{n} TUS persons with no time-use diary "
+        f"Removed {nn}/{n} India TUS persons with no time-use diary "
         f"({100 * nn / max(n, 1):.1f}%)"
     )
     return attributes

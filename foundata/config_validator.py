@@ -84,8 +84,15 @@ def validate_value_mappings(config: dict, template_section: dict) -> list[str]:
                 field, set()
             )
 
-            # Handle year-keyed configs
-            if isinstance(mapping, dict) and "default" in mapping:
+            # Handle year-keyed configs: a 'default' key, or (when every year
+            # has its own mapping) only dict values
+            if isinstance(mapping, dict) and (
+                "default" in mapping
+                or (
+                    mapping
+                    and all(isinstance(v, dict) for v in mapping.values())
+                )
+            ):
                 all_values = {}
                 for year_key, year_mapping in mapping.items():
                     if isinstance(year_mapping, dict):

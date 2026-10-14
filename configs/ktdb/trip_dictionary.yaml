@@ -1,130 +1,254 @@
-# Trip-level dictionary for <source>
-# Map raw CSV column names to template field names under column_mappings.
-# Add value mappings for categorical fields below.
+# Trip-level dictionary for KTDB (all years). Read with
+# utils.config_for_year: a year's key wins over `default`.
+#
+# 2021: one row per linked trip with up to 10 stages (mode + duration) side
+#   by side; times as hour and minute columns.
+# 2016: one row per linked trip (목적통행), with up to 6 stages (수단통행)
+#   side by side, each with its mode and arrival time. Times are given as an
+#   AM/PM code, an hour (0-11, "오후 0시" = noon) and a minute.
+# 2010: rows are unlinked legs: a leg ending at a transfer point (end_type 4)
+#   continues into the next leg, so legs are linked into trips by the loader.
+#   Zones are 3-digit 251 시군구 zones; times are hhmm and can exceed 2400.
+#   The weekend trips xlsx drops leading zeros from codes and times, so the
+#   loader pads them back.
 
 column_mappings:
-  idx: pid
-  th_seq: seq
-  
-  sTP1_1_5: ozone
-  TP1_1_5: dzone
-  sTP1: origin
-  TP2: purpose
-  # RAW_COL_NAME: oact
-  # RAW_COL_NAME: dact
-  TP5_1: mode1
-  TP5_2: mode2
-  TP5_3: mode3
-  TP5_4: mode4
-  TP5_5: mode5
-  TP5_6: mode6
-  TP5_7: mode7
-  TP5_8: mode8
-  TP5_9: mode9
-  TP5_10: mode10
-  # RAW_COL_NAME: mode
-  TP3_1: tst-hr
-  TP3_2: tst-min
-  TP4_1: tet-hr
-  TP4_2: tet-min
-  # RAW_COL_NAME: tst
-  # RAW_COL_NAME: tet
-  # RAW_COL_NAME: distance
-  TP5_1_t1: duration1
-  TP5_2_t1: duration2
-  TP5_3_t1: duration3
-  TP5_4_t1: duration4
-  TP5_5_t1: duration5
-  TP5_6_t1: duration6
-  TP5_7_t1: duration7
-  TP5_8_t1: duration8
-  TP5_9_t1: duration9
-  TP5_10_t1: duration10
+  2021:
+    idx: pid
+    th_seq: seq
+    sTP1_1_5: ozone
+    TP1_1_5: dzone
+    sTP1: origin
+    TP2: purpose
+    TP5_1: mode1
+    TP5_2: mode2
+    TP5_3: mode3
+    TP5_4: mode4
+    TP5_5: mode5
+    TP5_6: mode6
+    TP5_7: mode7
+    TP5_8: mode8
+    TP5_9: mode9
+    TP5_10: mode10
+    TP3_1: tst-hr
+    TP3_2: tst-min
+    TP4_1: tet-hr
+    TP4_2: tet-min
+    TP5_1_t1: duration1
+    TP5_2_t1: duration2
+    TP5_3_t1: duration3
+    TP5_4_t1: duration4
+    TP5_5_t1: duration5
+    TP5_6_t1: duration6
+    TP5_7_t1: duration7
+    TP5_8_t1: duration8
+    TP5_9_t1: duration9
+    TP5_10_t1: duration10
+  2016:
+    토일구분: weekend_day
+    IDX: idx
+    행정구역번호: district
+    가구원구분: member
+    통행유무: travelled  # 1 통행함, 2 통행안함
+    최초출발지_유형: origin  # where the day started
+    목적통행_통행순서: seq
+    통행목적: purpose
+    목적통행_출발시각(오전 오후): tst_ampm
+    목적통행_출발시각(시): tst_hr
+    목적통행_출발시각(분): tst_min
+    목적통행_출발지_행정동코드: ozone
+    목적통행_도착지_행정동코드: dzone
+    수단통행1_교통수단: mode1
+    수단통행1_도착시각(오전 오후): arr_ampm1
+    수단통행1_도착시각(시): arr_hr1
+    수단통행1_도착시각(분): arr_min1
+    수단통행2_교통수단: mode2
+    수단통행2_도착시각(오전 오후): arr_ampm2
+    수단통행2_도착시각(시): arr_hr2
+    수단통행2_도착시각(분): arr_min2
+    수단통행3_교통수단: mode3
+    수단통행3_도착시각(오전 오후): arr_ampm3
+    수단통행3_도착시각(시): arr_hr3
+    수단통행3_도착시각(분): arr_min3
+    수단통행4_교통수단: mode4
+    수단통행4_도착시각(오전 오후): arr_ampm4
+    수단통행4_도착시각(시): arr_hr4
+    수단통행4_도착시각(분): arr_min4
+    수단통행5_교통수단: mode5
+    수단통행5_도착시각(오전 오후): arr_ampm5
+    수단통행5_도착시각(시): arr_hr5
+    수단통행5_도착시각(분): arr_min5
+    수단통행6_교통수단: mode6
+    수단통행6_도착시각(오전 오후): arr_ampm6
+    수단통행6_도착시각(시): arr_hr6
+    수단통행6_도착시각(분): arr_min6
+  2010:
+    sheet_code: sheet_code
+    seq: member
+    tr_seq: leg
+    tr_mokjek: purpose
+    tr_sudan: mode
+    start_type: origin
+    start_zcode: ozone
+    start_time: tst
+    end_type: end_type
+    end_zcode: dzone
+    end_time: tet
 
+# 2016 오전/오후 code -> minutes to add to hour * 60 + minute
+ampm:
+  default: {}
+  2016:
+    1: 0  # 오전
+    2: 720  # 오후
+    3: 1440  # 익일오전 (next-day AM)
 
+# 2010 end_type code for a transfer point (갈아타는 곳)
+transfer_end_type:
+  default: null
+  2010: 4
+
+# where the day's first trip starts
 origin:
-  1: home
-  2: work
-  3: education
-  97: other
+  2021:
+    1: home
+    2: work
+    3: education
+    97: other
+  2016:
+    1: home  # 자택
+    2: work  # 직장
+    3: education  # 학교
+    4: other  # 기타장소
+  # start_type of a day's first leg
+  2010:
+    1: home  # 집
+    2: work  # 직장
+    3: education  # 학교
+    4: other  # 갈아타는 곳(환승)
+    5: other  # 기타 (undocumented for start_type; end_type's "기타")
 
 purpose:
-  1: home
-  2: work
-  3: work
-  4: education
-  5: education
-  6: work
-  7: shop
-  8: leisure
-  9: leisure
-  10: visit
-  11: other
-  12: escort
-  97: other
+  2021:
+    1: home
+    2: work
+    3: work
+    4: education
+    5: education
+    6: work
+    7: shop
+    8: leisure
+    9: leisure
+    10: visit
+    11: other
+    12: escort
+    97: other
+  # <표 1> 통행목적
+  2016:
+    1: escort  # 누군가를 태우거나 내려주려고
+    2: work  # 업무 후 직장으로 돌아감(귀사)
+    3: home  # 집으로 돌아가려고(귀가)
+    4: work  # 출근
+    5: education  # 등교
+    6: education  # 학원수업
+    7: work  # 직업관련(업무)
+    8: shop  # 물건을 사려고(쇼핑)
+    9: leisure  # 여가/운동/관광/레져
+    10: shop  # 외식 (meals -> shop)
+    11: visit  # 친지방문
+    12: other  # 기타(종교 및 개인용무 등)
+  # tr_mokjek (통행 목적)
+  2010:
+    1: escort  # 배웅
+    2: home  # 귀가
+    3: work  # 출근
+    4: education  # 등교
+    5: education  # 학원
+    6: work  # 업무
+    7: work  # 귀사
+    8: shop  # 쇼핑
+    9: leisure  # 여가/오락/외식/친지방문
+    10: other  # 기타
 
-# ozone mapping
-  # Valid values: urban, suburban, rural, unknown
-ozone:
-  # 1: urban
-  # 1: suburban
-  # 1: rural
-  # 1: unknown
-
-# dzone mapping
-  # Valid values: urban, suburban, rural, unknown
-dzone:
-  # 1: urban
-  # 1: suburban
-  # 1: rural
-  # 1: unknown
-
-# oact mapping
-  # Valid values: home, work, education, shop, leisure, medical, visit, escort, other, unknown
-oact:
-  # 1: home
-  # 1: work
-  # 1: education
-  # 1: shop
-  # 1: leisure
-  # 1: medical
-  # 1: visit
-  # 1: escort
-  # 1: other
-  # 1: unknown
-
-# dact mapping
-  # Valid values: home, work, education, shop, leisure, medical, visit, escort, other, unknown
-dact:
-  # 1: home
-  # 1: work
-  # 1: education
-  # 1: shop
-  # 1: leisure
-  # 1: medical
-  # 1: visit
-  # 1: escort
-  # 1: other
-  # 1: unknown
-
-# mode mapping
-  # Valid values: walk, bike, car, bus, rail, other, unknown
 mode:
-  1: walk
-  2: car
-  3: bus
-  4: bus
-  5: bus
-  6: unknown
-  7: rail
-  8: rail
-  9: rail
-  10: car
-  11: car
-  12: bike
-  13: car
-  14: bike
-  15: other
-  16: other
-  17: other
-  97: other
+  2021:
+    1: walk
+    2: car
+    3: bus
+    4: bus
+    5: bus
+    6: unknown
+    7: rail
+    8: rail
+    9: rail
+    10: car
+    11: car
+    12: bike
+    13: car
+    14: bike
+    15: other
+    16: other
+    17: other
+    97: other
+  # <표 2> 교통수단
+  2016:
+    1: walk  # 걸어서(갈아타기 위한 이동제외)
+    2: car  # 승용차/승합차(직접 운전)
+    3: car  # 승용차/승합차(타인 운전)
+    4: bus  # 시내(농어촌)버스
+    5: bus  # 마을(순환)버스
+    6: bus  # 광역버스
+    7: bus  # 시외버스
+    8: bus  # 고속버스
+    9: bus  # 기타버스(학원/전세/관광 등)
+    10: rail  # 지하철/전철
+    11: rail  # 경전철
+    12: rail  # 고속철도(KTX)
+    13: rail  # 일반철도
+    14: car  # 택시
+    15: car  # 소형화물차(2.5톤 미만)
+    16: car  # 중대형화물차(2.5톤 이상)
+    17: bike  # 자전거
+    18: car  # 오토바이
+    19: other  # 항공
+    20: other  # 선박
+    21: other  # 기타
+  # tr_sudan (통행 수단)
+  2010:
+    1: walk  # 걸어서
+    2: car  # 승용차(승합차) 직접운전
+    3: car  # 승용차(승합차) 다른사람 운전
+    4: bus  # 시내(농어촌)버스
+    5: bus  # 시외버스
+    6: bus  # 마을(순환)버스
+    7: bus  # 광역버스
+    8: bus  # 고속버스
+    9: bus  # 기타버스(전세버스 등)
+    10: rail  # 지하철/전철
+    11: rail  # 일반철도
+    12: rail  # 고속철도(KTX)
+    13: car  # 택시
+    14: car  # 소형화물차(2.5톤)
+    15: car  # 중․대형화물차(2.5톤 이상)
+    16: car  # 오토바이
+    17: bike  # 자전거
+    18: other  # 기타(항공,선박 등)
+
+# Trip mode = the highest-priority mode among its stages (2016) or legs
+# (2010). 2021 takes the mode with the longest total stage duration.
+mode_priority:
+  default: [rail, bus, car, other, bike, walk, unknown]
+
+# Straight-line centroid distances are scaled by this circuity factor
+circuity:
+  default: 1.3
+
+mode_speeds:
+  default:
+    walk: 5
+    bike: 10
+    car: 20
+    bus: 15
+    rail: 30
+    other: 10
+    unknown: 10
