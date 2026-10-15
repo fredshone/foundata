@@ -16,6 +16,7 @@ duration x mode speed.
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix, utils
 
@@ -53,7 +54,7 @@ def load(
     Returns:
         (attributes, trips) DataFrames conforming to the template schema.
     """
-    print(f"Loading {SOURCE} data...")
+    logger.info(f"Loading {SOURCE} data...")
     root = Path(data_root).expanduser()
     hh_mappings = hh_config["column_mappings"]
     trip_mappings = trips_config["column_mappings"]

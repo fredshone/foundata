@@ -6,28 +6,40 @@ We also have a pre-processed dataset of one-million openly available persons and
 
 The project is intended to be uses as a discoverable cli via `uv run foundata --help`.
 
-For example, `uv run foundata run --help`:
-```
-Usage: foundata run [OPTIONS]
+Run a single source with `foundata run <SOURCE> <SOURCE_DIR>`, pointing at that source's own data folder, e.g.:
 
-  Run the data processing pipeline end-to-end.
+```bash
+uv run foundata run ltds ~/Data/foundata/LTDS         # writes to output/ltds
+```
+
+Or process and combine many sources with `foundata batch <DATA_ROOT>`, e.g. `uv run foundata batch --help`:
+```
+Usage: foundata batch [OPTIONS] DATA_ROOT
+
+  Run the pipeline end-to-end over many sources and combine them.
+
+Arguments:
+  DATA_ROOT  Base data directory containing one folder per source (LTDS/, NTS/, ...), e.g. ~/Data/foundata  [required]
 
 Options:
-  -d, --data-root PATH                                Base data directory, e.g. ~/Data/foundata [required]
-  -o, --output PATH                                   Directory where CSVs and PNGs are written, defaults to ./output  [default: output]
-  -s, --select TEXT                                   Comma-separated list of sources to process (e.g. --select nhts --select ktdb).
-  -x, --omit TEXT                                     Comma-separated list of sources to omit (e.g. --omit nhts --omit ktdb).
-  --open                                               Run only the open-data sources (nhts, cmap, vista, qhts, ktdb, mexico, argentina, uruguay, chile). Overrides --select and --omit.
+  -o, --output PATH                                   Directory where CSVs and PNGs are written.  [default: output]
+  -s, --select SOURCE...                              Sources to process (e.g. -s nhts ktdb, or -s nhts,ktdb). Defaults to all.
+  -x, --omit SOURCE...                                Sources to omit (e.g. -x nhts ktdb, or -x nhts,ktdb).
+  --open                                              Run only the open-data sources (nhts, cmap, vista, qhts, ktdb, mexico, argentina, uruguay, chile). Overrides --select and --omit.
   -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
-  -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities. [default: filter-consecutive]
+  -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities.  [default: filter-consecutive]
+  -d, --diagnostics                                   Also produce the anomaly-detection reports and supplementary activity heatmaps.
+  -l, --log-level [debug|info|warning|error]          Minimum level of log messages to show.  [default: info]
   --help                                              Show this message and exit.
 ```
+
+By default a run writes the outputs, the summary tables and the plots shown in this README. Add `--diagnostics` for the anomaly-detection tables (and their CSVs) and the per-attribute activity heatmaps. Every command takes `-l/--log-level` (default `info`); use `-l debug` for finer-grained detail. The per-source processing notes are logged after the processing log table, each at its own level (e.g. `warning`), so `-l error` shows only the most serious.
 
 The base data directory needs to hold raw data downloaded from the various sources by the user. The template directory `data_dir_template`, shows the expected folder and files structure.
 
 ### Data Summary
 
-The latest output using `uv run foundata run` is as follows:
+The latest output using `uv run foundata batch` is as follows:
 
 | Source    | Plans         | Missing attributes | Trips          | Trip kms (millions) |
 |-----------|---------------|--------------------|----------------|---------------------|
@@ -76,7 +88,7 @@ Foundata makes use of open (safely available, either immediately, or available v
 | INDIA       | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
 | BRAZIL      | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
 | MEXICO      | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
-| ARGENTINA   | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
+| ARGENTINA   | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, weights normalised within each survey, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
 | URUGUAY     | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
 | MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
 | CHILE       | CL | 2012-13 | Santiago metro region (EOD 2012), all days of the week incl. summer season, ~68% of households have some member income imputed by the survey, distances from straight-line block or zone centroids | Open [data](https://github.com/PLUMAS-research/palomatrix-dtpm/tree/main/src/palomatrix/eod/datos) (SECTRA EOD 2012 as parquet) |
@@ -190,7 +202,7 @@ tree — same folder/file layout, just a handful of rows per source — so you c
 try the pipeline without access to any of the real data:
 
 ```bash
-foundata run --data-root data_dir_template --output /tmp/out
+foundata batch data_dir_template --output /tmp/out
 ```
 
 ### Adding a new source
@@ -221,21 +233,21 @@ foundata run --data-root data_dir_template --output /tmp/out
    foundata validate-table attributes.csv trips.csv
    ```
 
-6. **Add the source to `foundata/run.py`** so it is included in the full pipeline run (follow the existing `if "source" in sources:` pattern).
+6. **Add the source to `foundata/run.py`**: write a `_load_<source>(source_dir)` function and register it in `SOURCES`. This makes it available to both `foundata run <source>` and `foundata batch`.
 
 ### Running specific sources
 
-Use `--select` / `-s` to run only a subset of sources, or `--omit` / `-x` to exclude sources:
+Use `foundata run` for a single source, or `batch` with `--select` / `-s` to run a subset of sources, or `--omit` / `-x` to exclude sources:
 
 ```bash
 # Run KTDB only
-foundata run --data-root ~/Data/foundata --select ktdb --output /tmp/out
+foundata run ktdb ~/Data/foundata/KTDB --output /tmp/out
 
-# Run KTDB and NTS
-foundata run --data-root ~/Data/foundata -s ktdb -s nts --output /tmp/out
+# Run KTDB and NTS combined
+foundata batch ~/Data/foundata -s ktdb -s nts --output /tmp/out
 
 # Run everything except NTS
-foundata run --data-root ~/Data/foundata --omit nts --output /tmp/out
+foundata batch ~/Data/foundata --omit nts --output /tmp/out
 ```
 
 Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`, `france`.

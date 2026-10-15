@@ -14,10 +14,11 @@ Usage:
 """
 
 from pathlib import Path
+from typing import Optional
 
-import click
 import geopandas as gpd
 import pandas as pd
+import typer
 
 URL = (
     "https://mapas.ide.uy/geoserver-vectorial/INE_NO_SEGURO/wfs?service=WFS"
@@ -27,12 +28,12 @@ URL = (
 DEFAULT_OUT = Path(__file__).parent.parent / "configs/uruguay/segments.csv"
 
 
-@click.command()
-@click.option(
-    "--shp", default=None, help="Local shapefile path (skips download)"
-)
-@click.option("--out", default=str(DEFAULT_OUT), show_default=True)
-def main(shp, out):
+def main(
+    shp: Optional[Path] = typer.Option(
+        None, help="Local shapefile path (skips download)"
+    ),
+    out: Path = DEFAULT_OUT,
+):
     """Compute segment centroids and write configs/uruguay/segments.csv."""
     source = shp or URL
     print(f"Reading: {source}")
@@ -55,4 +56,4 @@ def main(shp, out):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

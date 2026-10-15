@@ -59,7 +59,41 @@ def test_ktdb_load():
     assert "ktdb" in attrs["source"].unique().to_list()
     assert attrs["survey"].unique().to_list() == ["ktdb2021"]
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
+    assert (trips.group_by("pid").agg(pl.col("seq").min())["seq"] == 0).all()
+    not_working = attrs.filter(pl.col("employment") != "employed")
+    assert (not_working["occupation"] == "void").all()
     check_template(attrs, trips)
+
+
+def test_ktdb_2021_trips_use_mode_priority(tmp_path):
+    # a long walk to a short rail ride is a rail trip; seq is 0-indexed and
+    # the first trip's oact comes from its origin
+    _, trips_cfg = configs(2021)
+    columns = {c: [None, None] for c in trips_cfg["column_mappings"]}
+    rows = {
+        "idx": [1, 1],
+        "th_seq": [1, 2],
+        "sTP1": [1, None],  # home
+        "TP2": [2, 1],  # work, then home
+        "TP3_1": [8, 17],
+        "TP3_2": [0, 0],
+        "TP4_1": [8, 17],
+        "TP4_2": [40, 30],
+        "TP5_1": [1, 1],  # walk
+        "TP5_1_t1": [30, 30],
+        "TP5_2": [7, None],  # rail
+        "TP5_2_t1": [10, None],
+    }
+    pl.DataFrame({**columns, **rows}).write_csv(tmp_path / "trips.csv")
+
+    trips = ktdb.load_trips_2021(tmp_path, trips_cfg)
+
+    assert trips["seq"].to_list() == [0, 1]
+    assert trips["mode"].to_list() == ["rail", "walk"]
+    assert trips["oact"].to_list() == ["home", "work"]
+    assert trips["dact"].to_list() == ["work", "home"]
+    # the 30 min walk at 5 km/h is the access distance of the rail trip
+    assert trips["access_egress_distance"][0] == pytest.approx(2.5)
 
 
 def test_ktdb_load_persons_hh_income_not_truncated_to_zero(monkeypatch):
@@ -294,6 +328,8 @@ def test_ktdb_load_trips_finds_distance_for_known_zone_pairs():
         dzone="TP1_1_5",
     )
     known = list(ktdb.load_centroids())
+    # raw th_seq is 1-indexed, seq is 0-indexed
+    zones = zones.with_columns(seq=(pl.col("seq") - 1).cast(pl.Int8))
     trips = ktdb.load_trips_2021(root, trips_cfg).join(
         zones.filter(
             pl.col("ozone").is_in(known) & pl.col("dzone").is_in(known)
@@ -302,21 +338,3 @@ def test_ktdb_load_trips_finds_distance_for_known_zone_pairs():
     )
     assert (trips["ozone"] > trips["dzone"]).any()
     assert trips["distance"].null_count() == 0
-
-
-def test_ktdb_warns_about_zones_missing_from_distances(capsys):
-    distances = pl.DataFrame({"_lo": ["1111053000"], "_hi": ["1111054000"]})
-    trips = pl.DataFrame(
-        {
-            "ozone": ["1111053000", "9999999999", " "],
-            "dzone": ["1111054000", "1111053000", "1111053000"],
-        }
-    )
-    ktdb.warn_unknown_zones(trips, distances)
-    out = capsys.readouterr().out
-    # the blank zone is left to the speed fallback, not reported
-    assert "1 (33.33%) trips use 1 zone codes" in out
-    assert "9999999999" in out
-
-    ktdb.warn_unknown_zones(trips.head(1), distances)
-    assert capsys.readouterr().out == ""

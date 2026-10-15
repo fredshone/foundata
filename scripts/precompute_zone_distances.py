@@ -12,11 +12,11 @@ Usage:
     uv run python scripts/precompute_zone_distances.py --centroids path/to/centroids.csv --out path/to/out.parquet
 """
 
-import argparse
 from pathlib import Path
 
 import numpy as np
 import polars as pl
+import typer
 
 DEFAULT_CENTROIDS = (
     Path(__file__).resolve().parent.parent
@@ -49,7 +49,11 @@ def haversine_matrix(lat: np.ndarray, lon: np.ndarray) -> np.ndarray:
     return (2 * R * np.arcsin(np.sqrt(np.clip(a, 0, 1)))).astype(np.float32)
 
 
-def main(centroids_path: Path, out_path: Path) -> None:
+def main(
+    centroids_path: Path = typer.Option(DEFAULT_CENTROIDS, "--centroids"),
+    out_path: Path = typer.Option(DEFAULT_OUT, "--out"),
+) -> None:
+    """Write pairwise distances between KTDB zone centroids."""
     # sort so the upper triangle really has ozone <= dzone
     df = pl.read_csv(centroids_path, schema_overrides={"zone": pl.String}).sort(
         "zone"
@@ -85,8 +89,4 @@ def main(centroids_path: Path, out_path: Path) -> None:
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--centroids", type=Path, default=DEFAULT_CENTROIDS)
-    parser.add_argument("--out", type=Path, default=DEFAULT_OUT)
-    args = parser.parse_args()
-    main(args.centroids, args.out)
+    typer.run(main)

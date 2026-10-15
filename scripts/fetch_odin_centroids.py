@@ -7,9 +7,9 @@ Usage:
 
 from pathlib import Path
 
-import click
 import geopandas as gpd
 import pandas as pd
+import typer
 
 URL_TEMPLATE = "https://cartomap.github.io/nl/wgs84/gemeente_{year}.geojson"
 DEFAULT_OUT = (
@@ -41,25 +41,22 @@ def load_year_centroids(year: int) -> pd.DataFrame:
     )
 
 
-@click.command()
-@click.option(
-    "--years",
-    default=DEFAULT_YEARS,
-    show_default=True,
-    help="Comma-separated ODIN survey years",
-)
-@click.option("--out", default=str(DEFAULT_OUT), show_default=True)
-def main(years: str, out: str):
+def main(
+    years: str = typer.Option(
+        DEFAULT_YEARS, help="Comma-separated ODIN survey years"
+    ),
+    out: Path = DEFAULT_OUT,
+):
     """Compute gemeente centroids per ODIN survey year and write configs/odin/gemeente_centroids.csv."""
     year_list = [int(y) for y in years.split(",")]
     frames = [load_year_centroids(year) for year in year_list]
     out_df = pd.concat(frames, ignore_index=True)
 
-    out_path = Path(out)
+    out_path = out
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(out_path, index=False)
     print(f"Written {len(out_df)} centroids to {out_path}")
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

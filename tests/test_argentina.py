@@ -55,6 +55,13 @@ def test_argentina_load():
     assert attrs["hh_income"].drop_nulls().min() >= 0
     for col in ("dact", "mode", "ozone", "dzone"):
         assert trips[col].null_count() == 0
+    # weights are normalised within each survey
+    means = attrs.group_by(
+        pl.col("pid").str.extract(
+            "^argentina(" + "|".join(argentina.SURVEYS) + ")"
+        )
+    ).agg(pl.col("weight").mean())["weight"]
+    assert ((means - 1).abs() < 1e-4).all()
 
 
 def hh_config(**overrides):

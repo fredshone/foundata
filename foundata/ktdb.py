@@ -30,6 +30,7 @@ None of the surveys have weights.
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix, utils
 
@@ -303,8 +304,8 @@ def warn_unknown_zones(trips: pl.DataFrame, distances: pl.DataFrame) -> None:
     codes = pl.concat([missing["ozone"], missing["dzone"]]).unique().sort()
     codes = codes.filter(~codes.is_in(known)).to_list()
     perc = missing.height / trips.height * 100
-    print(
-        f"WARNING: {missing.height} ({perc:.2f}%) trips use {len(codes)} zone "
+    logger.warning(
+        f"{missing.height} ({perc:.2f}%) trips use {len(codes)} zone "
         f"codes missing from zone_distances.parquet: {', '.join(codes)}"
     )
 
@@ -347,7 +348,7 @@ def load_2021(
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     """Load the 2021 survey from its year directory, with year-resolved
     configs."""
-    print(f"Loading {SOURCE}2021 data...")
+    logger.info(f"Loading {SOURCE}2021 data...")
     attributes = load_persons_2021(root, person_config)
     trips = load_trips_2021(root, trips_config)
     attributes = utils.assign_retired(attributes, trips)
@@ -366,8 +367,8 @@ def load_2021(
     missing_ae = attributes.filter(pl.col("access_egress_distance").is_null())
     if missing_ae.height > 0:
         perc = missing_ae.height / attributes.height * 100
-        print(
-            f"WARNING: {missing_ae.height} ({perc:.2f}%) records missing access-egress distance"
+        logger.warning(
+            f"{missing_ae.height} ({perc:.2f}%) records missing access-egress distance"
         )
 
     # Derive per-person region from first trip's origin zone prefix
@@ -500,6 +501,12 @@ def load_persons_2021(root: str | Path, config: dict) -> pl.DataFrame:
         .then(pl.lit("employed"))
         .otherwise(pl.lit("unemployed")),
     ).drop(["_student", "_employed", "date"])
+    # occupation only applies to workers, as in 2016 and 2010
+    data = data.with_columns(
+        occupation=pl.when(pl.col("employment") == "employed")
+        .then(pl.col("occupation"))
+        .otherwise(pl.lit("void"))
+    )
 
     data = data.with_columns(
         pl.lit("unknown").alias(col)
@@ -566,7 +573,11 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
         )
         .rename({"variable": "stage", "value": "mode"})
         .filter(pl.col("mode").is_not_null())
-        .with_columns(mode=pl.col("mode").replace_strict(config["mode"]))
+        .with_columns(
+            mode=pl.col("mode").replace_strict(
+                config["mode"], default="unknown"
+            )
+        )
         .sort(["pid", "seq", "stage"])
     )
 
@@ -586,56 +597,34 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
 
     stages = stage_modes.join(stage_durations, on=["pid", "seq", "stage"])
 
-    # access egress for transit
-    pt_trips = (
-        stages.filter(pl.col("mode").is_in(["bus", "rail"]))
-        .select("pid", "seq")
-        .unique()
+    ae_distances = access_egress(
+        stages, ["pid", "seq"], ["pid"], config["mode_speeds"]
     )
 
-    potential_ae_stages = stages.filter(~pl.col("mode").is_in(["bus", "rail"]))
-    ae_stages = (
-        potential_ae_stages.join(pt_trips, on=["pid", "seq"], how="inner")
-        .with_columns(
-            access_egress_distance=(pl.col("duration") / 60)
-            * mode_speed(config["mode_speeds"])
-        )
-        .select("pid", "seq", "access_egress_distance")
+    total_trip_durations = stage_durations.group_by(["pid", "seq"]).agg(
+        pl.col("duration").sum()
+    )
+    # main mode by priority (rail > bus > car > ...), as in 2016 and 2010,
+    # so a long walk to the metro doesn't make it a walk trip
+    main_trip_modes = stage_modes.group_by(["pid", "seq"]).agg(
+        mode=priority_mode(pl.col("mode"), config["mode_priority"])
     )
 
-    ae_distances = (
-        (
-            ae_stages.group_by(["pid", "seq"]).agg(
-                pl.col("access_egress_distance")
-                .sum()
-                .alias("access_egress_distance")
-            )
-        )
-        .group_by("pid")
-        .agg(pl.col("access_egress_distance").mean())
-        .select(["pid", "access_egress_distance"])
-    )
-
-    total_trip_durations = (
-        stages.drop("stage")
-        .group_by(["pid", "seq"])
-        .agg(pl.col("duration").sum())
-    )
-    # aggregate trip modes based on longest mode across all stages by pid
-    main_trip_modes = (
-        stages.group_by(["pid", "seq", "mode"])
-        .agg(pl.col("duration").sum())
-        .group_by(["pid", "seq"])
-        .agg(pl.all().sort_by("duration").last())
-    ).drop("duration")
-
+    # trips with no stage modes or durations are kept, as in 2016: mode
+    # unknown, duration from the trip times
     data = (
         data.select(
             "pid", "seq", "ozone", "dzone", "origin", "purpose", "tst", "tet"
         )
-        .join(total_trip_durations, on=["pid", "seq"])
-        .join(main_trip_modes, on=["pid", "seq"])
+        .join(total_trip_durations, on=["pid", "seq"], how="left")
+        .join(main_trip_modes, on=["pid", "seq"], how="left")
         .join(ae_distances, on="pid", how="left")
+        .with_columns(
+            mode=pl.col("mode").fill_null("unknown"),
+            duration=pl.col("duration").fill_null(
+                (pl.col("tet") - pl.col("tst")) % 1440
+            ),
+        )
     )
 
     # Distances: the table holds each pair once with ozone <= dzone, so
@@ -687,15 +676,14 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
     data = (
         data.sort(["pid", "seq"])
         .with_columns(
-            oact=pl.when(pl.col("seq") > 1)
-            .then(pl.col("purpose").shift(1).over("pid"))
-            .otherwise(pl.col("origin")),
+            oact=pl.when(pl.col("seq") == pl.col("seq").min().over("pid"))
+            .then(pl.col("origin"))
+            .otherwise(pl.col("purpose").shift(1).over("pid")),
             dact=pl.col("purpose"),
+            seq=(pl.col("seq") - 1).cast(pl.Int8),
         )
         .drop(["origin", "purpose"])
     )
-
-    data = data.sort(["pid", "seq"])
 
     # Handle midnight-crossing trips
     data = fix.day_wrap(data)
@@ -709,7 +697,7 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
         / data.select("pid").unique().height
         * 100
     )
-    print(f"Access-egress distance available for {perc:.2f}% of persons")
+    logger.debug(f"Access-egress distance available for {perc:.2f}% of persons")
 
     return data
 
@@ -728,7 +716,7 @@ def load_2016(
     """Load the 2016 household or weekend survey from its year directory,
     with year-resolved configs."""
     survey = f"{SOURCE}2016{'we' if weekend else ''}"
-    print(f"Loading {survey} data...")
+    logger.info(f"Loading {survey} data...")
     path = (
         Path(root).expanduser()
         / person_config["files"]["weekend" if weekend else "household"]
@@ -1035,7 +1023,7 @@ def load_2010(
     """Load the 2010 household or weekend survey from its year directory,
     with year-resolved configs."""
     survey = f"{SOURCE}2010{'we' if weekend else ''}"
-    print(f"Loading {survey} data...")
+    logger.info(f"Loading {survey} data...")
     root = Path(root).expanduser()
     files = person_config["files"]["weekend" if weekend else "household"]
     offset = person_config["weekend_day2_offset"] if weekend else None

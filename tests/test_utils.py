@@ -46,25 +46,6 @@ def test_config_for_year_falls_back_to_default():
     assert result["column_mappings"] == {"B": "hid"}
 
 
-# --- table_joiner / check_overlap ---
-
-
-def test_table_joiner_warns_on_missing_keys(capsys):
-    lhs = pl.DataFrame({"pid": ["a", "b", "c"]})
-    rhs = pl.DataFrame({"pid": ["a", "b", "x"]})
-    utils.check_overlap(lhs, rhs, on="pid", lhs_name="attrs", rhs_name="trips")
-    captured = capsys.readouterr()
-    assert "Warning" in captured.out or "Missing" in captured.out
-
-
-def test_check_overlap_all_present(capsys):
-    lhs = pl.DataFrame({"pid": ["a", "b", "c"]})
-    rhs = pl.DataFrame({"pid": ["a", "b", "c"]})
-    utils.check_overlap(lhs, rhs, on="pid", lhs_name="attrs", rhs_name="trips")
-    captured = capsys.readouterr()
-    assert "Warning" not in captured.out
-
-
 # --- compute_avg_speed ---
 
 

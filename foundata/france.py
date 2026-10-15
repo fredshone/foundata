@@ -19,6 +19,7 @@ import json
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix
 from foundata.utils import sample_to_euro
@@ -67,7 +68,7 @@ def load(
     Returns:
         (attributes, trips) DataFrames conforming to the template schema.
     """
-    print(f"Loading {SOURCE} data...")
+    logger.info(f"Loading {SOURCE} data...")
     root = Path(data_root).expanduser()
     attributes, trips = [], []
     for survey in survey_dirs(root, hh_config.get("exclude_surveys") or []):
@@ -303,7 +304,9 @@ def access_egress(legs: pl.DataFrame, config: dict) -> pl.DataFrame:
     """Mean per-person walking distance (km) over their transit trips.
 
     A walking leg's distance is its travel distance, else its euclidean
-    distance x circuity, else its travel time x walk_speed.
+    distance x circuity, else its travel time x walk_speed. Transit trips
+    with no walking leg are left out rather than counted as 0 km, as in
+    ktdb.
     """
     walk_km = pl.coalesce(
         "leg_travel_distance",
@@ -315,10 +318,11 @@ def access_egress(legs: pl.DataFrame, config: dict) -> pl.DataFrame:
         legs.group_by("pid", "trip_id")
         .agg(
             transit=(pl.col("leg_mode_group") == "public_transit").any(),
+            walked=walking.any(),
             known=walk_km.filter(walking).is_not_null().all(),
             km=walk_km.filter(walking).sum(),
         )
-        .filter("transit", "known")
+        .filter("transit", "walked", "known")
     )
     return per_trip.group_by("pid").agg(
         access_egress_distance=pl.col("km").mean().cast(pl.Float32)

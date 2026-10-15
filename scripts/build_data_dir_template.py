@@ -3,7 +3,7 @@ Build a minimal example data directory at data_dir_template/, mirroring the
 structure of a real ~/Data/foundata/ tree with a handful of rows per source —
 enough to run:
 
-    uv run foundata run -d data_dir_template
+    uv run foundata batch data_dir_template
 
 Sibling to scripts/generate_fixtures.py (which builds the tests/fixtures/
 used by the unit tests) and reuses its sample/shuffle helpers, but targets a
@@ -70,10 +70,12 @@ or regenerate only some sources:
 """
 
 import mmap
-import sys
+from enum import Enum
 from pathlib import Path
+from typing import Annotated, Optional
 
 import polars as pl
+import typer
 from csv_writer import sample_uruguay
 from dbf_writer import sample_brazil, sample_mexico
 from ddi_writer import build_ddi
@@ -1224,11 +1226,20 @@ GENERATORS = {
     "france": generate_france,
 }
 
-if __name__ == "__main__":
-    selected = sys.argv[1:] or list(GENERATORS)
-    unknown = set(selected) - set(GENERATORS)
-    if unknown:
-        sys.exit(f"Unknown sources: {sorted(unknown)}")
-    for name in selected:
+Source = Enum("Source", {name: name for name in GENERATORS}, type=str)
+
+
+def main(
+    sources: Annotated[
+        Optional[list[Source]],
+        typer.Argument(help="Sources to regenerate (default: all)."),
+    ] = None,
+):
+    """Build data_dir_template/ from samples of the real data."""
+    for name in [s.value for s in sources] if sources else list(GENERATORS):
         GENERATORS[name]()
     print("Done.")
+
+
+if __name__ == "__main__":
+    typer.run(main)

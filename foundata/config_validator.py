@@ -1,5 +1,7 @@
 from pathlib import Path
 
+from loguru import logger
+
 from foundata import utils
 
 PROGRAMMATIC_FIELDS = {"country", "source", "year", "month", "day"}
@@ -150,7 +152,7 @@ def validate_source(
     source_dir = configs_root / source_name
 
     if not source_dir.exists():
-        print(f"ERROR: Config directory not found: {source_dir}")
+        logger.error(f"Config directory not found: {source_dir}")
         return False
 
     template_attributes = utils.get_template_attributes()
@@ -215,18 +217,18 @@ def validate_source(
         warnings.extend(field_warnings)
 
     # Print summary
-    print(f"\n=== Validating source: {source_name} ===")
+    logger.info(f"=== Validating source: {source_name} ===")
     if warnings:
         for w in warnings:
-            print(f"  WARN: {w}")
+            logger.warning(w)
     if errors:
         for e in errors:
-            print(f"  ERROR: {e}")
-        print(
-            f"  RESULT: INVALID ({len(errors)} errors, {len(warnings)} warnings)"
+            logger.error(e)
+        logger.error(
+            f"RESULT: INVALID ({len(errors)} errors, {len(warnings)} warnings)"
         )
     else:
-        print(f"  RESULT: OK ({len(warnings)} warnings)")
+        logger.info(f"RESULT: OK ({len(warnings)} warnings)")
 
     return len(errors) == 0
 
@@ -244,7 +246,7 @@ def validate_all_sources(configs_root: str | Path | None = None) -> bool:
     ]
 
     if not sources:
-        print("No sources found.")
+        logger.warning("No sources found.")
         return True
 
     all_valid = True
@@ -253,5 +255,7 @@ def validate_all_sources(configs_root: str | Path | None = None) -> bool:
         if not valid:
             all_valid = False
 
-    print(f"\n=== Summary: {'ALL VALID' if all_valid else 'SOME INVALID'} ===")
+    logger.info(
+        f"=== Summary: {'ALL VALID' if all_valid else 'SOME INVALID'} ==="
+    )
     return all_valid

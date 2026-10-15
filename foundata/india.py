@@ -29,6 +29,7 @@ import mmap
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 from nesstar_converter import (
     NESSTAR_MAGIC,
     _parse_resource_layouts,
@@ -149,7 +150,7 @@ def load(
         raise ValueError(
             f"Unsupported India TUS year: {year} (expected 2024 or 2019)"
         )
-    print(f"Loading India TUS {year}...")
+    logger.info(f"Loading India TUS {year}...")
 
     blocks = ROUNDS[year]["blocks"]
     hh_mapping = hh_config["column_mappings"][str(year)]
@@ -353,7 +354,7 @@ def _diary_respondents_only(
         maintain_order="left",
     )
     nn = n - attributes.height
-    print(
+    logger.debug(
         f"Removed {nn}/{n} India TUS persons with no time-use diary "
         f"({100 * nn / max(n, 1):.1f}%)"
     )

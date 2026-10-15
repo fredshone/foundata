@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix
 from foundata.utils import (
@@ -23,7 +24,7 @@ def load(
     stages_config: dict,
     days_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading NTS...")
+    logger.info("Loading NTS...")
 
     hhs = load_households(data_root, hh_config)
     persons = load_persons(data_root, person_config)
@@ -54,7 +55,7 @@ def load(
 def load_households(
     root: str | Path, config: dict | None = None
 ) -> pl.DataFrame:
-    print("loading households...")
+    logger.info("loading households...")
 
     columns = config["column_mappings"]
 
@@ -91,7 +92,7 @@ def load_households(
 
 
 def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-    print("loading persons...")
+    logger.info("loading persons...")
 
     columns = config["column_mappings"]
 
@@ -125,7 +126,7 @@ def load_persons(root: str | Path, config: dict | None = None) -> pl.DataFrame:
 
 
 def load_trips(root: str | Path, config: dict | None = None) -> pl.DataFrame:
-    print("loading trips...")
+    logger.info("loading trips...")
 
     columns = config["column_mappings"]
 
@@ -202,7 +203,7 @@ def calc_transit_access_egress_distance(
         main_transit_stages.select("pid", "tid").unique().shape[0]
     )
     perc = n_main_transit_trips / n_trips * 100
-    print(
+    logger.debug(
         f"{n_main_transit_trips} out of {n_trips} ({perc:.2f}%) trips have a main transit stage."
     )
 
@@ -239,7 +240,7 @@ def calc_transit_access_egress_distance(
         pl.col("access_egress_distance").is_null()
     ).shape[0]
     perc = access_egress_distance_nulls / attributes.shape[0] * 100
-    print(
+    logger.debug(
         f"{access_egress_distance_nulls} out of {attributes.shape[0]} ({perc:.2f}%) persons have null access_egress_distance."
     )
 

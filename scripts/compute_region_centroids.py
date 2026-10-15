@@ -45,7 +45,12 @@ def main():
             lat = float(row["lat"])
             lon = float(row["lon"])
             if code not in bounds:
-                bounds[code] = {"min_lat": lat, "max_lat": lat, "min_lon": lon, "max_lon": lon}
+                bounds[code] = {
+                    "min_lat": lat,
+                    "max_lat": lat,
+                    "min_lon": lon,
+                    "max_lon": lon,
+                }
             else:
                 b = bounds[code]
                 b["min_lat"] = min(b["min_lat"], lat)

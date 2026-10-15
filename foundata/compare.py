@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from typing import Iterable, Sequence
 
 import polars as pl
+from loguru import logger
 
 _CATEGORICAL_DTYPES = {pl.Utf8, pl.Categorical, pl.Enum, pl.Boolean}
 
@@ -135,17 +136,17 @@ def verify_tables(
         )
 
         if not (missing or extra or kind_mismatches or cat_diffs or num_diffs):
-            print(f"[verify] {other.name}: OK vs {template_name}")
+            logger.info(f"[verify] {other.name}: OK vs {template_name}")
             continue
 
-        print(f"[verify] {other.name} vs {template_name}")
+        logger.warning(f"[verify] {other.name} vs {template_name}")
         if missing:
-            print(f"  missing columns: {missing}")
+            logger.warning(f"  missing columns: {missing}")
         if extra:
-            print(f"  extra columns: {extra}")
+            logger.warning(f"  extra columns: {extra}")
         if kind_mismatches:
-            print(f"  kind mismatches: {kind_mismatches}")
+            logger.warning(f"  kind mismatches: {kind_mismatches}")
         if cat_diffs:
-            print(f"  categorical diffs: {cat_diffs}")
+            logger.warning(f"  categorical diffs: {cat_diffs}")
         if num_diffs:
-            print(f"  numeric diffs: {num_diffs}")
+            logger.warning(f"  numeric diffs: {num_diffs}")

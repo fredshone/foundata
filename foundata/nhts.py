@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix
 from foundata.utils import (
@@ -22,7 +23,7 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading NHTS...")
+    logger.info("Loading NHTS...")
     hhs = load_households(data_root, hh_config, years=years)
     persons = load_persons(data_root, person_config, years=years)
     attributes = table_joiner(hhs, persons, on="hid")
@@ -60,7 +61,7 @@ def load_households(
 
     hhs: list[pl.DataFrame] = []
     for year, name in zip(years, names):
-        print(f"Loading {year}...")
+        logger.info(f"Loading {year}...")
         year_config = config_for_year(hh_config, year)
 
         column_mapping = year_config["column_mappings"]

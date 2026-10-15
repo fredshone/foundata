@@ -16,11 +16,12 @@ Usage:
 """
 
 from pathlib import Path
+from typing import Annotated
 
-import click
 import geopandas as gpd
 import pandas as pd
 import polars as pl
+import typer
 
 URL = "https://raw.githubusercontent.com/vuski/admdongkor/master/ver20121210/HangJeongDong_ver20121210.geojson"
 OUT_DIR = Path(__file__).parent.parent / "configs/ktdb"
@@ -32,16 +33,18 @@ OUT_DIR = Path(__file__).parent.parent / "configs/ktdb"
 SUCCESSORS = {"159": "2901", "166": "3408"}
 
 
-@click.command()
-@click.option(
-    "--classification",
-    required=True,
-    help="가구통행실태조사 분류 번호 및 행정코드.xls from the 2010 download",
-)
-@click.option("--geojson", default=URL, show_default=True)
-@click.option("--out-dir", default=str(OUT_DIR), show_default=True)
-def main(classification, geojson, out_dir):
-    out_dir = Path(out_dir)
+def main(
+    classification: Annotated[
+        Path,
+        typer.Option(
+            exists=True,
+            help="가구통행실태조사 분류 번호 및 행정코드.xls from the 2010 download",
+        ),
+    ],
+    geojson: str = URL,
+    out_dir: Path = OUT_DIR,
+):
+    """Write 2010 KTDB zones and their centroids to configs/ktdb."""
     out_dir.mkdir(parents=True, exist_ok=True)
 
     zones = (
@@ -95,4 +98,4 @@ def main(classification, geojson, out_dir):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

@@ -14,6 +14,7 @@ Creates:
 import sys
 from pathlib import Path
 
+import typer
 import yaml
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
@@ -42,8 +43,14 @@ def build_hh_yaml(template_attributes: dict) -> str:
 
     # List all hh-relevant attribute fields as commented stubs
     hh_fields = [
-        "hid", "hh_size", "hh_income", "dwelling", "ownership",
-        "vehicles", "hh_zone", "weight",
+        "hid",
+        "hh_size",
+        "hh_income",
+        "dwelling",
+        "ownership",
+        "vehicles",
+        "hh_zone",
+        "weight",
     ]
     for field in hh_fields:
         if field in template_attributes:
@@ -78,9 +85,18 @@ def build_person_yaml(template_attributes: dict) -> str:
     ]
 
     person_fields = [
-        "pid", "hid", "age", "sex", "employment", "occupation",
-        "education", "has_licence", "disability", "can_wfh",
-        "relationship", "race",
+        "pid",
+        "hid",
+        "age",
+        "sex",
+        "employment",
+        "occupation",
+        "education",
+        "has_licence",
+        "disability",
+        "can_wfh",
+        "relationship",
+        "race",
     ]
     for field in person_fields:
         if field in template_attributes:
@@ -264,6 +280,7 @@ def load_trips(
 
 
 def scaffold_source(source_name: str) -> None:
+    """Generate configs and a stub loader for a new source."""
     template = load_template()
     template_attributes = template["attributes"]
     template_trips = template["trips"]
@@ -298,14 +315,18 @@ def scaffold_source(source_name: str) -> None:
     print(f"  {py_path}")
     print()
     print("Next steps:")
-    print("  1. Fill in column_mappings in each YAML (raw col -> template field)")
+    print(
+        "  1. Fill in column_mappings in each YAML (raw col -> template field)"
+    )
     print("  2. Add value mappings for categorical fields")
-    print("  3. Implement load_households/load_persons/load_trips in the .py module")
-    print(f"  4. Run: python -c \"from foundata.config_validator import validate_source; validate_source('{source_name}')\"")
+    print(
+        "  3. Implement load_households/load_persons/load_trips in the .py module"
+    )
+    print(f"  4. Run: foundata validate-config {source_name}")
+    print(
+        f"  5. Add _load_{source_name}(source_dir) to foundata/run.py and register it in SOURCES"
+    )
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print(__doc__)
-        sys.exit(1)
-    scaffold_source(sys.argv[1])
+    typer.run(scaffold_source)

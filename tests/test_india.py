@@ -405,5 +405,5 @@ def test_india_load_excludes_persons_without_diary(loaded):
 
 
 def test_load_unsupported_year_raises(hh_cfg, person_cfg, trips_cfg):
-    with pytest.raises(ValueError, match="Unsupported TUS year"):
+    with pytest.raises(ValueError, match="Unsupported India TUS year"):
         india.load("x", "y", hh_cfg, person_cfg, trips_cfg, year=2010)

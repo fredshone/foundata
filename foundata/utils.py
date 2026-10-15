@@ -5,8 +5,10 @@ from typing import Iterable
 
 import polars as pl
 import yaml
+from loguru import logger
 from rapidfuzz import fuzz, process
 
+from foundata import table_logger
 from foundata.post_process import activities_to_trips, trips_to_activities
 
 DTYPE_MAP = {
@@ -41,7 +43,7 @@ def fuzzy_loader(path: str | Path, target: str, **kwargs) -> pl.DataFrame:
         raise FileNotFoundError(
             f"No file found in {path} matching {target} (best match: {best_match} with score {score})"
         )
-    print(
+    logger.debug(
         f"Fuzzy match loading {best_match} from {path} (score: {int(score)}%)"
     )
     return pl.read_csv(path / candidates[idx], **kwargs)
@@ -74,19 +76,23 @@ def check_overlap(
 
     if missing_in_lhs:
         n = min(n_lhs, 3)
-        print(
-            f"Warning: Missing {n_lhs} ({perc_lhs:.1f}%) of '{on}' keys in '{lhs_name}': {list(missing_in_lhs)[:n]}"
+        table_logger.note(
+            f"Missing {n_lhs} ({perc_lhs:.1f}%) of '{on}' keys in '{lhs_name}': {list(missing_in_lhs)[:n]}"
         )
     else:
-        print(f"All '{on}' keys in '{rhs_name}' are present in '{lhs_name}'")
+        logger.debug(
+            f"All '{on}' keys in '{rhs_name}' are present in '{lhs_name}'"
+        )
 
     if missing_in_rhs:
         n = min(n_rhs, 3)
-        print(
-            f"Warning: Missing {n_rhs} ({perc_rhs:.1f}%) of '{on}' keys in '{rhs_name}': {list(missing_in_rhs)[:n]}"
+        table_logger.note(
+            f"Missing {n_rhs} ({perc_rhs:.1f}%) of '{on}' keys in '{rhs_name}': {list(missing_in_rhs)[:n]}"
         )
     else:
-        print(f"All '{on}' keys in '{lhs_name}' are present in '{rhs_name}'")
+        logger.debug(
+            f"All '{on}' keys in '{lhs_name}' are present in '{rhs_name}'"
+        )
 
 
 def table_joiner(
@@ -105,7 +111,7 @@ def table_joiner(
     b_cols = rhs.columns
     duplicates = set(a_cols) & set(b_cols) - {on}
     if duplicates:
-        print(f"Warning: Duplicate columns (other than join key): {duplicates}")
+        logger.warning(f"Duplicate columns (other than join key): {duplicates}")
 
     return lhs.join(rhs, on=on, maintain_order=maintain_order)
 
@@ -224,8 +230,10 @@ def combine_consecutive_acts(
     )
     nn = n - len(clean_trips)
     if nn:
-        print(
-            f"Combined {nn}/{n} trips with consecutive activities of the same non-consecutive types ({100 * nn / n:.1f}%)"
+        table_logger.record(
+            "combined consec",
+            f"{100 * nn / n:.1f}%",
+            f"Combined {nn}/{n} trips with consecutive activities of the same non-consecutive types ({100 * nn / n:.1f}%)",
         )
     return clean_trips
 
@@ -257,12 +265,14 @@ def compute_avg_speed(
     """
     # check distances are not null and durations are positive to avoid skewing avg_speed
     if not trips.select(pl.col("distance").is_not_null()).to_series().all():
-        print(
-            "Warning: Some trips have null distance — these will be excluded from avg_speed calculation"
+        table_logger.note(
+            "Some trips have null distance — these will be excluded from avg_speed calculation",
+            level="WARNING",
         )
     if not trips.select(pl.col("tet") > pl.col("tst")).to_series().all():
-        print(
-            "Warning: Some trips have non-positive duration (tet <= tst) — these will be excluded from avg_speed calculation"
+        table_logger.note(
+            "Some trips have non-positive duration (tet <= tst) — these will be excluded from avg_speed calculation",
+            level="WARNING",
         )
 
     speed = (
@@ -315,9 +325,7 @@ def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
 
 
 def correct_child_employment(
-    attributes: pl.DataFrame,
-    void_age_max: int = 5,
-    student_age_max: int = 16,
+    attributes: pl.DataFrame, void_age_max: int = 5, student_age_max: int = 16
 ) -> pl.DataFrame:
     """Force employment/employed_type for children based on age.
 
@@ -436,8 +444,9 @@ def norm_weights(
         .to_series()
         .all()
     ):
-        print(
-            "Warning: Some weights are null — these will be treated as zero in normalization"
+        table_logger.note(
+            "Some weights are null — these will be treated as zero in normalization",
+            level="WARNING",
         )
     # check for non-positive weights to avoid skewing normalization
     if (
@@ -445,8 +454,9 @@ def norm_weights(
         .to_series()
         .all()
     ):
-        print(
-            "Warning: Some weights are non-positive (<= 0) — these will be treated as zero in normalization"
+        table_logger.note(
+            "Some weights are non-positive (<= 0) — these will be treated as zero in normalization",
+            level="WARNING",
         )
         attributes = attributes.with_columns(
             pl.col(weight_col)
@@ -456,7 +466,7 @@ def norm_weights(
         )
     avg_weight = attributes[weight_col].fill_null(0).mean()
     if avg_weight == 0:
-        print("Warning: Total weight is zero — returning all weights as 1")
+        table_logger.note("Total weight is zero — returning all weights as 1")
         return attributes.with_columns(
             pl.lit(1, dtype=pl.Float32).alias(weight_col)
         )
@@ -487,7 +497,7 @@ def add_implied_trips(
         is_travel=pl.lit(True),
         **{c: pl.lit(None, dtype=pl.String) for c in null_cols},
     )
-    print(f"Added {trips.height} {message}")
+    logger.debug(f"Added {trips.height} {message}")
     # make room for each trip at the end of the episode before it
     episodes = episodes.with_columns(
         tet=pl.col("tet")

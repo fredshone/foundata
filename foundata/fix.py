@@ -2,7 +2,7 @@ from typing import Optional
 
 import polars as pl
 
-from foundata import utils
+from foundata import table_logger, utils
 
 
 def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
@@ -92,26 +92,29 @@ def missing_columns(
     if template_trips is None:
         template_trips = utils.get_template_trips()
 
+    added = {"attributes": [], "trips": []}
     for col, cnfg in template_attributes.items():
         if cnfg.get("default") and col not in attributes.columns:
+            added["attributes"].append(col)
             polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
-            print(
-                f"WARNING: Optional attributes column '{col}' missing — adding as null {cnfg['dtype']}"
-            )
             attributes = attributes.with_columns(
                 pl.lit(None).cast(polars_type).alias(col)
             )
 
     for col, cnfg in template_trips.items():
         if cnfg.get("default") and col not in trips.columns:
+            added["trips"].append(col)
             polars_type = utils.DTYPE_MAP.get(cnfg["dtype"])
-            print(
-                f"WARNING: Optional trips column '{col}' missing — adding as null {cnfg['dtype']}"
-            )
             trips = trips.with_columns(
                 pl.lit(None).cast(polars_type).alias(col)
             )
 
+    for table, cols in added.items():
+        if cols:
+            table_logger.note(
+                f"Optional {table} columns missing — added as null: {', '.join(cols)}",
+                level="WARNING",
+            )
     return attributes, trips
 
 

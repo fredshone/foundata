@@ -14,10 +14,11 @@ that has it, so later sources only add zones the earlier ones lack.
 """
 
 from pathlib import Path
+from typing import Annotated, Optional
 
-import click
 import geopandas as gpd
 import pandas as pd
+import typer
 
 BASE = "https://raw.githubusercontent.com/vuski/admdongkor/master"
 URLS = [
@@ -49,14 +50,15 @@ def centroids(source: str) -> pd.DataFrame:
     )
 
 
-@click.command()
-@click.option(
-    "--geojson",
-    multiple=True,
-    help="GeoJSON path or URL, repeatable (default: 2021-07 plus 2022-01)",
-)
-@click.option("--out", default=str(DEFAULT_OUT), show_default=True)
-def main(geojson, out):
+def main(
+    geojson: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            help="GeoJSON path or URL, repeatable (default: 2021-07 plus 2022-01)"
+        ),
+    ] = None,
+    out: Path = DEFAULT_OUT,
+):
     """Compute zone centroids and write configs/ktdb/zone_centroids.csv."""
     frames = []
     for source in geojson or URLS:
@@ -68,10 +70,10 @@ def main(geojson, out):
         frames.append(df)
     out_df = pd.concat(frames, ignore_index=True)
 
-    Path(out).parent.mkdir(parents=True, exist_ok=True)
+    out.parent.mkdir(parents=True, exist_ok=True)
     out_df.to_csv(out, index=False)
     print(f"Written {len(out_df)} centroids to {out}")
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

@@ -2,6 +2,7 @@ import random
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix
 from foundata.utils import (
@@ -40,9 +41,9 @@ def load_years(
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
     all_attributes = []
     all_trips = []
-    print("Loading LTDS...")
+    logger.info("Loading LTDS...")
     for year in years:
-        print(f"Loading {year}...")
+        logger.info(f"Loading {year}...")
         root = expand_root(data_root) / year
 
         hh_config_year = config_for_year(hh_config, year)
@@ -73,13 +74,13 @@ def load_years(
 
         zone_mapping = load_mapping(root / "HABORO_T.csv")
 
-        print("processing hhs...")
+        logger.debug("processing hhs...")
         hhs = preprocess_hhs(hhs, hh_config_year, year, zone_mapping)
 
-        print("processing persons...")
+        logger.debug("processing persons...")
         persons = preprocess_persons(persons, person_config_year)
 
-        print("processing person data...")
+        logger.debug("processing person data...")
         persons_data = preprocess_persons_data(
             persons_data, person_data_config_year, year
         )
@@ -94,7 +95,7 @@ def load_years(
             attributes, hhs, on="hid", lhs_name="attributes", rhs_name="hhs"
         )
 
-        print("processing trips and stages...")
+        logger.debug("processing trips and stages...")
         trips = preprocess_trips(trips, trips_config_year, zone_mapping)
         trip_distances = extract_trip_distances(stages)
         trips = trips.join(trip_distances, on="tid", how="left")
@@ -376,7 +377,7 @@ def sample_start_times(earliest, latest, durations, pid, seed):
     hi = latest[n - 1]
     lo = earliest[n - 1]
     if lo > hi:
-        print(f"Warning: Infeasible sample found at pid: {pid} trip: {n - 1}")
+        logger.debug(f"Infeasible sample found at pid: {pid} trip: {n - 1}")
         starts[n - 1] = rng.randint(hi, lo)
     else:
         starts[n - 1] = rng.randint(earliest[n - 1], latest[n - 1])
@@ -386,7 +387,7 @@ def sample_start_times(earliest, latest, durations, pid, seed):
         hi = min(latest[i], starts[i + 1] - durations[i])
         lo = earliest[i]
         if lo > hi:
-            print(f"Warning:Negative sample found at pid: {pid} trip: {i}")
+            logger.debug(f"Negative sample found at pid: {pid} trip: {i}")
             starts[i] = rng.randint(hi, lo)
         else:
             starts[i] = rng.randint(lo, hi)
@@ -411,8 +412,8 @@ def compute_feasible_schedule(tsts, tets, durations, pid, max_iter=7):
             return earliest, latest, _durations
 
         # Otherwise reduce durations
-        print(
-            f"Warning: reducing durations by {amount} for infeasible pid: {pid} trips at indices: {infeasible}"
+        logger.debug(
+            f"reducing durations by {amount} for infeasible pid: {pid} trips at indices: {infeasible}"
         )
         _durations = reduce_durations(_durations, infeasible, amount=amount)
         amount *= 2  # exponential backoff for faster convergence
@@ -531,7 +532,7 @@ def extract_pid_access_egress_distance(stages: pl.DataFrame) -> pl.DataFrame:
     n = access_egress.height
     pop = stages.select("pid").unique().height
     perc = 100 * n / pop
-    print(
+    logger.debug(
         f"Computed access/egress distance for {n} trips, covering {perc:.1f}% of the population."
     )
 

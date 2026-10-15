@@ -6,10 +6,30 @@ from typing import Optional
 import matplotlib.pyplot as plt
 import numpy as np
 import polars as pl
+from loguru import logger
+from matplotlib.legend_handler import HandlerTuple
 from matplotlib.lines import Line2D
 from matplotlib.patches import Patch
 
 from foundata import post_process
+
+# Ten hues dark enough to read on the lightgray axes background; colours
+# alone can't separate ~20 sources, so line style / hatch is the second cue.
+SOURCE_COLORS = [
+    "#1f5fbf",  # blue
+    "#e8601c",  # orange
+    "#0f8c6e",  # teal
+    "#d6408f",  # magenta
+    "#222222",  # charcoal
+    "#a88400",  # gold
+    "#7a3fa8",  # violet
+    "#2e7d32",  # green
+    "#b01e1e",  # red
+    "#7b4f2c",  # brown
+]
+LINE_STYLES = ["-", (0, (4, 1.5)), (0, (1, 1.2)), (0, (5, 1.5, 1, 1.5))]
+HATCHES = ["", "////", "....", "xxxx"]
+DEFAULT_LINEWIDTH = 1.5
 
 
 def numeric_hist_grid(
@@ -19,8 +39,8 @@ def numeric_hist_grid(
     max_sample: int = 10_000,
     bins="auto",
     density: bool = True,
-    cmap_name: str = "tab20",
-    linewidth: float = 3,
+    cmap_name: str | None = None,
+    linewidth: float = DEFAULT_LINEWIDTH,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
     ignore_cols: list | set | tuple = (),
@@ -57,13 +77,7 @@ def numeric_hist_grid(
     if len(groups) == 0:
         raise ValueError(f"No non-null groups found in '{on}'.")
 
-    cmap = plt.get_cmap(cmap_name)
-    if hasattr(cmap, "colors") and cmap.colors is not None:
-        palette = list(cmap.colors)
-    else:
-        palette = [cmap(i / 20) for i in range(20)]
-    color_cycle = cycle(palette)
-    color_map = {g: next(color_cycle) for g in groups}
+    styles = _group_styles(groups, cmap_name)
 
     def _finite_np(values: np.ndarray) -> np.ndarray:
         if values.size == 0:
@@ -146,12 +160,12 @@ def numeric_hist_grid(
             lines = [message, "Reasons:"]
             for k, v in skip_reasons.items():
                 lines.append(f" - {k}: {v}")
-            print("\n".join(lines))
+            logger.error("\n".join(lines))
         raise ValueError(
             message + " Check thresholds or disable tail_handling."
         )
 
-    n_plots = len(to_plot) + 1  # +1 for legend
+    n_plots = len(to_plot)
     n_rows = math.ceil(n_plots / n_cols)
 
     fig, axes = plt.subplots(
@@ -199,7 +213,8 @@ def numeric_hist_grid(
                 bins=bin_edges,
                 histtype="step",
                 density=density,
-                color=color_map[g],
+                color=styles[g]["color"],
+                linestyle=styles[g]["linestyle"],
                 linewidth=linewidth,
                 label=str(g),
             )
@@ -207,34 +222,13 @@ def numeric_hist_grid(
         ax.set_title(col.title(), fontsize="large")
         ax.fontsize = "large"
 
-    handles = [
-        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
-        for g in groups
-    ]
-
-    # repeat for empty legend plot
-    idx = len(to_plot)
-    r = idx // n_cols
-    c = idx % n_cols
-    ax = axes[r][c]
-    ax.set_facecolor(ax_bg)
-
-    ax.legend(
-        handles=handles,
-        loc="center",
-        bbox_to_anchor=(0.86, 0.5),
-        borderaxespad=0.0,
-        frameon=False,
-        title=None,
-        fontsize="large",
-    )
-
-    for i in range(n_plots - 1, n_rows * n_cols):
+    for i in range(n_plots, n_rows * n_cols):
         r = i // n_cols
         c = i % n_cols
         axes[r][c].axis("off")
 
     plt.tight_layout()
+    _source_legend(fig, groups, styles, linewidth=linewidth)
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -332,9 +326,10 @@ def _plot_categorical_column(ax, df: pl.DataFrame, col: str, on: str):
 def summary_trends(
     df: pl.DataFrame,
     on: str = "source",
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
+    linewidth: float = DEFAULT_LINEWIDTH,
     save_path: str | Path | None = None,
 ):
     MONTH_LABELS = [
@@ -355,13 +350,7 @@ def summary_trends(
     groups = sorted(
         df.select(pl.col(on)).drop_nulls().unique().to_series().to_list()
     )
-    cmap = plt.get_cmap(cmap_name)
-    palette = (
-        list(cmap.colors)
-        if hasattr(cmap, "colors") and cmap.colors is not None
-        else [cmap(i / 20) for i in range(20)]
-    )
-    color_map = {g: c for g, c in zip(groups, cycle(palette))}
+    styles = _group_styles(groups, cmap_name)
 
     fig, axes = plt.subplots(1, 3, figsize=(16.5, 4.5))
     fig.patch.set_facecolor(fig_bg)
@@ -382,9 +371,10 @@ def summary_trends(
         ax.plot(
             agg["month"].to_list(),
             agg["max_temp_c"].to_list(),
-            color=color_map[g],
+            color=styles[g]["color"],
+            linestyle=styles[g]["linestyle"],
             label=g,
-            linewidth=2,
+            linewidth=linewidth,
         )
     ax.set_xticks(range(1, 13))
     ax.set_xticklabels(MONTH_LABELS, rotation=45, ha="right")
@@ -409,7 +399,7 @@ def summary_trends(
         ax.plot(
             x_positions,
             y_values,
-            color=color_map[g],
+            color=styles[g]["color"],
             label=g,
             marker="_",
             markersize=16,
@@ -434,26 +424,24 @@ def summary_trends(
         xs = agg["year"].to_list()
         ys = agg["avg_speed"].to_list()
         if len(xs) == 1:
-            ax.scatter(xs, ys, color=color_map[g], label=g, s=80, zorder=3)
+            ax.scatter(
+                xs, ys, color=styles[g]["color"], label=g, s=60, zorder=3
+            )
         else:
-            ax.plot(xs, ys, color=color_map[g], label=g, linewidth=2)
+            ax.plot(
+                xs,
+                ys,
+                color=styles[g]["color"],
+                linestyle=styles[g]["linestyle"],
+                label=g,
+                linewidth=linewidth,
+            )
     ax.set_title("Avg Speed by Year", fontsize="large")
     ax.set_ylabel("avg_speed")
     ax.set_xlabel("year")
 
-    handles = [
-        Line2D([0], [0], color=color_map[g], lw=2, label=g) for g in groups
-    ]
-    axes[2].legend(
-        handles=handles,
-        loc="upper left",
-        bbox_to_anchor=(1.05, 1),
-        borderaxespad=0,
-        frameon=False,
-        fontsize="large",
-    )
-
     plt.tight_layout()
+    _source_legend(fig, groups, styles, linewidth=linewidth)
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -529,14 +517,94 @@ def categorical_bar_grid(
         plt.show()
 
 
-def _group_color_map(groups: list, cmap_name: str = "tab20") -> dict:
-    cmap = plt.get_cmap(cmap_name)
-    if hasattr(cmap, "colors") and cmap.colors is not None:
-        palette = list(cmap.colors)
+def _group_styles(groups: list, cmap_name: str | None = None) -> dict:
+    """Colour plus line style / hatch per group.
+
+    Groups beyond the palette length reuse its hues with the next line
+    style (for lines) or hatch (for bars), so every group keeps a unique
+    colour+style pair instead of silently repeating a colour.
+    """
+    if cmap_name is None:
+        palette = SOURCE_COLORS
     else:
-        palette = [cmap(i / 20) for i in range(20)]
-    color_cycle = cycle(palette)
-    return {g: next(color_cycle) for g in groups}
+        cmap = plt.get_cmap(cmap_name)
+        if hasattr(cmap, "colors") and cmap.colors is not None:
+            palette = list(cmap.colors)
+        else:
+            palette = [cmap(i / 20) for i in range(20)]
+    n = len(palette)
+    return {
+        g: {
+            "color": palette[i % n],
+            "linestyle": LINE_STYLES[(i // n) % len(LINE_STYLES)],
+            "hatch": HATCHES[(i // n) % len(HATCHES)],
+        }
+        for i, g in enumerate(groups)
+    }
+
+
+def _bar_handle(style: dict, label: str | None = None) -> Patch:
+    return Patch(
+        facecolor=style["color"],
+        hatch=style["hatch"],
+        edgecolor="white",
+        linewidth=0,
+        label=label,
+    )
+
+
+def _source_legend(
+    fig,
+    groups: list,
+    styles: dict,
+    kind: str = "line",
+    linewidth: float = DEFAULT_LINEWIDTH,
+):
+    """Figure-level legend placed to the right of all axes, so it never
+    sits on top of plot space. Call after `tight_layout`; `savefig(...,
+    bbox_inches="tight")` grows the canvas to include it.
+    """
+    if kind == "line":
+        handles = [
+            Line2D(
+                [0],
+                [0],
+                color=styles[g]["color"],
+                linestyle=styles[g]["linestyle"],
+                lw=linewidth,
+                label=str(g),
+            )
+            for g in groups
+        ]
+    elif kind == "bar":
+        handles = [_bar_handle(styles[g], str(g)) for g in groups]
+    else:  # "both": hatched patch beside dashed line, for mixed grids
+        handles = [
+            (
+                _bar_handle(styles[g]),
+                Line2D(
+                    [0],
+                    [0],
+                    color=styles[g]["color"],
+                    linestyle=styles[g]["linestyle"],
+                    lw=linewidth,
+                ),
+            )
+            for g in groups
+        ]
+    per_col = max(1, int(fig.get_figheight() / 0.3))
+    fig.legend(
+        handles=handles,
+        labels=[str(g) for g in groups],
+        handler_map={tuple: HandlerTuple(ndivide=None, pad=0.6)},
+        loc="center left",
+        bbox_to_anchor=(1.0, 0.5),
+        borderaxespad=0.0,
+        frameon=False,
+        fontsize="medium",
+        handlelength=3,
+        ncol=math.ceil(len(handles) / per_col),
+    )
 
 
 def _non_null_groups(df: pl.DataFrame, on: str) -> list:
@@ -619,10 +687,10 @@ def time_of_day_profile(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
     on: str = "source",
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
-    linewidth: float = 2.5,
+    linewidth: float = DEFAULT_LINEWIDTH,
     save_path: str | Path | None = None,
 ):
     """Departure/arrival time-of-day density per source.
@@ -636,7 +704,7 @@ def time_of_day_profile(
     """
     trips = trips.join(attributes.select("pid", on), on="pid", how="left")
     groups = _non_null_groups(trips, on)
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
     fig, axes = plt.subplots(1, 2, figsize=(13, 4.5))
     fig.patch.set_facecolor(fig_bg)
@@ -664,7 +732,8 @@ def time_of_day_profile(
             ax.plot(
                 grid,
                 density,
-                color=color_map[g],
+                color=styles[g]["color"],
+                linestyle=styles[g]["linestyle"],
                 linewidth=linewidth,
                 label=str(g),
             )
@@ -675,20 +744,8 @@ def time_of_day_profile(
 
     axes[0].set_ylabel("density")
 
-    handles = [
-        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
-        for g in groups
-    ]
-    axes[1].legend(
-        handles=handles,
-        loc="upper left",
-        bbox_to_anchor=(1.02, 1),
-        borderaxespad=0.0,
-        frameon=False,
-        fontsize="medium",
-    )
-
     plt.tight_layout()
+    _source_legend(fig, groups, styles, linewidth=linewidth)
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -702,7 +759,7 @@ def time_heaping(
     on: str = "source",
     time_col: str = "tst",
     n_cols: int = 3,
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
     save_path: str | Path | None = None,
@@ -715,7 +772,7 @@ def time_heaping(
     """
     trips = trips.join(attributes.select("pid", on), on="pid", how="left")
     groups = _non_null_groups(trips, on)
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
     n_rows = math.ceil(len(groups) / n_cols)
     fig, axes = plt.subplots(
@@ -743,7 +800,7 @@ def time_heaping(
         counts = np.bincount(minutes, minlength=60)
         proportions = counts / counts.sum()
 
-        ax.bar(range(60), proportions, color=color_map[g], width=1.0)
+        ax.bar(range(60), proportions, color=styles[g]["color"], width=1.0)
         round_share = proportions[[0, 15, 30, 45]].sum() * 100
         ax.set_title(
             f"{g} ({round_share:.0f}% on :00/:15/:30/:45)", fontsize="medium"
@@ -769,10 +826,10 @@ def trip_time_diagnostics(
     attributes: pl.DataFrame,
     trips: pl.DataFrame,
     on: str = "source",
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
-    linewidth: float = 2.5,
+    linewidth: float = DEFAULT_LINEWIDTH,
     clip_percentiles: tuple[float, float] = (1.0, 99.0),
     save_path: str | Path | None = None,
 ):
@@ -788,7 +845,7 @@ def trip_time_diagnostics(
         attributes.select("pid", on), on="pid", how="left"
     ).with_columns(duration=(pl.col("tet") - pl.col("tst")).cast(pl.Float64))
     groups = _non_null_groups(trips, on)
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
     valid = trips.filter(pl.col("duration") > 0)
     speeds = valid.filter(pl.col("distance").is_not_null()).with_columns(
@@ -827,7 +884,12 @@ def trip_time_diagnostics(
             continue
         density = _kde_bounded(vals, grid, lo=0.0)
         ax.plot(
-            grid, density, color=color_map[g], linewidth=linewidth, label=str(g)
+            grid,
+            density,
+            color=styles[g]["color"],
+            linestyle=styles[g]["linestyle"],
+            linewidth=linewidth,
+            label=str(g),
         )
     ax.set_xlim(grid[0], grid[-1])
     ax.set_title("Trip Duration (min)", fontsize="large")
@@ -858,7 +920,8 @@ def trip_time_diagnostics(
             bins=bin_edges,
             histtype="step",
             density=True,
-            color=color_map[g],
+            color=styles[g]["color"],
+            linestyle=styles[g]["linestyle"],
             linewidth=linewidth,
             label=str(g),
         )
@@ -870,26 +933,21 @@ def trip_time_diagnostics(
     ax.set_facecolor(ax_bg)
     xs = range(len(groups))
     heights = [negative_map.get(g, 0.0) for g in groups]
-    ax.bar(xs, heights, color=[color_map[g] for g in groups])
+    ax.bar(
+        xs,
+        heights,
+        color=[styles[g]["color"] for g in groups],
+        hatch=[styles[g]["hatch"] for g in groups],
+        edgecolor="white",
+        linewidth=0,
+    )
     ax.set_xticks(list(xs))
     ax.set_xticklabels(groups, rotation=45, ha="right")
     ax.set_ylabel("%")
     ax.set_title("Non-positive Duration Trips", fontsize="large")
 
-    handles = [
-        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
-        for g in groups
-    ]
-    axes[1].legend(
-        handles=handles,
-        loc="upper left",
-        bbox_to_anchor=(1.02, 1),
-        borderaxespad=0.0,
-        frameon=False,
-        fontsize="medium",
-    )
-
     plt.tight_layout()
+    _source_legend(fig, groups, styles, linewidth=linewidth)
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -902,10 +960,10 @@ def activity_duration_by_type(
     activities: pl.DataFrame,
     on: str = "source",
     n_cols: int = 3,
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
-    linewidth: float = 2.5,
+    linewidth: float = DEFAULT_LINEWIDTH,
     clip_percentiles: tuple[float, float] = (1.0, 99.0),
     min_group_rows: int = 10,
     save_path: str | Path | None = None,
@@ -925,9 +983,9 @@ def activity_duration_by_type(
     act_types = sorted(
         activities.select("act").drop_nulls().unique().to_series().to_list()
     )
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
-    n_plots = len(act_types) + 1  # +1 for legend
+    n_plots = len(act_types)
     n_rows = math.ceil(n_plots / n_cols)
     fig, axes = plt.subplots(
         n_rows, n_cols, figsize=(5 * n_cols, 3.5 * n_rows), squeeze=False
@@ -962,7 +1020,8 @@ def activity_duration_by_type(
             ax.plot(
                 grid,
                 density,
-                color=color_map[g],
+                color=styles[g]["color"],
+                linestyle=styles[g]["linestyle"],
                 linewidth=linewidth,
                 label=str(g),
             )
@@ -971,29 +1030,12 @@ def activity_duration_by_type(
         ax.set_title(act.title(), fontsize="large")
         ax.set_xlabel("minutes")
 
-    # legend cell
-    idx = len(act_types)
-    r, c = idx // n_cols, idx % n_cols
-    ax = axes[r][c]
-    ax.set_facecolor(ax_bg)
-    handles = [
-        Line2D([0], [0], color=color_map[g], lw=linewidth, label=str(g))
-        for g in groups
-    ]
-    ax.legend(
-        handles=handles,
-        loc="center",
-        bbox_to_anchor=(0.86, 0.5),
-        borderaxespad=0.0,
-        frameon=False,
-        fontsize="large",
-    )
-
-    for i in range(n_plots - 1, n_rows * n_cols):
+    for i in range(n_plots, n_rows * n_cols):
         r, c = i // n_cols, i % n_cols
         axes[r][c].axis("off")
 
     plt.tight_layout()
+    _source_legend(fig, groups, styles, linewidth=linewidth)
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -1008,7 +1050,7 @@ def activity_count_by_attribute(
     act_types: Optional[list[str]] = None,
     on: str = "source",
     n_cols: int = 3,
-    cmap_name: str = "tab20",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
     bar_width: float = 0.8,
@@ -1048,9 +1090,9 @@ def activity_count_by_attribute(
     if not cats:
         raise ValueError(f"No non-null categories found in '{attribute_col}'.")
     groups = _non_null_groups(counts, on)
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
-    n_plots = len(act_types) + 1  # +1 for legend
+    n_plots = len(act_types)
     n_rows = math.ceil(n_plots / n_cols)
     fig, axes = plt.subplots(
         n_rows, n_cols, figsize=(6 * n_cols, 4 * n_rows), squeeze=False
@@ -1080,7 +1122,10 @@ def activity_count_by_attribute(
                 x + offset,
                 heights,
                 width=width,
-                color=color_map[g],
+                color=styles[g]["color"],
+                hatch=styles[g]["hatch"],
+                edgecolor="white",
+                linewidth=0,
                 label=str(g),
             )
 
@@ -1092,26 +1137,12 @@ def activity_count_by_attribute(
         )
         ax.set_ylabel("mean count / person")
 
-    # legend cell
-    idx = len(act_types)
-    r, c = idx // n_cols, idx % n_cols
-    ax = axes[r][c]
-    ax.set_facecolor(ax_bg)
-    handles = [Patch(facecolor=color_map[g], label=str(g)) for g in groups]
-    ax.legend(
-        handles=handles,
-        loc="center",
-        bbox_to_anchor=(0.86, 0.5),
-        borderaxespad=0.0,
-        frameon=False,
-        fontsize="large",
-    )
-
-    for i in range(n_plots - 1, n_rows * n_cols):
+    for i in range(n_plots, n_rows * n_cols):
         r, c = i // n_cols, i % n_cols
         axes[r][c].axis("off")
 
     plt.tight_layout()
+    _source_legend(fig, groups, styles, kind="bar")
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)
@@ -1171,7 +1202,7 @@ def attribute_activity_heatmap(
         attributes.select("pid", attribute_col, on), on="pid", how="left"
     )
     if counts.select(attribute_col).drop_nulls().height == 0:
-        print(
+        logger.info(
             f"Skipping activity heatmap for '{attribute_col}': all values are null."
         )
         return
@@ -1313,7 +1344,7 @@ def _plot_bar_cell(
     attribute_col: str,
     on: str,
     groups: list,
-    color_map: dict,
+    styles: dict,
     bar_width: float,
 ):
     """`act` is the column in `counts` holding the activity count — the
@@ -1337,7 +1368,15 @@ def _plot_bar_cell(
         )
         heights = [values.get(cat, 0.0) for cat in cats]
         offset = (gi - (len(groups) - 1) / 2) * width
-        ax.bar(x + offset, heights, width=width, color=color_map[g])
+        ax.bar(
+            x + offset,
+            heights,
+            width=width,
+            color=styles[g]["color"],
+            hatch=styles[g]["hatch"],
+            edgecolor="white",
+            linewidth=0,
+        )
 
     ax.set_xticks(x)
     ax.set_xticklabels(cats, rotation=45, ha="right", fontsize="small")
@@ -1354,7 +1393,7 @@ def _plot_line_cell(
     attribute_col: str,
     on: str,
     groups: list,
-    color_map: dict,
+    styles: dict,
     n_bins: int,
 ):
     """`act` is the column in `counts` holding the activity count — see the
@@ -1383,7 +1422,13 @@ def _plot_line_cell(
             if mask.any():
                 means[b] = y[mask].mean()
         ax.plot(
-            x, means, color=color_map[g], marker="o", markersize=4, linewidth=2
+            x,
+            means,
+            color=styles[g]["color"],
+            linestyle=styles[g]["linestyle"],
+            marker="o",
+            markersize=3,
+            linewidth=DEFAULT_LINEWIDTH,
         )
 
     ax.set_xticks(x)
@@ -1399,7 +1444,7 @@ def activities_attributes_grid(
     attribute_cols: Optional[dict[str, str]] = None,
     on: str = "source",
     n_bins: int = 8,
-    cmap_name: str = "Dark2",
+    cmap_name: str | None = None,
     fig_bg: str = "lightgray",
     ax_bg: str = "lightgray",
     bar_width: float = 0.8,
@@ -1445,7 +1490,7 @@ def activities_attributes_grid(
         how="left",
     )
     groups = _non_null_groups(counts, on)
-    color_map = _group_color_map(groups, cmap_name)
+    styles = _group_styles(groups, cmap_name)
 
     n_rows = len(act_types)
     n_cols = len(attribute_cols)
@@ -1467,7 +1512,7 @@ def activities_attributes_grid(
                     col,
                     on,
                     groups,
-                    color_map,
+                    styles,
                     bar_width,
                 )
             elif kind == "line":
@@ -1478,7 +1523,7 @@ def activities_attributes_grid(
                     col,
                     on,
                     groups,
-                    color_map,
+                    styles,
                     n_bins,
                 )
                 ax.set_xlabel(col.replace("_", " ").title(), fontsize="small")
@@ -1492,19 +1537,8 @@ def activities_attributes_grid(
             if c == 0:
                 ax.set_ylabel(f"{act.title()}\nmean count / person")
 
-    handles = [Patch(facecolor=color_map[g], label=str(g)) for g in groups]
-    fig.legend(
-        handles=handles,
-        loc="upper center",
-        bbox_to_anchor=(0.5, 1.0),
-        ncol=min(len(groups), 6),
-        frameon=False,
-        fontsize="large",
-    )
-
-    fig_height = 3.2 * n_rows
-    legend_frac = min(0.5 / fig_height, 0.15)
-    plt.tight_layout(rect=(0, 0, 1, 1 - legend_frac))
+    plt.tight_layout()
+    _source_legend(fig, groups, styles, kind="both")
     if save_path is not None:
         fig.savefig(save_path, bbox_inches="tight")
         plt.close(fig)

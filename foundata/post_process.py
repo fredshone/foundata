@@ -2,6 +2,7 @@ from typing import Optional
 
 import polars as pl
 import polars.selectors as cs
+from loguru import logger
 
 # Fixed age bands used for cross-source diagnostics (plots and conditionality
 # checks alike). Unlike `discretise_numeric` (data-driven quantile/uniform
@@ -58,10 +59,12 @@ def trips_to_activities(
     Returns:
         DataFrame with columns pid, seq, act, zone, start, end.
     """
-    print("Converting trips to activities...")
+    logger.info("Converting trips to activities...")
     if attributes is not None:
-        print("\tnumber of persons in attributes:", len(attributes))
-    print("\tnumber of persons in trips:", len(trips.select("pid").unique()))
+        logger.debug(f"number of persons in attributes: {len(attributes)}")
+    logger.debug(
+        f"number of persons in trips: {len(trips.select('pid').unique())}"
+    )
 
     first_acts = (
         trips.sort("pid", "seq")
@@ -111,14 +114,13 @@ def trips_to_activities(
             pl.lit(0, dtype=pl.Int32).alias("start"),
             pl.lit(1440, dtype=pl.Int32).alias("end"),
         )
-        print(
-            f"\tnumber of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
+        logger.debug(
+            f"number of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
         )
 
         activities = pl.concat([activities, no_trip_acts]).sort("pid", "seq")
-    print(
-        "\tnumber of persons in activities:",
-        len(activities.select("pid").unique()),
+    logger.debug(
+        f"number of persons in activities: {len(activities.select('pid').unique())}"
     )
     return activities
 
@@ -158,10 +160,9 @@ def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:
     Returns:
         DataFrame with columns pid, seq, tst, tet, oact, dact, ozone, dzone.
     """
-    print("Converting activities to trips...")
-    print(
-        "\tnumber of persons in activities:",
-        len(activities.select("pid").unique()),
+    logger.info("Converting activities to trips...")
+    logger.debug(
+        f"number of persons in activities: {len(activities.select('pid').unique())}"
     )
 
     # filter away plans with no trips (i.e. only one activity)
@@ -192,7 +193,9 @@ def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:
             pl.col("dzone"),
         )
     )
-    print("\tnumber of persons in trips:", len(trips.select("pid").unique()))
+    logger.debug(
+        f"number of persons in trips: {len(trips.select('pid').unique())}"
+    )
     return trips
 
 

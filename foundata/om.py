@@ -15,6 +15,7 @@ matter here:
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import nl_income
 from foundata.ovin import (
@@ -40,7 +41,7 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading OM...")
+    logger.info("Loading OM...")
     root = expand_root(data_root)
     columns = ["Huishoud", "Persoon"] + [
         raw
@@ -49,7 +50,7 @@ def load(
     ]
     all_attributes, all_trips = [], []
     for year in years:
-        print(f"Loading year {year}...")
+        logger.info(f"Loading year {year}...")
         data = read_sav(root / str(year) / DATA_FILES[year], columns)
 
         persons = load_persons(data, person_config, year)

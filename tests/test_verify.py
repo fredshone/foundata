@@ -87,7 +87,7 @@ def test_check_max_invalid():
 # --- check_set ---
 
 
-def test_check_set_valid(capsys):
+def test_check_set_valid():
     s = pl.Series("mode", ["car", "bus", "walk"])
     result = verify.check_set(
         {"car", "bus", "walk", "bike", "rail", "other", "unknown"}, s
@@ -95,13 +95,13 @@ def test_check_set_valid(capsys):
     assert result is True
 
 
-def test_check_set_invalid(capsys):
+def test_check_set_invalid():
     s = pl.Series("mode", ["Car", "Bus"])  # wrong case
     result = verify.check_set({"car", "bus"}, s)
     assert result is False
 
 
-def test_check_set_extra_values(capsys):
+def test_check_set_extra_values():
     s = pl.Series("mode", ["car", "hovercraft"])
     result = verify.check_set({"car", "bus"}, s)
     assert result is False
@@ -144,14 +144,12 @@ def test_columns_missing(sample_attributes_df, sample_trips_df):
     assert result is False
 
 
-def test_columns_extra(sample_attributes_df, sample_trips_df, capsys):
+def test_columns_extra(sample_attributes_df, sample_trips_df):
     attrs = sample_attributes_df.with_columns(
         pl.lit("extra").alias("extra_col")
     )
-    # extra columns don't cause failure, just a warning
-    verify.columns(attrs, sample_trips_df)
-    captured = capsys.readouterr()
-    assert "extra_col" in captured.out
+    # extra columns don't cause failure
+    assert verify.columns(attrs, sample_trips_df) is True
 
 
 # --- verify.activity_consistency ---
@@ -195,7 +193,7 @@ def test_activity_consistency_pass():
     assert verify.activity_consistency(trips) is True
 
 
-def test_activity_consistency_fail(capsys):
+def test_activity_consistency_fail():
     trips = _make_trips(
         [
             {
@@ -216,9 +214,7 @@ def test_activity_consistency_fail(capsys):
             },
         ]
     )
-    result = verify.activity_consistency(trips)
-    assert result is False
-    assert "inconsistencies" in capsys.readouterr().out
+    assert verify.activity_consistency(trips) is False
 
 
 def test_activity_consistency_skips_unknown():
@@ -272,7 +268,7 @@ def test_location_consistency_pass():
     assert verify.location_consistency(trips) is True
 
 
-def test_location_consistency_fail(capsys):
+def test_location_consistency_fail():
     trips = _make_trips(
         [
             {
@@ -293,9 +289,7 @@ def test_location_consistency_fail(capsys):
             },
         ]
     )
-    result = verify.location_consistency(trips)
-    assert result is False
-    assert "inconsistencies" in capsys.readouterr().out
+    assert verify.location_consistency(trips) is False
 
 
 def test_location_consistency_skips_unknown():
@@ -345,12 +339,10 @@ def test_trips_pids_subset_extra_attrs_ok():
     assert verify.trips_pids_subset_of_attributes(attrs, trips) is True
 
 
-def test_trips_pids_subset_orphan_in_trips(capsys):
+def test_trips_pids_subset_orphan_in_trips():
     attrs = _make_attrs(["p1", "p2"])
     trips = _make_trips_pids(["p1", "p3"])
-    result = verify.trips_pids_subset_of_attributes(attrs, trips)
-    assert result is False
-    assert "ERROR" in capsys.readouterr().out
+    assert verify.trips_pids_subset_of_attributes(attrs, trips) is False
 
 
 # --- verify.activities_pids_match_attributes ---
@@ -366,26 +358,42 @@ def test_activities_pids_match_pass():
     assert verify.activities_pids_match_attributes(attrs, acts) is True
 
 
-def test_activities_pids_match_in_attrs_not_acts(capsys):
+def test_activities_pids_match_in_attrs_not_acts():
     attrs = _make_attrs(["p1", "p2", "p3"])
     acts = _make_activities_pids(["p1", "p2"])
-    result = verify.activities_pids_match_attributes(attrs, acts)
-    assert result is False
-    assert "ERROR" in capsys.readouterr().out
+    assert verify.activities_pids_match_attributes(attrs, acts) is False
 
 
-def test_activities_pids_match_in_acts_not_attrs(capsys):
+def test_activities_pids_match_in_acts_not_attrs():
     attrs = _make_attrs(["p1", "p2"])
     acts = _make_activities_pids(["p1", "p2", "p3"])
-    result = verify.activities_pids_match_attributes(attrs, acts)
-    assert result is False
-    assert "ERROR" in capsys.readouterr().out
+    assert verify.activities_pids_match_attributes(attrs, acts) is False
 
 
-def test_activities_pids_match_both_directions(capsys):
+def test_activities_pids_match_both_directions():
     attrs = _make_attrs(["p1", "p2", "p4"])
     acts = _make_activities_pids(["p1", "p2", "p3"])
-    result = verify.activities_pids_match_attributes(attrs, acts)
-    assert result is False
-    out = capsys.readouterr().out
-    assert out.count("ERROR") == 2
+    assert verify.activities_pids_match_attributes(attrs, acts) is False
+
+
+# --- castable dtype mismatches ---
+
+
+def test_columns_castable_dtype_passes(sample_attributes_df, sample_trips_df):
+    # Int64 age casts cleanly to the template's int, so fix_types handles it
+    attrs = sample_attributes_df.with_columns(pl.col("age").cast(pl.Int64))
+    assert verify.columns(attrs, sample_trips_df) is True
+
+
+def test_columns_uncastable_dtype_fails(sample_attributes_df, sample_trips_df):
+    # too big for the template's int32, so a cast would null it
+    attrs = sample_attributes_df.with_columns(
+        pl.Series("hh_income", [40000, 2**40])
+    )
+    assert verify.columns(attrs, sample_trips_df) is False
+
+
+def test_columns_warnings_do_not_fail(sample_attributes_df, sample_trips_df):
+    # a negative age breaks the template min, which is only a warning
+    attrs = sample_attributes_df.with_columns(pl.Series("age", [-1, 45]))
+    assert verify.columns(attrs, sample_trips_df) is True

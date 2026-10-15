@@ -2,7 +2,7 @@ from typing import Optional
 
 import polars as pl
 
-from foundata import utils
+from foundata import table_logger, utils
 
 
 def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
@@ -18,10 +18,13 @@ def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
     n = len(trips.select("pid").unique())
     clean_trips = trips.filter(pl.col("tet") <= time_limit)
     nn = n - len(clean_trips.select("pid").unique())
-    if nn > 0:
-        print(
-            f"Removed {nn}/{n} trips that end after {time_limit} minutes ({100 * nn / n:.1f}%)"
-        )
+    table_logger.record(
+        "late end",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} trips that end after {time_limit} minutes ({table_logger.pct(nn, n)})"
+        if nn
+        else None,
+    )
     return clean_trips
 
 
@@ -70,8 +73,10 @@ def home_based(
     else:
         nn = n - len(trips.select(on).unique())
 
-    print(
-        f"Removed {nn}/{n} plans that are not home-based ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "not home-based",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans that are not home-based ({table_logger.pct(nn, n)})",
     )
     return attributes, trips
 
@@ -110,8 +115,10 @@ def missing_acts(
         else None
     )
 
-    print(
-        f"Removed {nn}/{n} plans due to missing activities ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "missing acts",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to missing activities ({table_logger.pct(nn, n)})",
     )
     return clean_attributes, clean_trips
 
@@ -146,8 +153,10 @@ def negative_trips(
         else None
     )
 
-    print(
-        f"Removed {nn}/{n} plans due to negative trip durations ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "neg trips",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to negative trip durations ({table_logger.pct(nn, n)})",
     )
     return clean_attributes, clean_trips
 
@@ -200,8 +209,10 @@ def feasible_trips(
         if attributes is not None
         else None
     )
-    print(
-        f"Removed {nn}/{n} plans due to infeasible trips ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "infeasible",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to infeasible trips ({table_logger.pct(nn, n)})",
     )
     return clean_attributes, clean_trips
 
@@ -238,8 +249,10 @@ def negative_activities(
         else None
     )
 
-    print(
-        f"Removed {nn}/{n} plans due to negative activity durations ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "neg acts",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to negative activity durations ({table_logger.pct(nn, n)})",
     )
     return clean_attributes, clean_trips
 
@@ -276,8 +289,10 @@ def null_times(
         else None
     )
 
-    print(
-        f"Removed {nn}/{n} plans due to null trip times ({100 * nn / n:.1f}%)"
+    table_logger.record(
+        "null times",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to null trip times ({table_logger.pct(nn, n)})",
     )
     return clean_attributes, clean_trips
 
@@ -298,11 +313,13 @@ def null_pids(
     if attributes is not None:
         n_attr = attributes[on].null_count()
         if n_attr:
-            print(f"Removed {n_attr} rows with null PIDs from attributes")
+            table_logger.note(
+                f"Removed {n_attr} rows with null PIDs from attributes"
+            )
             attributes = attributes.filter(pl.col(on).is_not_null())
     n_trips = trips[on].null_count()
     if n_trips:
-        print(f"Removed {n_trips} rows with null PIDs from trips")
+        table_logger.note(f"Removed {n_trips} rows with null PIDs from trips")
         trips = trips.filter(pl.col(on).is_not_null())
     return attributes, trips
 
@@ -346,10 +363,13 @@ def trips_on_attribute_pids(
         attr_pids, on=on, how="inner", maintain_order="left"
     )
     nn = n - len(clean_trips.select(on).unique())
-    if nn:
-        print(
-            f"Removed {nn}/{n} plans with pids not found in attributes ({100 * nn / n:.1f}%)"
-        )
+    table_logger.record(
+        "orphan trips",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans with pids not found in attributes ({table_logger.pct(nn, n)})"
+        if nn
+        else None,
+    )
     return attributes, clean_trips
 
 
@@ -380,10 +400,13 @@ def activity_consistency(
         if attributes is not None
         else None
     )
-    if nn:
-        print(
-            f"Removed {nn}/{n} plans due to activity chain inconsistencies ({100 * nn / n:.1f}%)"
-        )
+    table_logger.record(
+        "act chain",
+        table_logger.pct(nn, n),
+        f"Removed {nn}/{n} plans due to activity chain inconsistencies ({table_logger.pct(nn, n)})"
+        if nn
+        else None,
+    )
     return clean_attributes, clean_trips
 
 

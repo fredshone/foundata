@@ -14,18 +14,15 @@ Usage:
 
 from pathlib import Path
 
-import click
 import geopandas as gpd
 import pandas as pd
+import typer
 
 DEFAULT_ZONES = Path.home() / "Data/foundata/CHILE/zonificacion.parquet"
 DEFAULT_OUT = Path(__file__).parent.parent / "configs/chile/zones.csv"
 
 
-@click.command()
-@click.option("--zones", default=str(DEFAULT_ZONES), show_default=True)
-@click.option("--out", default=str(DEFAULT_OUT), show_default=True)
-def main(zones, out):
+def main(zones: Path = DEFAULT_ZONES, out: Path = DEFAULT_OUT):
     """Compute zone areas and centroids and write configs/chile/zones.csv."""
     print(f"Reading: {zones}")
     gdf = gpd.read_parquet(zones).to_crs("EPSG:32719")
@@ -44,4 +41,4 @@ def main(zones, out):
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 """Run the full foundata pipeline and save outputs."""
 
+import time
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import (
     anomaly,
@@ -27,6 +29,7 @@ from foundata import (
     plots,
     post_process,
     qhts,
+    table_logger,
     tables,
     uruguay,
     utils,
@@ -37,11 +40,13 @@ from foundata import (
 CONFIGS_ROOT = Path(__file__).resolve().parent.parent / "configs"
 
 
-def print_markdown_table(title: str, table: str):
-    print(f"\n### {title}\n\n{table}\n")
+def log_markdown_table(title: str, table: str):
+    logger.info(f"\n### {title}\n\n{table}\n")
 
 
 def process_source(attributes, trips, source_name):
+    n_plans_in = trips["pid"].n_unique()
+
     attributes = utils.compute_avg_speed(attributes, trips)
     attributes = utils.split_employment_type(attributes)
     attributes = utils.correct_child_employment(attributes)
@@ -52,7 +57,9 @@ def process_source(attributes, trips, source_name):
     attributes, trips = filter.missing_acts(attributes, trips)
 
     attributes, trips = fix.missing_columns(attributes, trips)
-    verify.columns(attributes, trips)
+    table_logger.record(
+        "verify", "ok" if verify.columns(attributes, trips) else "FAIL"
+    )
     attributes, trips = filter.columns(attributes, trips)
     attributes, trips = fix.fix_types(attributes, trips)
     attributes = fix.unknown_to_null(attributes)
@@ -65,519 +72,348 @@ def process_source(attributes, trips, source_name):
     attributes = attributes.sort("pid")
     trips = trips.sort(["pid", "seq"])
 
-    print(
-        f"Loaded {len(attributes)} persons, "
-        f"{len(trips.select(pl.col('pid').unique()))} plans, "
-        f"{len(trips)} trips from {source_name}"
+    n_plans = trips["pid"].n_unique()
+    table_logger.record("plans", n_plans)
+    table_logger.record("retained", table_logger.pct(n_plans, n_plans_in))
+    logger.info(
+        f"Processed {source_name}: {len(attributes)} persons, {n_plans} plans, "
+        f"{len(trips)} trips ({table_logger.pct(n_plans, n_plans_in)} of plans retained)"
     )
     return attributes, trips
 
 
+def _configs(source: str, *names: str) -> list[dict]:
+    """Load ``configs/<source>/<name>_dictionary.yaml`` for each name."""
+    return [
+        utils.load_yaml_config(
+            CONFIGS_ROOT / source / f"{name}_dictionary.yaml"
+        )
+        for name in names
+    ]
+
+
+def _load_ktdb(source_dir: Path):
+    person_config, trips_config = _configs("ktdb", "person", "trip")
+    # 2021 personal survey, plus the 2016 and 2010 household (weekday)
+    # and weekend surveys
+    return ktdb.load_years(
+        data_root=source_dir,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_ltds(source_dir: Path):
+    (
+        hh_config,
+        person_config,
+        person_data_config,
+        trips_config,
+        stages_config,
+    ) = _configs("ltds", "hh", "person", "person_data", "trip", "stage")
+    return ltds.load_years(
+        years=["LTDS2425", "LTDS2324", "LTDS2223", "LTDS1920"],
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        person_data_config=person_data_config,
+        trips_config=trips_config,
+        stages_config=stages_config,
+    )
+
+
+def _load_vista(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "vista", "hh", "person", "trip"
+    )
+    return vista.load_years(
+        years=["2012-2020", "2022-2023", "2023-2024"],
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_qhts(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "qhts", "hh", "person", "trip"
+    )
+    zone_mapping = qhts.load_zone_mapping(
+        CONFIGS_ROOT / "qhts" / "sa1-correspondence-file.csv"
+    )
+    return qhts.load_years(
+        data_root=source_dir,
+        years=["2019-22", "2022-25"],
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+        zones_mapping=zone_mapping,
+    )
+
+
+def _load_cmap(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "cmap", "hh", "person", "trip"
+    )
+    return cmap.load(
+        data_root=source_dir,
+        configs_root=CONFIGS_ROOT,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_nhts(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "nhts", "hh", "person", "trip"
+    )
+    return nhts.load(
+        data_root=source_dir,
+        years=[2022, 2017, 2009, 2001],
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_nts(source_dir: Path):
+    hh_config, person_config, trips_config, stages_config, days_config = (
+        _configs("nts", "hh", "person", "trip", "stage", "day")
+    )
+    return nts.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+        stages_config=stages_config,
+        days_config=days_config,
+    )
+
+
+def _load_odin(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "odin", "hh", "person", "trip"
+    )
+    return odin.load(
+        data_root=source_dir,
+        configs_root=CONFIGS_ROOT,
+        years=[2018, 2019, 2020, 2021, 2022, 2023, 2024],
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_ovin(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "ovin", "hh", "person", "trip"
+    )
+    return ovin.load(
+        data_root=source_dir,
+        years=list(ovin.DATA_FILES),
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_om(source_dir: Path):
+    hh_config, person_config, trips_config = _configs(
+        "om", "hh", "person", "trip"
+    )
+    return om.load(
+        data_root=source_dir,
+        years=list(om.DATA_FILES),
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_india(source_dir: Path):
+    # time use survey
+    hh_config, person_config, trips_config = _configs(
+        "india", "hh", "person", "trip"
+    )
+    return india.load_years(
+        data_root=source_dir,
+        years=[2019, 2024],
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_brazil(source_dir: Path):
+    # sao paulo
+    hh_config, person_config, trips_config = _configs(
+        "brazil", "hh", "person", "trip"
+    )
+    return brazil.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_mexico(source_dir: Path):
+    # mexico city
+    hh_config, person_config, trips_config = _configs(
+        "mexico", "hh", "person", "trip"
+    )
+    return mexico.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_argentina(source_dir: Path):
+    # household mobility surveys
+    hh_config, person_config, trips_config = _configs(
+        "argentina", "hh", "person", "trip"
+    )
+    return argentina.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_uruguay(source_dir: Path):
+    # montevideo
+    hh_config, person_config, trips_config = _configs(
+        "uruguay", "hh", "person", "trip"
+    )
+    return uruguay.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_mongolia(source_dir: Path):
+    # time use survey
+    hh_config, person_config, trips_config = _configs(
+        "mongolia", "hh", "person", "trip"
+    )
+    return mongolia.load_years(
+        data_root=source_dir,
+        years=(2023, 2019, 2011),
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_chile(source_dir: Path):
+    # santiago EOD 2012
+    hh_config, person_config, trips_config = _configs(
+        "chile", "hh", "person", "trip"
+    )
+    return chile.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+def _load_france(source_dir: Path):
+    # mobisurvstd-standardised surveys: every survey folder under FRANCE/
+    # (CEREMA city surveys, EMP 2019, EGT 2020)
+    hh_config, person_config, trips_config = _configs(
+        "france", "hh", "person", "trip"
+    )
+    return france.load(
+        data_root=source_dir,
+        hh_config=hh_config,
+        person_config=person_config,
+        trips_config=trips_config,
+    )
+
+
+# source name -> raw loader, in processing order. New sources go here. Each
+# loader takes the source's own data directory; in a batch run that is
+# <data_root>/<NAME>, e.g. ~/Data/foundata/LTDS.
+SOURCES = {
+    "ktdb": _load_ktdb,
+    "ltds": _load_ltds,
+    "vista": _load_vista,
+    "qhts": _load_qhts,
+    "cmap": _load_cmap,
+    "nhts": _load_nhts,
+    "nts": _load_nts,
+    "odin": _load_odin,
+    "ovin": _load_ovin,
+    "om": _load_om,
+    "india": _load_india,
+    "brazil": _load_brazil,
+    "mexico": _load_mexico,
+    "argentina": _load_argentina,
+    "uruguay": _load_uruguay,
+    "mongolia": _load_mongolia,
+    "chile": _load_chile,
+    "france": _load_france,
+}
+
+
+def batch_source_dir(data_root: str | Path, name: str) -> Path:
+    """The directory holding source *name* within a batch data root."""
+    return Path(data_root).expanduser() / name.upper()
+
+
+def load_source(name: str, source_dir: str | Path):
+    """Load and process a single source from its own data directory."""
+    if name not in SOURCES:
+        raise ValueError(
+            f"Unknown source '{name}', expected one of {', '.join(SOURCES)}"
+        )
+    with table_logger.source(name.upper()):
+        attributes, trips = SOURCES[name](Path(source_dir).expanduser())
+        logger.info(f"Processing {name.upper()}...")
+        return process_source(attributes, trips, name.upper())
+
+
 def runner(
-    data_root: str,
-    output: str,
-    select: list[str],
-    omit: list[str],
+    source_dirs: dict[str, str | Path],
+    output: str | Path,
     home_based: bool = False,
     fix_consecutive: bool = False,
+    diagnostics: bool = False,
 ):
-    data_root = Path(data_root).expanduser()
+    """Load, process, combine and write the given sources, then report.
+
+    *source_dirs* maps each source name to its own data directory. The
+    summary tables and README plots are always produced; *diagnostics* adds
+    the anomaly-detection reports and supplementary heatmaps.
+    """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
 
-    sources = {
-        "ltds",
-        "vista",
-        "qhts",
-        "cmap",
-        "nhts",
-        "nts",
-        "ktdb",
-        "odin",
-        "ovin",
-        "om",
-        "india",
-        "brazil",
-        "mexico",
-        "argentina",
-        "uruguay",
-        "mongolia",
-        "chile",
-        "france",
-    }
-    if select:
-        sources = set(select)
-    if omit:
-        sources -= set(omit)
+    sources = [s for s in SOURCES if s in source_dirs]
     if not sources:
-        print("No sources selected. Exiting.")
+        logger.warning("No sources selected. Exiting.")
         return
 
-    print(f"Selected sources: {', '.join(sources)}")
+    logger.info(f"Selected sources: {', '.join(sources)}")
+    table_logger.reset()
 
     all_attributes = []
     all_trips = []
-
-    # ------------------------------------------------------------------
-    # KTDB
-    # ------------------------------------------------------------------
-    if "ktdb" in sources:
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ktdb" / "person_dictionary.yaml"
+    for i, name in enumerate(sources, start=1):
+        logger.info(f"===[{i}/{len(sources)}] Loading {name.upper()}===")
+        start = time.perf_counter()
+        attributes, trips = load_source(name, source_dirs[name])
+        logger.info(
+            f"{name.upper()} done in {time.perf_counter() - start:.1f}s"
         )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ktdb" / "trip_dictionary.yaml"
-        )
-
-        # 2021 personal survey, plus the 2016 and 2010 household (weekday)
-        # and weekend surveys
-        attributes, trips = ktdb.load_years(
-            data_root=data_root / "KTDB",
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "KTDB")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # LTDS
-    # ------------------------------------------------------------------
-    if "ltds" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ltds" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ltds" / "person_dictionary.yaml"
-        )
-        person_data_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ltds" / "person_data_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ltds" / "trip_dictionary.yaml"
-        )
-        stages_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ltds" / "stage_dictionary.yaml"
-        )
-
-        attributes, trips = ltds.load_years(
-            years=["LTDS2425", "LTDS2324", "LTDS2223", "LTDS1920"],
-            data_root=data_root / "LTDS",
-            hh_config=hh_config,
-            person_config=person_config,
-            person_data_config=person_data_config,
-            trips_config=trips_config,
-            stages_config=stages_config,
-        )
-        attributes, trips = process_source(attributes, trips, "LTDS")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # VISTA
-    # ------------------------------------------------------------------
-    if "vista" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "vista" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "vista" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "vista" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = vista.load_years(
-            years=["2012-2020", "2022-2023", "2023-2024"],
-            data_root=data_root / "VISTA",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "VISTA")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # QHTS
-    # ------------------------------------------------------------------
-    if "qhts" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "qhts" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "qhts" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "qhts" / "trip_dictionary.yaml"
-        )
-        zone_mapping = qhts.load_zone_mapping(
-            CONFIGS_ROOT / "qhts" / "sa1-correspondence-file.csv"
-        )
-
-        attributes, trips = qhts.load_years(
-            data_root=data_root / "QHTS",
-            years=["2019-22", "2022-25"],
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-            zones_mapping=zone_mapping,
-        )
-        attributes, trips = process_source(attributes, trips, "QHTS")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # CMAP
-    # ------------------------------------------------------------------
-    if "cmap" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "cmap" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "cmap" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "cmap" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = cmap.load(
-            data_root=data_root / "CMAP",
-            configs_root=CONFIGS_ROOT,
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "CMAP")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # NHTS
-    # ------------------------------------------------------------------
-    if "nhts" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nhts" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nhts" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nhts" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = nhts.load(
-            data_root=data_root / "NHTS",
-            years=[2022, 2017, 2009, 2001],
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "NHTS")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # NTS
-    # ------------------------------------------------------------------
-    if "nts" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nts" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nts" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nts" / "trip_dictionary.yaml"
-        )
-        stages_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nts" / "stage_dictionary.yaml"
-        )
-        days_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "nts" / "day_dictionary.yaml"
-        )
-
-        attributes, trips = nts.load(
-            data_root=data_root / "NTS",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-            stages_config=stages_config,
-            days_config=days_config,
-        )
-        attributes, trips = process_source(attributes, trips, "NTS")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # ODIN
-    # ------------------------------------------------------------------
-    if "odin" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "odin" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "odin" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "odin" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = odin.load(
-            data_root=data_root / "ODIN",
-            configs_root=CONFIGS_ROOT,
-            years=[2018, 2019, 2020, 2021, 2022, 2023, 2024],
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "ODIN")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # OVIN
-    # ------------------------------------------------------------------
-    if "ovin" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ovin" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ovin" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "ovin" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = ovin.load(
-            data_root=data_root / "OVIN",
-            years=list(ovin.DATA_FILES),
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "OVIN")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # OM
-    # ------------------------------------------------------------------
-    if "om" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "om" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "om" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "om" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = om.load(
-            data_root=data_root / "OM",
-            years=list(om.DATA_FILES),
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "OM")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # INDIA (TIME USE SURVEY)
-    # ------------------------------------------------------------------
-    if "india" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "india" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "india" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "india" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = india.load_years(
-            data_root=data_root / "INDIA",
-            years=[2019, 2024],
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "INDIA")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # BRAZIL (SAO PAULO)
-    # ------------------------------------------------------------------
-    if "brazil" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "brazil" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "brazil" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "brazil" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = brazil.load(
-            data_root=data_root / "BRAZIL",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "BRAZIL")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # MEXICO (MEXICO CITY)
-    # ------------------------------------------------------------------
-    if "mexico" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mexico" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mexico" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mexico" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = mexico.load(
-            data_root=data_root / "MEXICO",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "MEXICO")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # ARGENTINA (HOUSEHOLD MOBILITY SURVEYS)
-    # ------------------------------------------------------------------
-    if "argentina" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "argentina" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "argentina" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "argentina" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = argentina.load(
-            data_root=data_root / "ARGENTINA",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "ARGENTINA")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # URUGUAY (MONTEVIDEO)
-    # ------------------------------------------------------------------
-    if "uruguay" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "uruguay" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "uruguay" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "uruguay" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = uruguay.load(
-            data_root=data_root / "URUGUAY",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "URUGUAY")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # MONGOLIA (TIME USE SURVEY)
-    # ------------------------------------------------------------------
-    if "mongolia" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mongolia" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mongolia" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "mongolia" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = mongolia.load_years(
-            data_root=data_root / "MONGOLIA",
-            years=(2023, 2019, 2011),
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "MONGOLIA")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # CHILE (SANTIAGO EOD 2012)
-    # ------------------------------------------------------------------
-    if "chile" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "chile" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "chile" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "chile" / "trip_dictionary.yaml"
-        )
-
-        attributes, trips = chile.load(
-            data_root=data_root / "CHILE",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "CHILE")
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-
-    # ------------------------------------------------------------------
-    # FRANCE (MOBISURVSTD-STANDARDISED SURVEYS)
-    # ------------------------------------------------------------------
-    if "france" in sources:
-        hh_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "france" / "hh_dictionary.yaml"
-        )
-        person_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "france" / "person_dictionary.yaml"
-        )
-        trips_config = utils.load_yaml_config(
-            CONFIGS_ROOT / "france" / "trip_dictionary.yaml"
-        )
-
-        # every survey folder under FRANCE/ (CEREMA city surveys, EMP 2019,
-        # EGT 2020)
-        attributes, trips = france.load(
-            data_root=data_root / "FRANCE",
-            hh_config=hh_config,
-            person_config=person_config,
-            trips_config=trips_config,
-        )
-        attributes, trips = process_source(attributes, trips, "FRANCE")
         all_attributes.append(attributes)
         all_trips.append(trips)
 
@@ -585,22 +421,26 @@ def runner(
     # Concat and write
     # ------------------------------------------------------------------
 
-    print("Concatenating and writing outputs...")
+    logger.info("=== Post processing all sources===")
 
+    logger.debug("Concatenating sources...")
     all_attributes = pl.concat(all_attributes, how="vertical")
     all_trips = pl.concat(all_trips, how="vertical")
 
     if home_based:
-        print("Filtering to home-based trips only...")
+        logger.info("Filtering to home-based trips only...")
         all_attributes, all_trips = filter.home_based(all_attributes, all_trips)
 
     if fix_consecutive:
         non_consecutive_types = ["home", "work", "education"]
-        print(f"Fixing consecutive activities of {non_consecutive_types}...")
+        logger.info(
+            f"Fixing consecutive activities of {non_consecutive_types}..."
+        )
         all_trips = utils.combine_consecutive_acts(
             all_trips, non_consecutive_types=non_consecutive_types
         )
 
+    logger.info(f"Writing attributes and trips to {output}...")
     all_attributes.write_csv(output / "attributes.csv")
     binned_attributes = post_process.discretise_numeric(
         all_attributes,
@@ -613,37 +453,40 @@ def runner(
     all_trips.write_csv(output / "trips.csv")
 
     if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
-        raise ValueError("ERROR: Trips has pids not in attributes")
+        raise ValueError("Trips has pids not in attributes")
 
-    print("Post-processing trips to activities...")
     activities = post_process.trips_to_activities(all_attributes, all_trips)
     if not verify.activities_pids_match_attributes(all_attributes, activities):
-        raise ValueError("ERROR: Activities pids do not match attributes pids")
+        raise ValueError("Activities pids do not match attributes pids")
 
     activities.write_csv(output / "activities.csv")
 
-    print(f"Written to {output}")
+    logger.info(f"Written attributes, trips and activities to {output}")
 
     # ------------------------------------------------------------------
-    # Visualisations
+    # Summary tables and README plots
     # ------------------------------------------------------------------
-    print_markdown_table(
+    log_markdown_table(
+        "Processing Log (% of plans removed per step)", table_logger.render()
+    )
+    table_logger.log_notes()
+
+    log_markdown_table(
         "Summary",
         tables.summary_table(all_attributes, all_trips, markdown=True),
     )
 
-    print_markdown_table(
+    log_markdown_table(
         "Attribute Availability by Source",
         tables.attribute_availability(all_attributes, markdown=True),
     )
 
+    logger.info("Plotting attributes_numeric.png...")
     plots.numeric_hist_grid(
         all_attributes,
         on="source",
-        cmap_name="Dark2",
         n_cols=3,
         bins=11,
-        linewidth=2,
         density=True,
         ignore_cols={"weight"},
         tail_handling="clip",
@@ -656,55 +499,84 @@ def runner(
         save_path=output / "attributes_numeric.png",
     )
 
+    logger.info("Plotting attributes_categorical.png...")
     plots.categorical_bar_grid(
         all_attributes,
         on="source",
         save_path=output / "attributes_categorical.png",
     )
 
+    logger.info("Plotting attributes_trends.png...")
     plots.summary_trends(
         all_attributes,
         on="source",
-        cmap_name="Dark2",
         save_path=output / "attributes_trends.png",
     )
 
-    # ------------------------------------------------------------------
-    # Diagnostics and anomaly detection
-    # ------------------------------------------------------------------
-
+    logger.info("Plotting trip_time_of_day.png...")
     plots.time_of_day_profile(
         all_attributes,
         all_trips,
         on="source",
-        cmap_name="Dark2",
         save_path=output / "trip_time_of_day.png",
     )
 
+    logger.info("Plotting trip_time_heaping.png...")
     plots.time_heaping(
         all_attributes,
         all_trips,
         on="source",
-        cmap_name="Dark2",
         save_path=output / "trip_time_heaping.png",
     )
 
+    logger.info("Plotting trip_time_diagnostics.png...")
     plots.trip_time_diagnostics(
         all_attributes,
         all_trips,
         on="source",
-        cmap_name="Dark2",
         save_path=output / "trip_time_diagnostics.png",
     )
 
+    logger.info("Plotting activity_duration_by_type.png...")
     plots.activity_duration_by_type(
         all_attributes,
         activities,
         on="source",
-        cmap_name="Dark2",
         save_path=output / "activity_duration_by_type.png",
     )
 
+    logger.info("Plotting activity_counts_grid.png...")
+    plots.activities_attributes_grid(
+        all_attributes,
+        activities,
+        attribute_cols={
+            "employment": "bar",
+            "hh_income": "line",
+            "age": "line",
+        },
+        on="source",
+        save_path=output / "activity_counts_grid.png",
+    )
+
+    if diagnostics:
+        _diagnostics(all_attributes, all_trips, activities, output)
+    else:
+        logger.info(
+            "Skipping diagnostics reports and supplementary plots "
+            "(enable with --diagnostics)"
+        )
+
+    logger.success(f"Done, outputs saved to {output}")
+
+
+def _diagnostics(
+    all_attributes: pl.DataFrame,
+    all_trips: pl.DataFrame,
+    activities: pl.DataFrame,
+    output: Path,
+):
+    """Supplementary attribute x activity heatmaps and anomaly detection."""
+    logger.info("Plotting activity_heatmap_by_employment.png...")
     plots.attribute_activity_heatmap(
         all_attributes,
         activities,
@@ -713,6 +585,7 @@ def runner(
         save_path=output / "activity_heatmap_by_employment.png",
     )
 
+    logger.info("Plotting activity_heatmap_by_hh_income.png...")
     # sources such as mexico have no income at all; attribute_activity_heatmap
     # skips plotting (rather than raising) when a column is all null
     plots.attribute_activity_heatmap(
@@ -724,6 +597,7 @@ def runner(
         save_path=output / "activity_heatmap_by_hh_income.png",
     )
 
+    logger.info("Plotting activity_heatmap_by_year.png...")
     plots.attribute_activity_heatmap(
         all_attributes,
         activities,
@@ -732,6 +606,7 @@ def runner(
         save_path=output / "activity_heatmap_by_year.png",
     )
 
+    logger.info("Plotting activity_heatmap_by_day.png...")
     # likewise uruguay never records the travel day
     plots.attribute_activity_heatmap(
         all_attributes,
@@ -741,19 +616,7 @@ def runner(
         save_path=output / "activity_heatmap_by_day.png",
     )
 
-    plots.activities_attributes_grid(
-        all_attributes,
-        activities,
-        attribute_cols={
-            "employment": "bar",
-            "hh_income": "line",
-            "age": "line",
-        },
-        on="source",
-        cmap_name="Dark2",
-        save_path=output / "activity_counts_grid.png",
-    )
-
+    logger.info("Plotting activity_heatmap_by_age.png...")
     all_attributes_age = post_process.add_age_band(all_attributes)
     plots.attribute_activity_heatmap(
         all_attributes_age,
@@ -763,8 +626,9 @@ def runner(
         save_path=output / "activity_heatmap_by_age.png",
     )
 
+    logger.info("Running anomaly detection...")
     # anomaly detection - time quality
-    print_markdown_table(
+    log_markdown_table(
         "Time Quality",
         anomaly.time_quality_summary_table(
             all_attributes, all_trips, markdown=True
@@ -786,7 +650,7 @@ def runner(
             markdown=True,
         )
     )
-    print_markdown_table(
+    log_markdown_table(
         "20 most unusual activity-participation distributions by source-year "
         "(Jensen-Shannon divergence vs the pooled activity-type mix across "
         "all sources and years)",
@@ -801,7 +665,7 @@ def runner(
     distribution_shift_outliers = anomaly.flag_distribution_shift_outliers(
         distribution_shift, on=["source", "year"], top_n=20, markdown=True
     )
-    print_markdown_table(
+    log_markdown_table(
         "20 most unusual attribute distributions by source-year (Jensen-Shannon "
         "divergence vs the pooled distribution across all sources and years)",
         distribution_shift_outliers,
@@ -817,11 +681,9 @@ def runner(
     outliers_by_year = anomaly.flag_conditionality_outliers(
         conditionality_by_year, on=["source", "year"], top_n=20, markdown=True
     )
-    print_markdown_table(
+    log_markdown_table(
         "Top 20 conditionality outliers by source-year (attribute x activity "
         "Cramér's V vs peer source-years, most anomalous first; catches "
         "per-year mapping bugs that a source-level check averages away)",
         outliers_by_year,
     )
-
-    print(f"Done, outputs saved to {output}")

@@ -1,6 +1,7 @@
 import polars as pl
+from loguru import logger
 
-from foundata import utils
+from foundata import table_logger, utils
 
 
 def null_pids(
@@ -9,9 +10,9 @@ def null_pids(
     n_attr = attributes[on].null_count()
     n_trips = trips[on].null_count()
     if n_attr:
-        print(f"ERROR: {n_attr} null PIDs in attributes")
+        table_logger.note(f"{n_attr} null PIDs in attributes", level="ERROR")
     if n_trips:
-        print(f"ERROR: {n_trips} null PIDs in trips")
+        table_logger.note(f"{n_trips} null PIDs in trips", level="ERROR")
     return n_attr == 0 and n_trips == 0
 
 
@@ -21,6 +22,7 @@ def columns(
     template_attributes: dict | None = None,
     template_trips: dict | None = None,
 ) -> bool:
+    """Verify that attributes and trips have the expected columns, types, and values."""
     if template_attributes is None:
         template_attributes = utils.get_template_attributes()
     if template_trips is None:
@@ -29,7 +31,7 @@ def columns(
     expected_attributes = template_attributes.keys()
     expected_trips = template_trips.keys()
 
-    # ckeck for missing columns
+    # check for missing columns
     actual_attributes = set(attributes.columns)
     actual_trips = set(trips.columns)
 
@@ -37,9 +39,14 @@ def columns(
     missing_trips = expected_trips - actual_trips
 
     if missing_attributes:
-        print(f"Missing columns in attributes: {missing_attributes}")
+        table_logger.note(
+            f"Missing columns in attributes: {missing_attributes}",
+            level="ERROR",
+        )
     if missing_trips:
-        print(f"Missing columns in trips: {missing_trips}")
+        table_logger.note(
+            f"Missing columns in trips: {missing_trips}", level="ERROR"
+        )
 
     # check for columns types
     attributes_good = check_col_cnfg(attributes, template_attributes)
@@ -49,10 +56,15 @@ def columns(
     extra_attributes = actual_attributes - expected_attributes
     extra_trips = actual_trips - expected_trips
 
+    # extra columns are dropped by filter.columns, so are only of interest
     if extra_attributes:
-        print(f"Extra columns in attributes: {extra_attributes}")
+        table_logger.note(
+            f"Extra columns in attributes: {extra_attributes}", level="DEBUG"
+        )
     if extra_trips:
-        print(f"Extra columns in trips: {extra_trips}")
+        table_logger.note(
+            f"Extra columns in trips: {extra_trips}", level="DEBUG"
+        )
 
     return (
         not missing_attributes
@@ -75,6 +87,22 @@ def check_dtype(expected_dtype: str, actual_dtype: pl.DataType) -> bool:
     if polars_type is not None:
         return actual_dtype == polars_type
     raise ValueError(f"Unknown expected dtype: {expected_dtype}")
+
+
+def castable(series: pl.Series, expected_dtype: str) -> bool:
+    """Whether fix.fix_types can cast *series* to *expected_dtype* losslessly.
+
+    fix_types casts with strict=False, so values that can't be converted
+    silently become null; a strict cast fails on exactly those values.
+    """
+    polars_type = utils.DTYPE_MAP.get(expected_dtype)
+    if polars_type is None:
+        return False
+    try:
+        series.cast(polars_type, strict=True)
+    except pl.exceptions.PolarsError:
+        return False
+    return True
 
 
 def check_no_default(actual: pl.Series) -> bool:
@@ -111,9 +139,15 @@ def check_set(expected_set: set, actual_series: pl.Series) -> bool:
     missing = expected_set - actual_set
     extra = actual_set - expected_set
     if missing:
-        print(f"Warning: Missing values in '{actual_series.name}': {missing}")
+        table_logger.note(
+            f"Missing values in '{actual_series.name}': {missing}",
+            level="DEBUG",
+        )
     if extra:
-        print(f"Unexpected values in '{actual_series.name}': {extra}")
+        table_logger.note(
+            f"Unexpected values in '{actual_series.name}': {extra}",
+            level="INFO",
+        )
         return False
     return True
 
@@ -132,8 +166,8 @@ def activity_consistency(trips: pl.DataFrame) -> bool:
     n = len(inconsistent)
     total = trips.select("pid").n_unique()
     if n:
-        print(
-            f"Warning: {n}/{total} persons have activity chain inconsistencies ({100 * n / total:.1f}%)"
+        logger.warning(
+            f"{n}/{total} persons have activity chain inconsistencies ({100 * n / total:.1f}%)"
         )
         return False
     return True
@@ -153,8 +187,8 @@ def location_consistency(trips: pl.DataFrame) -> bool:
     n = len(inconsistent)
     total = trips.select("pid").n_unique()
     if n:
-        print(
-            f"Warning: {n}/{total} persons have location chain inconsistencies ({100 * n / total:.1f}%)"
+        logger.warning(
+            f"{n}/{total} persons have location chain inconsistencies ({100 * n / total:.1f}%)"
         )
         return False
     return True
@@ -172,8 +206,8 @@ def trips_pids_subset_of_attributes(
     trip_pids = set(trips["pid"].to_list())
     orphans = trip_pids - attr_pids
     if orphans:
-        print(
-            f"ERROR: {len(orphans)} pid(s) found in trips but not in attributes "
+        logger.error(
+            f"{len(orphans)} pid(s) found in trips but not in attributes "
             f"({100 * len(orphans) / len(trip_pids):.1f}% of trip pids)"
         )
         return False
@@ -190,21 +224,26 @@ def activities_pids_match_attributes(
     in_acts_not_attrs = act_pids - attr_pids
     ok = True
     if in_attrs_not_acts:
-        print(
-            f"ERROR: {len(in_attrs_not_acts)} pid(s) in attributes but not in activities "
+        logger.error(
+            f"{len(in_attrs_not_acts)} pid(s) in attributes but not in activities "
             f"({100 * len(in_attrs_not_acts) / len(attr_pids):.1f}% of attribute pids)"
         )
         ok = False
     if in_acts_not_attrs:
-        print(
-            f"ERROR: {len(in_acts_not_attrs)} pid(s) in activities but not in attributes "
+        logger.error(
+            f"{len(in_acts_not_attrs)} pid(s) in activities but not in attributes "
             f"({100 * len(in_acts_not_attrs) / len(act_pids):.1f}% of activity pids)"
         )
         ok = False
     return ok
 
 
-def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
+def check_col_cnfg(actual: pl.DataFrame, template: dict) -> bool:
+    """Check columns against the template; only ERROR-level problems fail.
+
+    Default values and min/max violations are noted as warnings but don't
+    fail the check.
+    """
     actual_cols = set(actual.columns)
     template_cols = set(template.keys())
 
@@ -215,44 +254,53 @@ def check_col_cnfg(actual: pl.DataFrame, template: dict) -> None:
         expected_dtype = cnfg["dtype"]
         actual_dtype = actual[col].dtype
         good_dtype = check_dtype(expected_dtype, actual_dtype)
-        if not good_dtype:
-            print(
-                f"ERROR: Column '{col}' has dtype {actual_dtype} but expected {expected_dtype}"
+        if not good_dtype and castable(actual[col], expected_dtype):
+            # fixed automatically by fix.fix_types
+            table_logger.note(
+                f"Column '{col}' has dtype {actual_dtype}, will be cast to {expected_dtype}",
+                level="DEBUG",
+            )
+        elif not good_dtype:
+            table_logger.note(
+                f"Column '{col}' has dtype {actual_dtype} but expected {expected_dtype}, "
+                "and some values can't be cast (they would become null)",
+                level="ERROR",
             )
             fails += 1
 
         if "default" not in cnfg or not cnfg["default"]:
             good_default = check_no_default(actual[col])
             if not good_default:
-                print(
-                    f"ERROR: Column '{col}' appears to be using default values but expected none."
+                table_logger.note(
+                    f"Column '{col}' appears to be using default values but expected none.",
+                    level="ERROR",
                 )
-                fails += 1
 
         if "min" in cnfg:
             expected_min = cnfg["min"]
             good_min = check_min(expected_min, actual[col])
             if not good_min:
-                print(
-                    f"ERROR: Column '{col}' has min {actual[col].min()} but expected at least {expected_min}"
+                table_logger.note(
+                    f"Column '{col}' has min {actual[col].min()} but expected at least {expected_min}",
+                    level="ERROR",
                 )
-                fails += 1
 
         if "max" in cnfg:
             expected_max = cnfg["max"]
             good_max = check_max(expected_max, actual[col])
             if not good_max:
-                print(
-                    f"ERROR: Column '{col}' has max {actual[col].max()} but expected at most {expected_max}"
+                table_logger.note(
+                    f"Column '{col}' has max {actual[col].max()} but expected at most {expected_max}",
+                    level="ERROR",
                 )
-                fails += 1
 
         if "set" in cnfg:
             expected_set = set(cnfg["set"])
             good_set = check_set(expected_set, actual[col].drop_nulls())
             if not good_set:
-                print(
-                    f"ERROR: Column '{col}' expected set {expected_set} but found ^."
+                table_logger.note(
+                    f"Column '{col}' has values outside its expected set",
+                    level="ERROR",
                 )
                 fails += 1
 

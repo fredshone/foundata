@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Optional
 
 import polars as pl
+from loguru import logger
 
 from .fix import day_wrap
 from .utils import config_for_year, sample_to_euro, table_joiner
@@ -22,9 +23,9 @@ def load_years(
     all_attributes = []
     all_trips = []
 
-    print("Loading QHTS...")
+    logger.info("Loading QHTS...")
     for year in years:
-        print(f"Loading {year}...")
+        logger.info(f"Loading {year}...")
 
         yr = year[3:5] + year[5:7]
 

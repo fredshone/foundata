@@ -6,6 +6,7 @@ Five surveys are combined into one source, each keyed by a short name:
 Each ships SPSS .sav tables for households, persons, trips and stages linked
 by numeric ids, and records one weekday diary per person (the day before
 the interview, 04:00 to 04:00). pid and hid are ``argentina<survey><raw id>``.
+Weights are normalised to a mean of 1 within each survey.
 There are no distances, so they are estimated from stage times and mode
 speeds. Codes come from the value labels embedded in the .sav files.
 """
@@ -18,6 +19,7 @@ from pathlib import Path
 import pandas as pd
 import polars as pl
 import pyreadstat
+from loguru import logger
 
 from foundata import fix
 from foundata.utils import sample_to_euro
@@ -89,7 +91,7 @@ def load(
     Returns:
         (attributes, trips) DataFrames conforming to the template schema.
     """
-    print(f"Loading {SOURCE} data...")
+    logger.info(f"Loading {SOURCE} data...")
     root = Path(data_root).expanduser()
     loaded = [
         load_survey(root, survey, hh_config, person_config, trips_config)
@@ -153,6 +155,11 @@ def load_survey(
             country=pl.lit(COUNTRY),
             pid=pl.lit(prefix) + pl.col("pid").cast(pl.String),
             hid=pl.lit(prefix) + pl.col("hid").cast(pl.String),
+            # each survey's weights sum to its own area's population, so
+            # they are normalised within the survey before combining
+            weight=(pl.col("weight") / pl.col("weight").mean()).cast(
+                pl.Float32
+            ),
         )
     )
     trips = trips.select(

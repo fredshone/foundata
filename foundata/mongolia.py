@@ -29,6 +29,7 @@ from pathlib import Path
 
 import polars as pl
 import pyreadstat
+from loguru import logger
 
 from foundata.utils import (
     add_implied_trips,
@@ -115,7 +116,7 @@ def load(
         raise ValueError(
             f"Unsupported MONGOLIA year: {year} (expected one of {list(ROUNDS)})"
         )
-    print(f"Loading MONGOLIA {year}...")
+    logger.info(f"Loading MONGOLIA {year}...")
     round_dir = Path(round_dir).expanduser()
     files = ROUNDS[year]["files"]
     hh_cfg, person_cfg, trips_cfg = (
@@ -366,7 +367,7 @@ def _diary_days_only(persons: pl.DataFrame, days: pl.DataFrame) -> pl.DataFrame:
     are dropped rather than given a home-all-day plan; hh_size still counts
     them."""
     diarists = persons.join(days, on="person", how="semi").height
-    print(
+    logger.debug(
         f"Removed {persons.height - diarists}/{persons.height} MONGOLIA household "
         f"members with no diary; {days.height} diary days kept"
     )

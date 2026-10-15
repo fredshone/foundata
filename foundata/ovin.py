@@ -20,6 +20,7 @@ from pathlib import Path
 
 import polars as pl
 import pyreadstat
+from loguru import logger
 
 from foundata import fix, nl_income
 from foundata.utils import expand_root, resolve_activity_chain, table_joiner
@@ -45,7 +46,7 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading OViN...")
+    logger.info("Loading OViN...")
     root = expand_root(data_root)
     columns = ["OP"] + [
         raw
@@ -54,7 +55,7 @@ def load(
     ]
     all_attributes, all_trips = [], []
     for year in years:
-        print(f"Loading year {year}...")
+        logger.info(f"Loading year {year}...")
         data = read_sav(root / str(year) / DATA_FILES[year], columns)
 
         hhs = load_households(data, hh_config, year)

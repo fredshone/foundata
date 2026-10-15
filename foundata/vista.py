@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from .fix import day_wrap
 from .utils import (
@@ -42,12 +43,12 @@ def load_years(
     all_attributes = []
     all_trips = []
 
-    print("Loading VISTA...")
+    logger.info("Loading VISTA...")
 
     for year, hh_name, persons_name, trips_name in zip(
         years, hhs_names, persons_names, trips_names
     ):
-        print(f"Loading {year}...")
+        logger.info(f"Loading {year}...")
         yr = year[2:4] + year[5:7]
 
         hh_config_year = config_for_year(hh_config, year)

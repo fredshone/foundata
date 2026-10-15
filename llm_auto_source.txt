@@ -11,8 +11,8 @@ RUNNING THINGS
 - Validate configs: `uv run foundata validate-config <src>`. WARNs for
   intermediate columns are expected; ERRORs mean a mapped value isn't in the
   template's set.
-- Run one source: `uv run foundata run -d ~/Data/foundata -s <src> -o <scratch>/out`
-- Template smoke run: `uv run foundata run -d data_dir_template -o <scratch>/out`
+- Run one source: `uv run foundata run <src> ~/Data/foundata/<SRC> -o <scratch>/out`
+- Template smoke run: `uv run foundata batch data_dir_template -o <scratch>/out`
   This runs EVERY source by default, so a new source must have template data
   or this run breaks.
 - Raw data lives under ~/Data/foundata/<Folder>/. Use the user's folder name
@@ -47,9 +47,10 @@ REPO MAP
     utils.split_employment_type turns them into employed + employed_type.
 - foundata/<src>.py: the loader. Exposes `load(...)` or `load_years(...)` and
   returns (attributes, trips).
-- foundata/run.py: add the import, add the name to the `sources` set, and add
-  an `if "<src>" in sources:` block (load the 3 configs, call the loader, then
-  process_source). process_source does the shared cleaning: avg_speed,
+- foundata/run.py: add the import, add a `_load_<src>(source_dir)` function
+  (load the configs with `_configs`, call the loader) and register it in the
+  `SOURCES` dict, which also makes it a `foundata run <src>` CLI choice.
+  load_source then applies process_source, which does the shared cleaning: avg_speed,
   employment split, child employment, time/activity filters, missing columns,
   type fixes, weight normalisation.
 - foundata/utils.py: table_joiner, config_for_year, sample_to_euro

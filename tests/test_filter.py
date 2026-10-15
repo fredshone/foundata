@@ -1,8 +1,8 @@
 import polars as pl
-from click.testing import CliRunner
+from typer.testing import CliRunner
 
 from foundata import filter
-from foundata.cli import cli
+from foundata.cli import app
 
 
 def make_attrs(pids: list[str]) -> pl.DataFrame:
@@ -523,7 +523,7 @@ def test_filter_attributes_numeric_key(tmp_path):
 
     runner = CliRunner()
     result = runner.invoke(
-        cli,
+        app,
         [
             "filter",
             "attributes",

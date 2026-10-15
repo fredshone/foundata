@@ -15,8 +15,9 @@ import json
 import subprocess
 import time
 from pathlib import Path
+from typing import Optional
 
-import click
+import typer
 
 # Chicago city-centre coordinates (covers CMAP metro area)
 CHICAGO_LAT = 41.85
@@ -87,58 +88,24 @@ def fetch_daily(
     return fetch_batch([(lat, lon)], start, end)[0]
 
 
-@click.command()
-@click.option(
-    "--start",
-    default="2017-01-01",
-    show_default=True,
-    help="Start date (YYYY-MM-DD)",
-)
-@click.option(
-    "--end",
-    default="2019-12-31",
-    show_default=True,
-    help="End date (YYYY-MM-DD)",
-)
-@click.option(
-    "--lat", default=CHICAGO_LAT, show_default=True, type=float, help="Latitude"
-)
-@click.option(
-    "--lon",
-    default=CHICAGO_LON,
-    show_default=True,
-    type=float,
-    help="Longitude",
-)
-@click.option(
-    "--out",
-    default=str(DEFAULT_OUT),
-    show_default=True,
-    type=click.Path(),
-    help="Output CSV path",
-)
-@click.option(
-    "--regions-csv",
-    default=None,
-    type=click.Path(exists=True),
-    help="CSV with region_code,region_name,lat,lon columns; fetches all regions and writes combined output",
-)
-@click.option(
-    "--batch-size",
-    default=10,
-    show_default=True,
-    help="Number of regions to fetch per Open-Meteo request (stays under rate limits)",
-)
 def main(
-    start: str,
-    end: str,
-    lat: float,
-    lon: float,
-    out: str,
-    regions_csv: str | None,
-    batch_size: int,
+    start: str = typer.Option("2017-01-01", help="Start date (YYYY-MM-DD)"),
+    end: str = typer.Option("2019-12-31", help="End date (YYYY-MM-DD)"),
+    lat: float = typer.Option(CHICAGO_LAT, help="Latitude"),
+    lon: float = typer.Option(CHICAGO_LON, help="Longitude"),
+    out: Path = typer.Option(DEFAULT_OUT, help="Output CSV path"),
+    regions_csv: Optional[Path] = typer.Option(
+        None,
+        exists=True,
+        help="CSV with region_code,region_name,lat,lon columns; fetches all regions and writes combined output",
+    ),
+    batch_size: int = typer.Option(
+        10,
+        help="Number of regions to fetch per Open-Meteo request (stays under rate limits)",
+    ),
 ):
-    out_path = Path(out)
+    """Fetch daily max temperature and precipitation from Open-Meteo."""
+    out_path = out
     out_path.parent.mkdir(parents=True, exist_ok=True)
 
     if regions_csv:
@@ -202,4 +169,4 @@ def main(
 
 
 if __name__ == "__main__":
-    main()
+    typer.run(main)

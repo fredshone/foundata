@@ -356,6 +356,24 @@ def test_access_egress():
         assert abs(got - want) < 1e-5
 
 
+def test_access_egress_skips_transit_trips_without_walking():
+    # trip 2 is transit with no walking leg: left out, not averaged as 0 km
+    trips_cfg = load_configs()[2]
+    legs = pl.DataFrame(
+        {
+            "trip_id": [1, 1, 2],
+            "pid": [1, 1, 1],
+            "leg_mode_group": ["walking", "public_transit", "public_transit"],
+            "leg_travel_distance": [0.6, 5.0, 8.0],
+            "leg_euclidean_distance": [None, None, None],
+            "leg_travel_time": [8, 10, 15],
+        }
+    )
+    result = france.access_egress(legs, trips_cfg)
+    assert result["pid"].to_list() == [1]
+    assert abs(result["access_egress_distance"][0] - 0.6) < 1e-5
+
+
 def test_metadata_present():
     for survey in france.survey_dirs(Path(DATA_ROOT), []):
         meta = json.loads((survey / france.METADATA_PATH).read_text())

@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from foundata import fix, nl_income
 from foundata.utils import (
@@ -33,11 +34,11 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading ODIN...")
+    logger.info("Loading ODIN...")
     gemeente_zone = load_gemeente_zone(Path(configs_root))
     all_hhs, all_persons, all_trips = [], [], []
     for year in years:
-        print(f"Loading year {year}...")
+        logger.info(f"Loading year {year}...")
         hhs = load_households(data_root, hh_config, year)
         persons = load_persons(data_root, person_config, year)
         trips = load_trips(

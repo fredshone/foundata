@@ -1,6 +1,7 @@
 from pathlib import Path
 
 import polars as pl
+from loguru import logger
 
 from .utils import expand_root, get_config_path, sample_to_euro, table_joiner
 
@@ -16,20 +17,20 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    print("Loading CMAP...")
+    logger.info("Loading CMAP...")
     rurality = load_rurality(configs_root)
 
-    print("loading households...")
+    logger.info("loading households...")
     hhs = load_households(data_root, hh_config)
     hh_locations = load_home_locations(data_root, rurality_table=rurality)
     hhs = hhs.join(hh_locations, on="hid", how="left")
 
-    print("loading persons...")
+    logger.info("loading persons...")
     persons = load_persons(data_root, person_config)
 
     attributes = table_joiner(hhs, persons, on="hid")
 
-    print("loading trips...")
+    logger.info("loading trips...")
     rurality_mapping = load_locations(data_root, rurality_table=rurality)
     trips = load_trips(
         data_root, trips_config, rurality_mapping=rurality_mapping
