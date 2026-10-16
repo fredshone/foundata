@@ -19,6 +19,9 @@ column_mappings:
     hhid: hid                # intermediate -- prefixed in mongolia.py
     HH14: hh_size            # Total number of household members
     HH8: hh_zone             # Location (capital / aimag centre / soum centre / countryside)
+    HH4: home_aimag          # intermediate -- home location: aimag / capital code
+    HH5: home_soum           # intermediate -- soum / district code within aimag
+    HH6: home_bagh           # intermediate -- bagh / khoroo code within soum
     HC1: dwelling            # What is your type of accommodation?
     HC5: ownership           # Can you state the form of ownership of your residence?
   "2019":
@@ -26,6 +29,9 @@ column_mappings:
     HH3: hid_hh              # intermediate -- Household number; hid in mongolia.py
     HH13: hh_size            # Total number of household members
     HH4: hh_zone             # Location
+    HH5: home_aimag          # intermediate -- Province's/ capital's code
+    HH6: home_soum           # intermediate -- Soum's/ district's code
+    HH7: home_bagh           # intermediate -- Bagh's/ khoroo's code
     HC1: dwelling            # Dwelling type
     HC5: ownership           # Ownership of accomodation
   "2011":
@@ -33,8 +39,33 @@ column_mappings:
     HH2: hid_hh              # intermediate -- HH number; hid in mongolia.py
     HH15: hh_size            # Household size
     HH3: hh_zone             # Location
+    HH4: home_aimag          # intermediate -- Aimag/ city
+    HH5: home_soum           # intermediate -- Soum/ district
     HC1: dwelling            # Type of dwelling
     HC6: ownership           # DOES ANY MEMBER OF YOUR HOUSEHOLD OWN THIS DWELLING?
+
+# home location (see foundata.location): the dwelling's admin unit as an
+# NSO code, aimag (2 digits) + soum (2) [+ bagh (2)]. NSO codes are stable,
+# but Ulaanbaatar khoroos have been split since 2019 (new ones take new
+# numbers), so 2019 khoroos only approximately match today's boundaries.
+# Work in progress: rural bag boundaries are not published.
+home_location:
+  default:
+    - level: bagh_{year}
+      when: {year: [2019, 2023]}
+      years: [2019, 2023]
+      code:
+        - {column: home_aimag, width: 2}
+        - {column: home_soum, width: 2}
+        - {column: home_bagh, width: 2}
+      valid: '\d{6}'
+      known: true
+    # 2011 gives no bagh; a bagh code NSO doesn't list falls back too
+    - level: soum
+      code:
+        - {column: home_aimag, width: 2}
+        - {column: home_soum, width: 2}
+      valid: '\d{4}'
 
 # Vehicle types the household owns (answered vehicle_yes_code). vehicles =
 # number of these types owned, so a lower bound: two cars count once.

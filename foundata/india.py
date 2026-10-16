@@ -37,6 +37,7 @@ from nesstar_converter import (
     parse_ddi,
 )
 
+from foundata import location
 from foundata.utils import add_implied_trips, table_joiner, table_stacker
 
 SOURCE = "india"
@@ -284,7 +285,7 @@ def load_households(
         # 2019's schedule has no dwelling-tenure question at all
         hhs = hhs.with_columns(ownership=pl.lit(None, dtype=pl.String))
 
-    return hhs.with_columns(
+    hhs = hhs.with_columns(
         hid=_hid_expr(year),
         hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
         year=pl.col("year").cast(pl.Int32, strict=False),
@@ -307,7 +308,10 @@ def load_households(
         weight=pl.col("weight").cast(pl.Float64, strict=False).cast(pl.Float32),
         country=pl.lit(COUNTRY),
         source=pl.lit(SOURCE),
-    ).drop("hid_fsu", "hid_sample")
+    )
+    return location.add(
+        hhs, config["home_location"], source=SOURCE, year=year
+    ).drop("hid_fsu", "hid_sample", "home_nss_region", "home_district")
 
 
 def _finish_persons(persons: pl.DataFrame, config: dict) -> pl.DataFrame:

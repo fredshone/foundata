@@ -14,6 +14,7 @@ column_mappings:
     Maand: month
     Week: week
     WoGem: home_gemeente
+    WoPC: home_postcode  # 4-digit postcode; not in the DANS 2024 release
   2024:
     OPID: hid
     HHPers_DANS24: hh_size
@@ -66,3 +67,19 @@ day:
     "5": thursday
     "6": friday
     "7": saturday
+
+# home location (see foundata.location): 4-digit postcode (WoPC, 2018-23),
+# else the gemeente as a 4-digit CBS code of the survey year. Gemeente codes
+# 9000+ are DANS disclosure-control groups of small gemeenten (2024), not
+# real gemeenten, and 0 is unknown.
+home_location:
+  default:
+    - level: pc4
+      when: {year: [2018, 2019, 2020, 2021, 2022, 2023]}
+      code: [{column: home_postcode, width: 4}]
+      valid: '[1-9]\d{3}'
+    - level: gemeente_{year}
+      years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      code: [{column: home_gemeente, width: 4}]
+      valid: '[0-8]\d{3}'
+      missing: ["0000"]

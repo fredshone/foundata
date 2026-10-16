@@ -85,6 +85,7 @@ def test_load_households():
             "hh_size": ["3", "99", "2"],
             "hh_size_surveyed": ["3", "4", "2"],
             "hh_zone": ["1020", "3320", "3900"],
+            "home_segment": ["109009", "121027", None],
         }
     )
 
@@ -96,6 +97,8 @@ def test_load_households():
     assert result["dwelling"].to_list() == ["house", "flat", "unknown"]
     assert result["ownership"].to_list() == ["owned", "rented", "unknown"]
     assert result["hh_zone"].to_list() == ["urban", "suburban", "rural"]
+    assert result["home_level"].to_list() == ["segment_2011"] * 2 + [None]
+    assert result["home_code"].to_list() == ["109009", "121027", None]
 
 
 def test_load_persons():

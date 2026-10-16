@@ -3,6 +3,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
+from . import location
 from .utils import expand_root, get_config_path, sample_to_euro, table_joiner
 
 USD_TO_EURO = 0.85
@@ -22,7 +23,9 @@ def load(
 
     logger.info("loading households...")
     hhs = load_households(data_root, hh_config)
-    hh_locations = load_home_locations(data_root, rurality_table=rurality)
+    hh_locations = load_home_locations(
+        data_root, rurality_table=rurality, home_spec=hh_config["home_location"]
+    )
     hhs = hhs.join(hh_locations, on="hid", how="left")
 
     logger.info("loading persons...")
@@ -174,12 +177,12 @@ def load_locations(
             pl.col("tract_fips").cast(pl.Utf8).str.zfill(6),
         )
         .with_columns(
-            fips=(
-                pl.col("state_fips")
-                + pl.col("county_fips")
-                + pl.col("tract_fips")
-            ).str.replace_all("-", "0")
+            # tract FIPS; a part may be -1 (unknown)
+            tract=pl.col("state_fips")
+            + pl.col("county_fips")
+            + pl.col("tract_fips")
         )
+        .with_columns(fips=pl.col("tract").str.replace_all("-", "0"))
         .drop(["state_fips", "county_fips", "tract_fips"])
     )
 
@@ -199,7 +202,7 @@ def load_locations(
 
 
 def load_home_locations(
-    root: str | Path, rurality_table: pl.DataFrame
+    root: str | Path, rurality_table: pl.DataFrame, home_spec: list[dict]
 ) -> pl.DataFrame:
     root = expand_root(root)
     locations = (
@@ -221,26 +224,31 @@ def load_home_locations(
             pl.col("tract_fips").cast(pl.Utf8).str.zfill(6),
         )
         .with_columns(
-            fips=(
-                pl.col("state_fips")
-                + pl.col("county_fips")
-                + pl.col("tract_fips")
-            ).str.replace_all("-", "0")
+            raw_fips=pl.col("state_fips")
+            + pl.col("county_fips")
+            + pl.col("tract_fips")
         )
+        .with_columns(fips=pl.col("raw_fips").str.replace_all("-", "0"))
         .drop(["state_fips", "county_fips", "tract_fips"])
     )
 
+    # home location: 2010 census tract; a code with a missing (-1) part is
+    # unknown (see home_location in hh_dictionary.yaml)
     locations = (
-        locations.join(
-            rurality_table,
-            left_on="fips",
-            right_on="tractFIPS",
-            how="left",
-            maintain_order="left_right",
+        location.add(
+            locations.join(
+                rurality_table,
+                left_on="fips",
+                right_on="tractFIPS",
+                how="left",
+                maintain_order="left_right",
+            ).with_columns(hh_zone=pl.col("hh_zone").fill_null("unknown")),
+            home_spec,
+            source="cmap",
         )
-        .with_columns(hh_zone=pl.col("hh_zone").fill_null("unknown"))
-        .drop("fips")
-    ).rename({"sampno": "hid"})
+        .drop("fips", "raw_fips")
+        .rename({"sampno": "hid"})
+    )
 
     # some households have more than one location flagged home==1 in the
     # source data (different locno, occasionally different tract); keep a
@@ -345,7 +353,10 @@ def load_trips(
             trips.rename({"ozone": "ozone_code", "dzone": "dzone_code"})
             .join(
                 rurality_mapping.select(
-                    ["sampno", "locno", pl.col("hh_zone").alias("ozone")]
+                    "sampno",
+                    "locno",
+                    pl.col("hh_zone").alias("ozone"),
+                    pl.col("tract").alias("origin_tract"),
                 ),
                 left_on=["hid", "ozone_code"],
                 right_on=["sampno", "locno"],
@@ -354,7 +365,10 @@ def load_trips(
             )
             .join(
                 rurality_mapping.select(
-                    ["sampno", "locno", pl.col("hh_zone").alias("dzone")]
+                    "sampno",
+                    "locno",
+                    pl.col("hh_zone").alias("dzone"),
+                    pl.col("tract").alias("destination_tract"),
                 ),
                 left_on=["hid", "dzone_code"],
                 right_on=["sampno", "locno"],
@@ -362,6 +376,11 @@ def load_trips(
                 maintain_order="left_right",
             )
             .drop(["ozone_code", "dzone_code"])
+        )
+        # trip end locations: the tract of each place (see
+        # trip_dictionary.yaml)
+        trips = location.add_trip_ends(trips, config, source=SOURCE).drop(
+            "origin_tract", "destination_tract"
         )
 
     return trips

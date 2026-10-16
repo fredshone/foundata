@@ -8,9 +8,9 @@ Persona and Viaje, with the code tables in codigos.parquet.
 
 Every household member reports the trips of one assigned day (Fecha, any
 weekday, normal and summer seasons). Trip distances come from the survey's
-straight-line distance between block centroids, EOD zone centroids
-(``configs/chile/zones.csv``, from ``scripts/compute_chile_zones.py``) or
-duration x mode speed.
+straight-line distance between block centroids, EOD zone points (from the
+``eod_zone_2012`` location lookup, see scripts/build_location_lookups.py)
+or duration x mode speed.
 """
 
 from pathlib import Path
@@ -18,7 +18,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix, utils
+from foundata import fix, location
 
 SOURCE = "chile"
 COUNTRY = "cl"
@@ -89,6 +89,11 @@ def load(
     attributes = (
         persons.drop("income_imputed")
         .join(hhs, on="hid", how="left")
+        .join(
+            home_points(raw_hhs, hh_config["home_location"]),
+            on="hid",
+            how="left",
+        )
         .join(access_egress(trips), on="pid", how="left")
         .with_columns(
             source=pl.lit(SOURCE),
@@ -110,9 +115,20 @@ def load(
         "tst",
         "tet",
         "distance",
+        *location.columns("origin"),
+        *location.columns("destination"),
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
+
+
+def home_points(hhs: pl.DataFrame, spec: list[dict]) -> pl.DataFrame:
+    """Dwelling coordinates per hogar as home location columns."""
+    return location.add(
+        hhs.select(pl.col("hid").cast(pl.String), "home_x", "home_y"),
+        spec,
+        source=SOURCE,
+    ).drop("home_x", "home_y")
 
 
 def load_zones(
@@ -131,7 +147,10 @@ def load_zones(
         .group_by("zone")
         .agg(population=pl.col("weight").cast(pl.Float64).sum())
     )
-    zones = pl.read_csv(utils.get_config_path(SOURCE, "zones.csv"))
+    # EOD zones' areas and points (UTM 19S) from the location lookup
+    zones = location.zone_points(
+        SOURCE, "eod_zone_2012", crs="EPSG:32719"
+    ).select(pl.col("code").cast(pl.Int64).alias("zone"), "area_km2", "x", "y")
     density = pl.col("population") / pl.col("area_km2")
     return zones.join(residents, on="zone", how="left").select(
         "zone",
@@ -323,6 +342,7 @@ def load_trips(
     trips with neither are left null so the plan is dropped downstream.
     """
     duration = pl.col("duration").cast(pl.Int32)
+    trips = location.add_trip_ends(trips, config, source=SOURCE)
     trips = (
         trips.with_columns(
             pid=pl.col("pid").cast(pl.String),
@@ -381,6 +401,8 @@ def load_trips(
         "tet",
         "distance",
         "access_egress_distance",
+        *location.columns("origin"),
+        *location.columns("destination"),
     )
 
 

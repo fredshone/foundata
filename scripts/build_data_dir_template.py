@@ -438,7 +438,7 @@ def generate_ktdb():
     # force zone-code columns to string: the real (much larger) trips.csv
     # infers these as string, but a small sample of purely-numeric-looking
     # codes would otherwise infer as int64 and break the strict-typed join
-    # against configs/ktdb/zone_distances.parquet (which stores them as str)
+    # against the 10-digit string codes of the dong location lookup
     zone_cols = ["sTP1_1_5", "TP1_1_5"]
     persons = persons.with_columns(pl.col("SQ1_5").cast(pl.Utf8))
     trips = pl.read_csv(
@@ -489,8 +489,8 @@ def generate_ktdb():
     # The real trips.csv is large enough that some rows have a blank
     # sTP1_1_5/TP1_1_5 zone code, which makes polars infer those columns as
     # string. Our tiny sample only has real 10-digit codes, so it would
-    # infer as int64 instead and break the strict-typed join against
-    # configs/ktdb/zone_distances.parquet (stored as str). Add one throwaway
+    # infer as int64 instead and break the strict-typed join against the
+    # dong location lookup's string codes. Add one throwaway
     # row (th_seq=0) reproducing that real-world blank-code case — the
     # loader's `seq > 0` filter drops it immediately, but its presence in
     # the file is enough to make schema inference match production.
@@ -958,6 +958,8 @@ TUS_2024 = {
         "Monthly_Exp_E_Total",
         "MULT",
         "Survey_Year",
+        "NSS_Region",
+        "District",
     },
     "person_cols": {
         "FSU_Serial_No",
@@ -985,7 +987,17 @@ TUS_2019 = {
     "demographics": "LEVEL - 02 (Block 3)",
     "day": "LEVEL - 04 (Block 5)",
     "diary": "LEVEL - 05 (Block 6)",
-    "hh_cols": {"fsu", "b1q4", "b4q1", "sector", "b4q9", "mult", "survey_yr"},
+    "hh_cols": {
+        "fsu",
+        "b1q4",
+        "b4q1",
+        "sector",
+        "b4q9",
+        "mult",
+        "survey_yr",
+        "nss_region",
+        "district",
+    },
     "demographics_cols": {
         "fsu",
         "b1q4",

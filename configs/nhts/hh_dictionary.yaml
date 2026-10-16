@@ -14,6 +14,7 @@ column_mappings:
         "HH_RACE": "race1"
         "HHR_RACE": "race2"
         "WTHHFIN": "weight"
+        "CENSUS_D": "home_division"  # 2022 has no CBSA, MSA or state
     default:
         "HOUSEID": "hid"
         "HBHUR": "hh_zone"
@@ -29,6 +30,43 @@ column_mappings:
         "HH_RACE": "race1"
         "HHR_RACE": "race2"
         "WTHHFIN": "weight"
+        # home location, finest first (only the columns a year has are read):
+        # CBSA (2009, 2017; largest areas only), 1999 MSA (2001, 2009),
+        # state FIPS
+        "HH_CBSA": "home_cbsa"
+        "HHC_MSA": "home_msa"
+        "HHSTFIPS": "home_state"
+
+
+# home location (see foundata.location), finest first: CBSA (2009: 2003
+# delineations, 2017: 2013 delineations; largest areas only), 1999
+# MSA/CMSA (2001, 2009), state FIPS, else census division (2022 has no
+# finer geography). Suppressed (XXXX), non-MSA (9999) and missing (-1)
+# codes fall through to the next level. CDIVMSAR (2022) is not used: it
+# splits divisions by MSA size, which is not a contiguous area.
+home_location:
+  default:
+    - level: cbsa_2013
+      when: {year: [2017]}
+      code: [{column: home_cbsa, width: 5}]
+      valid: '\d{5}'
+    - level: cbsa_2003
+      when: {year: [2009]}
+      code: [{column: home_cbsa, width: 5}]
+      valid: '\d{5}'
+    - level: msa_1999
+      when: {year: [2001, 2009]}
+      code: [{column: home_msa, width: 4}]
+      valid: '\d{4}'
+      missing: ["9999"]
+    - level: state
+      when: {year: [2001, 2009, 2017]}
+      code: [{column: home_state, width: 2}]
+      valid: '\d{2}'
+    - level: census_division
+      when: {year: [2022]}
+      code: [{column: home_division, width: 2}]
+      valid: '\d{2}'
 
 
 hh_zone:

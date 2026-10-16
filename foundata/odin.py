@@ -3,7 +3,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix, nl_income
+from foundata import fix, location, nl_income
 from foundata.utils import (
     bounds_from_list,
     config_for_year,
@@ -157,6 +157,12 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
     )
+    # home location: 4-digit postcode (2018-23), else gemeente
+    data = location.add(
+        data, year_config["home_location"], source="odin", year=year
+    )
+    if "home_postcode" in data.columns:
+        data = data.drop("home_postcode")
 
     return data.filter(pl.col("hid").is_not_null())
 
@@ -283,6 +289,7 @@ def load_trips(
     data = data.filter(pl.col("Verpl") == "1")
 
     data = data.select(column_mapping.keys()).rename(column_mapping)
+    data = location.add_trip_ends(data, year_config, source="odin", year=year)
 
     if gemeente_zone is not None:
         zone_lookup = gemeente_zone.filter(pl.col("year") == year).select(

@@ -3,7 +3,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.utils import (
     check_overlap,
     resolve_activity_chain,
@@ -86,6 +86,9 @@ def load_households(
         pl.lit("uk").alias("country"),
     )
 
+    hhs = location.add(hhs, config["home_location"], source="nts").drop(
+        "home_region"
+    )
     hhs = hhs.filter(pl.col("hid").is_not_null())
 
     return hhs

@@ -17,7 +17,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import nl_income
+from foundata import location, nl_income
 from foundata.ovin import (
     drop_non_regular,
     gemeente_zone,
@@ -56,7 +56,7 @@ def load(
         persons = load_persons(data, person_config, year)
         hhs = load_households(data, hh_config, persons, year)
         zones = gemeente_zone(data.filter(pl.col("Persoon") == 1))
-        trips = load_trips(data, trips_config, zones)
+        trips = load_trips(data, trips_config, zones, year, source="om")
         persons, trips = drop_non_regular(
             persons.drop("personal_income"),
             trips,
@@ -148,7 +148,7 @@ def load_households(
     hhs = hhs.with_columns(
         hh_income=pl.when(complete).then(pl.col("hh_income"))
     )
-    return hhs.with_columns(
+    hhs = hhs.with_columns(
         hh_income=nl_income.to_gross(
             hhs["hh_income"], nl_income.load_config(), year
         ),
@@ -159,7 +159,10 @@ def load_households(
         ),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
-    ).drop("home_gemeente", "respondents")
+    ).drop("respondents")
+    return location.add(
+        hhs, config["home_location"], source="om", year=year
+    ).drop("home_gemeente")
 
 
 def household_income(persons: pl.DataFrame) -> pl.DataFrame:

@@ -15,7 +15,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.brazil import read_dbf
 
 SOURCE = "mexico"
@@ -98,6 +98,8 @@ def load(
         "tst",
         "tet",
         "distance",
+        *location.columns("origin"),
+        *location.columns("destination"),
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
@@ -105,7 +107,7 @@ def load(
 
 def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
     """One row per hogar. vehicles counts cars and motorcycles."""
-    return hhs.with_columns(
+    hhs = hhs.with_columns(
         vehicles=(
             pl.col("cars").cast(pl.Int32) + pl.col("motorcycles").cast(pl.Int32)
         ),
@@ -116,6 +118,7 @@ def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
     ).drop("cars", "motorcycles")
+    return location.add(hhs, config["home_location"], source="mexico")
 
 
 def district_zone_types(hhs: pl.DataFrame) -> dict[int, str]:
@@ -199,8 +202,11 @@ def load_trips(
 
     Unknown (99) times are left null, so filter.null_times drops the plan.
     """
+    trips = location.add_trip_ends(trips, config, source="mexico")
     trips = trips.with_columns(
-        pl.col(c).cast(pl.Int32) for c in trips.columns if c != "pid"
+        pl.col(c).cast(pl.Int32)
+        for c in trips.columns
+        if c != "pid" and not c.startswith(("origin_", "destination_"))
     ).with_columns(
         pid=pl.col("pid") + pl.col("diary").cast(pl.String),
         seq=(pl.col("seq") - 1).cast(pl.Int8),

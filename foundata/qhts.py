@@ -4,6 +4,7 @@ from typing import Optional
 import polars as pl
 from loguru import logger
 
+from . import location
 from .fix import day_wrap
 from .utils import config_for_year, sample_to_euro, table_joiner
 
@@ -58,6 +59,7 @@ def load_years(
         )
         trips = preprocess_trips(trips, trips_config_year, year=year)
         trips = day_wrap(trips)
+        trips = location.add_trip_ends(trips, trips_config_year, source="qhts")
 
         if zones_mapping is not None:
             trips = (
@@ -124,6 +126,9 @@ def preprocess_households(
         hh_zone=pl.col("hh_zone")
         .replace_strict(rurality_mapping, default=pl.col("hh_zone"))
         .fill_null("unknown"),
+    )
+    hhs = location.add(hhs, config["home_location"], source="qhts").drop(
+        "home_sa1"
     )
 
     hhs = hhs.filter(pl.col("hid").is_not_null())

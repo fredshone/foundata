@@ -72,7 +72,35 @@ def build_hh_yaml(template_attributes: dict) -> str:
             lines.append(f"  # 1: {val}")
         lines.append("")
 
+    lines += HOME_LOCATION_STUB
     return "\n".join(lines)
+
+
+# see the LOCATIONS section of llm_auto_source.txt
+HOME_LOCATION_STUB = [
+    "# home location (see foundata.location): candidates, finest first; map",
+    "# the raw code columns to intermediate names (e.g. home_zone) above. The",
+    "# level needs a lookup (scripts/build_location_lookups.py).",
+    "home_location:",
+    "  - level: LEVEL  # e.g. tract_2010, gemeente_{year} (with years: [...])",
+    "    code: [home_zone]  # parts: column or {column, slice, map, width}",
+    "    # valid: '\\d{11}'  # regex a code must match",
+    "    # missing: ['0']  # codes meaning unknown",
+    "",
+]
+TRIP_LOCATION_STUB = [
+    "# trip end locations (see foundata.location), as home_location in",
+    "# hh_dictionary.yaml, from the raw origin/destination zone codes",
+    "# origin_location:",
+    "#   - level: LEVEL",
+    "#     code: [ozone]",
+    "# destination_location:",
+    "#   - level: LEVEL",
+    "#     code: [dzone]",
+    "",
+]
+# template fields the runner sets, not mapped from raw columns
+PROGRAMMATIC = {"hh_location", "olocation", "dlocation"}
 
 
 def build_person_yaml(template_attributes: dict) -> str:
@@ -129,7 +157,7 @@ def build_trip_yaml(template_trips: dict) -> str:
         "column_mappings:",
     ]
 
-    trip_fields = list(template_trips.keys())
+    trip_fields = [f for f in template_trips if f not in PROGRAMMATIC]
     for field in trip_fields:
         lines.append(f"  # RAW_COL_NAME: {field}")
 
@@ -146,6 +174,7 @@ def build_trip_yaml(template_trips: dict) -> str:
             lines.append(f"  # 1: {val}")
         lines.append("")
 
+    lines += TRIP_LOCATION_STUB
     return "\n".join(lines)
 
 
@@ -154,7 +183,7 @@ def build_python_module(source_name: str) -> str:
 
 import polars as pl
 
-from foundata import fix, utils
+from foundata import fix, location, utils
 from foundata.utils import table_joiner
 
 SOURCE = "{source_name}"
@@ -222,6 +251,10 @@ def load_households(
         country=pl.lit("unknown"),  # TODO: set ISO country code, e.g. "aus"
     )
 
+    # home location from the home_location declaration (TODO: pass year= /
+    # survey= if the declaration uses them, and drop its raw columns)
+    data = location.add(data, config["home_location"], source=SOURCE)
+
     return data
 
 
@@ -271,6 +304,10 @@ def load_trips(
     # TODO: Map mode, oact, dact, ozone, dzone to canonical values.
     # TODO: Compute tst/tet in minutes since midnight.
     # TODO: Convert distance to km (e.g. * 1.60934 for miles).
+
+    # trip end locations, if trip_dictionary.yaml declares them; before
+    # ozone/dzone are mapped to urbanity
+    data = location.add_trip_ends(data, config, source=SOURCE)
 
     # Handle midnight-crossing trips
     data = fix.day_wrap(data)

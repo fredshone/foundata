@@ -1,0 +1,124 @@
+# Matching NSS district names (configs/india/districts_<year>.csv) to LGD
+# and Census 2011 district boundaries (scripts/build_location_lookups.py).
+# Names are normalised first (lowercase letters only, "&" -> "and",
+# bracketed text dropped except "(rural)"/"(urban)").
+#
+# names: NSS name -> boundary-file name; "<state>:<name>" where a name is
+#   ambiguous across states. Also applied to names in the split table.
+# extra_splits: districts carved out since 2021 that the split table
+#   (ramSeraph District_splits_and_carveouts) leaves out.
+# states: NSS state code -> LGD (Census 2011) state code, by survey year,
+#   where they differ.
+names:
+  punch: poonch
+  shupiyan: shopian
+  muktsar: srimuktsarsahib
+  sahibzadaajitsinghnagar: sasnagar
+  garhwal: paurigarhwal
+  gurgaon: gurugram
+  mewat: nuh
+  jyotibaphulenagar: amroha
+  mahamayanagar: hathras
+  allahabad: prayagraj
+  santravidasnagar: bhadohi
+  kanshiramnagar: kasganj
+  kamrupmetropolitan: kamrupmetro
+  kochbihar: coochbehar
+  uttardinajpur: dinajpuruttar
+  dakshindinajpur: dinajpurdakshin
+  northtwentyfourparganas: paraganasnorth
+  southtwentyfourparganas: paraganassouth
+  hugli: hooghly
+  haora: howrah
+  paschimmedinipur: medinipurwest
+  purbamedinipur: medinipureast
+  purbisinghbhum: eastsinghbum
+  pashchimisinghbhum: westsinghbhum
+  subarnapur: sonepur
+  baudh: boudh
+  koriya: korea
+  uttarbastarkanker: kanker
+  dakshinbastardantewada: dantewada
+  kabeerdham: kabirdham
+  balodabazarbhatapara: balodabazar
+  balrampurramanujganj: balrampur
+  hoshangabad: narmadapuram
+  khandwa: eastnimar
+  narsimhapur: narsinghpur
+  thedangs: dang
+  27:raigarh: raigad
+  bid: beed
+  chhatrapatisambhajinagar: aurangabad
+  dharashiv: osmanabad
+  belgaum: belagavi
+  29:bijapur: vijayapura
+  bellary: ballari
+  bangalore: bengaluruurban
+  bangalorerural: bengalururural
+  bengaluruurban: bengaluruurban
+  bengalururural: bengalururural
+  mysore: mysuru
+  gulbarga: kalaburagi
+  thoothukkudi: tuticorin
+  thoothukudi: tuticorin
+  puducherry: pondicherry
+  aizwal: aizawl
+  komarambheem: kumurambheemasifabad
+  jayashankar: jayashankarbhupalapally
+  bhadradri: bhadradrikothagudem
+  warangalrural: warangal
+  warangalurban: hanumakonda
+  rajanna: rajannasircilla
+  yadadri: yadadribhuvanagiri
+  jogulamba: jogulambagadwal
+  ananthapuramu: anantapur
+  tirupathi: tirupati
+  srisatyasai: srisathyasai
+  sripottisriramulunellore: spsrnellore
+  drbrambedkarkonaseema: konaseema
+  visakhapatnam: visakhapatanam
+  leh: lehladakh
+  darjiling: darjeeling
+  jaipurrural: jaipurgramin
+  jodhpurrural: jodhpurgramin
+  gangapur: gangapurcity
+  anupgarh: anoopgarh
+  firozpur: ferozepur
+  nellore: spsrnellore
+extra_splits:
+- state: '22'
+  year: 2022
+  parent: rajnandgaon
+  district: khairgarhchhuikhadangandai
+- state: '22'
+  year: 2022
+  parent: rajnandgaon
+  district: mohlamanpurambagarhchouki
+- state: '22'
+  year: 2022
+  parent: korea
+  district: manendragarhchirimiribharatpur
+- state: '22'
+  year: 2022
+  parent: janjgirchampa
+  district: sakti
+- state: '22'
+  year: 2022
+  parent: raigarh
+  district: sarangarhbilaigarh
+- state: '13'
+  year: 2022
+  parent: tuensang
+  district: shamator
+- state: '12'
+  year: 2024
+  parent: papumpare
+  district: itanagarcapitalcomplex
+states:
+  2019:
+    '28': '37'
+  2024:
+    '28': '37'
+    '37': '38'
+    '25': '39'
+    '26': '39'

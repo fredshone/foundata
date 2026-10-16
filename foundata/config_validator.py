@@ -2,9 +2,16 @@ from pathlib import Path
 
 from loguru import logger
 
-from foundata import utils
+from foundata import location, utils
 
-PROGRAMMATIC_FIELDS = {"country", "source", "year", "month", "day"}
+PROGRAMMATIC_FIELDS = {
+    "country",
+    "source",
+    "year",
+    "month",
+    "day",
+    "hh_location",  # set by run.runner from home_location
+}
 
 
 def _flatten_column_mappings(col_mappings: dict) -> list[tuple[str, str]]:
@@ -141,6 +148,21 @@ def check_required_fields(hh_config: dict, person_config: dict) -> list[str]:
     return warnings
 
 
+def validate_locations(config: dict | None, key: str) -> list[str]:
+    """Problems with a location declaration (a list of candidates, or one
+    per year: ``{default: [...], <year>: [...]}``), if *config* has one."""
+    if not config or key not in config:
+        return []
+    spec = config[key]
+    specs = spec.items() if isinstance(spec, dict) else [(None, spec)]
+    return [
+        f"{key}{'' if year is None else f' ({year})'}: {error}"
+        for year, s in specs
+        if s  # null or empty: no locations for that year
+        for error in location.validate_spec(s)
+    ]
+
+
 def validate_source(
     source_name: str, configs_root: str | Path | None = None
 ) -> bool:
@@ -210,6 +232,16 @@ def validate_source(
     if trip_config:
         errs = validate_value_mappings(trip_config, template_trips)
         errors.extend([f"[trips] {e}" for e in errs])
+
+    # Location declarations (see foundata.location)
+    for name, config, key in (
+        ("hh", hh_config, "home_location"),
+        ("trips", trip_config, "origin_location"),
+        ("trips", trip_config, "destination_location"),
+    ):
+        errors.extend(f"[{name}] {e}" for e in validate_locations(config, key))
+    if hh_config and "home_location" not in hh_config:
+        warnings.append("[hh] no home_location: households get no location")
 
     # Check required fields coverage
     if hh_config and person_config:

@@ -138,3 +138,10 @@ hh_zone:
         Mitchell (S): suburban            # Outer-metropolitan growth area (Wallan/ Kilmore) [2](https://stfpbsprodapp01.blob.core.windows.net/amendmentfiles/b3f1ea4d-6c70-e811-a858-000d3ad117e3_928b1faa-1692-4413-ace4-6ca9e66e00ec_Moorabool%20C81%20Explanatory%20Report%20Approval%20Gazetted.pdf)
         Moira (S): rural                 # Large rural shire in north-east Victoria [20](https://www.moira.vic.gov.au/Our-Region/Geographic-Profile)
         Murrindindi (S): rural           # Rural shire in north-east Victoria with small towns (Alexandra, Yea) [21](https://www.murrindindi.vic.gov.au/Our-Region/Geographic-Profile)
+# home location (see foundata.location): the household's LGA (homelga), by
+# name as VISTA gives it ("Kingston (C)"), mapped to the ABS 2021 LGA code
+# in lga_2021_codes.csv (Merri-bek is ABS 2021's Moreland)
+home_location:
+  default:
+    - level: lga_2021
+      code: [{column: home_lga, map: lga_2021_codes.csv}]

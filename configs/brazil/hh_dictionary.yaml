@@ -6,6 +6,8 @@
 column_mappings:
   ID_DOM: hid
   ZONA: home_zone
+  CO_DOM_X: home_x  # dwelling coordinate, metres, Córrego Alegre / UTM 23S
+  CO_DOM_Y: home_y
   NO_MORAD: hh_size
   DATA: date  # interview date, ddmmyyyy
   # family-level (a household can hold several families), aggregated to hh
@@ -47,3 +49,11 @@ day:
   4: wednesday
   5: thursday
   6: friday
+
+# home location: the dwelling coordinate (CO_DOM_X/Y), in the CRS of the
+# survey's own zone shapefiles (Córrego Alegre / UTM 23S), reprojected to
+# WGS84. scale_m is an assumed geocoding uncertainty; the survey doesn't
+# state one.
+home_location:
+  - level: point
+    point: {x: home_x, y: home_y, crs: "EPSG:22523", scale_m: 50}

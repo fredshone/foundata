@@ -19,6 +19,31 @@ column_mappings:
   income_upper_bound: income_upper  # null for the open top band
   trips_weekday: hh_weekday  # null when household trips span several weekdays
   interview_date: interview_date
+  # home location, finest first: the survey's detailed zone (CEREMA
+  # surveys; zone ids are local to each survey, so the code is prefixed
+  # with the survey folder), else the point (EGT 2020, rounded to 0.001°),
+  # else the commune (INSEE code)
+  home_detailed_zone: home_detailed_zone
+  home_lng: point_lng  # detailed-zone centroids in CEREMA surveys, unused
+  home_lat: point_lat
+  home_insee: home_insee
+
+# home location (see foundata.location): the detailed zone, coded
+# <survey folder>/<zone id> as zone ids are survey-specific; else the point
+# (EGT 2020, rounded to 0.001°, about 110 x 73 m cells, whose equivalent
+# radius is about 50 m); else the commune (INSEE code) of the survey year
+# (the year in the survey folder's name).
+home_location:
+  - level: detailed_zone
+    prefix: "{survey}/"
+    code: [home_detailed_zone]
+  - level: point
+    point: {x: point_lng, y: point_lat, crs: "EPSG:4326", scale_m: 50}
+  - level: commune_{year}
+    years: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
+    code: [home_insee]
+    valid: '[0-9][0-9AB]\d{3}'
+
 
 # Survey folders to skip (folder names under FRANCE/). EMP 2019 is left out:
 # its diary day is drawn among the days the person travelled, so people who

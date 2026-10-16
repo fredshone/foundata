@@ -16,12 +16,13 @@ hh_size. Zone urbanity comes from the INSEE density grid of the commune.
 
 import datetime as dt
 import json
+import re
 from pathlib import Path
 
 import polars as pl
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.utils import sample_to_euro
 
 SOURCE = "france"
@@ -127,11 +128,33 @@ def load_survey(
                 pl.Float32
             ),
         )
-        .drop("person_day", "hh_day", "person_date", "hh_date")
+        .pipe(
+            location.add,
+            hh_config["home_location"],
+            source=SOURCE,
+            year=survey_year(survey.name, metadata),
+            survey=survey.name,
+        )
+        .drop(
+            "person_day",
+            "hh_day",
+            "person_date",
+            "hh_date",
+            "home_detailed_zone",
+            "point_lng",
+            "point_lat",
+            "home_insee",
+        )
     )
     # a few persons have trips but is_surveyed = false: their trips go too
     trips = (
-        load_trips(raw_trips, hh_config, trips_config)
+        load_trips(
+            raw_trips,
+            hh_config,
+            trips_config,
+            survey=survey.name,
+            year=survey_year(survey.name, metadata),
+        )
         .with_columns(pid=pl.lit(prefix) + pl.col("pid").cast(pl.String))
         .join(attributes.select("pid"), on="pid", how="semi")
     )
@@ -191,7 +214,21 @@ def load_households(
         hh_date=pl.coalesce(
             "date", pl.col("interview_date") - dt.timedelta(days=1)
         ),
+        home_detailed_zone="home_detailed_zone",
+        point_lng="point_lng",
+        point_lat="point_lat",
+        home_insee="home_insee",
     )
+
+
+def survey_year(name: str, metadata: dict | None = None) -> int:
+    """The year in a survey folder's name (its last 4-digit number, e.g.
+    ``toulouse_2013``, ``EGT2020``), else the survey period's midpoint."""
+    if years := re.findall(r"\d{4}", name):
+        return int(years[-1])
+    if metadata is None:
+        raise ValueError(f"no year in survey name {name!r}")
+    return fallback_year(metadata)
 
 
 def income(config: dict) -> pl.Expr:
@@ -268,9 +305,17 @@ def load_persons(persons: pl.DataFrame, config: dict) -> pl.DataFrame:
 
 
 def load_trips(
-    trips: pl.DataFrame, hh_config: dict, config: dict
+    trips: pl.DataFrame,
+    hh_config: dict,
+    config: dict,
+    survey: str | None = None,
+    year: int | None = None,
 ) -> pl.DataFrame:
-    """One row per trip, 0-indexed seq, times in minutes since midnight."""
+    """One row per trip, 0-indexed seq, times in minutes since midnight,
+    with origin and destination locations (see trip_dictionary.yaml)."""
+    trips = location.add_trip_ends(
+        trips, config, source=SOURCE, year=year, survey=survey
+    )
     trips = trips.sort("pid", "seq").with_columns(
         seq=(pl.col("seq") - 1).cast(pl.Int8),
         oact=pl.col("oact").replace_strict(config["act"], default="unknown"),
@@ -297,6 +342,8 @@ def load_trips(
         "tst",
         "tet",
         "distance",
+        *location.columns("origin"),
+        *location.columns("destination"),
     )
 
 

@@ -1,7 +1,7 @@
-"""Compute ktdb region centroids from zone centroids.
+"""Compute ktdb region centroids from the 2021 dong location lookup.
 
 Region code = first 2 characters of the 10-digit admin dong code.
-Centroid = bounding-box centre of all dong centroids in the region.
+Centroid = bounding-box centre of all dong points in the region.
 
 Usage:
     uv run python scripts/compute_region_centroids.py
@@ -10,8 +10,11 @@ Usage:
 import csv
 from pathlib import Path
 
-CONFIGS = Path(__file__).resolve().parent.parent / "configs" / "ktdb"
-ZONE_CSV = CONFIGS / "zone_centroids.csv"
+import polars as pl
+
+ROOT = Path(__file__).resolve().parent.parent / "configs"
+CONFIGS = ROOT / "ktdb"
+ZONES = ROOT / "geo" / "kr" / "dong_2021.parquet"
 OUT_CSV = CONFIGS / "region_centroids.csv"
 
 # 2021 Korean si/do admin codes → English names
@@ -37,26 +40,19 @@ REGION_NAMES = {
 
 
 def main():
-    # Accumulate lat/lon bounds per region
-    bounds: dict[str, dict] = {}
-    with open(ZONE_CSV) as f:
-        for row in csv.DictReader(f):
-            code = str(row["zone"])[:2]
-            lat = float(row["lat"])
-            lon = float(row["lon"])
-            if code not in bounds:
-                bounds[code] = {
-                    "min_lat": lat,
-                    "max_lat": lat,
-                    "min_lon": lon,
-                    "max_lon": lon,
-                }
-            else:
-                b = bounds[code]
-                b["min_lat"] = min(b["min_lat"], lat)
-                b["max_lat"] = max(b["max_lat"], lat)
-                b["min_lon"] = min(b["min_lon"], lon)
-                b["max_lon"] = max(b["max_lon"], lon)
+    # lat/lon bounds of each region's dong points
+    zones = pl.read_parquet(ZONES, columns=["code", "lat", "lon"])
+    bounds = {
+        row["region"]: row
+        for row in zones.group_by(region=pl.col("code").str.slice(0, 2))
+        .agg(
+            min_lat=pl.col("lat").min(),
+            max_lat=pl.col("lat").max(),
+            min_lon=pl.col("lon").min(),
+            max_lon=pl.col("lon").max(),
+        )
+        .iter_rows(named=True)
+    }
 
     rows = []
     for code in sorted(bounds):

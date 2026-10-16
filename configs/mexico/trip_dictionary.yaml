@@ -131,3 +131,14 @@ speed:
 # District codes with no location: 888 fuera de la ZMVM, 999 distrito no
 # especificado. These (and districts with no sampled residents) get
 # ozone/dzone unknown.
+
+# trip end locations (see foundata.location): the origin and destination
+# EOD districts (DTO_ORIGEN/DTO_DEST); work in progress, as for homes
+origin_location:
+  - level: eod_district
+    code: [{column: ozone, width: 3}]
+    valid: '\d{3}'
+destination_location:
+  - level: eod_district
+    code: [{column: dzone, width: 3}]
+    valid: '\d{3}'

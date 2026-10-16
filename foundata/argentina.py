@@ -21,7 +21,7 @@ import polars as pl
 import pyreadstat
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.utils import sample_to_euro
 
 SOURCE = "argentina"
@@ -351,7 +351,12 @@ def load_households(
     else:
         income = pl.lit(None, dtype=pl.Int32)
 
+    spec = config.get("home_location")
+    if spec:
+        hhs = location.add(hhs, spec, source="argentina", survey=survey)
+    home = [c for c in location.columns("home") if c in hhs.columns]
     return hhs.select(
+        *home,
         hid=pl.col("hid").cast(pl.Int64),
         dwelling=recode("dwelling", survey_map(config, "dwelling", survey)),
         hh_zone=recode("hh_zone", survey_map(config, "hh_zone", survey)),

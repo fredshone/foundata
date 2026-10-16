@@ -286,7 +286,8 @@ def test_ktdb_mode_speeds_consistent_across_years():
 
 def test_ktdb_load_years_stacks_all_surveys():
     person_cfg, trips_cfg = nested_configs()
-    attrs, trips = ktdb.load_years(DATA_ROOT, person_cfg, trips_cfg)
+    hh_cfg = load_yaml_config(CONFIGS_ROOT / "ktdb" / "hh_dictionary.yaml")
+    attrs, trips = ktdb.load_years(DATA_ROOT, hh_cfg, person_cfg, trips_cfg)
     assert set(attrs["survey"]) == {
         "ktdb2021",
         "ktdb2016",
@@ -305,18 +306,16 @@ def test_ktdb_load_rejects_unknown_surveys():
         ktdb.load(DATA_ROOT, person_cfg, trips_cfg, year=2021, weekend=True)
 
 
-def test_ktdb_zone_distances_store_ordered_pairs():
-    # load_trips looks pairs up as (min, max), so every stored pair must be
-    # ordered and every centroid zone must appear
-    dist = ktdb.load_distances()
-    assert (dist["ozone"] <= dist["dzone"]).all()
-    zones = set(dist["ozone"]) | set(dist["dzone"])
-    assert zones == set(ktdb.load_centroids())
+def test_ktdb_zone_points_cover_the_lookup():
+    points = ktdb.zone_points("dong_2021")
+    assert points.columns == ["zone", "lat", "lon"]
+    assert points["zone"].is_unique().all()
+    assert points["lat"].is_between(33, 39).all()
 
 
 def test_ktdb_load_trips_finds_distance_for_known_zone_pairs():
-    # either zone order must hit the table; blank zones are left to the
-    # speed fallback
+    # zones in the location lookup get a distance; blank zones are left to
+    # the speed fallback
     _, trips_cfg = configs(2021)
     root = Path(DATA_ROOT) / "2021"
     zones = pl.read_csv(
@@ -327,7 +326,7 @@ def test_ktdb_load_trips_finds_distance_for_known_zone_pairs():
         ozone="sTP1_1_5",
         dzone="TP1_1_5",
     )
-    known = list(ktdb.load_centroids())
+    known = ktdb.zone_points("dong_2021")["zone"].to_list()
     # raw th_seq is 1-indexed, seq is 0-indexed
     zones = zones.with_columns(seq=(pl.col("seq") - 1).cast(pl.Int8))
     trips = ktdb.load_trips_2021(root, trips_cfg).join(

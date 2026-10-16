@@ -9,7 +9,9 @@ terms), so samples are anonymised like the other restricted sources:
 - households get fresh synthetic ids, consistent across a round's tables
   (person line numbers are kept);
 - household and person attribute columns are each shuffled independently
-  across the sample, so no real respondent's combination survives;
+  across the sample, so no real respondent's combination survives (the
+  parts of the home location code are shuffled together, so they still
+  form a real code);
 - diary rows are kept intact apart from the remapped ids, so the diary
   timing and sequencing stay coherent.
 """
@@ -85,12 +87,23 @@ def _hh_key(df: pl.DataFrame, cols: list[str]) -> pl.Expr:
 
 
 def _shuffle_non_keys(
-    df: pl.DataFrame, keys: list[str], seed: int
+    df: pl.DataFrame, keys: list[str], seed: int, together: list[str] = ()
 ) -> pl.DataFrame:
-    return df.with_columns(
+    """Shuffle each non-key column independently, except the *together*
+    columns (the parts of the home location code), which are shuffled as
+    one block so they still form a real code."""
+    together = [c for c in together if c in df.columns]
+    rest = [c for c in df.columns if c not in keys and c not in together]
+    df = df.with_columns(
         df[c].sample(fraction=1.0, shuffle=True, seed=seed + i).alias(c)
-        for i, c in enumerate(c for c in df.columns if c not in keys)
+        for i, c in enumerate(rest)
     )
+    if together:
+        block = df.select(together).sample(
+            fraction=1.0, shuffle=True, seed=seed - 1
+        )
+        df = df.with_columns(block)
+    return df
 
 
 def _remap(
@@ -167,7 +180,17 @@ def sample_mongolia(
         for i, (table, df) in enumerate(tables.items()):
             df = df.filter(hh_keys[table].is_in(sampled.implode()))
             if table != "diary":
-                df = _shuffle_non_keys(df, KEYS[year][table], seed + 100 * i)
+                hh_mapping = config_for_year(configs["hh"], str(year))[
+                    "column_mappings"
+                ]
+                location = [
+                    raw
+                    for raw, new in hh_mapping.items()
+                    if new.startswith("home_")
+                ]
+                df = _shuffle_non_keys(
+                    df, KEYS[year][table], seed + 100 * i, together=location
+                )
             df = _remap(df, year, table, hh_map)
             path = dst / round_["files"][table]
             path.parent.mkdir(parents=True, exist_ok=True)

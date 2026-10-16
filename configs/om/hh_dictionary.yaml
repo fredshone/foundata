@@ -34,3 +34,11 @@ hh_zone:
 # slightly understates disposable income. It is null if any member didn't
 # respond (fewer person records than AantPers, 2-4% of households) or has an
 # unknown income.
+
+# home location (see foundata.location): the household's gemeente (WoGem)
+# as a 4-digit CBS code of the survey year; 0 is unknown
+home_location:
+  - level: gemeente_{year}
+    years: [2005, 2006, 2007]
+    code: [{column: home_gemeente, width: 4}]
+    missing: ["0000"]

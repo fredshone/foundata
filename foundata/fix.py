@@ -4,6 +4,9 @@ import polars as pl
 
 from foundata import table_logger, utils
 
+# template columns set after the sources are combined, so not missing here
+FILLED_AFTER_COMBINING = {"hh_location", "olocation", "dlocation"}
+
 
 def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
     """
@@ -110,6 +113,8 @@ def missing_columns(
             )
 
     for table, cols in added.items():
+        # filled in after all sources are combined (run.runner)
+        cols = [c for c in cols if c not in FILLED_AFTER_COMBINING]
         if cols:
             table_logger.note(
                 f"Optional {table} columns missing — added as null: {', '.join(cols)}",

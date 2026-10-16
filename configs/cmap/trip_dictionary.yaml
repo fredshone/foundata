@@ -81,3 +81,14 @@ purpose:
     -7: other #  Missing,
     -8: other #  Missing,
     -9: other #  Missing)
+# trip end locations (see foundata.location): the 2010 census tract of each
+# place (location.csv by sampno + locno); a code with a missing (-1) part
+# is unknown
+origin_location:
+  - level: tract_2010
+    code: [origin_tract]
+    valid: '\d{11}'
+destination_location:
+  - level: tract_2010
+    code: [destination_tract]
+    valid: '\d{11}'

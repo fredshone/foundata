@@ -253,9 +253,10 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
         "Maand",
         "Week",
         "WoGem",
+        "WoPC",
     ]
     # 2018-01-01 is a Monday (ISO week 1); Weekdag 2 == Monday.
-    rows = [["1", "1", "2", "11", "1", "1", "2", "2018", "1", "1", "3"]]
+    rows = [["1", "1", "2", "11", "1", "1", "2", "2018", "1", "1", "3", "9901"]]
     _write_households_tab(
         tmp_path / "2018" / odin.DATA_FILES[2018], header, rows
     )
@@ -264,6 +265,9 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
 
     assert result["survey_date"].to_list() == ["2018-01-01"]
     assert result["home_gemeente"].to_list() == ["0003"]
+    # the postcode is the finer home location
+    assert result["home_level"].to_list() == ["pc4"]
+    assert result["home_code"].to_list() == ["9901"]
 
 
 def test_load_households_nulls_dans_privacy_codes(tmp_path):

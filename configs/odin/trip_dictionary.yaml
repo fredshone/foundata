@@ -98,3 +98,21 @@ stedelijkheidsklasse:
     "3": suburban
     "4": rural
     "5": rural
+
+# trip end locations (see foundata.location): the origin and destination
+# gemeente (VertGem/AankGem) as 4-digit CBS codes of the survey year; 0 is
+# unknown and 9000+ are disclosure-control groups (2024), and gemeenten abroad have no location
+origin_location:
+  default:
+    - level: gemeente_{year}
+      years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      code: [{column: origin_gemeente, width: 4}]
+      valid: '[0-8]\d{3}'
+      missing: ["0000"]
+destination_location:
+  default:
+    - level: gemeente_{year}
+      years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
+      code: [{column: destination_gemeente, width: 4}]
+      valid: '[0-8]\d{3}'
+      missing: ["0000"]

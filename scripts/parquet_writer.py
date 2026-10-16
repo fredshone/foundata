@@ -26,7 +26,7 @@ def sample_chile(src_root: Path, dst_root: Path, n: int, seed: int) -> None:
 
     The data is openly published, so records are copied unmodified, along
     with the code tables. The zoning geoparquet isn't copied: the loader
-    reads zone areas and centroids from configs/chile/zones.csv.
+    reads zone areas and points from the eod_zone_2012 location lookup.
     """
     from foundata.chile import (
         HOUSEHOLDS_PATH,

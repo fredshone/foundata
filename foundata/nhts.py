@@ -3,7 +3,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.utils import (
     config_for_year,
     expand_root,
@@ -100,6 +100,21 @@ def load_households(
                 year_config["ownership"]
             ),
             day=pl.col("day").replace_strict(year_config["day"]),
+        )
+
+        data = location.add(
+            data, year_config["home_location"], source="nhts", year=year
+        ).drop(
+            [
+                c
+                for c in (
+                    "home_cbsa",
+                    "home_msa",
+                    "home_state",
+                    "home_division",
+                )
+                if c in data.columns
+            ]
         )
 
         if "race1" in data.columns:

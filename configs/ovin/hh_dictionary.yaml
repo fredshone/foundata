@@ -52,3 +52,11 @@ day:
   5: thursday   # Donderdag
   6: friday     # Vrijdag
   7: saturday   # Zaterdag
+
+# home location (see foundata.location): the respondent's gemeente (WoGem)
+# as a 4-digit CBS code of the survey year; 0 is unknown
+home_location:
+  - level: gemeente_{year}
+    years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
+    code: [{column: home_gemeente, width: 4}]
+    missing: ["0000"]

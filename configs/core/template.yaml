@@ -132,6 +132,11 @@ attributes:
     default: True
     set: [urban, suburban, rural, unknown]
     description: "Urban/rural classification of the household location."
+  hh_location:
+    dtype: int32
+    default: True
+    min: 0
+    description: "Row (location_id) of locations.parquet holding the household's home location. Households (and trip ends) in the same zone share a row; null where the source gives no home location."
   weight:
     dtype: float32
     default: True
@@ -176,6 +181,16 @@ trips:
     default: True
     set: [urban, suburban, rural, unknown]
     description: "Urban/rural classification of the trip destination zone."
+  olocation:
+    dtype: int32
+    default: True
+    min: 0
+    description: "Row (location_id) of locations.parquet holding the trip origin's location; null where the source gives none."
+  dlocation:
+    dtype: int32
+    default: True
+    min: 0
+    description: "Row (location_id) of locations.parquet holding the trip destination's location; null where the source gives none."
   oact:
     dtype: str
     default: True

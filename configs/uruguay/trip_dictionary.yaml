@@ -79,7 +79,7 @@ mode:
 # Distance (km), in order of preference:
 # 1. walk trips: blocks walked x block_km (a Montevideo cuadra is ~100 m);
 # 2. trips between different census segments: straight line between the
-#    segment centroids (configs/uruguay/segments.csv) x circuity;
+#    segment points (the segment_2011 location lookup) x circuity;
 # 3. otherwise (same segment, or a segment outside the lookup): trip
 #    duration x the mode's speed below.
 block_km: 0.1
@@ -111,3 +111,14 @@ transit_stage_modes:  # BL codes
   - 53  # bus escolar
   - 54  # bus de la empresa
 unknown_blocks: [99]
+
+# trip end locations (see foundata.location): the origin and destination
+# INE 2011 census segments (codsegorigen/codsegproposito)
+origin_location:
+  - level: segment_2011
+    code: [ozone]
+    valid: '[1-9]\d*'
+destination_location:
+  - level: segment_2011
+    code: [dzone]
+    valid: '[1-9]\d*'

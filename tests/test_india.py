@@ -92,6 +92,8 @@ def _hh_raw_2019(**overrides):
         "b4q9": "1000",
         "mult": "123.5",
         "survey_yr": "2019",
+        "nss_region": "272",
+        "district": "5",
     }
     row.update(overrides)
     return pl.DataFrame({k: [v] for k, v in row.items()})
@@ -110,6 +112,9 @@ def test_load_households_2019(hh_cfg):
     assert row["ownership"] == "unknown"
     assert "hid_fsu" not in hhs.columns
     assert "hid_sample" not in hhs.columns
+    # district code is the state (first 2 digits of the NSS region) + district
+    assert row["home_level"] == "district_2019"
+    assert row["home_code"] == "2705"
 
 
 def test_load_households_blank_expenditure_is_null(hh_cfg):

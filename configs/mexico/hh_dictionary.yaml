@@ -21,3 +21,11 @@ hh_zone:
   2: suburban  # 15,000 a 99,999 habitantes
   3: suburban  # 2,500 a 14,999 habitantes
   4: rural  # menores de 2,500 habitantes
+
+# home location (see foundata.location): the EOD 2017 district (DISTRITO,
+# 3-digit). District polygons are not published, so the lookup is work in
+# progress (see scripts/build_location_lookups.py).
+home_location:
+  - level: eod_district
+    code: [{column: home_district, width: 3}]
+    valid: '\d{3}'

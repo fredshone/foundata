@@ -8,8 +8,8 @@ missing values and decimals use a comma.
 Each person aged 4+ reports the trips made from 4am the previous day (a
 Monday-Friday, not recorded which) to 4am on the interview day. The survey
 has no income and no distances; distances come from blocks walked, census
-segment centroids (``configs/uruguay/segments.csv``, from
-``scripts/fetch_uruguay_segments.py``) or duration x mode speed.
+segment points (the ``segment_2011`` location lookup) or duration x mode
+speed.
 """
 
 from pathlib import Path
@@ -17,7 +17,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import utils
+from foundata import location, utils
 
 SOURCE = "uruguay"
 COUNTRY = "uy"
@@ -109,6 +109,8 @@ def load(
         "tst",
         "tet",
         "distance",
+        *location.columns("origin"),
+        *location.columns("destination"),
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
@@ -145,8 +147,9 @@ def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
         pl.col("hh_size", "hh_size_surveyed").cast(pl.Int32),
         pl.col("has_cars", "cars", "has_mopeds", "mopeds").cast(pl.Int32),
     )
-    return hhs.select(
+    hhs = hhs.select(
         "hid",
+        "home_segment",
         hh_size=pl.when(
             pl.col("hh_size").is_in(config["hh_size_unknown_codes"])
         )
@@ -160,6 +163,9 @@ def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
         ),
         vehicles=(count("has_cars", "cars") + count("has_mopeds", "mopeds")),
         hh_zone=zone_type(pl.col("hh_zone"), config),
+    )
+    return location.add(hhs, config["home_location"], source="uruguay").drop(
+        "home_segment"
     )
 
 
@@ -233,12 +239,17 @@ def education(config: dict) -> pl.Expr:
 
 
 def load_segments(hh_config: dict) -> pl.DataFrame:
-    """Census segment centroids (UTM metres) and zone type."""
-    segments = pl.read_csv(
-        utils.get_config_path(SOURCE, "segments.csv"),
+    """Census segment points (UTM 21S metres, from the segment_2011
+    location lookup) and zone type (from the segment's locality,
+    configs/uruguay/segment_localities.csv)."""
+    localities = pl.read_csv(
+        utils.get_config_path(SOURCE, "segment_localities.csv"),
         schema_overrides={"codseg": pl.String},
     )
-    return segments.select(
+    points = location.zone_points(
+        SOURCE, "segment_2011", "uy", crs="EPSG:32721"
+    ).select(codseg="code", x="x", y="y")
+    return points.join(localities, on="codseg", how="left").select(
         "codseg", "x", "y", zone=zone_type(pl.col("codloc"), hh_config)
     )
 
@@ -267,6 +278,7 @@ def load_trips(
 
     Unknown times are left null, so the plan is dropped downstream.
     """
+    trips = location.add_trip_ends(trips, config, source="uruguay")
     trips = trips.with_columns(
         pl.col("seq", "oact", "dact", "mode", "blocks").cast(pl.Int32),
         pid=pl.col("hid") + pl.col("pid").str.zfill(2),

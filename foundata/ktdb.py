@@ -32,7 +32,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix, utils
+from foundata import fix, location, utils
 
 SOURCE = "ktdb"
 # (year, weekend) of every survey
@@ -66,6 +66,7 @@ N_STAGES_2016 = 6
 
 def load_years(
     data_root: str | Path,
+    hh_config: dict,
     person_config: dict,
     trips_config: dict,
     surveys: list[tuple[int, bool]] = SURVEYS,
@@ -74,6 +75,7 @@ def load_years(
 
     Args:
         data_root: The KTDB data directory, with one subdirectory per year.
+        hh_config: Parsed hh_dictionary.yaml (the home location).
         person_config: Parsed (year-keyed) person_dictionary.yaml.
         trips_config: Parsed (year-keyed) trip_dictionary.yaml.
         surveys: (year, weekend) pairs to load.
@@ -86,6 +88,9 @@ def load_years(
         attributes, trips = load(
             data_root, person_config, trips_config, year, weekend
         )
+        attributes = location.add(
+            attributes, hh_config["home_location"], source=SOURCE, year=year
+        ).drop("home_dong")
         all_attributes.append(attributes)
         all_trips.append(trips)
     return (
@@ -263,38 +268,28 @@ def access_egress(
     )
 
 
-def load_centroids() -> dict[str, tuple[float, float]]:
-    """Return {zone_code: (lat, lon)} for all known 2021 zones."""
-    csv = utils.get_config_path("ktdb", "zone_centroids.csv")
-    df = pl.read_csv(csv, schema_overrides={"zone": pl.String})
-    return {
-        row["zone"]: (row["lat"], row["lon"])
-        for row in df.iter_rows(named=True)
-    }
-
-
 def read_centroids(name: str) -> pl.DataFrame:
-    """Read a zone, lat, lon centroid table from configs/ktdb/."""
+    """Read a zone, lat, lon centroid table from configs/ktdb/ (the 2010
+    251-zone system, which has no location lookup)."""
     return pl.read_csv(
         utils.get_config_path("ktdb", name),
         schema_overrides={"zone": pl.String},
     )
 
 
-def load_distances() -> pl.DataFrame:
-    """Load precomputed zone-to-zone haversine distances (km)."""
-    path = utils.get_config_path("ktdb", "zone_distances.parquet")
-    return pl.read_parquet(path)
+def zone_points(level: str) -> pl.DataFrame:
+    """``zone, lat, lon`` of each unit of a location lookup level."""
+    return location.zone_points(SOURCE, level, "kr").select(
+        zone="code", lat="lat", lon="lon"
+    )
 
 
-def warn_unknown_zones(trips: pl.DataFrame, distances: pl.DataFrame) -> None:
-    """Warn about trips whose (non-blank) zone code has no centroid.
-
-    These trips get no distance; add the zones to zone_centroids.csv (see
-    scripts/fetch_ktdb_centroids.py) and rerun precompute_zone_distances.py.
-    """
-    known = pl.concat([distances["_lo"], distances["_hi"]]).unique().to_list()
-    unknown = ~pl.col("ozone").is_in(known) | ~pl.col("dzone").is_in(known)
+def warn_unknown_zones(trips: pl.DataFrame, known: pl.Series) -> None:
+    """Warn about trips whose (non-blank) zone code has no point in the
+    location lookup; they get no distance."""
+    unknown = ~pl.col("ozone").is_in(known.implode()) | ~pl.col("dzone").is_in(
+        known.implode()
+    )
     blank = (pl.col("ozone").str.strip_chars() == "") | (
         pl.col("dzone").str.strip_chars() == ""
     )
@@ -302,11 +297,11 @@ def warn_unknown_zones(trips: pl.DataFrame, distances: pl.DataFrame) -> None:
     if missing.height == 0:
         return
     codes = pl.concat([missing["ozone"], missing["dzone"]]).unique().sort()
-    codes = codes.filter(~codes.is_in(known)).to_list()
+    codes = codes.filter(~codes.is_in(known.implode())).to_list()
     perc = missing.height / trips.height * 100
     logger.warning(
-        f"{missing.height} ({perc:.2f}%) trips use {len(codes)} zone "
-        f"codes missing from zone_distances.parquet: {', '.join(codes)}"
+        f"{missing.height} ({perc:.2f}%) trips use {len(codes)} zone codes "
+        f"missing from the location lookup: {', '.join(codes)}"
     )
 
 
@@ -524,7 +519,8 @@ def load_persons_2021(root: str | Path, config: dict) -> pl.DataFrame:
     data = data.with_columns(
         hh_zone=pl.col("home_zone").replace_strict(
             zone_mapping, default="unknown"
-        )
+        ),
+        home_dong=pl.col("home_zone"),
     ).drop("home_zone")
     return data
 
@@ -627,20 +623,24 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
         )
     )
 
-    # Distances: the table holds each pair once with ozone <= dzone, so
-    # look up the ordered pair
-    dist_df = load_distances().rename({"ozone": "_lo", "dzone": "_hi"})
-
-    data = (
-        data.with_columns(
-            _lo=pl.min_horizontal("ozone", "dzone"),
-            _hi=pl.max_horizontal("ozone", "dzone"),
-        )
-        .join(dist_df, on=["_lo", "_hi"], how="left")
-        .drop("_lo", "_hi")
-        .rename({"distance_km": "distance"})
+    # Distances: straight line between the dongs' points (from the
+    # location lookup)
+    points = zone_points("dong_2021")
+    data = data.join(
+        points.rename({"zone": "ozone", "lat": "_olat", "lon": "_olon"}),
+        on="ozone",
+        how="left",
+    ).join(
+        points.rename({"zone": "dzone", "lat": "_dlat", "lon": "_dlon"}),
+        on="dzone",
+        how="left",
     )
-    warn_unknown_zones(data, dist_df)
+    data = data.with_columns(
+        distance=haversine_km(
+            pl.col("_olat"), pl.col("_olon"), pl.col("_dlat"), pl.col("_dlon")
+        )
+    ).drop("_olat", "_olon", "_dlat", "_dlon")
+    warn_unknown_zones(data, points["zone"])
 
     circuity = config["circuity"]
     data = data.with_columns(
@@ -659,6 +659,7 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
     zones = load_zones()
     zone_mapping = dict(zip(zones["zone"], zones["hh_zone"]))
 
+    data = location.add_trip_ends(data, config, source=SOURCE, year=2021)
     # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
     data = data.with_columns(
         region_code=pl.when(
@@ -880,7 +881,8 @@ def load_persons_2016(
     data = data.with_columns(
         hh_zone=pl.col("home_zone").replace_strict(
             zone_mapping, default="unknown"
-        )
+        ),
+        home_dong=pl.col("home_zone"),
     )
 
     weather = load_weather()
@@ -994,11 +996,12 @@ def load_trips_2016(
 
     data = centroid_distances(
         data,
-        read_centroids("zone_centroids_2016.csv"),
+        zone_points("dong_2016"),
         config["circuity"],
         config["mode_speeds"],
     )
 
+    data = location.add_trip_ends(data, config, source=SOURCE, year=2016)
     zones = load_zones()
     zone_mapping = dict(zip(zones["zone"].cast(pl.String), zones["hh_zone"]))
     data = data.with_columns(
@@ -1192,7 +1195,9 @@ def load_persons_2010(
         .str.slice(0, 8)
         .replace_strict(
             dict(zip(zones["code"], zones["hh_zone"])), default="unknown"
-        )
+        ),
+        # KTDB's own 8-digit 2010 읍면동 code (see home_location)
+        home_dong=pl.col("sheet_code").str.slice(0, 8),
     )
 
     return data.with_columns(

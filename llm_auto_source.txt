@@ -107,6 +107,52 @@ OUTPUT CONTRACT (check template.yaml for the full list)
   shop. Motorbike -> car. Taxi / ride-hail -> car.
 - oact of trip n should equal dact of trip n-1;
   filter.activity_consistency drops plans where it doesn't.
+- hh_location (attributes) and olocation/dlocation (trips) are set by the
+  runner from the location declarations below; don't set them in a loader.
+
+LOCATIONS (homes and trip ends; see the foundata/location.py docstring)
+- Declare the finest home geography in hh_dictionary.yaml under
+  home_location: a list of candidates, finest first. Each candidate has a
+  level and either code (a list of parts: column names or {column | value,
+  slice, map, width}) or point ({x, y, crs, scale_m}), plus optional when
+  ({year: [...]}, {survey: [...]}), prefix, valid (regex), missing (codes
+  meaning unknown), known (only codes in the lookup count, so others fall
+  through to the next candidate) and years (for a level with {year}).
+  Year-keyed configs wrap it as {default: [...], <year>: [...]}.
+- In the loader, map the raw columns to intermediate names (anything but
+  the reserved <role>_level/_code/_lon/_lat/_scale_m) and call
+  location.add(hhs, config["home_location"], source=..., year=...,
+  survey=...) once; drop the intermediates after. Never write home_level
+  yourself: location.add leaves level and code null together, which
+  location.extract checks.
+- Trip ends: declare origin_location and destination_location the same way
+  in trip_dictionary.yaml and call location.add_trip_ends(trips, config,
+  source=..., year=...) while the raw zone codes are still there (before
+  they become urbanity). Keep the origin_*/destination_* columns in the
+  trips you return.
+- Level names: a level is a geography with a fixed code list. Add a _<year>
+  suffix giving the code list's vintage where codes are renumbered or
+  redrawn between rounds (gemeente_2012, radio_2010, dong_2016). Use
+  standard codes (ONS, FIPS, ABS, CBS, INDEC, KOSTAT, NSO...) where the
+  survey allows, mapping survey numbering to them in the config (a csv map
+  with from,to columns in configs/<source>/ for long ones). New base names
+  need a precision class in location.LEVEL_PRECISION.
+- Lookups: each level needs a GeoParquet lookup, built by
+  scripts/build_location_lookups.py: add the boundary file to DATASETS and
+  a builder for the source (BUILDERS), which writes national geographies to
+  configs/geo/<country>/<level>.parquet (shared by sources) and
+  survey-specific zones to configs/<source>/locations/. The builder builds
+  every level the source's declarations emit (location.levels), so a new
+  survey year means adding it to years and rebuilding. Put name aliases in
+  a yaml next to the lookup, not in the script. If the unit has no
+  published boundary, use the containing unit (geom_source parent) or flag
+  a provisional area as estimated; never leave it silently missing.
+  scripts/build_location_lookup.py builds one lookup from a local file.
+- Check: tests/test_location.py validates every declaration and lookup;
+  tests/test_locations_batch.py runs data_dir_template and checks every
+  emitted level has a lookup and codes have the lookup's format. Run
+  foundata location-summary <batch output> for the README location table,
+  and update both README location tables.
 
 WORKFLOW
 0. If the user asks whether a dataset is usable, or it's a new candidate,
@@ -134,7 +180,9 @@ WORKFLOW
    mapping or timing bug.
 5. Add fixture and template generators, run them, then add tests and run the
    full suite and the data_dir_template run.
-6. Update run.py and the README. Summarise the judgement calls to the user.
+6. Declare home (and trip end) locations and build their lookups (see
+   LOCATIONS). Update run.py and the README. Summarise the judgement calls
+   to the user.
    Do not commit unless asked.
 
 GOTCHAS SEEN SO FAR

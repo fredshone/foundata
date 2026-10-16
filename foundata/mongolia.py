@@ -31,6 +31,7 @@ import polars as pl
 import pyreadstat
 from loguru import logger
 
+from foundata import location
 from foundata.utils import (
     add_implied_trips,
     config_for_year,
@@ -234,6 +235,7 @@ def load_households(
         country=pl.lit(COUNTRY),
         source=pl.lit(SOURCE),
     )
+    hhs = location.add(hhs, config["home_location"], source=SOURCE, year=year)
     if available:
         hh_mode = (
             pl.when(pl.col("vehicles") > 0)
@@ -257,6 +259,8 @@ def load_households(
         "country",
         "source",
         "hh_mode",
+        "home_level",
+        "home_code",
     )
 
 

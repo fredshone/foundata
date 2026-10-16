@@ -205,3 +205,11 @@ travday:
 download:
   1: Print
   2: Receive in the mail
+
+# home location (see foundata.location): 2010 census tract (state + county +
+# tract FIPS from location.csv where home == 1); a code with a missing (-1)
+# part is unknown
+home_location:
+  - level: tract_2010
+    code: [raw_fips]
+    valid: '\d{11}'

@@ -85,3 +85,17 @@ stedelijkheidsklasse:
   3: suburban
   4: rural
   5: rural
+
+# trip end locations (see foundata.location): the origin and destination
+# gemeente (VertGem/AankGem) as 4-digit CBS codes of the survey year; 0 is
+# unknown, and gemeenten abroad have no location
+origin_location:
+  - level: gemeente_{year}
+    years: [2005, 2006, 2007]
+    code: [{column: origin_gemeente, width: 4}]
+    missing: ["0000"]
+destination_location:
+  - level: gemeente_{year}
+    years: [2005, 2006, 2007]
+    code: [{column: destination_gemeente, width: 4}]
+    missing: ["0000"]

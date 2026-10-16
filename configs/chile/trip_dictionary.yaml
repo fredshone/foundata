@@ -69,7 +69,7 @@ mode_priority: [rail, bus, car, other, bike, walk]
 #    and destination; imputed within the zone for trips without
 #    coordinates, viajes.Imputada = 1) x circuity, when > 0;
 # 2. trips between two different EOD zones: straight line between the zone
-#    centroids (configs/chile/zones.csv) x circuity;
+#    points (the eod_zone_2012 location lookup) x circuity;
 # 3. otherwise (same block or zone, or outside the zoning): trip duration x
 #    the mode's door-to-door speed below.
 circuity: 1.3
@@ -94,3 +94,16 @@ transit_stage_modes:  # Modo codes
   - 12  # bus interurbano o rural
   - 14  # bus urbano con pago al conductor
   - 16  # tren
+
+# trip end locations (see foundata.location): the origin and destination EOD
+# zones (ZonaOrigen/ZonaDestino); 0 and 999 are outside the zoning
+origin_location:
+  - level: eod_zone_2012
+    code: [ozone]
+    valid: '\d+'
+    missing: ["0", "999"]
+destination_location:
+  - level: eod_zone_2012
+    code: [dzone]
+    valid: '\d+'
+    missing: ["0", "999"]

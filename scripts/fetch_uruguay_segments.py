@@ -1,12 +1,13 @@
-"""Download INE Uruguay 2011 census segments, compute centroids, write CSV.
+"""Download INE Uruguay 2011 census segments and write each one's locality.
 
 The uruguay survey (Montevideo EOD 2016) locates homes and trip ends by 2011
-census segment (codseg). This writes one row per segment with a
-representative point in UTM 21S metres (EPSG:32721) and the INE locality
-code (codloc), used for trip distances and zone urbanity.
+census segment (codseg). This writes the INE locality code (codloc) of each
+segment, used for zone urbanity; the segments' geometry (for locations and
+trip distances) is the segment_2011 location lookup
+(scripts/build_location_lookups.py).
 
 A few rural segments are split into several polygons (one per locality);
-these are dissolved and take the locality of their largest part.
+these take the locality of their largest part.
 
 Usage:
     uv run --group scripts python scripts/fetch_uruguay_segments.py
@@ -17,7 +18,6 @@ from pathlib import Path
 from typing import Optional
 
 import geopandas as gpd
-import pandas as pd
 import typer
 
 URL = (
@@ -25,7 +25,9 @@ URL = (
     "&request=GetFeature&version=1.0.0&outputFormat=shape-zip"
     "&typeName=ine_seg_11"
 )
-DEFAULT_OUT = Path(__file__).parent.parent / "configs/uruguay/segments.csv"
+DEFAULT_OUT = (
+    Path(__file__).parent.parent / "configs/uruguay/segment_localities.csv"
+)
 
 
 def main(
@@ -34,24 +36,15 @@ def main(
     ),
     out: Path = DEFAULT_OUT,
 ):
-    """Compute segment centroids and write configs/uruguay/segments.csv."""
+    """Write configs/uruguay/segment_localities.csv (codseg, codloc)."""
     source = shp or URL
     print(f"Reading: {source}")
     gdf = gpd.read_file(source).to_crs("EPSG:32721")
 
     # locality of each segment's largest part
     largest = gdf.sort_values("area", ascending=False).drop_duplicates("codseg")
-    dissolved = gdf[["codseg", "geometry"]].dissolve(by="codseg")
-    points = dissolved.geometry.representative_point()
-
-    out_df = pd.DataFrame(
-        {
-            "codseg": dissolved.index.astype(int),
-            "x": points.x.round(1).values,
-            "y": points.y.round(1).values,
-        }
-    ).merge(largest[["codseg", "codloc"]].astype(int), on="codseg", how="left")
-    out_df.sort_values("codseg").to_csv(out, index=False)
+    out_df = largest[["codseg", "codloc"]].astype(int).sort_values("codseg")
+    out_df.to_csv(out, index=False)
     print(f"Wrote {len(out_df)} segments to {out}")
 
 

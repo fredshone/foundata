@@ -22,7 +22,7 @@ import polars as pl
 import pyreadstat
 from loguru import logger
 
-from foundata import fix, nl_income
+from foundata import fix, location, nl_income
 from foundata.utils import expand_root, resolve_activity_chain, table_joiner
 
 SOURCE = "ovin"
@@ -61,7 +61,7 @@ def load(
         hhs = load_households(data, hh_config, year)
         persons = load_persons(data, person_config)
         zones = gemeente_zone(data.filter(pl.col("OP") == 1))
-        trips = load_trips(data, trips_config, zones)
+        trips = load_trips(data, trips_config, zones, year)
         persons, trips = drop_non_regular(
             persons, trips, person_config, trips_config
         )
@@ -128,7 +128,7 @@ def load_households(
     data: pl.DataFrame, config: dict, year: int
 ) -> pl.DataFrame:
     data = respondents(data, config["column_mappings"])
-    return data.with_columns(
+    data = data.with_columns(
         hh_income=household_income(data["hh_income"], config, year),
         hh_size=pl.col("hh_size").cast(pl.Int32),
         vehicles=pl.when(pl.col("vehicles") != config["vehicles_unknown"])
@@ -142,7 +142,10 @@ def load_households(
         month=pl.col("month").cast(pl.Int8),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
-    ).drop("home_gemeente", "day_of_month")
+    ).drop("day_of_month")
+    return location.add(
+        data, config["home_location"], source="ovin", year=year
+    ).drop("home_gemeente")
 
 
 def household_income(codes: pl.Series, config: dict, year: int) -> pl.Series:
@@ -203,7 +206,11 @@ def gemeente_zone(respondents: pl.DataFrame) -> pl.DataFrame:
 
 
 def load_trips(
-    data: pl.DataFrame, config: dict, zones: pl.DataFrame
+    data: pl.DataFrame,
+    config: dict,
+    zones: pl.DataFrame,
+    year: int | None = None,
+    source: str = "ovin",
 ) -> pl.DataFrame:
     """All trips (any Verpl type), one row per trip; `trip_type` is kept so
     `drop_non_regular` can use it. Activities are mapped but not chained
@@ -224,6 +231,7 @@ def load_trips(
         )
     if "hid" not in data.columns:
         data = data.with_columns(hid=pl.col("pid"))
+    data = location.add_trip_ends(data, config, source=source, year=year)
     return data.with_columns(
         tst=pl.col("tst_hour") * 60 + pl.col("tst_min"),
         tet=pl.col("tet_hour") * 60 + pl.col("tet_min"),

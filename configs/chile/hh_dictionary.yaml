@@ -9,6 +9,8 @@ column_mappings:
   hogares:
     Hogar: hid
     Zona: hh_zone  # EOD zone of the dwelling (1-866)
+    DirCoordX: home_x  # dwelling coordinate, UTM 19S (EPSG:32719) metres
+    DirCoordY: home_y
     Fecha: date  # travel day, "DD-MM-YYYY" (matches DiaAsig)
     NumPer: hh_size
     Propiedad: ownership
@@ -16,6 +18,12 @@ column_mappings:
   vehiculos:
     Hogar: hid
     TipoVeh: vehicle_type
+
+# home location: the dwelling coordinate (DirCoordX/Y), reprojected to WGS84.
+# scale_m is an assumed geocoding uncertainty; the survey doesn't state one.
+home_location:
+  - level: point
+    point: {x: home_x, y: home_y, crs: "EPSG:32719", scale_m: 50}
 
 # ownership mapping (Propiedad)
   # Valid values: owned, rented, other, unknown
@@ -52,8 +60,8 @@ eur_per_clp:
   2013: 0.001520
 
 # hh_zone (and trip ozone/dzone) from the weighted residential population
-# density of the EOD zone (persons per km², zone areas in
-# configs/chile/zones.csv from scripts/compute_chile_zones.py). Zones with no
+# density of the EOD zone (persons per km², zone areas from the
+# eod_zone_2012 location lookup, see scripts/build_location_lookups.py). Zones with no
 # sampled residents, and the external zones (0, 999), are unknown.
 density_thresholds:
   urban: 5000

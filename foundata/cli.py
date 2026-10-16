@@ -280,6 +280,37 @@ def batch(
     runner(source_dirs, output, home_based, filter_consecutive, diagnostics)
 
 
+@app.command("location-summary")
+def location_summary(
+    output: Annotated[
+        Path,
+        typer.Argument(
+            help="A batch output directory (attributes.csv, trips.csv, "
+            "locations.parquet)"
+        ),
+    ],
+):
+    """Print the per-source location coverage table (as in the README)."""
+    from foundata import location
+
+    attributes = pl.read_csv(
+        output / "attributes.csv",
+        columns=["pid", "hid", "source", "hh_location"],
+        infer_schema_length=None,
+    )
+    trips = pl.read_csv(
+        output / "trips.csv",
+        columns=["pid", "olocation", "dlocation"],
+        infer_schema_length=None,
+    )
+    locations = pl.read_parquet(output / "locations.parquet")
+    print(
+        location.summary_markdown(
+            location.summary(attributes, trips, locations)
+        )
+    )
+
+
 @app.command("validate-config")
 def validate_config(
     source: Annotated[

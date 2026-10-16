@@ -18,6 +18,7 @@ column_mappings:
   D5: hh_size  # personas que viven habitualmente en el hogar (99 sin dato)
   d5a: hh_size_surveyed  # cantidad efectiva de personas relevadas
   codloc: hh_zone  # INE 2011 locality code of the dwelling
+  codseg: home_segment  # INE 2011 census segment of the dwelling (home location)
 
 # dwelling mapping (C1)
   # Valid values: house, flat, other, unknown
@@ -45,8 +46,15 @@ hh_size_unknown_codes: [99]
 vehicle_unknown_codes: [9, 99]
 
 # hh_zone from the INE locality code (codloc, also used for trip zones via
-# configs/uruguay/segments.csv). Montevideo city is urban, the dispersed rural
+# configs/uruguay/segment_localities.csv). Montevideo city is urban, the dispersed rural
 # area of each department (codloc ending 900) is rural, and every other
 # locality (Ciudad de la Costa, Las Piedras, Pando, ...) is suburban.
 urban_localities: [1020]  # Montevideo
 rural_locality_suffix: 900  # <depto>900 RURAL
+
+# home location (see foundata.location): the dwelling's INE 2011 census
+# segment (codseg)
+home_location:
+  - level: segment_2011
+    code: [home_segment]
+    valid: '[1-9]\d*'

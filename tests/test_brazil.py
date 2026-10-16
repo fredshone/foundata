@@ -101,6 +101,8 @@ def raw_families(**overrides) -> pl.DataFrame:
         "QT_AUTO": ["1", "0"],
         "QT_MOTO": ["0", "1"],
         "CONDMORA": ["2", "1"],
+        "CO_DOM_X": ["333743", "333743"],
+        "CO_DOM_Y": ["7394463", "7394463"],
     }
     data.update(overrides)
     return pl.DataFrame(data)
@@ -118,6 +120,10 @@ def test_load_households_aggregates_families():
     assert row["ownership"] == "owned"  # first family
     assert row["hh_zone"] == "urban"
     assert row["date"] == date(2017, 9, 6)
+    # dwelling point in central São Paulo
+    assert row["home_level"] == "point"
+    assert row["home_lon"] == pytest.approx(-46.63, abs=0.01)
+    assert row["home_lat"] == pytest.approx(-23.55, abs=0.01)
 
 
 def test_load_households_unknown_family_values_null_household():

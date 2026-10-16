@@ -111,6 +111,9 @@ def test_load_households_2023(configs):
             "hhid": [1.0, 2.0, 3.0, 4.0],
             "HH14": [3.0, 1.0, 5.0, 2.0],
             "HH8": [1.0, 3.0, 4.0, 2.0],
+            "HH4": [11.0, 11.0, 61.0, 61.0],  # aimag / capital
+            "HH5": [1.0, 1.0, 13.0, 13.0],  # soum / district
+            "HH6": [51.0, 52.0, 1.0, 1.0],  # bagh / khoroo
             "HC1": [11.0, 12.0, 14.0, 96.0],
             "HC5": [1.0, 2.0, 3.0, None],
             "CA1M": [1.0, 2.0, 2.0, 2.0],  # motorbike
@@ -138,6 +141,9 @@ def test_load_households_2023(configs):
     assert out["hh_income"].is_null().all()
     # car > bus > bike > walk
     assert out["hh_mode"].to_list() == ["car", "bus", "bike", "walk"]
+    # 110152 and 611301 aren't NSO bag codes, so fall back to the soum
+    assert out["home_level"].to_list() == ["bagh_2023", "soum", "soum", "soum"]
+    assert out["home_code"].to_list() == ["110151", "1101", "6113", "6113"]
 
 
 def test_load_households_2011_ids_and_no_mode_fallback(configs):
@@ -147,6 +153,8 @@ def test_load_households_2011_ids_and_no_mode_fallback(configs):
             "HH2": [3.0],
             "HH15": [4.0],
             "HH3": [4.0],
+            "HH4": [65.0],  # aimag
+            "HH5": [13.0],  # soum
             "HC1": [16.0],  # ger
             "HC6": [1.0],
             "CA5_K": [2.0],
@@ -162,6 +170,8 @@ def test_load_households_2011_ids_and_no_mode_fallback(configs):
     assert out["dwelling"].to_list() == ["other"]
     assert out["vehicles"].to_list() == [1]
     assert out["hh_mode"].to_list() == [None]
+    assert out["home_level"].to_list() == ["soum"]
+    assert out["home_code"].to_list() == ["6513"]
 
 
 def test_load_persons_2023(configs):

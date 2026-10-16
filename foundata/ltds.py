@@ -4,7 +4,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix
+from foundata import fix, location
 from foundata.utils import (
     assign_education_to_escort,
     bounds_from_list,
@@ -186,8 +186,9 @@ def preprocess_hhs(
         pl.col("zone")
         .replace_strict(zone_mapping, default=pl.col("zone"))
         .fill_null("unknown")
-        .alias("hh_zone")
-    ).drop("zone")
+        .alias("hh_zone"),
+    )
+    hhs = location.add(hhs, config["home_location"], source="ltds").drop("zone")
 
     hhs = hhs.filter(pl.col("hid").is_not_null())
 
@@ -483,6 +484,7 @@ def preprocess_trips(
         lambda g: sample_plan_trip_start_times(g, seed=42)
     )
 
+    trips = location.add_trip_ends(trips, config, source="ltds")
     trips = trips.with_columns(
         ozone=pl.col("ozone").replace_strict(zone_mapping),
         dzone=pl.col("dzone").replace_strict(zone_mapping),

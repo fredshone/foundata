@@ -28,6 +28,8 @@ column_mappings:
     Monthly_Exp_E_Total: hh_income  # intermediate -- monthly INR expenditure; annualised+converted in india.py
     MULT: weight                    # NSS multiplier; absolute scale doesn't matter, utils.norm_weights renormalises to mean 1
     Survey_Year: year
+    NSS_Region: home_nss_region   # intermediate -- 2-digit state + region digit; home location in india.py
+    District: home_district       # intermediate -- district within state
   "2019":
     fsu: hid_fsu                    # intermediate -- combined into hid in india.py
     b1q4: hid_sample                # intermediate -- combined into hid in india.py (Sample hhld. No.)
@@ -36,6 +38,8 @@ column_mappings:
     b4q9: hh_income                 # intermediate -- usual monthly consumer expenditure E: [A+B+C+(D/12)], INR; annualised+converted in india.py
     mult: weight                    # NSS multiplier; absolute scale doesn't matter, utils.norm_weights renormalises to mean 1
     survey_yr: year
+    nss_region: home_nss_region   # intermediate -- 2-digit state + region digit; home location in india.py
+    district: home_district       # intermediate -- district within state
 
 # hh_zone mapping (shared across rounds)
 # Valid values: urban, suburban, rural, unknown
@@ -51,3 +55,18 @@ ownership:
   "2": rented
   "3": other
   "9": other
+
+# home location (see foundata.location): the district, as NSS state code
+# (first 2 digits of the NSS region) + district code; district codes are
+# renumbered between rounds (configs/india/districts_<year>.csv). Else the
+# NSS region.
+home_location:
+  - level: district_{year}
+    years: [2019, 2024]
+    code:
+      - {column: home_nss_region, slice: [0, 2]}
+      - {column: home_district, width: 2}
+    valid: '\d{4}'
+  - level: nss_region
+    code: [home_nss_region]
+    valid: '\d{3}'

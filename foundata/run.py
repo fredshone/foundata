@@ -18,6 +18,7 @@ from foundata import (
     france,
     india,
     ktdb,
+    location,
     ltds,
     mexico,
     mongolia,
@@ -93,11 +94,14 @@ def _configs(source: str, *names: str) -> list[dict]:
 
 
 def _load_ktdb(source_dir: Path):
-    person_config, trips_config = _configs("ktdb", "person", "trip")
+    hh_config, person_config, trips_config = _configs(
+        "ktdb", "hh", "person", "trip"
+    )
     # 2021 personal survey, plus the 2016 and 2010 household (weekday)
     # and weekend surveys
     return ktdb.load_years(
         data_root=source_dir,
+        hh_config=hh_config,
         person_config=person_config,
         trips_config=trips_config,
     )
@@ -377,8 +381,56 @@ def load_source(name: str, source_dir: str | Path):
         )
     with table_logger.source(name.upper()):
         attributes, trips = SOURCES[name](Path(source_dir).expanduser())
+        attributes, homes = location.extract(attributes, name)
+        homes = homes.with_columns(pl.col("hid").cast(pl.String))
+        trip_ends = []
+        for role in ("origin", "destination"):
+            trips, refs = location.extract(
+                trips, name, role=role, keys=("pid", "seq")
+            )
+            trip_ends.append(
+                refs.with_columns(
+                    pl.col("pid").cast(pl.String), pl.col("seq").cast(pl.Int64)
+                )
+            )
+        # trips have no country column: a source's trips are in its country
+        country = attributes["country"].drop_nulls().unique()
+        trip_ends = pl.concat(trip_ends).with_columns(
+            country=pl.lit(country[0] if len(country) == 1 else None, pl.String)
+        )
         logger.info(f"Processing {name.upper()}...")
-        return process_source(attributes, trips, name.upper())
+        attributes, trips = process_source(attributes, trips, name.upper())
+        homes = homes.filter(pl.col("hid").is_in(attributes["hid"].implode()))
+        trip_ends = trip_ends.filter(
+            pl.col("pid").is_in(trips["pid"].implode())
+        )
+        return attributes, trips, homes, trip_ends
+
+
+def log_location_coverage(
+    attributes: pl.DataFrame, locations: pl.DataFrame, refs: pl.DataFrame
+) -> None:
+    """Log, per source, households without a home location, and per role
+    and level the share of located refs with a geometry."""
+    households = attributes.select("hid", "source").unique("hid")
+    homes = refs.filter(pl.col("role") == "home")
+    unlocated = (
+        households.join(homes.select("hid"), on="hid", how="anti")
+        .group_by("source")
+        .len()
+    )
+    for source, n in unlocated.iter_rows():
+        logger.warning(f"{source}: {n} households have no home location")
+    for row in location.coverage(locations, refs).iter_rows(named=True):
+        message = (
+            f"{row['source']} {row['role']} {row['level']}: {row['n']} "
+            f"refs, {row['with_geometry']:.1%} with a geometry "
+            f"({row['exact']:.1%} exact)"
+        )
+        if row["with_geometry"] < 0.99:
+            logger.warning(message)
+        else:
+            logger.info(message)
 
 
 def runner(
@@ -407,15 +459,21 @@ def runner(
 
     all_attributes = []
     all_trips = []
+    all_homes = []
+    all_trip_ends = []
     for i, name in enumerate(sources, start=1):
         logger.info(f"===[{i}/{len(sources)}] Loading {name.upper()}===")
         start = time.perf_counter()
-        attributes, trips = load_source(name, source_dirs[name])
+        attributes, trips, homes, trip_ends = load_source(
+            name, source_dirs[name]
+        )
         logger.info(
             f"{name.upper()} done in {time.perf_counter() - start:.1f}s"
         )
         all_attributes.append(attributes)
         all_trips.append(trips)
+        all_homes.append(homes)
+        all_trip_ends.append(trip_ends)
 
     # ------------------------------------------------------------------
     # Concat and write
@@ -440,13 +498,69 @@ def runner(
             all_trips, non_consecutive_types=non_consecutive_types
         )
 
-    logger.info(f"Writing attributes and trips to {output}...")
+    homes = pl.concat(all_homes, how="vertical").filter(
+        pl.col("hid").is_in(all_attributes["hid"].implode())
+    )
+    trip_ends = pl.concat(all_trip_ends, how="vertical")
+    # homes and trip ends share one locations table
+    locations, refs = location.index(
+        pl.concat(
+            [
+                homes.with_columns(
+                    pid=pl.lit(None, pl.String), seq=pl.lit(None, pl.Int64)
+                ),
+                trip_ends.with_columns(hid=pl.lit(None, pl.String)),
+            ],
+            how="diagonal",
+        )
+    )
+    homes = refs.filter(pl.col("role") == "home")
+    all_attributes = (
+        all_attributes.drop("hh_location")
+        .join(
+            homes.select("hid", hh_location="location_id"), on="hid", how="left"
+        )
+        .select(all_attributes.columns)
+    )
+    trip_ids = (
+        refs.filter(pl.col("role") != "home")
+        .select("pid", "seq", "role", "location_id")
+        .pivot("role", index=["pid", "seq"], values="location_id")
+    )
+    for role in ("origin", "destination"):
+        if role not in trip_ids.columns:
+            trip_ids = trip_ids.with_columns(pl.lit(None, pl.Int32).alias(role))
+    all_trips = (
+        all_trips.drop("olocation", "dlocation")
+        .join(
+            trip_ids.select(
+                "pid",
+                pl.col("seq").cast(all_trips.schema["seq"]),
+                olocation="origin",
+                dlocation="destination",
+            ),
+            on=["pid", "seq"],
+            how="left",
+        )
+        .select(all_trips.columns)
+    )
+    log_location_coverage(all_attributes, locations, refs)
+
+    logger.info(f"Writing attributes, trips and locations to {output}...")
     all_attributes.write_csv(output / "attributes.csv")
+    location.write(locations, output / "locations.parquet")
     binned_attributes = post_process.discretise_numeric(
         all_attributes,
         n_bins=5,
         method="quantile",
-        exclude_cols=["year", "month", "weight", "vehicles", "hh_size"],
+        exclude_cols=[
+            "year",
+            "month",
+            "weight",
+            "vehicles",
+            "hh_size",
+            "hh_location",
+        ],
     )
     binned_attributes = post_process.fill_nulls(binned_attributes)
     binned_attributes.write_csv(output / "binned_attributes.csv")
@@ -488,7 +602,7 @@ def runner(
         n_cols=3,
         bins=11,
         density=True,
-        ignore_cols={"weight"},
+        ignore_cols={"weight", "hh_location"},
         tail_handling="clip",
         tail_ratio_threshold=4,
         outlier_share_max=0.2,

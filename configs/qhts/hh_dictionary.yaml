@@ -10,6 +10,7 @@ column_mappings:
         # hhinc_group: hh_income
         HHVEH: vehicles
         STRATA_LGA: hh_zone
+        HOME_SA1_2021: home_sa1  # see home_location
         # BIKES: num_bikes
         HHWGT_24: weight
     2019-22:
@@ -23,6 +24,7 @@ column_mappings:
         # hhinc_group: hh_income
         HHVEH: vehicles
         STRATA_LGA: hh_zone
+        HOME_SA1_2021: home_sa1  # see home_location
         # BIKES: num_bikes
         HHWGT_21: weight
     2017-20:
@@ -36,6 +38,7 @@ column_mappings:
         # hhinc_group: hh_income
         HHVEH: vehicles
         STRATA_LGA: hh_zone
+        HOME_SA1_2021: home_sa1  # see home_location
         # BIKES: num_bikes
         HHWGT_19: weight
 
@@ -72,3 +75,10 @@ hh_zone:
         12: urban # Cairns
         13: urban # Mackay
         14: rural # Beaudesert-Tamborine
+
+# home location (see foundata.location): the household's ASGS 2021 SA1
+home_location:
+  default:
+    - level: sa1_2021
+      code: [home_sa1]
+      valid: '\d{11}'

@@ -155,3 +155,15 @@ hh_zone:
         Southern Grampians (S): rural
         West Wimmera (S): rural
 
+
+# trip end locations (see foundata.location): the origin and destination
+# LGA (origlga/destlga, by name) as ABS 2021 LGA codes; LGAs outside
+# lga_2021_codes.csv (outside the survey area) have no location
+origin_location:
+  default:
+    - level: lga_2021
+      code: [{column: ozone, map: lga_2021_codes.csv}]
+destination_location:
+  default:
+    - level: lga_2021
+      code: [{column: dzone, map: lga_2021_codes.csv}]

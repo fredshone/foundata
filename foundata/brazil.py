@@ -15,7 +15,7 @@ import numpy as np
 import polars as pl
 from loguru import logger
 
-from foundata import fix, utils
+from foundata import fix, location, utils
 
 SOURCE = "brazil"
 COUNTRY = "br"
@@ -199,7 +199,9 @@ def load_households(
         families.sort("hid", "family")
         .group_by("hid", maintain_order=True)
         .agg(
-            pl.col("home_zone", "hh_size", "date", "ownership").first(),
+            pl.col(
+                "home_zone", "home_x", "home_y", "hh_size", "date", "ownership"
+            ).first(),
             monthly_income=pl.when(pl.col("income").is_not_null().all())
             .then(pl.col("income").sum())
             .otherwise(None),
@@ -213,6 +215,9 @@ def load_households(
         )
     )
 
+    hhs = location.add(hhs, config["home_location"], source="brazil").drop(
+        "home_x", "home_y"
+    )
     return hhs.with_columns(
         hh_income=(pl.col("monthly_income") * 12 * config["brl_to_euro"]).cast(
             pl.Int32
