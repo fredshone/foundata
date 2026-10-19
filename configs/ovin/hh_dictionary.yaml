@@ -54,9 +54,29 @@ day:
   7: saturday   # Zaterdag
 
 # home location (see foundata.location): the respondent's gemeente (WoGem)
-# as a 4-digit CBS code of the survey year; 0 is unknown
+# as a 4-digit CBS code of the survey year (0, unknown, is null)
 home_location:
-  - level: gemeente_{year}
-    years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
-    code: [{column: home_gemeente, width: 4}]
-    missing: ["0000"]
+  2010:
+    - level: gemeente
+      geo: gemeente_2010.parquet
+  2011:
+    - level: gemeente
+      geo: gemeente_2011.parquet
+  2012:
+    - level: gemeente
+      geo: gemeente_2012.parquet
+  2013:
+    - level: gemeente
+      geo: gemeente_2013.parquet
+  2014:
+    - level: gemeente
+      geo: gemeente_2014.parquet
+  2015:
+    - level: gemeente
+      geo: gemeente_2015.parquet
+  2016:
+    - level: gemeente
+      geo: gemeente_2016.parquet
+  2017:
+    - level: gemeente
+      geo: gemeente_2017.parquet

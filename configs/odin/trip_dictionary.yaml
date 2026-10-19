@@ -18,8 +18,8 @@ column_mappings:
     AankUur: tet_hour
     AankMin: tet_min
     AfstV: distance
-    VertGem: origin_gemeente
-    AankGem: destination_gemeente
+    VertGem: o_gemeente
+    AankGem: d_gemeente
   2024:
     OPID: pid
     VerplNr: seq
@@ -31,8 +31,8 @@ column_mappings:
     AankUur: tet_hour
     AankMin: tet_min
     AfstV: distance
-    VertGem_DANS24: origin_gemeente
-    AankGem_DANS24: destination_gemeente
+    VertGem_DANS24: o_gemeente
+    AankGem_DANS24: d_gemeente
 
 # Hvm (hoofdvervoermiddel / main mode of transport)
 mode:
@@ -100,19 +100,27 @@ stedelijkheidsklasse:
     "5": rural
 
 # trip end locations (see foundata.location): the origin and destination
-# gemeente (VertGem/AankGem) as 4-digit CBS codes of the survey year; 0 is
-# unknown and 9000+ are disclosure-control groups (2024), and gemeenten abroad have no location
-origin_location:
-  default:
-    - level: gemeente_{year}
-      years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
-      code: [{column: origin_gemeente, width: 4}]
-      valid: '[0-8]\d{3}'
-      missing: ["0000"]
-destination_location:
-  default:
-    - level: gemeente_{year}
-      years: [2018, 2019, 2020, 2021, 2022, 2023, 2024]
-      code: [{column: destination_gemeente, width: 4}]
-      valid: '[0-8]\d{3}'
-      missing: ["0000"]
+# gemeente (VertGem/AankGem), as for homes; gemeenten abroad have no
+# location
+trip_location:
+  2018:
+    - level: gemeente
+      geo: gemeente_2018.parquet
+  2019:
+    - level: gemeente
+      geo: gemeente_2019.parquet
+  2020:
+    - level: gemeente
+      geo: gemeente_2020.parquet
+  2021:
+    - level: gemeente
+      geo: gemeente_2021.parquet
+  2022:
+    - level: gemeente
+      geo: gemeente_2022.parquet
+  2023:
+    - level: gemeente
+      geo: gemeente_2023.parquet
+  2024:
+    - level: gemeente
+      geo: gemeente_2024.parquet

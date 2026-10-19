@@ -78,29 +78,24 @@ def build_hh_yaml(template_attributes: dict) -> str:
 
 # see the LOCATIONS section of llm_auto_source.txt
 HOME_LOCATION_STUB = [
-    "# home location (see foundata.location): candidates, finest first; map",
-    "# the raw code columns to intermediate names (e.g. home_zone) above. The",
-    "# level needs a lookup (scripts/build_location_lookups.py).",
+    "# home location (see foundata.location): levels, finest first, each",
+    "# with its lookup in configs/<source>/geo/ (build_location_lookups.py).",
+    "# The loader writes a clean home_<level> code column for each.",
     "home_location:",
-    "  - level: LEVEL  # e.g. tract_2010, gemeente_{year} (with years: [...])",
-    "    code: [home_zone]  # parts: column or {column, slice, map, width}",
-    "    # valid: '\\d{11}'  # regex a code must match",
-    "    # missing: ['0']  # codes meaning unknown",
+    "  - level: LEVEL  # e.g. tract, gemeente (see location.LEVEL_PRECISION)",
+    "    geo: LEVEL_YEAR.parquet",
     "",
 ]
 TRIP_LOCATION_STUB = [
-    "# trip end locations (see foundata.location), as home_location in",
-    "# hh_dictionary.yaml, from the raw origin/destination zone codes",
-    "# origin_location:",
+    "# trip end locations (see foundata.location), as home_location; the",
+    "# loader writes origin_<level> and destination_<level> code columns",
+    "# trip_location:",
     "#   - level: LEVEL",
-    "#     code: [ozone]",
-    "# destination_location:",
-    "#   - level: LEVEL",
-    "#     code: [dzone]",
+    "#     geo: LEVEL_YEAR.parquet",
     "",
 ]
 # template fields the runner sets, not mapped from raw columns
-PROGRAMMATIC = {"hh_location", "olocation", "dlocation"}
+PROGRAMMATIC = {"hh_location", "ocode", "dcode"}
 
 
 def build_person_yaml(template_attributes: dict) -> str:
@@ -251,9 +246,10 @@ def load_households(
         country=pl.lit("unknown"),  # TODO: set ISO country code, e.g. "aus"
     )
 
-    # home location from the home_location declaration (TODO: pass year= /
-    # survey= if the declaration uses them, and drop its raw columns)
-    data = location.add(data, config["home_location"], source=SOURCE)
+    # home location (see home_location): TODO write a clean home_<level>
+    # code column per level, and pass key=<survey year> if the declaration
+    # has blocks by year
+    data = location.add(data, source=SOURCE)
 
     return data
 

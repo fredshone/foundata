@@ -20,6 +20,7 @@ from loguru import logger
 from foundata import location, nl_income
 from foundata.ovin import (
     drop_non_regular,
+    gemeente_code,
     gemeente_zone,
     load_trips,
     read_sav,
@@ -161,8 +162,10 @@ def load_households(
         ownership=pl.lit("unknown"),
     ).drop("respondents")
     return location.add(
-        hhs, config["home_location"], source="om", year=year
-    ).drop("home_gemeente")
+        hhs.with_columns(home_gemeente=gemeente_code("home_gemeente")),
+        source="om",
+        key=year,
+    )
 
 
 def household_income(persons: pl.DataFrame) -> pl.DataFrame:

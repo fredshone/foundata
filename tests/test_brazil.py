@@ -121,9 +121,11 @@ def test_load_households_aggregates_families():
     assert row["hh_zone"] == "urban"
     assert row["date"] == date(2017, 9, 6)
     # dwelling point in central São Paulo
-    assert row["home_level"] == "point"
-    assert row["home_lon"] == pytest.approx(-46.63, abs=0.01)
-    assert row["home_lat"] == pytest.approx(-23.55, abs=0.01)
+    source, level, point = row["hh_location"].split("/")
+    assert (source, level) == ("brazil", "point")
+    lon, lat = map(float, point.split(","))
+    assert lon == pytest.approx(-46.63, abs=0.01)
+    assert lat == pytest.approx(-23.55, abs=0.01)
 
 
 def test_load_households_unknown_family_values_null_household():
@@ -173,6 +175,10 @@ def test_load_trips_times_escort_and_access_egress():
             "N_VIAG": ["1", "2", "3"],
             "ZONA_O": ["1", "2", "1"],
             "ZONA_D": ["2", "1", "2"],
+            "CO_O_X": ["333743", None, "333743"],
+            "CO_O_Y": ["7394463", None, "7394463"],
+            "CO_D_X": ["333104", "333743", "327503"],
+            "CO_D_Y": ["7394476", "7394463", "7392159"],
             "MOTIVO_O": ["8", "4", "8"],
             "MOTIVO_D": ["4", "8", "3"],
             "SERVIR_O": ["2", "1", "2"],
@@ -203,3 +209,7 @@ def test_load_trips_times_escort_and_access_egress():
         None,
         18 / 60 * trips_cfg["walk_speed"],
     ]
+    # trip ends: the coordinate, else the OD zone
+    assert trips["ocode"][1] == "brazil/od_zone_2017/2"
+    assert trips["ocode"][0].startswith("brazil/point/-46.6")
+    assert trips["dcode"].str.starts_with("brazil/point/").all()

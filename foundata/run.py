@@ -94,14 +94,13 @@ def _configs(source: str, *names: str) -> list[dict]:
 
 
 def _load_ktdb(source_dir: Path):
-    hh_config, person_config, trips_config = _configs(
-        "ktdb", "hh", "person", "trip"
-    )
+    # hh_dictionary.yaml only declares the home location, which
+    # location.LocationFinder reads
+    person_config, trips_config = _configs("ktdb", "person", "trip")
     # 2021 personal survey, plus the 2016 and 2010 household (weekday)
     # and weekend surveys
     return ktdb.load_years(
         data_root=source_dir,
-        hh_config=hh_config,
         person_config=person_config,
         trips_config=trips_config,
     )
@@ -381,56 +380,35 @@ def load_source(name: str, source_dir: str | Path):
         )
     with table_logger.source(name.upper()):
         attributes, trips = SOURCES[name](Path(source_dir).expanduser())
-        attributes, homes = location.extract(attributes, name)
-        homes = homes.with_columns(pl.col("hid").cast(pl.String))
-        trip_ends = []
-        for role in ("origin", "destination"):
-            trips, refs = location.extract(
-                trips, name, role=role, keys=("pid", "seq")
-            )
-            trip_ends.append(
-                refs.with_columns(
-                    pl.col("pid").cast(pl.String), pl.col("seq").cast(pl.Int64)
-                )
-            )
-        # trips have no country column: a source's trips are in its country
-        country = attributes["country"].drop_nulls().unique()
-        trip_ends = pl.concat(trip_ends).with_columns(
-            country=pl.lit(country[0] if len(country) == 1 else None, pl.String)
+        # location keys -> this source's location ids (from 0)
+        attributes, trips, locations = location.finder(name).index(
+            attributes, trips
         )
         logger.info(f"Processing {name.upper()}...")
         attributes, trips = process_source(attributes, trips, name.upper())
-        homes = homes.filter(pl.col("hid").is_in(attributes["hid"].implode()))
-        trip_ends = trip_ends.filter(
-            pl.col("pid").is_in(trips["pid"].implode())
-        )
-        return attributes, trips, homes, trip_ends
+        return attributes, trips, locations
 
 
-def log_location_coverage(
-    attributes: pl.DataFrame, locations: pl.DataFrame, refs: pl.DataFrame
+def log_locations(
+    attributes: pl.DataFrame, trips: pl.DataFrame, locations: pl.DataFrame
 ) -> None:
-    """Log, per source, households without a home location, and per role
-    and level the share of located refs with a geometry."""
-    households = attributes.select("hid", "source").unique("hid")
-    homes = refs.filter(pl.col("role") == "home")
+    """Log, per source, households without a home location, and the
+    location summary table (as in the README)."""
     unlocated = (
-        households.join(homes.select("hid"), on="hid", how="anti")
+        attributes.unique("hid")
+        .filter(pl.col("hh_location").is_null())
         .group_by("source")
         .len()
+        .sort("source")
     )
     for source, n in unlocated.iter_rows():
         logger.warning(f"{source}: {n} households have no home location")
-    for row in location.coverage(locations, refs).iter_rows(named=True):
-        message = (
-            f"{row['source']} {row['role']} {row['level']}: {row['n']} "
-            f"refs, {row['with_geometry']:.1%} with a geometry "
-            f"({row['exact']:.1%} exact)"
-        )
-        if row["with_geometry"] < 0.99:
-            logger.warning(message)
-        else:
-            logger.info(message)
+    log_markdown_table(
+        "Locations",
+        location.summary_markdown(
+            location.summary(attributes, trips, locations)
+        ),
+    )
 
 
 def runner(
@@ -459,21 +437,23 @@ def runner(
 
     all_attributes = []
     all_trips = []
-    all_homes = []
-    all_trip_ends = []
+    all_locations = []
+    offset = 0  # each source's location ids follow the previous source's
     for i, name in enumerate(sources, start=1):
         logger.info(f"===[{i}/{len(sources)}] Loading {name.upper()}===")
         start = time.perf_counter()
-        attributes, trips, homes, trip_ends = load_source(
-            name, source_dirs[name]
-        )
+        attributes, trips, locations = load_source(name, source_dirs[name])
         logger.info(
             f"{name.upper()} done in {time.perf_counter() - start:.1f}s"
         )
-        all_attributes.append(attributes)
-        all_trips.append(trips)
-        all_homes.append(homes)
-        all_trip_ends.append(trip_ends)
+        all_attributes.append(
+            attributes.with_columns(pl.col("hh_location") + offset)
+        )
+        all_trips.append(trips.with_columns(pl.col("ocode", "dcode") + offset))
+        all_locations.append(
+            locations.with_columns(pl.col("location_id") + offset)
+        )
+        offset += locations.height
 
     # ------------------------------------------------------------------
     # Concat and write
@@ -498,53 +478,18 @@ def runner(
             all_trips, non_consecutive_types=non_consecutive_types
         )
 
-    homes = pl.concat(all_homes, how="vertical").filter(
-        pl.col("hid").is_in(all_attributes["hid"].implode())
+    # the locations households and trips still refer to
+    used = pl.concat(
+        [
+            all_attributes["hh_location"],
+            all_trips["ocode"],
+            all_trips["dcode"],
+        ]
+    ).drop_nulls()
+    locations = pl.concat(all_locations).filter(
+        pl.col("location_id").is_in(used.implode())
     )
-    trip_ends = pl.concat(all_trip_ends, how="vertical")
-    # homes and trip ends share one locations table
-    locations, refs = location.index(
-        pl.concat(
-            [
-                homes.with_columns(
-                    pid=pl.lit(None, pl.String), seq=pl.lit(None, pl.Int64)
-                ),
-                trip_ends.with_columns(hid=pl.lit(None, pl.String)),
-            ],
-            how="diagonal",
-        )
-    )
-    homes = refs.filter(pl.col("role") == "home")
-    all_attributes = (
-        all_attributes.drop("hh_location")
-        .join(
-            homes.select("hid", hh_location="location_id"), on="hid", how="left"
-        )
-        .select(all_attributes.columns)
-    )
-    trip_ids = (
-        refs.filter(pl.col("role") != "home")
-        .select("pid", "seq", "role", "location_id")
-        .pivot("role", index=["pid", "seq"], values="location_id")
-    )
-    for role in ("origin", "destination"):
-        if role not in trip_ids.columns:
-            trip_ids = trip_ids.with_columns(pl.lit(None, pl.Int32).alias(role))
-    all_trips = (
-        all_trips.drop("olocation", "dlocation")
-        .join(
-            trip_ids.select(
-                "pid",
-                pl.col("seq").cast(all_trips.schema["seq"]),
-                olocation="origin",
-                dlocation="destination",
-            ),
-            on=["pid", "seq"],
-            how="left",
-        )
-        .select(all_trips.columns)
-    )
-    log_location_coverage(all_attributes, locations, refs)
+    log_locations(all_attributes, all_trips, locations)
 
     logger.info(f"Writing attributes, trips and locations to {output}...")
     all_attributes.write_csv(output / "attributes.csv")
@@ -569,7 +514,9 @@ def runner(
     if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
         raise ValueError("Trips has pids not in attributes")
 
-    activities = post_process.trips_to_activities(all_attributes, all_trips)
+    activities = post_process.trips_to_activity_schedules(
+        all_attributes, all_trips
+    )
     if not verify.activities_pids_match_attributes(all_attributes, activities):
         raise ValueError("Activities pids do not match attributes pids")
 
@@ -622,9 +569,7 @@ def runner(
 
     logger.info("Plotting attributes_trends.png...")
     plots.summary_trends(
-        all_attributes,
-        on="source",
-        save_path=output / "attributes_trends.png",
+        all_attributes, on="source", save_path=output / "attributes_trends.png"
     )
 
     logger.info("Plotting trip_time_of_day.png...")

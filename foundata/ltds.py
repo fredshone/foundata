@@ -188,7 +188,11 @@ def preprocess_hhs(
         .fill_null("unknown")
         .alias("hh_zone"),
     )
-    hhs = location.add(hhs, config["home_location"], source="ltds").drop("zone")
+    # hhaboro (HABORO_T.csv numbering) as ONS local authority districts
+    hhs = hhs.with_columns(
+        home_lad=location.mapped("zone", "ltds", "borough_lad_2023.csv")
+    )
+    hhs = location.add(hhs, source="ltds").drop("zone")
 
     hhs = hhs.filter(pl.col("hid").is_not_null())
 
@@ -484,7 +488,14 @@ def preprocess_trips(
         lambda g: sample_plan_trip_start_times(g, seed=42)
     )
 
-    trips = location.add_trip_ends(trips, config, source="ltds")
+    # boroughs as ONS districts; places outside London have none
+    trips = trips.with_columns(
+        origin_lad=location.mapped("ozone", "ltds", "borough_lad_2023.csv"),
+        destination_lad=location.mapped(
+            "dzone", "ltds", "borough_lad_2023.csv"
+        ),
+    )
+    trips = location.add_trip_ends(trips, source="ltds")
     trips = trips.with_columns(
         ozone=pl.col("ozone").replace_strict(zone_mapping),
         dzone=pl.col("dzone").replace_strict(zone_mapping),

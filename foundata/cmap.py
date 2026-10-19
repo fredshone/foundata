@@ -23,9 +23,7 @@ def load(
 
     logger.info("loading households...")
     hhs = load_households(data_root, hh_config)
-    hh_locations = load_home_locations(
-        data_root, rurality_table=rurality, home_spec=hh_config["home_location"]
-    )
+    hh_locations = load_home_locations(data_root, rurality_table=rurality)
     hhs = hhs.join(hh_locations, on="hid", how="left")
 
     logger.info("loading persons...")
@@ -202,7 +200,7 @@ def load_locations(
 
 
 def load_home_locations(
-    root: str | Path, rurality_table: pl.DataFrame, home_spec: list[dict]
+    root: str | Path, rurality_table: pl.DataFrame
 ) -> pl.DataFrame:
     root = expand_root(root)
     locations = (
@@ -233,7 +231,7 @@ def load_home_locations(
     )
 
     # home location: 2010 census tract; a code with a missing (-1) part is
-    # unknown (see home_location in hh_dictionary.yaml)
+    # unknown
     locations = (
         location.add(
             locations.join(
@@ -242,8 +240,10 @@ def load_home_locations(
                 right_on="tractFIPS",
                 how="left",
                 maintain_order="left_right",
-            ).with_columns(hh_zone=pl.col("hh_zone").fill_null("unknown")),
-            home_spec,
+            ).with_columns(
+                hh_zone=pl.col("hh_zone").fill_null("unknown"),
+                home_tract=location.clean("raw_fips", valid=r"\d{11}"),
+            ),
             source="cmap",
         )
         .drop("fips", "raw_fips")
@@ -356,7 +356,9 @@ def load_trips(
                     "sampno",
                     "locno",
                     pl.col("hh_zone").alias("ozone"),
-                    pl.col("tract").alias("origin_tract"),
+                    location.clean("tract", valid=r"\d{11}").alias(
+                        "origin_tract"
+                    ),
                 ),
                 left_on=["hid", "ozone_code"],
                 right_on=["sampno", "locno"],
@@ -368,7 +370,9 @@ def load_trips(
                     "sampno",
                     "locno",
                     pl.col("hh_zone").alias("dzone"),
-                    pl.col("tract").alias("destination_tract"),
+                    location.clean("tract", valid=r"\d{11}").alias(
+                        "destination_tract"
+                    ),
                 ),
                 left_on=["hid", "dzone_code"],
                 right_on=["sampno", "locno"],
@@ -377,10 +381,8 @@ def load_trips(
             )
             .drop(["ozone_code", "dzone_code"])
         )
-        # trip end locations: the tract of each place (see
-        # trip_dictionary.yaml)
-        trips = location.add_trip_ends(trips, config, source=SOURCE).drop(
-            "origin_tract", "destination_tract"
-        )
+        # trip end locations: the tract of each place; a code with a
+        # missing (-1) part is unknown
+        trips = location.add_trip_ends(trips, source=SOURCE)
 
     return trips

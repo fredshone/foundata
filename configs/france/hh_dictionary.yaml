@@ -28,21 +28,117 @@ column_mappings:
   home_lat: point_lat
   home_insee: home_insee
 
-# home location (see foundata.location): the detailed zone, coded
-# <survey folder>/<zone id> as zone ids are survey-specific; else the point
-# (EGT 2020, rounded to 0.001°, about 110 x 73 m cells, whose equivalent
-# radius is about 50 m); else the commune (INSEE code) of the survey year
-# (the year in the survey folder's name).
+# home location (see foundata.location), keyed by survey year (the year in
+# the survey folder's name): the detailed zone, coded <survey folder>/<zone
+# id> in france.py as zone ids are survey-specific; else the point (EGT
+# 2020, rounded to 0.001°, about 110 x 73 m cells, whose equivalent radius
+# is about 50 m); else the commune (INSEE code) of the survey year.
 home_location:
-  - level: detailed_zone
-    prefix: "{survey}/"
-    code: [home_detailed_zone]
-  - level: point
-    point: {x: point_lng, y: point_lat, crs: "EPSG:4326", scale_m: 50}
-  - level: commune_{year}
-    years: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
-    code: [home_insee]
-    valid: '[0-9][0-9AB]\d{3}'
+  2009:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2009.parquet
+  2010:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2010.parquet
+  2011:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2011.parquet
+  2012:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2012.parquet
+  2013:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2013.parquet
+  2014:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2014.parquet
+  2015:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2015.parquet
+  2016:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2016.parquet
+  2017:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2017.parquet
+  2018:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2018.parquet
+  2019:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2019.parquet
+  2020:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2020.parquet
+  2021:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2021.parquet
+  2022:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2022.parquet
+  2023:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2023.parquet
 
 
 # Survey folders to skip (folder names under FRANCE/). EMP 2019 is left out:

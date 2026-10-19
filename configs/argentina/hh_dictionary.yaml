@@ -69,81 +69,38 @@ column_mappings:
     fraccion: home_frac  # home location, see home_radio
     radio: home_radio
 
-# home location (see foundata.location): the dwelling's census radio as an
-# INDEC code (provincia 2 + departamento 3 + fracción 2 + radio 2), adding
-# the province where the file has none. The 2012-13 surveys are on 2010
-# census radios, ENMODO (2009-10) on 2001 radios. About 4% of radio codes
-# are not radios of their fracción in the census, so those fall back to
-# the fracción (the radio code's first 7 digits).
+# home location (see foundata.location), keyed by survey: the dwelling's
+# census radio as an INDEC code (provincia 2 + departamento 3 + fracción 2 +
+# radio 2), built in argentina.py, adding the province where the file has
+# none. The 2012-13 surveys are on 2010 census radios, ENMODO (2009-10) on
+# 2001 radios. About 4% of radio codes are not radios of their fracción in
+# the census, so those fall back to the fracción (the first 7 digits).
 home_location:
-  - level: radio_2010
-    when: {survey: [salta]}
-    known: true
-    code:
-      - {value: "66"}  # Salta
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-      - {column: home_radio, width: 2}
-  - level: radio_2010
-    when: {survey: [rc]}
-    known: true
-    code: [{column: home_pdfr, width: 9}]
-  - level: radio_2010
-    when: {survey: [nq]}
-    known: true
-    code:
-      - {column: home_prov, width: 2}
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-      - {column: home_radio, width: 2}
-  - level: radio_2010
-    when: {survey: [sfp]}
-    known: true
-    code:
-      # La Capital and Las Colonias are in Santa Fe, Paraná in Entre Ríos
-      - {column: home_depto, map: {63: "82", 70: "82", 84: "30"}}
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-      - {column: home_radio, width: 2}
-  - level: radio_2001
-    when: {survey: [enmodo]}
-    known: true
-    code:
-      # PARTIDO (hh_zone) as INDEC 2001 provincia + departamento: 901-921
-      # are Ciudad de Buenos Aires distritos escolares, the rest Buenos
-      # Aires partidos (enmodo_partido_2001.csv)
-      - {column: hh_zone, map: enmodo_partido_2001.csv}
-      - {column: home_frac, width: 2}
-      - {column: home_radio, width: 2}
-  # else the fracción: the same parts without the radio
-  - level: fraccion_2010
-    when: {survey: [salta]}
-    code:
-      - {value: "66"}
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-  - level: fraccion_2010
-    when: {survey: [rc]}
-    # PDFR is always 9 digits here (provinces 18 and 22)
-    code: [{column: home_pdfr, slice: [0, 7]}]
-    valid: '\d{7}'
-  - level: fraccion_2010
-    when: {survey: [nq]}
-    code:
-      - {column: home_prov, width: 2}
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-  - level: fraccion_2010
-    when: {survey: [sfp]}
-    code:
-      - {column: home_depto, map: {63: "82", 70: "82", 84: "30"}}
-      - {column: home_depto, width: 3}
-      - {column: home_frac, width: 2}
-  - level: fraccion_2001
-    when: {survey: [enmodo]}
-    code:
-      - {column: hh_zone, map: enmodo_partido_2001.csv}
-      - {column: home_frac, width: 2}
+  salta:
+    - level: radio
+      geo: radio_2010.parquet
+    - level: fraccion
+      geo: fraccion_2010.parquet
+  rc:
+    - level: radio
+      geo: radio_2010.parquet
+    - level: fraccion
+      geo: fraccion_2010.parquet
+  nq:
+    - level: radio
+      geo: radio_2010.parquet
+    - level: fraccion
+      geo: fraccion_2010.parquet
+  sfp:
+    - level: radio
+      geo: radio_2010.parquet
+    - level: fraccion
+      geo: fraccion_2010.parquet
+  enmodo:
+    - level: radio
+      geo: radio_2001.parquet
+    - level: fraccion
+      geo: fraccion_2001.parquet
 
 # Survey year, used when a person's diary date is unknown (ENMODO records
 # none: fieldwork ran 2009-2010).

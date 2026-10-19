@@ -27,5 +27,4 @@ hh_zone:
 # progress (see scripts/build_location_lookups.py).
 home_location:
   - level: eod_district
-    code: [{column: home_district, width: 3}]
-    valid: '\d{3}'
+    geo: eod_district.parquet

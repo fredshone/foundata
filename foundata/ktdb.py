@@ -66,7 +66,6 @@ N_STAGES_2016 = 6
 
 def load_years(
     data_root: str | Path,
-    hh_config: dict,
     person_config: dict,
     trips_config: dict,
     surveys: list[tuple[int, bool]] = SURVEYS,
@@ -75,7 +74,6 @@ def load_years(
 
     Args:
         data_root: The KTDB data directory, with one subdirectory per year.
-        hh_config: Parsed hh_dictionary.yaml (the home location).
         person_config: Parsed (year-keyed) person_dictionary.yaml.
         trips_config: Parsed (year-keyed) trip_dictionary.yaml.
         surveys: (year, weekend) pairs to load.
@@ -89,8 +87,12 @@ def load_years(
             data_root, person_config, trips_config, year, weekend
         )
         attributes = location.add(
-            attributes, hh_config["home_location"], source=SOURCE, year=year
-        ).drop("home_dong")
+            attributes.with_columns(
+                **location_codes("home_dong", year, "home")
+            ),
+            source=SOURCE,
+            key=year,
+        )
         all_attributes.append(attributes)
         all_trips.append(trips)
     return (
@@ -268,18 +270,25 @@ def access_egress(
     )
 
 
-def read_centroids(name: str) -> pl.DataFrame:
-    """Read a zone, lat, lon centroid table from configs/ktdb/ (the 2010
-    251-zone system, which has no location lookup)."""
-    return pl.read_csv(
-        utils.get_config_path("ktdb", name),
-        schema_overrides={"zone": pl.String},
-    )
+def location_codes(column: str, year: int, role: str) -> dict[str, pl.Expr]:
+    """*role*'s 행정동 and 시군구 codes from a household's or trip end's
+    dong code (see home_location): for 2021 and 2016 the 10-digit MOIS code
+    and its first 5 digits; for 2010 KTDB's 8-digit code mapped to KOSTAT's
+    7-digit code, and its first 5 digits."""
+    code = location.clean(column)
+    if year == 2010:
+        dong = location.mapped(column, SOURCE, "dong_2010_kostat.csv")
+    else:
+        dong = location.clean(column, valid=r"\d{10}")
+    return {
+        f"{role}_dong": dong,
+        f"{role}_sigungu": location.clean(code.str.slice(0, 5), valid=r"\d{5}"),
+    }
 
 
 def zone_points(level: str) -> pl.DataFrame:
     """``zone, lat, lon`` of each unit of a location lookup level."""
-    return location.zone_points(SOURCE, level, "kr").select(
+    return location.zone_points(SOURCE, level).select(
         zone="code", lat="lat", lon="lon"
     )
 
@@ -357,14 +366,6 @@ def load_2021(
 
     attributes = attributes.join(ae_distances, on="pid", how="left")
     trips = trips.drop("access_egress_distance")
-
-    # check for missing access-egress distances and warn
-    missing_ae = attributes.filter(pl.col("access_egress_distance").is_null())
-    if missing_ae.height > 0:
-        perc = missing_ae.height / attributes.height * 100
-        logger.warning(
-            f"{missing_ae.height} ({perc:.2f}%) records missing access-egress distance"
-        )
 
     # Derive per-person region from first trip's origin zone prefix
     # todo: specifically find home location from trips based on trip purpose
@@ -659,7 +660,14 @@ def load_trips_2021(root: str | Path, config: dict) -> pl.DataFrame:
     zones = load_zones()
     zone_mapping = dict(zip(zones["zone"], zones["hh_zone"]))
 
-    data = location.add_trip_ends(data, config, source=SOURCE, year=2021)
+    data = location.add_trip_ends(
+        data.with_columns(
+            **location_codes("ozone", 2021, "origin"),
+            **location_codes("dzone", 2021, "destination"),
+        ),
+        source=SOURCE,
+        key=2021,
+    )
     # Extract 시도 prefix (first 2 chars) before zone codes are overwritten
     data = data.with_columns(
         region_code=pl.when(
@@ -894,9 +902,7 @@ def load_persons_2016(
     )
 
     return data.with_columns(
-        survey=pl.lit(survey),
-        source=pl.lit(SOURCE),
-        country=pl.lit("kr"),
+        survey=pl.lit(survey), source=pl.lit(SOURCE), country=pl.lit("kr")
     ).drop(
         "idx",
         "district",
@@ -1001,7 +1007,14 @@ def load_trips_2016(
         config["mode_speeds"],
     )
 
-    data = location.add_trip_ends(data, config, source=SOURCE, year=2016)
+    data = location.add_trip_ends(
+        data.with_columns(
+            **location_codes("ozone", 2016, "origin"),
+            **location_codes("dzone", 2016, "destination"),
+        ),
+        source=SOURCE,
+        key=2016,
+    )
     zones = load_zones()
     zone_mapping = dict(zip(zones["zone"].cast(pl.String), zones["hh_zone"]))
     data = data.with_columns(
@@ -1186,7 +1199,7 @@ def load_persons_2010(
         .then(pl.lit("yes"))
         .when(pl.col("employment").is_in(EMPLOYED))
         .then(pl.lit("unknown"))
-        .otherwise(pl.lit("void")),
+        .otherwise(pl.lit("void"))
     )
 
     zones = load_zones_2010()
@@ -1201,9 +1214,7 @@ def load_persons_2010(
     )
 
     return data.with_columns(
-        survey=pl.lit(survey),
-        source=pl.lit(SOURCE),
-        country=pl.lit("kr"),
+        survey=pl.lit(survey), source=pl.lit(SOURCE), country=pl.lit("kr")
     ).drop(
         "sheet_code",
         "member",
@@ -1217,8 +1228,7 @@ def load_persons_2010(
 def load_zones_2010() -> pl.DataFrame:
     """2010 읍면동 codes (SSGGGDDD) with their urbanity."""
     zones = pl.read_csv(
-        utils.get_config_path("ktdb", "zones_2010.csv"),
-        infer_schema_length=0,
+        utils.get_config_path("ktdb", "zones_2010.csv"), infer_schema_length=0
     )
     return zones.with_columns(hh_zone=zone_class(pl.col("dong")))
 
@@ -1309,11 +1319,31 @@ def load_trips_2010(
 
     trips = fix.day_wrap(trips)
 
+    # the 251 zones are the 2010 시군구, located by the sigungu_2010 lookup
+    sigungu = pl.read_csv(
+        utils.get_config_path("ktdb", "zone_2010_sigungu.csv"),
+        infer_schema_length=0,
+    )
+    points = zone_points("sigungu_2010").join(
+        sigungu, left_on="zone", right_on="to"
+    )
     trips = centroid_distances(
         trips,
-        read_centroids("zone_centroids_2010.csv"),
+        points.select(zone="from", lat="lat", lon="lon"),
         config["circuity"],
         config["mode_speeds"],
+    )
+    trips = location.add_trip_ends(
+        trips.with_columns(
+            origin_sigungu=location.mapped(
+                "ozone", SOURCE, "zone_2010_sigungu.csv"
+            ),
+            destination_sigungu=location.mapped(
+                "dzone", SOURCE, "zone_2010_sigungu.csv"
+            ),
+        ),
+        source=SOURCE,
+        key=2010,
     )
 
     return trips.with_columns(

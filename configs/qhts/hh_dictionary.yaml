@@ -79,6 +79,5 @@ hh_zone:
 # home location (see foundata.location): the household's ASGS 2021 SA1
 home_location:
   default:
-    - level: sa1_2021
-      code: [home_sa1]
-      valid: '\d{11}'
+    - level: sa1
+      geo: sa1_2021.parquet

@@ -148,19 +148,22 @@ def check_required_fields(hh_config: dict, person_config: dict) -> list[str]:
     return warnings
 
 
-def validate_locations(config: dict | None, key: str) -> list[str]:
-    """Problems with a location declaration (a list of candidates, or one
-    per year: ``{default: [...], <year>: [...]}``), if *config* has one."""
+def validate_locations(
+    config: dict | None, key: str, source: str | None = None
+) -> list[str]:
+    """Problems with a location declaration (levels, or blocks of them by
+    survey), if *config* has one, including lookups missing from
+    configs/<source>/geo/."""
     if not config or key not in config:
         return []
-    spec = config[key]
-    specs = spec.items() if isinstance(spec, dict) else [(None, spec)]
-    return [
-        f"{key}{'' if year is None else f' ({year})'}: {error}"
-        for year, s in specs
-        if s  # null or empty: no locations for that year
-        for error in location.validate_spec(s)
-    ]
+    errors = location.validate(config[key], key)
+    if source and not errors:
+        errors += [
+            f"{key}: no lookup configs/{source}/geo/{geo}.parquet"
+            for geo in location.geo_files(config[key])
+            if not location.lookup_path(source, geo).exists()
+        ]
+    return errors
 
 
 def validate_source(
@@ -236,10 +239,12 @@ def validate_source(
     # Location declarations (see foundata.location)
     for name, config, key in (
         ("hh", hh_config, "home_location"),
-        ("trips", trip_config, "origin_location"),
-        ("trips", trip_config, "destination_location"),
+        ("trips", trip_config, "trip_location"),
     ):
-        errors.extend(f"[{name}] {e}" for e in validate_locations(config, key))
+        errors.extend(
+            f"[{name}] {e}"
+            for e in validate_locations(config, key, source_name)
+        )
     if hh_config and "home_location" not in hh_config:
         warnings.append("[hh] no home_location: households get no location")
 

@@ -166,10 +166,11 @@ def preprocess_households(
 
     # home location: the LGA (homelga, also mapped to hh_zone below)
     hhs = location.add(
-        hhs.with_columns(home_lga=pl.col("hh_zone")),
-        config["home_location"],
+        hhs.with_columns(
+            home_lga=location.mapped("hh_zone", SOURCE, "lga_2021_codes.csv")
+        ),
         source=SOURCE,
-    ).drop("home_lga")
+    )
     hhs = hhs.with_columns(
         pl.col("hh_zone")
         .replace_strict(zone_mapping, default=pl.col("hh_zone"))
@@ -268,7 +269,11 @@ def preprocess_trips(
     mode_map = config["mode_mappings"]
     act_map = config["act_mappings"]
     rurality_map = config["hh_zone"]
-    trips = location.add_trip_ends(trips, config, source=SOURCE)
+    trips = trips.with_columns(
+        origin_lga=location.mapped("ozone", SOURCE, "lga_2021_codes.csv"),
+        destination_lga=location.mapped("dzone", SOURCE, "lga_2021_codes.csv"),
+    )
+    trips = location.add_trip_ends(trips, source=SOURCE)
     trips = trips.with_columns(
         mode=pl.col("mode").replace_strict(mode_map),
         oact=pl.col("oact").replace_strict(act_map),

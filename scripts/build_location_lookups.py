@@ -2,17 +2,17 @@
 
 A lookup is a GeoParquet file with one row per unit of a level: ``code,
 lon, lat, area_km2, geom_source, geom_dataset, geom_year`` and a
-simplified polygon. National geographies (official code lists, which
-several sources can share) go to ``configs/geo/<country>/<level>.parquet``;
-survey-specific zone systems to ``configs/<source>/locations/<level>.parquet``.
-Each file's parquet metadata (key ``foundata``) records how it was built:
+simplified polygon, written to ``configs/<source>/geo/<level>.parquet``
+by the source's builder (national code lists and survey zones alike). Each
+file's parquet metadata (key ``foundata``) records how it was built:
 the datasets (URL, sha256, retrieval date), the method, alias files used,
 and codes that could not be matched or were matched fuzzily.
 
-Which levels to build comes from each source's ``home_location``
-declaration (configs/<source>/hh_dictionary.yaml): the builder for a
-source writes every level the declaration can emit (``location.levels``),
-so a new survey year means adding it to ``years`` there and rebuilding.
+Which lookups to build comes from each source's ``home_location`` and
+``trip_location`` declarations (its hh_ and trip_dictionary.yaml): the
+builder for a source writes every ``geo`` file they name
+(``location.geo_files``), so a new survey year means adding its block
+there and rebuilding.
 
 Boundary files are downloaded on first use to
 ``<data-root>/boundaries/<COUNTRY>/`` and recorded in
@@ -354,6 +354,7 @@ class Builder:
         self.boundaries = data_root / "boundaries"
         self.lock = read_lock()
         self.used: list[str] = []  # dataset ids used for the current lookup
+        self.source = ""  # the source being built; lookups go to its geo/
 
     def fetch(self, dataset_id: str) -> Path:
         """Path of a dataset's file, downloading it if missing, and checking
@@ -417,22 +418,15 @@ class Builder:
         df: pd.DataFrame,
         level: str,
         *,
-        source: str | None = None,
-        country: str | None = None,
         method: str,
         aliases: list[str] = (),
         unmatched: list[str] = (),
         fuzzy: dict[str, str] | None = None,
         extra_datasets: dict[str, str] | None = None,
     ) -> None:
-        """Write a lookup to configs/<source>/locations/ (survey-specific
-        zones) or configs/geo/<country>/ (national geographies), with its
-        provenance in the parquet metadata."""
-        out = (
-            CONFIGS / source / "locations" / f"{level}.parquet"
-            if source
-            else CONFIGS / "geo" / country / f"{level}.parquet"
-        )
+        """Write a lookup to configs/<source>/geo/<level>.parquet for the
+        source being built, with its provenance in the parquet metadata."""
+        out = CONFIGS / self.source / "geo" / f"{level}.parquet"
         out.parent.mkdir(parents=True, exist_ok=True)
         gdf = gpd.GeoDataFrame(df, geometry="geometry", crs="EPSG:4326")
         for column in ("geom_source", "geom_dataset", "geom_year"):
@@ -459,8 +453,7 @@ class Builder:
 
         meta = {
             "level": level,
-            "source": source,
-            "country": country,
+            "source": self.source,
             "built": dt.date.today().isoformat(),
             "method": method,
             "datasets": [
@@ -555,32 +548,22 @@ def first_of(*lookups: pd.DataFrame) -> pd.DataFrame:
     return pd.concat(non_empty).drop_duplicates("code", keep="first")
 
 
-def source_levels(source: str) -> list[str]:
-    """The levels a source's location declarations can emit: home_location
-    (hh_dictionary.yaml), origin_location and destination_location
+def source_lookups(source: str) -> list[str]:
+    """The lookups (file stems) a source's location declarations read:
+    home_location (hh_dictionary.yaml) and trip_location
     (trip_dictionary.yaml)."""
-    levels = []
-    for dictionary, keys in (
-        ("hh", ["home_location"]),
-        ("trip", ["origin_location", "destination_location"]),
-    ):
+    stems = []
+    for dictionary, key in (("hh", "home_location"), ("trip", "trip_location")):
         path = CONFIGS / source / f"{dictionary}_dictionary.yaml"
         config = yaml.safe_load(path.read_text()) if path.exists() else {}
-        for key in keys:
-            spec = config.get(key)
-            # per-year configs: {default: [...], <year>: [...]}
-            specs = spec.values() if isinstance(spec, dict) else [spec]
-            levels += [lv for s in specs if s for lv in location.levels(s)]
-    return list(dict.fromkeys(levels))
+        stems += location.geo_files(config.get(key))
+    return list(dict.fromkeys(stems))
 
 
 def unbuilt(source: str, built: set[str]) -> None:
-    """Report levels a source emits that its builder did not write."""
-    missing = [
-        lv for lv in source_levels(source) if lv not in built and lv != "point"
-    ]
-    if missing:
-        print(f"  WARNING {source}: no builder for levels {missing}")
+    """Report lookups a source declares that its builder did not write."""
+    if missing := [g for g in source_lookups(source) if g not in built]:
+        print(f"  WARNING {source}: no builder for lookups {missing}")
 
 
 # -- builders, one per source ---------------------------------------------------
@@ -598,7 +581,6 @@ def nts(b: Builder) -> set[str]:
             ]
         ),
         "region",
-        country="uk",
         method="ONS English regions, plus the Wales and Scotland country polygons",
     )
     return {"region"}
@@ -609,7 +591,6 @@ def ltds(b: Builder) -> set[str]:
     b.write(
         b.polygons(lads, lads.LAD23CD, "ons_lad_2023"),
         "lad_2023",
-        country="uk",
         method="ONS local authority districts (December 2023) by LAD23CD; "
         "London boroughs are the E09 codes",
     )
@@ -624,20 +605,18 @@ def nhts(b: Builder) -> set[str]:
     b.write(
         b.polygons(cbsa_2013, cbsa_2013.CBSAFP, "census_cbsa_2013"),
         "cbsa_2013",
-        country="usa",
         method="Census 2013 CBSAs (February 2013 delineations), as NHTS 2017 codes them",
     )
     cbsa_2009 = census("census_cbsa_2009")
     b.write(
         b.polygons(cbsa_2009, cbsa_2009.CBSAFP, "census_cbsa_2009"),
         "cbsa_2003",
-        country="usa",
         method="TIGER 2009 CBSAs (2003-based delineations), as NHTS 2009 codes them",
     )
     # the 1999 files have no .prj; they are NAD83 longitude/latitude
     msa = census("census_msa_1999").set_crs("EPSG:4269")
     cmsa = census("census_cmsa_1999").set_crs("EPSG:4269")
-    aliases = CONFIGS / "geo" / "usa" / "msa_1999.aliases.yaml"
+    aliases = CONFIGS / "nhts" / "geo" / "msa_1999.aliases.yaml"
     nhts_code = {
         c: n for n, c in yaml.safe_load(aliases.read_text())["cmsa"].items()
     }
@@ -650,7 +629,6 @@ def nhts(b: Builder) -> set[str]:
             ]
         ),
         "msa_1999",
-        country="usa",
         method="1999 MSAs by MSACMSA code; CMSAs by the 4-digit code NHTS gives them",
         aliases=[str(aliases.relative_to(CONFIGS))],
         unmatched=[f"CMSA {c}" for c in unmatched],
@@ -659,7 +637,6 @@ def nhts(b: Builder) -> set[str]:
     b.write(
         b.polygons(states, states.STATEFP, "census_state_2018"),
         "state",
-        country="usa",
         method="Census 2018 states by FIPS code",
     )
     divisions = census("census_division_2018")
@@ -668,7 +645,6 @@ def nhts(b: Builder) -> set[str]:
             divisions, divisions.DIVISIONCE.str.zfill(2), "census_division_2018"
         ),
         "census_division",
-        country="usa",
         method="Census divisions by 2-digit code",
     )
     return {"cbsa_2013", "cbsa_2003", "msa_1999", "state", "census_division"}
@@ -686,7 +662,6 @@ def cmap(b: Builder) -> set[str]:
     b.write(
         pd.concat(tracts),
         "tract_2010",
-        country="usa",
         method="Census 2010 tracts of Illinois, Indiana and Wisconsin by "
         "11-digit FIPS",
     )
@@ -699,7 +674,6 @@ def qhts(b: Builder) -> set[str]:
     b.write(
         b.polygons(sa1, sa1.SA1_CODE21, "abs_sa1_2021"),
         "sa1_2021",
-        country="aus",
         method="ABS 2021 SA1s in Queensland",
     )
     return {"sa1_2021"}
@@ -711,7 +685,6 @@ def vista(b: Builder) -> set[str]:
     b.write(
         b.polygons(lga, lga.LGA_CODE21, "abs_lga_2021"),
         "lga_2021",
-        country="aus",
         method="ABS 2021 LGAs in Victoria by LGA_CODE21 (VISTA's names are "
         "mapped to codes in configs/vista/lga_2021_codes.csv)",
     )
@@ -719,7 +692,7 @@ def vista(b: Builder) -> set[str]:
 
 
 def gemeenten(b: Builder, year: int) -> None:
-    """configs/geo/nl/gemeente_<year>: that year's CBS map (2005-17), PDOK
+    """configs/<source>/geo/gemeente_<year>: that year's CBS map (2005-17), PDOK
     gemeenten (2016 on), or the nearest year's CBS map before 2005."""
     if year >= 2018:
         dataset_id = f"pdok_gemeenten_{year}"
@@ -744,7 +717,6 @@ def gemeenten(b: Builder, year: int) -> None:
     b.write(
         b.polygons(gdf, code, dataset_id),
         f"gemeente_{year}",
-        country="nl",
         method=method + "; 4-digit CBS codes",
     )
 
@@ -752,7 +724,7 @@ def gemeenten(b: Builder, year: int) -> None:
 def nl_source(source: str):
     def build(b: Builder) -> set[str]:
         built = set()
-        for level in source_levels(source):
+        for level in source_lookups(source):
             if level.startswith("gemeente_"):
                 gemeenten(b, int(level.removeprefix("gemeente_")))
                 built.add(level)
@@ -771,7 +743,6 @@ def nl_source(source: str):
             b.write(
                 first_of(*pc4),
                 "pc4",
-                country="nl",
                 method="CBS PC4 2023, then 2019 for postcodes since retired",
             )
             built.add("pc4")
@@ -788,7 +759,6 @@ def ktdb(b: Builder) -> set[str]:
     b.write(
         first_of(*(b.polygons(g, g.adm_cd2, i) for g, i in dong_2021)),
         "dong_2021",
-        country="kr",
         method="행정동 of July 2021 by 10-digit code, then October 2021 and "
         "January 2022 for dongs created during the survey",
     )
@@ -798,7 +768,6 @@ def ktdb(b: Builder) -> set[str]:
             dong_2016, dong_2016.adm_cd, "admdong_20161231"
         ),  # 10-digit here
         "dong_2016",
-        country="kr",
         method="행정동 of December 2016 by 10-digit code",
     )
     for ext in ("shp", "shx", "dbf", "prj", "cpg"):
@@ -810,7 +779,6 @@ def ktdb(b: Builder) -> set[str]:
     b.write(
         b.polygons(kostat, kostat.code, "kostat_2011_shp"),
         "dong_2010",
-        country="kr",
         method="KOSTAT 2011 읍면동 by 7-digit KOSTAT code (CRS set to EPSG:5174, "
         "as the file's .prj lacks the datum shift); KTDB 2010 codes are "
         "mapped to these in configs/ktdb/dong_2010_kostat.csv",
@@ -831,7 +799,6 @@ def ktdb(b: Builder) -> set[str]:
         b.write(
             b.polygons(dongs, dongs.code.str[:5], dataset_id),
             f"sigungu_{year}",
-            country="kr",
             method=f"시군구 of {year} as the union of their 행정동 (first 5 "
             "digits of the 10-digit code)",
         )
@@ -849,7 +816,6 @@ def ktdb(b: Builder) -> set[str]:
     b.write(
         b.polygons(dongs, dongs["from"].str[:5], "kostat_2011_shp"),
         "sigungu_2010",
-        source="ktdb",
         method="KTDB 2010 시도 + 시군구 codes (first 5 digits of the "
         "classification code) as the union of their dongs' KOSTAT 2011 "
         "polygons (configs/ktdb/dong_2010_kostat.csv)",
@@ -882,7 +848,6 @@ def argentina(b: Builder) -> set[str]:
                 f"conicet_radios_{year}",
             ),
             f"radio_{year}",
-            country="ar",
             method=f"INDEC {year} census radios by 9-digit code, provinces {', '.join(provinces)}",
         )
         b.fetch(f"conicet_radios_{year}")
@@ -893,7 +858,6 @@ def argentina(b: Builder) -> set[str]:
                 f"conicet_radios_{year}",
             ),
             f"fraccion_{year}",
-            country="ar",
             method=f"INDEC {year} census fracciones (7-digit code) as the "
             f"union of their radios, provinces {', '.join(provinces)}",
         )
@@ -905,7 +869,6 @@ def uruguay(b: Builder) -> set[str]:
     b.write(
         b.polygons(segments, segments.codseg.astype(int), "ine_segments_2011"),
         "segment_2011",
-        country="uy",
         method="INE 2011 census segments by codseg (multi-part segments dissolved)",
     )
     return {"segment_2011"}
@@ -953,7 +916,7 @@ def india(b: Builder) -> set[str]:
     lgd = gpd.read_parquet(b.fetch("lgd_districts"))
     c11 = gpd.read_parquet(b.fetch("census_districts_2011"))
     splits = pd.read_csv(b.fetch("india_district_splits"))
-    alias_file = CONFIGS / "india" / "locations" / "district.aliases.yaml"
+    alias_file = CONFIGS / "india" / "geo" / "district.aliases.yaml"
     aliases = yaml.safe_load(alias_file.read_text())
     names = aliases["names"]
     for table in (lgd, c11):
@@ -997,7 +960,7 @@ def india(b: Builder) -> set[str]:
     )
 
     built, by_year = set(), {}
-    for level in source_levels("india"):
+    for level in source_lookups("india"):
         if not level.startswith("district_"):
             continue
         year = int(level.removeprefix("district_"))
@@ -1072,7 +1035,6 @@ def india(b: Builder) -> set[str]:
         b.write(
             lookup,
             level,
-            source="india",
             method="NSS districts matched by name (within state) to LGD "
             "districts, merged with districts carved out of them since 2011 "
             "that the survey doesn't list; Census 2011 districts for those "
@@ -1086,7 +1048,7 @@ def india(b: Builder) -> set[str]:
         )
         built.add(level)
 
-    if "nss_region" in source_levels("india"):
+    if "nss_region" in source_lookups("india"):
         # NSS regions as the union of their 2024 districts
         districts = pd.read_csv(
             CONFIGS / "india" / "districts_2024.csv", dtype=str
@@ -1103,7 +1065,6 @@ def india(b: Builder) -> set[str]:
         b.write(
             b.polygons(gdf, gdf.code, "lgd_districts"),
             "nss_region",
-            source="india",
             method="NSS regions as the union of their districts in the TUS "
             "2024 district list (configs/india/districts_2024.csv)",
         )
@@ -1137,7 +1098,7 @@ def mongolia(b: Builder) -> set[str]:
     )
 
     built = set()
-    for level in source_levels("mongolia"):
+    for level in source_lookups("mongolia"):
         year = int(level[-4:]) if level[-4:].isdigit() else None
         rows, unmatched = [], []
         if level == "soum":
@@ -1174,7 +1135,6 @@ def mongolia(b: Builder) -> set[str]:
         b.write(
             pd.DataFrame(rows),
             level,
-            country="mng",
             method=method,
             unmatched=unmatched,
         )
@@ -1222,7 +1182,6 @@ def mexico(b: Builder) -> set[str]:
     b.write(
         districts,
         "eod_district",
-        source="mexico",
         method="EOD 2017 districts as the union of the INEGI 2020 "
         "municipalities each overlaps (MEXICO/TCAT_DISTRITOS.DBF); estimated "
         "unless the district is one whole municipality",
@@ -1357,7 +1316,6 @@ def france(b: Builder) -> set[str]:
     b.write(
         pd.concat([z for z in zones if len(z)]),
         "detailed_zone",
-        source="france",
         method="each CEREMA survey's detailed zone polygons (FRANCE/<survey>/"
         "detailed_zones.geo.parquet), coded <survey>/<zone id>; zones "
         "without a polygon take their draw zone, else the commune most of "
@@ -1369,7 +1327,7 @@ def france(b: Builder) -> set[str]:
     # communes of homes and trip ends with neither a detailed zone nor a
     # point (the loaders' last fallback), as of the survey year
     built = {"detailed_zone"}
-    for level in source_levels("france"):
+    for level in source_lookups("france"):
         if not level.startswith("commune_"):
             continue
         year = int(level.removeprefix("commune_"))
@@ -1385,7 +1343,6 @@ def france(b: Builder) -> set[str]:
         b.write(
             lookup,
             level,
-            country="fr",
             method=f"communes of {year} (nearest earlier vintage first) "
             "for homes and trip ends of that year's surveys with neither a "
             "detailed zone nor a point",
@@ -1402,12 +1359,33 @@ def chile(b: Builder) -> set[str]:
     b.write(
         zones,
         "eod_zone_2012",
-        source="chile",
         method="Santiago EOD 2012 zones (CHILE/zonificacion.parquet) by zona; "
         "areas from the polygons (the file's area column doesn't match them)",
         extra_datasets={"CHILE/zonificacion.parquet": "EOD 2012 zones"},
     )
     return {"eod_zone_2012"}
+
+
+def brazil(b: Builder) -> set[str]:
+    gdf = gpd.read_file(
+        b.data_root
+        / "BRAZIL/OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp"
+    )
+    zones = b.polygons(gdf, gdf.NumeroZona.astype(int).astype(str), None)
+    zones["geom_dataset"] = "Metrô SP OD 2017 zonas"
+    zones["geom_year"] = 2017
+    b.write(
+        zones,
+        "od_zone_2017",
+        method="São Paulo OD 2017 zones (Zonas_2017_region.shp, shipped "
+        "with the survey) by NumeroZona",
+        extra_datasets={
+            "BRAZIL/OD-2017/Mapas-OD2017/Shape-OD2017/Zonas_2017_region.shp": (
+                "OD 2017 zones"
+            )
+        },
+    )
+    return {"od_zone_2017"}
 
 
 BUILDERS = {
@@ -1428,9 +1406,8 @@ BUILDERS = {
     "mexico": mexico,
     "france": france,
     "chile": chile,  # homes are points; trip ends are EOD zones
+    "brazil": brazil,  # points, else OD zones
 }
-# sources with point locations only
-NO_LOOKUPS = {"brazil"}
 
 
 def main(
@@ -1439,12 +1416,13 @@ def main(
         None, help=f"Build only these sources: {', '.join(BUILDERS)}"
     ),
 ):
-    """Write the location lookups for each source's home_location levels."""
+    """Write the location lookups each source's declarations name."""
     builder = Builder(data_root.expanduser())
     for source, build in BUILDERS.items():
         if only and source not in only:
             continue
         print(f"== {source}")
+        builder.source = source
         built = build(builder)
         unbuilt(source, built)
 

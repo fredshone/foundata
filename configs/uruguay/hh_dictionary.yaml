@@ -55,6 +55,5 @@ rural_locality_suffix: 900  # <depto>900 RURAL
 # home location (see foundata.location): the dwelling's INE 2011 census
 # segment (codseg)
 home_location:
-  - level: segment_2011
-    code: [home_segment]
-    valid: '[1-9]\d*'
+  - level: segment
+    geo: segment_2011.parquet

@@ -60,7 +60,7 @@ def trips_conditionality():
 
 @pytest.fixture
 def activities_conditionality(attrs_conditionality, trips_conditionality):
-    return post_process.trips_to_activities(
+    return post_process.trips_to_activity_schedules(
         attrs_conditionality, trips_conditionality
     )
 

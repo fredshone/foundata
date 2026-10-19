@@ -5,6 +5,10 @@ column_mappings:
   N_VIAG: seq
   ZONA_O: ozone
   ZONA_D: dzone
+  CO_O_X: o_x
+  CO_O_Y: o_y
+  CO_D_X: d_x
+  CO_D_Y: d_y
   MOTIVO_O: oact
   MOTIVO_D: dact
   SERVIR_O: oescort  # 1: serving a passenger at origin
@@ -60,3 +64,12 @@ mode:
   15: bike
   16: walk
   17: other
+
+# trip end locations (see foundata.location), as for homes: the origin and
+# destination coordinates (CO_O_X/Y, CO_D_X/Y), else the OD 2017 zone
+# (ZONA_O/ZONA_D)
+trip_location:
+  - level: point
+    scale_m: 50
+  - level: od_zone
+    geo: od_zone_2017.parquet

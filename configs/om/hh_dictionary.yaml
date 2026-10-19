@@ -36,9 +36,14 @@ hh_zone:
 # unknown income.
 
 # home location (see foundata.location): the household's gemeente (WoGem)
-# as a 4-digit CBS code of the survey year; 0 is unknown
+# as a 4-digit CBS code of the survey year (0, unknown, is null)
 home_location:
-  - level: gemeente_{year}
-    years: [2005, 2006, 2007]
-    code: [{column: home_gemeente, width: 4}]
-    missing: ["0000"]
+  2005:
+    - level: gemeente
+      geo: gemeente_2005.parquet
+  2006:
+    - level: gemeente
+      geo: gemeente_2006.parquet
+  2007:
+    - level: gemeente
+      geo: gemeente_2007.parquet

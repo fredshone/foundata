@@ -181,12 +181,12 @@ trips:
     default: True
     set: [urban, suburban, rural, unknown]
     description: "Urban/rural classification of the trip destination zone."
-  olocation:
+  ocode:
     dtype: int32
     default: True
     min: 0
     description: "Row (location_id) of locations.parquet holding the trip origin's location; null where the source gives none."
-  dlocation:
+  dcode:
     dtype: int32
     default: True
     min: 0

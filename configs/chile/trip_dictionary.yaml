@@ -96,14 +96,8 @@ transit_stage_modes:  # Modo codes
   - 16  # tren
 
 # trip end locations (see foundata.location): the origin and destination EOD
-# zones (ZonaOrigen/ZonaDestino); 0 and 999 are outside the zoning
-origin_location:
-  - level: eod_zone_2012
-    code: [ozone]
-    valid: '\d+'
-    missing: ["0", "999"]
-destination_location:
-  - level: eod_zone_2012
-    code: [dzone]
-    valid: '\d+'
-    missing: ["0", "999"]
+# zones (ZonaOrigen/ZonaDestino); chile.py nulls 0 and 999 (outside the
+# zoning)
+trip_location:
+  - level: eod_zone
+    geo: eod_zone_2012.parquet

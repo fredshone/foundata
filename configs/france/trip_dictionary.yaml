@@ -23,15 +23,15 @@ column_mappings:
     trip_euclidean_distance_km: euclidean_distance
     trip_weekday: weekday
     trip_date: date  # approximate for some CEREMA surveys; null for EMP 2019
-    # trip end locations, see origin_location / destination_location
-    origin_detailed_zone: origin_detailed_zone
-    origin_lng: origin_lng
-    origin_lat: origin_lat
-    origin_insee: origin_insee
-    destination_detailed_zone: destination_detailed_zone
-    destination_lng: destination_lng
-    destination_lat: destination_lat
-    destination_insee: destination_insee
+    # trip end locations, see trip_location
+    origin_detailed_zone: o_detailed_zone
+    origin_lng: o_lng
+    origin_lat: o_lat
+    origin_insee: o_insee
+    destination_detailed_zone: d_detailed_zone
+    destination_lng: d_lng
+    destination_lat: d_lat
+    destination_insee: d_insee
   legs:
     trip_id: trip_id
     person_id: pid
@@ -145,23 +145,109 @@ walk_speed: 4.5  # km/h
 # zone (<survey>/<zone id>), else the point (EGT 2020; CEREMA surveys'
 # lng/lat are zone centroids, used only where there is no zone), else the
 # commune of the survey year
-origin_location:
-  - level: detailed_zone
-    prefix: "{survey}/"
-    code: [origin_detailed_zone]
-  - level: point
-    point: {x: origin_lng, y: origin_lat, crs: "EPSG:4326", scale_m: 50}
-  - level: commune_{year}
-    years: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
-    code: [origin_insee]
-    valid: '[0-9][0-9AB]\d{3}'
-destination_location:
-  - level: detailed_zone
-    prefix: "{survey}/"
-    code: [destination_detailed_zone]
-  - level: point
-    point: {x: destination_lng, y: destination_lat, crs: "EPSG:4326", scale_m: 50}
-  - level: commune_{year}
-    years: [2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022, 2023]
-    code: [destination_insee]
-    valid: '[0-9][0-9AB]\d{3}'
+trip_location:
+  2009:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2009.parquet
+  2010:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2010.parquet
+  2011:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2011.parquet
+  2012:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2012.parquet
+  2013:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2013.parquet
+  2014:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2014.parquet
+  2015:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2015.parquet
+  2016:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2016.parquet
+  2017:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2017.parquet
+  2018:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2018.parquet
+  2019:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2019.parquet
+  2020:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2020.parquet
+  2021:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2021.parquet
+  2022:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2022.parquet
+  2023:
+    - level: detailed_zone
+      geo: detailed_zone.parquet
+    - level: point
+      scale_m: 50
+    - level: commune
+      geo: commune_2023.parquet

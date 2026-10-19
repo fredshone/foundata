@@ -139,9 +139,9 @@ hh_zone:
         Moira (S): rural                 # Large rural shire in north-east Victoria [20](https://www.moira.vic.gov.au/Our-Region/Geographic-Profile)
         Murrindindi (S): rural           # Rural shire in north-east Victoria with small towns (Alexandra, Yea) [21](https://www.murrindindi.vic.gov.au/Our-Region/Geographic-Profile)
 # home location (see foundata.location): the household's LGA (homelga), by
-# name as VISTA gives it ("Kingston (C)"), mapped to the ABS 2021 LGA code
-# in lga_2021_codes.csv (Merri-bek is ABS 2021's Moreland)
+# name as VISTA gives it ("Kingston (C)"), mapped by vista.py to the ABS
+# 2021 LGA code with lga_2021_codes.csv (Merri-bek is ABS 2021's Moreland)
 home_location:
   default:
-    - level: lga_2021
-      code: [{column: home_lga, map: lga_2021_codes.csv}]
+    - level: lga
+      geo: lga_2021.parquet

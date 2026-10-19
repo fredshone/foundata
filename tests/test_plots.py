@@ -138,7 +138,7 @@ def test_plot_trip_time_diagnostics(attrs, trips, tmp_path):
 
 def test_plot_activity_duration_by_type(attrs, trips, tmp_path):
     out = tmp_path / "activity_duration.png"
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     plots.activity_duration_by_type(attrs, activities, save_path=out)
     _assert_saved(out)
 
@@ -183,7 +183,9 @@ def test_stratified_sample_keeps_small_groups_intact():
 
 def test_plot_activity_count_by_attribute(attrs_employment, trips, tmp_path):
     out = tmp_path / "activity_count_by_attribute.png"
-    activities = post_process.trips_to_activities(attrs_employment, trips)
+    activities = post_process.trips_to_activity_schedules(
+        attrs_employment, trips
+    )
     plots.activity_count_by_attribute(
         attrs_employment,
         activities,
@@ -196,7 +198,9 @@ def test_plot_activity_count_by_attribute(attrs_employment, trips, tmp_path):
 
 def test_plot_attribute_activity_heatmap(attrs_employment, trips, tmp_path):
     out = tmp_path / "attribute_activity_heatmap.png"
-    activities = post_process.trips_to_activities(attrs_employment, trips)
+    activities = post_process.trips_to_activity_schedules(
+        attrs_employment, trips
+    )
     plots.attribute_activity_heatmap(
         attrs_employment, activities, attribute_col="employment", save_path=out
     )
@@ -208,7 +212,9 @@ def test_plot_activity_count_by_attribute_age_band(
 ):
     out = tmp_path / "activity_count_by_age.png"
     banded = post_process.add_age_band(attrs_conditionality)
-    activities = post_process.trips_to_activities(banded, trips_conditionality)
+    activities = post_process.trips_to_activity_schedules(
+        banded, trips_conditionality
+    )
     plots.activity_count_by_attribute(
         banded,
         activities,
@@ -223,7 +229,7 @@ def test_plot_attribute_activity_heatmap_binned(
     attrs_full, trips_conditionality, tmp_path
 ):
     out = tmp_path / "attribute_activity_heatmap_binned.png"
-    activities = post_process.trips_to_activities(
+    activities = post_process.trips_to_activity_schedules(
         attrs_full, trips_conditionality
     )
     plots.attribute_activity_heatmap(
@@ -248,7 +254,9 @@ def test_plot_activity_count_by_attribute_name_collides_with_act_type(
             ["degree", "none", "degree", "none", "degree", "none"]
         )
     )
-    activities = post_process.trips_to_activities(attrs, trips_conditionality)
+    activities = post_process.trips_to_activity_schedules(
+        attrs, trips_conditionality
+    )
 
     out = tmp_path / "activity_count_by_attribute_education.png"
     plots.activity_count_by_attribute(
@@ -268,17 +276,14 @@ def test_plot_activity_count_by_attribute_name_collides_with_act_type(
 
     out3 = tmp_path / "activities_attributes_grid_education.png"
     plots.activities_attributes_grid(
-        attrs,
-        activities,
-        attribute_cols={"education": "bar"},
-        save_path=out3,
+        attrs, activities, attribute_cols={"education": "bar"}, save_path=out3
     )
     _assert_saved(out3)
 
 
 def test_plot_activity_counts_grid(attrs_full, trips_conditionality, tmp_path):
     out = tmp_path / "activity_counts_grid.png"
-    activities = post_process.trips_to_activities(
+    activities = post_process.trips_to_activity_schedules(
         attrs_full, trips_conditionality
     )
     plots.activities_attributes_grid(

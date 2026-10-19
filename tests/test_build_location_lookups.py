@@ -35,13 +35,12 @@ def test_polygons_drops_null_codes_and_dissolves(tmp_path):
 def test_write_lookup_with_provenance(tmp_path, monkeypatch):
     monkeypatch.setattr(b, "CONFIGS", tmp_path)
     builder = b.Builder(tmp_path)
+    builder.source = "xx"
     gdf = squares(["2", "1"])
     lookup = builder.polygons(gdf, gdf.code, None)
     lookup["geom_dataset"] = "test"
-    builder.write(
-        lookup, "state", country="xx", method="squares", unmatched=["9"]
-    )
-    path = tmp_path / "geo" / "xx" / "state.parquet"
+    builder.write(lookup, "state", method="squares", unmatched=["9"])
+    path = tmp_path / "xx" / "geo" / "state.parquet"
     out = pl.read_parquet(path)
     assert out.columns == b.location.LOOKUP_COLUMNS
     assert out["code"].to_list() == ["1", "2"]
@@ -76,15 +75,16 @@ def test_find_district_records_fuzzy_matches():
     assert b.find_district(table, "36", "hyderabad", fuzzy) is None
 
 
-def test_source_levels_reads_declarations():
-    assert b.source_levels("ovin") == [
+def test_source_lookups_reads_declarations():
+    assert b.source_lookups("ovin") == [
         f"gemeente_{y}" for y in range(2010, 2018)
     ]
-    assert "sigungu_2016" in b.source_levels("ktdb")
-    assert b.source_levels("brazil") == ["point"]
+    assert "sigungu_2016" in b.source_lookups("ktdb")
+    assert b.source_lookups("brazil") == ["od_zone_2017"]
+    assert b.source_lookups("odin")[:2] == ["pc4", "gemeente_2018"]
 
 
 def test_every_source_has_a_builder():
     from foundata import run
 
-    assert set(run.SOURCES) == set(b.BUILDERS) | b.NO_LOOKUPS
+    assert set(run.SOURCES) == set(b.BUILDERS)

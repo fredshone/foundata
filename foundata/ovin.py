@@ -39,6 +39,11 @@ DATA_FILES = {
 FLOAT_COLUMNS = {"FactorP"}
 
 
+def gemeente_code(column: str) -> pl.Expr:
+    """A 4-digit CBS gemeente code (OViN and OM); null for 0 (unknown)."""
+    return location.clean(column, width=4, missing=["0000"])
+
+
 def load(
     data_root: str | Path,
     years: list[int],
@@ -144,8 +149,10 @@ def load_households(
         ownership=pl.lit("unknown"),
     ).drop("day_of_month")
     return location.add(
-        data, config["home_location"], source="ovin", year=year
-    ).drop("home_gemeente")
+        data.with_columns(home_gemeente=gemeente_code("home_gemeente")),
+        source="ovin",
+        key=year,
+    )
 
 
 def household_income(codes: pl.Series, config: dict, year: int) -> pl.Series:
@@ -222,7 +229,7 @@ def load_trips(
         .select(column_mapping.keys())
         .rename(column_mapping)
     )
-    for end, zone in (("origin", "ozone"), ("destination", "dzone")):
+    for end, zone in (("o", "ozone"), ("d", "dzone")):
         data = data.join(
             zones.rename({"gemeente": f"{end}_gemeente", "sted": zone}),
             on=f"{end}_gemeente",
@@ -231,7 +238,11 @@ def load_trips(
         )
     if "hid" not in data.columns:
         data = data.with_columns(hid=pl.col("pid"))
-    data = location.add_trip_ends(data, config, source=source, year=year)
+    data = data.with_columns(
+        origin_gemeente=gemeente_code("o_gemeente"),
+        destination_gemeente=gemeente_code("d_gemeente"),
+    )
+    data = location.add_trip_ends(data, source=source, key=year)
     return data.with_columns(
         tst=pl.col("tst_hour") * 60 + pl.col("tst_min"),
         tet=pl.col("tet_hour") * 60 + pl.col("tet_min"),
@@ -254,8 +265,8 @@ def load_trips(
         "tst_min",
         "tet_hour",
         "tet_min",
-        "origin_gemeente",
-        "destination_gemeente",
+        "o_gemeente",
+        "d_gemeente",
     )
 
 

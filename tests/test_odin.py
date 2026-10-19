@@ -43,8 +43,8 @@ def test_gemeente_zone_join_maps_known_and_unknown_codes():
     )
     trips = pl.DataFrame(
         {
-            "origin_gemeente": ["0363", "9999"],
-            "destination_gemeente": ["1680", "0363"],
+            "o_gemeente": ["0363", "9999"],
+            "d_gemeente": ["1680", "0363"],
         }
     )
 
@@ -55,22 +55,22 @@ def test_gemeente_zone_join_maps_known_and_unknown_codes():
         trips.join(
             zone_lookup.rename(
                 {
-                    "gemeentecode": "origin_gemeente",
+                    "gemeentecode": "o_gemeente",
                     "stedelijkheidsklasse": "ozone",
                 }
             ),
-            on="origin_gemeente",
+            on="o_gemeente",
             how="left",
             maintain_order="left_right",
         )
         .join(
             zone_lookup.rename(
                 {
-                    "gemeentecode": "destination_gemeente",
+                    "gemeentecode": "d_gemeente",
                     "stedelijkheidsklasse": "dzone",
                 }
             ),
-            on="destination_gemeente",
+            on="d_gemeente",
             how="left",
             maintain_order="left_right",
         )
@@ -170,7 +170,7 @@ def test_load_prevents_cross_year_pid_collisions(monkeypatch):
             {
                 "hid": ["1"],
                 "survey_date": [f"{year}-01-01"],
-                "home_gemeente": ["0001"],
+                "weather_gemeente": ["0001"],
             }
         )
 
@@ -264,10 +264,9 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
     result = odin.load_households(tmp_path, hh_config, 2018)
 
     assert result["survey_date"].to_list() == ["2018-01-01"]
-    assert result["home_gemeente"].to_list() == ["0003"]
+    assert result["weather_gemeente"].to_list() == ["0003"]
     # the postcode is the finer home location
-    assert result["home_level"].to_list() == ["pc4"]
-    assert result["home_code"].to_list() == ["9901"]
+    assert result["hh_location"].to_list() == ["odin/pc4/9901"]
 
 
 def test_load_households_nulls_dans_privacy_codes(tmp_path):
@@ -299,4 +298,5 @@ def test_load_households_nulls_dans_privacy_codes(tmp_path):
     result = odin.load_households(tmp_path, hh_config, 2024)
 
     assert result["survey_date"].to_list() == ["2024-12-29"]
-    assert result["home_gemeente"].to_list() == [None]
+    assert result["weather_gemeente"].to_list() == [None]
+    assert result["hh_location"].to_list() == [None]

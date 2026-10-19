@@ -23,8 +23,8 @@ column_mappings:
   AankUur: tet_hour   # runs past 23 for trips ending after midnight
   AankMin: tet_min
   AfstV: distance     # hectometres
-  VertGem: origin_gemeente
-  AankGem: destination_gemeente
+  VertGem: o_gemeente
+  AankGem: d_gemeente
 
 regular_trip: 1        # Verpl: Nieuwe verplaatsing
 # Verpl 2 (normale beroepsmatige verplaatsingen): one row per stretch of
@@ -102,15 +102,30 @@ stedelijkheidsklasse:
   5: rural
 
 # trip end locations (see foundata.location): the origin and destination
-# gemeente (VertGem/AankGem) as 4-digit CBS codes of the survey year; 0 is
-# unknown, and gemeenten abroad have no location
-origin_location:
-  - level: gemeente_{year}
-    years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
-    code: [{column: origin_gemeente, width: 4}]
-    missing: ["0000"]
-destination_location:
-  - level: gemeente_{year}
-    years: [2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017]
-    code: [{column: destination_gemeente, width: 4}]
-    missing: ["0000"]
+# gemeente (VertGem/AankGem), as for homes; gemeenten abroad have no
+# location
+trip_location:
+  2010:
+    - level: gemeente
+      geo: gemeente_2010.parquet
+  2011:
+    - level: gemeente
+      geo: gemeente_2011.parquet
+  2012:
+    - level: gemeente
+      geo: gemeente_2012.parquet
+  2013:
+    - level: gemeente
+      geo: gemeente_2013.parquet
+  2014:
+    - level: gemeente
+      geo: gemeente_2014.parquet
+  2015:
+    - level: gemeente
+      geo: gemeente_2015.parquet
+  2016:
+    - level: gemeente
+      geo: gemeente_2016.parquet
+  2017:
+    - level: gemeente
+      geo: gemeente_2017.parquet

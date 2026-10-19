@@ -309,9 +309,18 @@ def load_households(
         country=pl.lit(COUNTRY),
         source=pl.lit(SOURCE),
     )
-    return location.add(
-        hhs, config["home_location"], source=SOURCE, year=year
-    ).drop("hid_fsu", "hid_sample", "home_nss_region", "home_district")
+    # home location: NSS state (2 digits of the NSS region) + district
+    hhs = hhs.with_columns(
+        home_district=location.clean(
+            location.clean("home_nss_region").str.slice(0, 2)
+            + location.clean("home_district", width=2),
+            valid=r"\d{4}",
+        ),
+        home_nss_region=location.clean("home_nss_region", valid=r"\d{3}"),
+    )
+    return location.add(hhs, source=SOURCE, key=year).drop(
+        "hid_fsu", "hid_sample"
+    )
 
 
 def _finish_persons(persons: pl.DataFrame, config: dict) -> pl.DataFrame:

@@ -210,6 +210,5 @@ download:
 # tract FIPS from location.csv where home == 1); a code with a missing (-1)
 # part is unknown
 home_location:
-  - level: tract_2010
-    code: [raw_fips]
-    valid: '\d{11}'
+  - level: tract
+    geo: tract_2010.parquet

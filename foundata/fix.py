@@ -4,8 +4,8 @@ import polars as pl
 
 from foundata import table_logger, utils
 
-# template columns set after the sources are combined, so not missing here
-FILLED_AFTER_COMBINING = {"hh_location", "olocation", "dlocation"}
+# trip-end locations, which only some sources have
+FILLED_AFTER_COMBINING = {"ocode", "dcode"}
 
 
 def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:

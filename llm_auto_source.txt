@@ -107,50 +107,65 @@ OUTPUT CONTRACT (check template.yaml for the full list)
   shop. Motorbike -> car. Taxi / ride-hail -> car.
 - oact of trip n should equal dact of trip n-1;
   filter.activity_consistency drops plans where it doesn't.
-- hh_location (attributes) and olocation/dlocation (trips) are set by the
-  runner from the location declarations below; don't set them in a loader.
+- hh_location (attributes) and ocode/dcode (trips) are location keys
+  written by location.add / add_trip_ends (see LOCATIONS below), which the
+  runner turns into ids; activities' location is derived from them.
 
 LOCATIONS (homes and trip ends; see the foundata/location.py docstring)
-- Declare the finest home geography in hh_dictionary.yaml under
-  home_location: a list of candidates, finest first. Each candidate has a
-  level and either code (a list of parts: column names or {column | value,
-  slice, map, width}) or point ({x, y, crs, scale_m}), plus optional when
-  ({year: [...]}, {survey: [...]}), prefix, valid (regex), missing (codes
-  meaning unknown), known (only codes in the lookup count, so others fall
-  through to the next candidate) and years (for a level with {year}).
-  Year-keyed configs wrap it as {default: [...], <year>: [...]}.
-- In the loader, map the raw columns to intermediate names (anything but
-  the reserved <role>_level/_code/_lon/_lat/_scale_m) and call
-  location.add(hhs, config["home_location"], source=..., year=...,
-  survey=...) once; drop the intermediates after. Never write home_level
-  yourself: location.add leaves level and code null together, which
-  location.extract checks.
-- Trip ends: declare origin_location and destination_location the same way
-  in trip_dictionary.yaml and call location.add_trip_ends(trips, config,
-  source=..., year=...) while the raw zone codes are still there (before
-  they become urbanity). Keep the origin_*/destination_* columns in the
-  trips you return.
-- Level names: a level is a geography with a fixed code list. Add a _<year>
-  suffix giving the code list's vintage where codes are renumbered or
-  redrawn between rounds (gemeente_2012, radio_2010, dong_2016). Use
+- The config only lists levels and their lookup files. In hh_dictionary.yaml
+  under home_location, list the levels finest first, each with its lookup
+  in configs/<source>/geo/:
+      home_location:
+        2023:
+          - level: pc4
+            geo: pc4.parquet
+          - level: gemeente
+            geo: gemeente_2023.parquet
+        default:
+          - level: gemeente
+            geo: gemeente_2024.parquet
+  Blocks are keyed by survey year (or survey name), with default for the
+  rest; a plain list applies to every survey. A point level is
+  "- level: point" with "scale_m: <assumed uncertainty>" and no geo.
+- All the logic is in the loader. Before calling location.add, write one
+  clean code column per level, <role>_<level> (home_pc4, home_gemeente):
+  a string in the lookup's code format, null where unknown or invalid.
+  Use location.clean(col, width=, valid=, missing=) to strip, zero-pad and
+  validate, and location.mapped(col, source, "<file>.csv") to map survey
+  numbering to standard codes with a from,to csv in configs/<source>/.
+  For a point, write <role>_lon/<role>_lat in WGS84 (location.wgs84
+  projects x, y from the survey's CRS). Then call
+  location.add(hhs, source=..., key=<year or survey>) once (its
+  LocationFinder reads the declaration from the config). It writes hh_location: the key <source>/<geo>/<code> of
+  the first level whose code is in its lookup (a code the lookup lacks
+  falls through; the last level keeps it), or <source>/point/<lon>,<lat>,
+  and drops the code columns it read. The runner turns keys into
+  location ids (LocationFinder.index). Never write hh_location yourself.
+- Trip ends: declare trip_location the same way in trip_dictionary.yaml,
+  once for both ends. Write origin_<level> and destination_<level> code
+  columns (origin_lon... for points) while the raw zone codes are still
+  there (before they become urbanity) and call
+  location.add_trip_ends(trips, source=..., key=...), which writes
+  the ocode and dcode keys. Keep ocode and dcode in the trips you return.
+- Levels: a level is a kind of unit (gemeente, sa1, tract) and gives the
+  precision class (location.LEVEL_PRECISION; add new ones there). The geo
+  file gives the vintage: name it <level>_<year> where codes are
+  renumbered or redrawn between rounds (gemeente_2012.parquet). Use
   standard codes (ONS, FIPS, ABS, CBS, INDEC, KOSTAT, NSO...) where the
-  survey allows, mapping survey numbering to them in the config (a csv map
-  with from,to columns in configs/<source>/ for long ones). New base names
-  need a precision class in location.LEVEL_PRECISION.
-- Lookups: each level needs a GeoParquet lookup, built by
+  survey allows.
+- Lookups: each geo file is a GeoParquet lookup, built by
   scripts/build_location_lookups.py: add the boundary file to DATASETS and
-  a builder for the source (BUILDERS), which writes national geographies to
-  configs/geo/<country>/<level>.parquet (shared by sources) and
-  survey-specific zones to configs/<source>/locations/. The builder builds
-  every level the source's declarations emit (location.levels), so a new
-  survey year means adding it to years and rebuilding. Put name aliases in
+  a builder for the source (BUILDERS), which writes configs/<source>/geo/
+  <name>.parquet. The builder builds every geo file the source's
+  declarations name (location.geo_files), so a new survey year means
+  adding its block and rebuilding. Put name aliases in
   a yaml next to the lookup, not in the script. If the unit has no
   published boundary, use the containing unit (geom_source parent) or flag
   a provisional area as estimated; never leave it silently missing.
   scripts/build_location_lookup.py builds one lookup from a local file.
-- Check: tests/test_location.py validates every declaration and lookup;
-  tests/test_locations_batch.py runs data_dir_template and checks every
-  emitted level has a lookup and codes have the lookup's format. Run
+- Check: tests/test_location.py validates every declaration and lookup
+  (and that each geo file exists); tests/test_locations_batch.py runs
+  data_dir_template and checks codes have their lookup's format. Run
   foundata location-summary <batch output> for the README location table,
   and update both README location tables.
 

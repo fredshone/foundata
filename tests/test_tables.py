@@ -136,7 +136,7 @@ def test_attribute_availability_markdown():
 
 
 def test_activity_summary_table_values(attrs, trips):
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     table = tables.activity_summary_table(attrs, activities).sort(
         "source", "act"
     )
@@ -157,11 +157,11 @@ def test_activity_summary_table_values(attrs, trips):
     assert a_education["n_participants"] == 1
     assert a_education["participation_prob_pct"] == pytest.approx(50.0)
     assert a_education["participation_rate_pct"] == pytest.approx(50.0)
-    assert a_education["median_duration_min"] == pytest.approx(1440 - 510)
+    assert a_education["median_duration_min"] == pytest.approx(1440 - 480)
 
 
 def test_activity_summary_table_markdown(attrs, trips):
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     md = tables.activity_summary_table(attrs, activities, markdown=True)
     assert isinstance(md, str)
     # grouped into one sub-table per activity type, headed by its name, with
@@ -201,7 +201,7 @@ def test_activity_summary_table_prob_vs_rate_diverge():
         schema=TRIPS_SCHEMA,
     )
 
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     table = tables.activity_summary_table(attrs, activities)
     shop = table.filter(pl.col("act") == "shop").row(0, named=True)
     assert shop["n_activities"] == 2

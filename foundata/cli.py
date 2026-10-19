@@ -300,7 +300,7 @@ def location_summary(
     )
     trips = pl.read_csv(
         output / "trips.csv",
-        columns=["pid", "olocation", "dlocation"],
+        columns=["pid", "ocode", "dcode"],
         infer_schema_length=None,
     )
     locations = pl.read_parquet(output / "locations.parquet")

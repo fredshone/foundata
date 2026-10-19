@@ -73,22 +73,11 @@ def test_france_load():
         "tst",
         "tet",
         "distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
     }
-    assert (
-        trips["destination_level"]
-        .drop_nulls()
-        .is_in(
-            [
-                "detailed_zone",
-                "point",
-                *[f"commune_{y}" for y in range(2009, 2024)],
-            ]
-        )
-        .all()
-    )
-    assert trips["destination_level"].is_not_null().mean() > 0.9
+    # location keys (ids once the runner indexes them)
+    assert trips["dcode"].is_not_null().mean() > 0.9
 
 
 def test_exclude_surveys():
@@ -205,25 +194,30 @@ def test_household_day_and_date():
 def test_home_location_zone_then_point_then_commune():
     hhs = pl.DataFrame(
         {
-            "home_detailed_zone": ["001", None, None, None],
+            # 99999999 is not a Lyon 2015 zone, so falls through
+            "home_detailed_zone": ["00101001", "99999999", None, None],
             "point_lng": [4.8, 2.35, None, None],
             "point_lat": [45.7, 48.85, None, None],
             "home_insee": ["69123", "75056", "69123", None],
         }
     )
-    spec = load_configs()[0]["home_location"]
-    out = location.add(
-        hhs, spec, source="france", year=2015, survey="lyon_2015"
+    hhs = hhs.with_columns(
+        **france.location_codes(
+            "home",
+            "lyon_2015",
+            "home_detailed_zone",
+            "point_lng",
+            "point_lat",
+            "home_insee",
+        )
     )
-    assert out["home_level"].to_list() == [
-        "detailed_zone",
-        "point",
-        "commune_2015",
+    out = location.add(hhs, source="france", key=2015)
+    assert out["hh_location"].to_list() == [
+        "france/detailed_zone/lyon_2015/00101001",
+        "france/point/2.35,48.85",
+        "france/commune_2015/69123",
         None,
     ]
-    assert out["home_code"].to_list() == ["lyon_2015/001", None, "69123", None]
-    assert out["home_lon"].to_list() == [None, 2.35, None, None]
-    assert out["home_scale_m"].to_list() == [None, 50.0, None, None]
 
 
 def test_survey_year():
@@ -357,28 +351,25 @@ def test_load_trips():
             "euclidean_distance": [1.0, 10.0, None],
             "weekday": ["monday"] * 3,
             "date": [None, None, None],
-            "origin_detailed_zone": ["002", "001", None],
-            "destination_detailed_zone": ["001", "002", None],
-            "origin_lng": [None, None, None],
-            "origin_lat": [None, None, None],
-            "destination_lng": [None, None, 2.35],
-            "destination_lat": [None, None, 48.85],
-            "origin_insee": ["69123"] * 3,
-            "destination_insee": ["69123"] * 3,
+            "o_detailed_zone": ["00101002", "00101001", None],
+            "d_detailed_zone": ["00101001", "00101002", None],
+            "o_lng": [None, None, None],
+            "o_lat": [None, None, None],
+            "d_lng": [None, None, 2.35],
+            "d_lat": [None, None, 48.85],
+            "o_insee": ["69123"] * 3,
+            "d_insee": ["69123"] * 3,
         },
         schema_overrides={"tst": pl.UInt16, "tet": pl.UInt16},
     )
     result = france.load_trips(trips, hh_cfg, trips_cfg, "lyon_2015", 2015)
-    assert result["origin_code"].to_list() == [
-        "lyon_2015/001",
-        "lyon_2015/002",
-        "69123",
+    # sorted by seq
+    assert result["ocode"].to_list() == [
+        "france/detailed_zone/lyon_2015/00101001",
+        "france/detailed_zone/lyon_2015/00101002",
+        "france/commune_2015/69123",
     ]
-    assert result["destination_level"].to_list() == [
-        "detailed_zone",
-        "detailed_zone",
-        "point",
-    ]
+    assert result["dcode"][2] == "france/point/2.35,48.85"
     assert result["seq"].to_list() == [0, 1, 2]
     assert result["oact"].to_list() == ["home", "work", "shop"]
     assert result["dact"].to_list() == ["work", "shop", "home"]

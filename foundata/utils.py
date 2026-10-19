@@ -9,7 +9,10 @@ from loguru import logger
 from rapidfuzz import fuzz, process
 
 from foundata import table_logger
-from foundata.post_process import activities_to_trips, trips_to_activities
+from foundata.post_process import (
+    activities_to_trips,
+    trips_to_activity_schedules,
+)
 
 DTYPE_MAP = {
     "int8": pl.Int8,
@@ -392,7 +395,7 @@ def assign_education_to_escort(trips: pl.DataFrame) -> pl.DataFrame:
     assignments.
     """
     # convert trips to activities to calculate durations
-    activities = trips_to_activities(None, trips)
+    activities = trips_to_activity_schedules(None, trips)
     activities = activities.with_columns(
         duration=pl.col("end") - pl.col("start")
     )

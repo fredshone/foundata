@@ -254,30 +254,20 @@ mode_speeds:
     unknown: 10
 
 # trip end locations (see foundata.location): the origin and destination
-# 행정동 (10-digit MOIS code of the survey year), else its 시군구
-origin_location:
-  2021: &ktdb_origin
-    - level: dong_{year}
-      years: [2016, 2021]
-      code: [ozone]
-      valid: '\d{10}'
-      known: true
-    - level: sigungu_{year}
-      years: [2016, 2021]
-      code: [{column: ozone, slice: [0, 5]}]
-      valid: '\d{5}'
-  2016: *ktdb_origin
-  default: null  # 2010 trip ends are in KTDB's 251-zone system
-destination_location:
-  2021: &ktdb_destination
-    - level: dong_{year}
-      years: [2016, 2021]
-      code: [dzone]
-      valid: '\d{10}'
-      known: true
-    - level: sigungu_{year}
-      years: [2016, 2021]
-      code: [{column: dzone, slice: [0, 5]}]
-      valid: '\d{5}'
-  2016: *ktdb_destination
-  default: null  # 2010 trip ends are in KTDB's 251-zone system
+# 행정동 (10-digit MOIS code of the survey year), else its 시군구. 2010 trip
+# ends are only known to KTDB's 251-zone system, whose zones are the 2010
+# 시군구 (zone_2010_sigungu.csv, from scripts/build_ktdb_2010_zones.py)
+trip_location:
+  2021:
+    - level: dong
+      geo: dong_2021.parquet
+    - level: sigungu
+      geo: sigungu_2021.parquet
+  2016:
+    - level: dong
+      geo: dong_2016.parquet
+    - level: sigungu
+      geo: sigungu_2016.parquet
+  2010:
+    - level: sigungu
+      geo: sigungu_2010.parquet

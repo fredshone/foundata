@@ -47,11 +47,10 @@ day:
     
 
 # home location (see foundata.location): household borough (hhaboro,
-# HABORO_T.csv) as an ONS local authority district code (December 2023).
-# Only the 33 London boroughs occur in the data.
+# HABORO_T.csv numbering), mapped by ltds.py to ONS local authority
+# districts (December 2023) with borough_lad_2023.csv. Only the 33 London
+# boroughs occur in the data.
 home_location:
   default:
-    - level: lad_2023
-      code:
-        # hhaboro (also used for hh_zone), HABORO_T.csv numbering
-        - {column: zone, map: borough_lad_2023.csv}
+    - level: lad
+      geo: lad_2023.parquet

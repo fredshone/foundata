@@ -102,20 +102,21 @@ def load_households(
             day=pl.col("day").replace_strict(year_config["day"]),
         )
 
-        data = location.add(
-            data, year_config["home_location"], source="nhts", year=year
-        ).drop(
-            [
-                c
-                for c in (
-                    "home_cbsa",
-                    "home_msa",
-                    "home_state",
-                    "home_division",
-                )
-                if c in data.columns
-            ]
+        # home codes: FIPS, zero-padded; suppressed, non-MSA and missing
+        # codes are null (see home_location)
+        codes = {
+            "home_cbsa": {"width": 5, "valid": r"\d{5}"},
+            "home_msa": {"width": 4, "valid": r"\d{4}", "missing": ["9999"]},
+            "home_state": {"width": 2, "valid": r"\d{2}"},
+            "home_census_division": {"width": 2, "valid": r"\d{2}"},
+        }
+        data = data.with_columns(
+            location.clean(c, **kw).alias(c)
+            for c, kw in codes.items()
+            if c in data.columns
         )
+        data = location.add(data, source="nhts", key=year)
+        data = data.drop(c for c in codes if c in data.columns)
 
         if "race1" in data.columns:
             data = data.with_columns(

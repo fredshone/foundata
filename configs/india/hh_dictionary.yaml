@@ -57,16 +57,17 @@ ownership:
   "9": other
 
 # home location (see foundata.location): the district, as NSS state code
-# (first 2 digits of the NSS region) + district code; district codes are
-# renumbered between rounds (configs/india/districts_<year>.csv). Else the
-# NSS region.
+# (first 2 digits of the NSS region) + 2-digit district code, built in
+# india.py; district codes are renumbered between rounds
+# (configs/india/districts_<year>.csv). Else the NSS region.
 home_location:
-  - level: district_{year}
-    years: [2019, 2024]
-    code:
-      - {column: home_nss_region, slice: [0, 2]}
-      - {column: home_district, width: 2}
-    valid: '\d{4}'
-  - level: nss_region
-    code: [home_nss_region]
-    valid: '\d{3}'
+  2019:
+    - level: district
+      geo: district_2019.parquet
+    - level: nss_region
+      geo: nss_region.parquet
+  2024:
+    - level: district
+      geo: district_2024.parquet
+    - level: nss_region
+      geo: nss_region.parquet

@@ -19,6 +19,8 @@ from foundata import fix, location, utils
 
 SOURCE = "brazil"
 COUNTRY = "br"
+# CRS of the survey's coordinates and zone shapefiles (Córrego Alegre / UTM 23S)
+CRS = "EPSG:22523"
 
 OD_PATH = Path("OD-2017") / "Banco de Dados-OD2017" / "OD_2017_v1.dbf"
 ZONES_PATH = (
@@ -121,6 +123,8 @@ def load(
         "tst",
         "tet",
         "distance",
+        "ocode",
+        "dcode",
     )
 
     attributes = attributes.with_columns(
@@ -215,9 +219,10 @@ def load_households(
         )
     )
 
-    hhs = location.add(hhs, config["home_location"], source="brazil").drop(
-        "home_x", "home_y"
+    hhs = location.wgs84(hhs, "home_x", "home_y", CRS).with_columns(
+        home_od_zone=location.clean("home_zone")
     )
+    hhs = location.add(hhs, source="brazil").drop("home_x", "home_y")
     return hhs.with_columns(
         hh_income=(pl.col("monthly_income") * 12 * config["brl_to_euro"]).cast(
             pl.Int32
@@ -329,6 +334,17 @@ def load_trips(
     )
 
     act_mapping = config["dact"]
+    trips = (
+        location.wgs84(trips, "o_x", "o_y", CRS, role="origin")
+        .pipe(location.wgs84, "d_x", "d_y", CRS, role="destination")
+        .with_columns(
+            origin_od_zone=location.clean("ozone"),
+            destination_od_zone=location.clean("dzone"),
+        )
+    )
+    trips = location.add_trip_ends(trips, source=SOURCE).drop(
+        "o_x", "o_y", "d_x", "d_y"
+    )
     trips = trips.with_columns(
         seq=(pl.col("seq") - 1).cast(pl.Int8),
         tst=pl.col("tst_h") * 60 + pl.col("tst_m"),

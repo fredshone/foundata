@@ -112,13 +112,9 @@ act:
         98 Missing: unknown
 
 # trip end locations (see foundata.location): the origin and destination
-# borough (toaboro/tdaboro, HABORO_T.csv numbering) as ONS local authority
-# district codes; places outside London have no location
-origin_location:
+# borough (toaboro/tdaboro), as for homes; places outside London have no
+# location
+trip_location:
   default:
-    - level: lad_2023
-      code: [{column: ozone, map: borough_lad_2023.csv}]
-destination_location:
-  default:
-    - level: lad_2023
-      code: [{column: dzone, map: borough_lad_2023.csv}]
+    - level: lad
+      geo: lad_2023.parquet

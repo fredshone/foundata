@@ -114,11 +114,6 @@ unknown_blocks: [99]
 
 # trip end locations (see foundata.location): the origin and destination
 # INE 2011 census segments (codsegorigen/codsegproposito)
-origin_location:
-  - level: segment_2011
-    code: [ozone]
-    valid: '[1-9]\d*'
-destination_location:
-  - level: segment_2011
-    code: [dzone]
-    valid: '[1-9]\d*'
+trip_location:
+  - level: segment
+    geo: segment_2011.parquet

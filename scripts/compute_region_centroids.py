@@ -14,7 +14,7 @@ import polars as pl
 
 ROOT = Path(__file__).resolve().parent.parent / "configs"
 CONFIGS = ROOT / "ktdb"
-ZONES = ROOT / "geo" / "kr" / "dong_2021.parquet"
+ZONES = ROOT / "ktdb" / "geo" / "dong_2021.parquet"
 OUT_CSV = CONFIGS / "region_centroids.csv"
 
 # 2021 Korean si/do admin codes → English names

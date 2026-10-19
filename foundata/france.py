@@ -128,19 +128,26 @@ def load_survey(
                 pl.Float32
             ),
         )
+        .with_columns(
+            **location_codes(
+                "home",
+                survey.name,
+                "home_detailed_zone",
+                "point_lng",
+                "point_lat",
+                "home_insee",
+            )
+        )
         .pipe(
             location.add,
-            hh_config["home_location"],
             source=SOURCE,
-            year=survey_year(survey.name, metadata),
-            survey=survey.name,
+            key=survey_year(survey.name, metadata),
         )
         .drop(
             "person_day",
             "hh_day",
             "person_date",
             "hh_date",
-            "home_detailed_zone",
             "point_lng",
             "point_lat",
             "home_insee",
@@ -219,6 +226,19 @@ def load_households(
         point_lat="point_lat",
         home_insee="home_insee",
     )
+
+
+def location_codes(
+    role: str, survey: str, zone: str, lng: str, lat: str, insee: str
+) -> dict[str, pl.Expr]:
+    """*role*'s location inputs (see home_location): the detailed zone as
+    ``<survey>/<zone id>``, the point (WGS84) and the INSEE commune code."""
+    return {
+        f"{role}_detailed_zone": pl.lit(f"{survey}/") + location.clean(zone),
+        f"{role}_lon": pl.col(lng).cast(pl.Float64),
+        f"{role}_lat": pl.col(lat).cast(pl.Float64),
+        f"{role}_commune": location.clean(insee, valid=r"[0-9][0-9AB]\d{3}"),
+    }
 
 
 def survey_year(name: str, metadata: dict | None = None) -> int:
@@ -313,9 +333,20 @@ def load_trips(
 ) -> pl.DataFrame:
     """One row per trip, 0-indexed seq, times in minutes since midnight,
     with origin and destination locations (see trip_dictionary.yaml)."""
-    trips = location.add_trip_ends(
-        trips, config, source=SOURCE, year=year, survey=survey
+    trips = trips.with_columns(
+        **location_codes(
+            "origin", survey, "o_detailed_zone", "o_lng", "o_lat", "o_insee"
+        ),
+        **location_codes(
+            "destination",
+            survey,
+            "d_detailed_zone",
+            "d_lng",
+            "d_lat",
+            "d_insee",
+        ),
     )
+    trips = location.add_trip_ends(trips, source=SOURCE, key=year)
     trips = trips.sort("pid", "seq").with_columns(
         seq=(pl.col("seq") - 1).cast(pl.Int8),
         oact=pl.col("oact").replace_strict(config["act"], default="unknown"),
@@ -342,8 +373,8 @@ def load_trips(
         "tst",
         "tet",
         "distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
     )
 
 

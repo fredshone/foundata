@@ -45,27 +45,25 @@ column_mappings:
     HC6: ownership           # DOES ANY MEMBER OF YOUR HOUSEHOLD OWN THIS DWELLING?
 
 # home location (see foundata.location): the dwelling's admin unit as an
-# NSO code, aimag (2 digits) + soum (2) [+ bagh (2)]. NSO codes are stable,
-# but Ulaanbaatar khoroos have been split since 2019 (new ones take new
-# numbers), so 2019 khoroos only approximately match today's boundaries.
+# NSO code, built in mongolia.py: aimag (2 digits) + soum (2) [+ bagh (2)].
+# NSO codes are stable, but Ulaanbaatar khoroos have been split since 2019
+# (new ones take new numbers), so 2019 khoroos only approximately match
+# today's boundaries. A bagh code NSO doesn't list falls back to its soum.
 # Work in progress: rural bag boundaries are not published.
 home_location:
-  default:
-    - level: bagh_{year}
-      when: {year: [2019, 2023]}
-      years: [2019, 2023]
-      code:
-        - {column: home_aimag, width: 2}
-        - {column: home_soum, width: 2}
-        - {column: home_bagh, width: 2}
-      valid: '\d{6}'
-      known: true
-    # 2011 gives no bagh; a bagh code NSO doesn't list falls back too
+  "2023":
+    - level: bagh
+      geo: bagh_2023.parquet
     - level: soum
-      code:
-        - {column: home_aimag, width: 2}
-        - {column: home_soum, width: 2}
-      valid: '\d{4}'
+      geo: soum.parquet
+  "2019":
+    - level: bagh
+      geo: bagh_2019.parquet
+    - level: soum
+      geo: soum.parquet
+  default:  # 2011 gives no bagh
+    - level: soum
+      geo: soum.parquet
 
 # Vehicle types the household owns (answered vehicle_yes_code). vehicles =
 # number of these types owned, so a lower bound: two cars count once.

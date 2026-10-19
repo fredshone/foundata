@@ -92,7 +92,7 @@ def test_trips_to_activities_basic():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 4
 
     row0 = acts.row(0, named=True)
@@ -104,19 +104,19 @@ def test_trips_to_activities_basic():
     row1 = acts.row(1, named=True)
     assert row1["act"] == "work"
     assert row1["zone"] == "z2"
-    assert row1["start"] == 540
+    assert row1["start"] == 480
     assert row1["end"] == 900
 
     row2 = acts.row(2, named=True)
     assert row2["act"] == "shop"
     assert row2["zone"] == "z3"
-    assert row2["start"] == 920
+    assert row2["start"] == 900
     assert row2["end"] == 960
 
     row3 = acts.row(3, named=True)
     assert row3["act"] == "home"
     assert row3["zone"] == "z1"
-    assert row3["start"] == 1020
+    assert row3["start"] == 960
     assert row3["end"] == 1440
 
 
@@ -136,7 +136,7 @@ def test_trips_to_activities_single_trip():
             }
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 2
 
 
@@ -188,7 +188,7 @@ def test_trips_to_activities_multi_person():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 6
     pids = acts.get_column("pid").to_list()
     assert pids.count("p1") == 3
@@ -221,7 +221,7 @@ def test_trips_to_activities_columns():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert set(acts.columns) == {"pid", "seq", "act", "zone", "start", "end"}
 
 
@@ -251,7 +251,7 @@ def test_trips_to_activities_includes_start_of_day():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     row = acts.row(0, named=True)
     assert row["start"] == 0
     assert row["end"] == 480
@@ -285,10 +285,10 @@ def test_trips_to_activities_includes_end_of_day():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     row = acts.row(-1, named=True)
     assert row["end"] == 1440
-    assert row["start"] == 1080
+    assert row["start"] == 1020
     assert row["act"] == "home"
     assert row["zone"] == "z1"
 
@@ -308,7 +308,9 @@ def fixture_attrs(fixture_trips):
 
 
 def test_trips_to_activities_fixture(fixture_attrs, fixture_trips):
-    acts = post_process.trips_to_activities(fixture_attrs, fixture_trips)
+    acts = post_process.trips_to_activity_schedules(
+        fixture_attrs, fixture_trips
+    )
 
     assert set(acts.columns) == {"pid", "seq", "act", "zone", "start", "end"}
     assert (acts["start"] >= 0).all()
@@ -366,7 +368,7 @@ def test_trips_to_activities_no_trips_person():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 4
 
     p1_acts = acts.filter(pl.col("pid") == "p1")
@@ -413,7 +415,7 @@ def test_trips_to_activities_last_trip_at_midnight_generates_final_activity():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 3
     last = acts.sort("seq").row(-1, named=True)
     assert last["act"] == "home"
@@ -502,7 +504,7 @@ def test_trips_to_activities_multi_trip_last_at_midnight_generates_final_activit
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 8
     last = acts.sort("seq").row(-1, named=True)
     assert last["act"] == "home"
@@ -546,11 +548,11 @@ def test_trips_to_activities_seq_contradicts_chronological_tst_order():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 3
     row = acts.filter(pl.col("seq") == 2).row(0, named=True)
     assert row["act"] == "work"
-    assert row["start"] == 950
+    assert row["start"] == 900
     assert row["end"] == 480
     assert row["end"] < row["start"]
 
@@ -591,7 +593,7 @@ def test_trips_to_activities_non_contiguous_seq_numbers():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == len(trips) + 1
     # seq gaps are passed through unrenumbered
     assert acts.sort("seq").get_column("seq").to_list() == [1, 2, 4, 6]
@@ -624,7 +626,7 @@ def test_trips_to_activities_duplicate_seq():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == len(trips) + 1
     seqs = acts.get_column("seq").to_list()
     assert seqs.count(2) == 2  # duplicate seq propagates into the output
@@ -663,11 +665,11 @@ def test_trips_to_activities_tet_over_1440_dropped_silently():
             },
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 2  # the invalid trip's destination activity is dropped
     row = acts.sort("seq").row(-1, named=True)
     assert row["act"] == "work"
-    assert row["start"] == 540
+    assert row["start"] == 480
     assert row["end"] == 900  # not 1440 — uses the real next trip's tst
 
 
@@ -688,11 +690,11 @@ def test_trips_to_activities_tet_less_than_tst():
             }
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 2
     row = acts.sort("seq").row(-1, named=True)
     assert row["act"] == "work"
-    assert row["start"] == 480
+    assert row["start"] == 500
     assert row["end"] == 1440
 
 
@@ -714,7 +716,7 @@ def test_trips_to_activities_pid_missing_from_attributes():
             }
         ]
     )
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 3
     p1_acts = acts.filter(pl.col("pid") == "p1")
     assert len(p1_acts) == 2
@@ -736,7 +738,7 @@ def test_trips_to_activities_empty_trips_all_get_home_activity():
         ]
     )
     trips = _make_trips([])
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 2
     for row in acts.iter_rows(named=True):
         assert row["act"] == "home"
@@ -747,7 +749,7 @@ def test_trips_to_activities_empty_trips_all_get_home_activity():
 def test_trips_to_activities_both_empty():
     attrs = _make_attributes([])
     trips = _make_trips([])
-    acts = post_process.trips_to_activities(attrs, trips)
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
     assert len(acts) == 0
     assert set(acts.columns) == {"pid", "seq", "act", "zone", "start", "end"}
 
@@ -1039,10 +1041,10 @@ def test_activities_to_trips_empty_input():
 # ---------------------------------------------------------------------------
 
 
-def test_round_trip_trips_to_activities_to_trips_is_exact_identity():
-    """On well-formed input, trips -> activities -> trips reproduces the
-    original trips exactly (mod seq dtype). This depends on dest_acts using
-    tet (arrival) rather than tst (departure) for the activity start."""
+def test_round_trip_trips_to_activities_to_trips_loses_tet():
+    """trips -> activities -> trips reproduces everything except tet: since
+    dest_acts start at the trip's tst (departure), travel time is folded into
+    the activity and the round-tripped trips have zero duration (tet == tst)."""
     attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
     trips = _make_trips(
         [
@@ -1078,7 +1080,7 @@ def test_round_trip_trips_to_activities_to_trips_is_exact_identity():
             },
         ]
     )
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     round_trip = post_process.activities_to_trips(activities)
 
     assert len(round_trip) == len(trips)
@@ -1087,11 +1089,41 @@ def test_round_trip_trips_to_activities_to_trips_is_exact_identity():
         round_trip.sort("seq").iter_rows(named=True),
     ):
         assert rt_row["tst"] == orig_row["tst"]
-        assert rt_row["tet"] == orig_row["tet"]
+        assert rt_row["tet"] == orig_row["tst"]
         assert rt_row["oact"] == orig_row["oact"]
         assert rt_row["dact"] == orig_row["dact"]
         assert rt_row["ozone"] == orig_row["ozone"]
         assert rt_row["dzone"] == orig_row["dzone"]
+
+
+def test_trips_to_activities_location():
+    """Activities take the location of their trip end; a home activity
+    without one, and a person with no trips, takes hh_location."""
+    attrs = pl.DataFrame(
+        {"pid": ["p1", "p2"], "hh_zone": ["urban"] * 2, "hh_location": [7, 8]},
+        schema_overrides={"hh_location": pl.Int32},
+    )
+    trips = pl.DataFrame(
+        {
+            "pid": ["p1", "p1"],
+            "seq": [0, 1],
+            "oact": ["home", "work"],
+            "dact": ["work", "home"],
+            "ozone": ["z1", "z2"],
+            "dzone": ["z2", "z1"],
+            "tst": [480, 1020],
+            "tet": [540, 1080],
+            "ocode": [None, 3],
+            "dcode": [3, 9],
+        },
+        schema_overrides={"ocode": pl.Int32, "dcode": pl.Int32},
+    )
+    acts = post_process.trips_to_activity_schedules(attrs, trips)
+    assert acts["location"].dtype == pl.Int32
+    assert acts["location"].to_list() == [7, 3, 9, 8]
+    round_trip = post_process.activities_to_trips(acts)
+    assert round_trip["ocode"].to_list() == [7, 3]
+    assert round_trip["dcode"].to_list() == [3, 9]
 
 
 def test_round_trip_trips_to_activities_to_trips_no_trip_pid_yields_zero_trips():
@@ -1115,16 +1147,16 @@ def test_round_trip_trips_to_activities_to_trips_no_trip_pid_yields_zero_trips()
             }
         ]
     )
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     round_trip = post_process.activities_to_trips(activities)
     assert round_trip.get_column("pid").to_list() == ["p1"]
 
 
-def test_round_trip_activities_to_trips_to_activities_is_exact_identity_even_with_gaps():
-    """Regression test for the dest_acts start=tet fix: activities -> trips
-    -> activities is a clean identity even when the activity chain has real
-    gaps (travel time) between activities, not just for contiguous chains.
-    Before the fix, gaps collapsed to zero on the return trip."""
+def test_round_trip_activities_to_trips_to_activities_collapses_gaps():
+    """activities -> trips -> activities is an identity for contiguous chains.
+    Where the chain has gaps (travel time) between activities, each activity's
+    start moves back to the previous activity's end, since dest_acts start at
+    the trip's tst (departure)."""
     attrs = _make_attributes([{"pid": "p1", "hh_zone": "urban"}])
 
     contiguous = _make_activities(
@@ -1184,23 +1216,31 @@ def test_round_trip_activities_to_trips_to_activities_is_exact_identity_even_wit
         ]
     )
 
-    for activities in (contiguous, gapped):
+    for activities, expected in (
+        (contiguous, contiguous),
+        (gapped, contiguous),
+    ):
         round_trip = post_process.activities_to_trips(activities)
-        round_activities = post_process.trips_to_activities(attrs, round_trip)
+        round_activities = post_process.trips_to_activity_schedules(
+            attrs, round_trip
+        )
         assert round_activities.sort("seq").select(
             "act", "zone", "start", "end"
         ).rows() == (
-            activities.sort("seq").select("act", "zone", "start", "end").rows()
+            expected.sort("seq").select("act", "zone", "start", "end").rows()
         )
 
 
 def test_round_trip_fixture_csv_exact_identity(fixture_attrs, fixture_trips):
-    """tst/tet/dact/dzone always survive the round trip exactly, since they map
-    1:1 from a trip's own fields. oact/ozone are reconstructed from the
+    """tst/dact/dzone always survive the round trip exactly, since they map
+    1:1 from a trip's own fields. tet does not: activities start at the trip's
+    tst, so round-tripped trips have tet == tst. oact/ozone are reconstructed from the
     *previous* trip's dact/dzone (the activity chain), so they only survive
     where the original data's chain is internally consistent — real NTS data
     isn't always (verify.activity_consistency exists for exactly this)."""
-    activities = post_process.trips_to_activities(fixture_attrs, fixture_trips)
+    activities = post_process.trips_to_activity_schedules(
+        fixture_attrs, fixture_trips
+    )
     round_trip = post_process.activities_to_trips(activities)
 
     orig = fixture_trips.select(
@@ -1220,10 +1260,11 @@ def test_round_trip_fixture_csv_exact_identity(fixture_attrs, fixture_trips):
         orig
     )  # every original trip has a round-tripped match
 
-    for col in ("tst", "tet", "dact", "dzone"):
+    for col in ("tst", "dact", "dzone"):
         assert (joined[col] == joined[f"{col}_rt"]).all(), (
             f"{col} mismatch after round-trip"
         )
+    assert (joined["tet_rt"] == joined["tst"]).all()
 
     # oact/ozone only round-trip where the original chain is self-consistent
     # (previous trip's dact/dzone matches this trip's oact/ozone)
@@ -1454,7 +1495,7 @@ def test_activity_counts_per_person():
         schema=TRIPS_SCHEMA,
     )
 
-    activities = post_process.trips_to_activities(attrs, trips)
+    activities = post_process.trips_to_activity_schedules(attrs, trips)
     counts = post_process.activity_counts_per_person(
         attrs, activities, ["work", "education"]
     ).sort("pid")

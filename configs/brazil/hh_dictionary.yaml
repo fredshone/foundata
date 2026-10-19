@@ -50,10 +50,13 @@ day:
   5: thursday
   6: friday
 
-# home location: the dwelling coordinate (CO_DOM_X/Y), in the CRS of the
-# survey's own zone shapefiles (Córrego Alegre / UTM 23S), reprojected to
-# WGS84. scale_m is an assumed geocoding uncertainty; the survey doesn't
-# state one.
+# home location (see foundata.location): the dwelling coordinate
+# (CO_DOM_X/Y, in the CRS of the survey's own zone shapefiles, Córrego
+# Alegre / UTM 23S, reprojected to WGS84 in brazil.py). scale_m is an
+# assumed geocoding uncertainty; the survey doesn't state one. Without a
+# coordinate, the OD 2017 zone (ZONA).
 home_location:
   - level: point
-    point: {x: home_x, y: home_y, crs: "EPSG:22523", scale_m: 50}
+    scale_m: 50
+  - level: od_zone
+    geo: od_zone_2017.parquet

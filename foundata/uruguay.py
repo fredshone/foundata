@@ -109,8 +109,8 @@ def load(
         "tst",
         "tet",
         "distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
@@ -164,9 +164,15 @@ def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
         vehicles=(count("has_cars", "cars") + count("has_mopeds", "mopeds")),
         hh_zone=zone_type(pl.col("hh_zone"), config),
     )
-    return location.add(hhs, config["home_location"], source="uruguay").drop(
-        "home_segment"
+    return location.add(
+        hhs.with_columns(home_segment=segment_code("home_segment")),
+        source="uruguay",
     )
+
+
+def segment_code(column: str) -> pl.Expr:
+    """An INE 2011 census segment code (0 and blank are unknown)."""
+    return location.clean(column, valid=r"[1-9]\d*")
 
 
 def load_persons(persons: pl.DataFrame, config: dict) -> pl.DataFrame:
@@ -247,7 +253,7 @@ def load_segments(hh_config: dict) -> pl.DataFrame:
         schema_overrides={"codseg": pl.String},
     )
     points = location.zone_points(
-        SOURCE, "segment_2011", "uy", crs="EPSG:32721"
+        SOURCE, "segment_2011", crs="EPSG:32721"
     ).select(codseg="code", x="x", y="y")
     return points.join(localities, on="codseg", how="left").select(
         "codseg", "x", "y", zone=zone_type(pl.col("codloc"), hh_config)
@@ -278,7 +284,13 @@ def load_trips(
 
     Unknown times are left null, so the plan is dropped downstream.
     """
-    trips = location.add_trip_ends(trips, config, source="uruguay")
+    trips = location.add_trip_ends(
+        trips.with_columns(
+            origin_segment=segment_code("ozone"),
+            destination_segment=segment_code("dzone"),
+        ),
+        source="uruguay",
+    )
     trips = trips.with_columns(
         pl.col("seq", "oact", "dact", "mode", "blocks").cast(pl.Int32),
         pid=pl.col("hid") + pl.col("pid").str.zfill(2),

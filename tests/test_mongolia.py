@@ -142,8 +142,12 @@ def test_load_households_2023(configs):
     # car > bus > bike > walk
     assert out["hh_mode"].to_list() == ["car", "bus", "bike", "walk"]
     # 110152 and 611301 aren't NSO bag codes, so fall back to the soum
-    assert out["home_level"].to_list() == ["bagh_2023", "soum", "soum", "soum"]
-    assert out["home_code"].to_list() == ["110151", "1101", "6113", "6113"]
+    assert out["hh_location"].to_list() == [
+        "mongolia/bagh_2023/110151",
+        "mongolia/soum/1101",
+        "mongolia/soum/6113",
+        "mongolia/soum/6113",
+    ]
 
 
 def test_load_households_2011_ids_and_no_mode_fallback(configs):
@@ -170,8 +174,7 @@ def test_load_households_2011_ids_and_no_mode_fallback(configs):
     assert out["dwelling"].to_list() == ["other"]
     assert out["vehicles"].to_list() == [1]
     assert out["hh_mode"].to_list() == [None]
-    assert out["home_level"].to_list() == ["soum"]
-    assert out["home_code"].to_list() == ["6513"]
+    assert out["hh_location"].to_list() == ["mongolia/soum/6513"]
 
 
 def test_load_persons_2023(configs):

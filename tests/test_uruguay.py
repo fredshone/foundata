@@ -97,8 +97,11 @@ def test_load_households():
     assert result["dwelling"].to_list() == ["house", "flat", "unknown"]
     assert result["ownership"].to_list() == ["owned", "rented", "unknown"]
     assert result["hh_zone"].to_list() == ["urban", "suburban", "rural"]
-    assert result["home_level"].to_list() == ["segment_2011"] * 2 + [None]
-    assert result["home_code"].to_list() == ["109009", "121027", None]
+    assert result["hh_location"].to_list() == [
+        "uruguay/segment_2011/109009",
+        "uruguay/segment_2011/121027",
+        None,
+    ]
 
 
 def test_load_persons():

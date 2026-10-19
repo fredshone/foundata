@@ -86,9 +86,11 @@ def load_households(
         pl.lit("uk").alias("country"),
     )
 
-    hhs = location.add(hhs, config["home_location"], source="nts").drop(
-        "home_region"
+    # HHoldGOR_B02ID numbering as ONS codes; -8/-9/-10 (missing) unmapped
+    hhs = hhs.with_columns(
+        home_region=location.mapped("home_region", "nts", "region_codes.csv")
     )
+    hhs = location.add(hhs, source="nts")
     hhs = hhs.filter(pl.col("hid").is_not_null())
 
     return hhs

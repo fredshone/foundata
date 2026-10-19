@@ -113,8 +113,7 @@ def test_load_households_2019(hh_cfg):
     assert "hid_fsu" not in hhs.columns
     assert "hid_sample" not in hhs.columns
     # district code is the state (first 2 digits of the NSS region) + district
-    assert row["home_level"] == "district_2019"
-    assert row["home_code"] == "2705"
+    assert row["hh_location"] == "india/district_2019/2705"
 
 
 def test_load_households_blank_expenditure_is_null(hh_cfg):

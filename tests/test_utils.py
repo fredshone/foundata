@@ -341,8 +341,8 @@ def test_assign_education_to_escort():
         {
             "pid": ["p1", "p1"],
             "seq": [0, 1],
-            "tst": [0, 90],
-            "tet": [60, 150],
+            "tst": [0, 50],
+            "tet": [30, 110],
             "oact": ["home", "education"],
             "dact": ["education", "home"],
             "distance": [5.0, 5.0],

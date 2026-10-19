@@ -77,7 +77,7 @@ def load(
         pl.Series(weather.select("region_code").unique()).to_list()
     )
     attribute_regions = set(
-        pl.Series(attributes.select("home_gemeente").unique()).to_list()
+        pl.Series(attributes.select("weather_gemeente").unique()).to_list()
     ) - {None}
     missing_regions = attribute_regions - weather_regions
     if missing_regions:
@@ -85,10 +85,10 @@ def load(
 
     attributes = attributes.join(
         weather,
-        left_on=["survey_date", "home_gemeente"],
+        left_on=["survey_date", "weather_gemeente"],
         right_on=["date", "region_code"],
         how="left",
-    ).drop(["survey_date", "home_gemeente"])
+    ).drop(["survey_date", "weather_gemeente"])
 
     return attributes, trips
 
@@ -108,6 +108,14 @@ def household_income(codes: pl.Expr, deciles: dict, year: int) -> pl.Expr:
     ).map_elements(
         lambda bounds: nl_income.sample_band(bounds, alpha, cap),
         return_dtype=pl.Int32,
+    )
+
+
+def gemeente_code(column: str) -> pl.Expr:
+    """A 4-digit CBS gemeente code; null for 0 (unknown) and 9000+ (DANS
+    disclosure-control groups, 2024)."""
+    return location.clean(
+        column, width=4, valid=r"[0-8]\d{3}", missing=["0000"]
     )
 
 
@@ -149,20 +157,23 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         # Codes 9000+ are DANS statistical-disclosure-control placeholders
         # (small municipalities grouped for privacy in the restricted 2024
         # release) — not real, geocodable gemeenten, so treat as unknown.
-        home_gemeente=pl.when(
+        weather_gemeente=pl.when(
             pl.col("home_gemeente").cast(pl.Int32, strict=False) < 9000
         )
         .then(pl.col("home_gemeente").str.zfill(4))
         .otherwise(None),
+        home_gemeente=gemeente_code("home_gemeente"),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
     )
+    if "home_postcode" in data.columns:  # not in the 2024 release
+        data = data.with_columns(
+            home_pc4=location.clean(
+                "home_postcode", width=4, valid=r"[1-9]\d{3}"
+            )
+        ).drop("home_postcode")
     # home location: 4-digit postcode (2018-23), else gemeente
-    data = location.add(
-        data, year_config["home_location"], source="odin", year=year
-    )
-    if "home_postcode" in data.columns:
-        data = data.drop("home_postcode")
+    data = location.add(data, source="odin", key=year)
 
     return data.filter(pl.col("hid").is_not_null())
 
@@ -289,7 +300,11 @@ def load_trips(
     data = data.filter(pl.col("Verpl") == "1")
 
     data = data.select(column_mapping.keys()).rename(column_mapping)
-    data = location.add_trip_ends(data, year_config, source="odin", year=year)
+    data = data.with_columns(
+        origin_gemeente=gemeente_code("o_gemeente"),
+        destination_gemeente=gemeente_code("d_gemeente"),
+    )
+    data = location.add_trip_ends(data, source="odin", key=year)
 
     if gemeente_zone is not None:
         zone_lookup = gemeente_zone.filter(pl.col("year") == year).select(
@@ -297,30 +312,28 @@ def load_trips(
         )
         data = (
             data.with_columns(
-                origin_gemeente=pl.col("origin_gemeente").str.zfill(4),
-                destination_gemeente=pl.col("destination_gemeente").str.zfill(
-                    4
-                ),
+                o_gemeente=pl.col("o_gemeente").str.zfill(4),
+                d_gemeente=pl.col("d_gemeente").str.zfill(4),
             )
             .join(
                 zone_lookup.rename(
                     {
-                        "gemeentecode": "origin_gemeente",
+                        "gemeentecode": "o_gemeente",
                         "stedelijkheidsklasse": "ozone",
                     }
                 ),
-                on="origin_gemeente",
+                on="o_gemeente",
                 how="left",
                 maintain_order="left_right",
             )
             .join(
                 zone_lookup.rename(
                     {
-                        "gemeentecode": "destination_gemeente",
+                        "gemeentecode": "d_gemeente",
                         "stedelijkheidsklasse": "dzone",
                     }
                 ),
-                on="destination_gemeente",
+                on="d_gemeente",
                 how="left",
                 maintain_order="left_right",
             )
@@ -332,7 +345,7 @@ def load_trips(
                     year_config["stedelijkheidsklasse"], default="unknown"
                 ),
             )
-            .drop(["origin_gemeente", "destination_gemeente"])
+            .drop(["o_gemeente", "d_gemeente"])
         )
     else:
         data = data.with_columns(

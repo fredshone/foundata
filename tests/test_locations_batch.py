@@ -27,11 +27,14 @@ def batch(tmp_path_factory):
     )
     locations = pl.read_parquet(output / "locations.parquet")
     trips = pl.read_csv(output / "trips.csv", infer_schema_length=None)
-    return attributes, locations, trips
+    activities = pl.read_csv(
+        output / "activities.csv", infer_schema_length=None
+    )
+    return attributes, locations, trips, activities
 
 
 def test_hh_location_references_locations(batch):
-    attributes, locations, _ = batch
+    attributes, locations, _, _ = batch
     assert locations["location_id"].is_unique().all()
     assert locations["location_key"].is_unique().all()
     ids = attributes["hh_location"].drop_nulls().unique()
@@ -51,7 +54,7 @@ def test_hh_location_references_locations(batch):
 
 
 def test_every_source_is_located_with_geometry(batch):
-    attributes, locations, _ = batch
+    attributes, locations, _, _ = batch
     households = attributes.unique("hid").join(
         locations, left_on="hh_location", right_on="location_id", how="left"
     )
@@ -62,43 +65,59 @@ def test_every_source_is_located_with_geometry(batch):
 
 
 def test_every_level_has_a_lookup(batch):
-    _, locations, _ = batch
-    for (source, country, level), _ in locations.group_by(
-        "source", "country", "level"
-    ):
+    _, locations, _, _ = batch
+    for (source, level, geo), _ in locations.group_by("source", "level", "geo"):
         if level != "point":
-            assert location.load_lookup(source, level, country) is not None, (
-                source,
-                level,
-            )
+            assert location.load_lookup(source, geo) is not None, (source, geo)
         assert location.precision_of(level) is not None, level
 
 
 def test_codes_match_their_lookups_format(batch):
     """A location's code has the length of its lookup's codes, catching
-    padding mistakes in a source's home_location declaration."""
-    _, locations, _ = batch
-    for (source, country, level), group in locations.filter(
+    padding mistakes in a loader's codes."""
+    _, locations, _, _ = batch
+    for (source, geo), group in locations.filter(
         pl.col("level") != "point"
-    ).group_by("source", "country", "level"):
-        lookup = location.load_lookup(source, level, country)
+    ).group_by("source", "geo"):
+        lookup = location.load_lookup(source, geo)
         lengths = set(lookup["code"].str.len_chars().unique())
         if len(lengths) == 1:
             assert set(group["code"].str.len_chars().unique()) <= lengths, (
                 source,
-                level,
+                geo,
             )
 
 
 def test_trip_ends_reference_locations(batch):
-    attributes, locations, trips = batch
-    for column in ("olocation", "dlocation"):
+    attributes, locations, trips, _ = batch
+    for column in ("ocode", "dcode"):
         ids = trips[column].drop_nulls().unique()
         assert ids.is_in(locations["location_id"].implode()).all()
     # QHTS declares its trip ends, and a trip home ends in the home SA1
     qhts = trips.filter(pl.col("pid").str.starts_with("qhts"))
-    assert qhts["dlocation"].is_not_null().mean() > 0.9
+    assert qhts["dcode"].is_not_null().mean() > 0.9
     home = qhts.filter(pl.col("dact") == "home").join(
         attributes.select("pid", "hh_location"), on="pid"
     )
-    assert (home["dlocation"] == home["hh_location"]).mean() > 0.9
+    assert (home["dcode"] == home["hh_location"]).mean() > 0.9
+
+
+def test_activity_locations(batch):
+    attributes, locations, trips, activities = batch
+    ids = activities["location"].drop_nulls().unique()
+    assert ids.is_in(locations["location_id"].implode()).all()
+    # every home activity of a located household is located
+    home = activities.filter(pl.col("act") == "home").join(
+        attributes.select("pid", "hh_location"), on="pid"
+    )
+    located = home.filter(pl.col("hh_location").is_not_null())
+    assert located["location"].is_not_null().all()
+    # trip destinations carry over to the activity that follows
+    dests = trips.select("pid", seq=pl.col("seq") + 1, dcode="dcode").join(
+        activities, on=["pid", "seq"]
+    )
+    assert (
+        dests.filter(pl.col("dcode").is_not_null())
+        .select((pl.col("dcode") == pl.col("location")).all())
+        .item()
+    )

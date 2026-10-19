@@ -19,11 +19,12 @@ column_mappings:
     Hogar: hid
     TipoVeh: vehicle_type
 
-# home location: the dwelling coordinate (DirCoordX/Y), reprojected to WGS84.
-# scale_m is an assumed geocoding uncertainty; the survey doesn't state one.
+# home location (see foundata.location): the dwelling coordinate
+# (DirCoordX/Y, UTM 19S), reprojected to WGS84 in chile.py. scale_m is an
+# assumed geocoding uncertainty; the survey doesn't state one.
 home_location:
   - level: point
-    point: {x: home_x, y: home_y, crs: "EPSG:32719", scale_m: 50}
+    scale_m: 50
 
 # ownership mapping (Propiedad)
   # Valid values: owned, rented, other, unknown

@@ -134,11 +134,6 @@ speed:
 
 # trip end locations (see foundata.location): the origin and destination
 # EOD districts (DTO_ORIGEN/DTO_DEST); work in progress, as for homes
-origin_location:
+trip_location:
   - level: eod_district
-    code: [{column: ozone, width: 3}]
-    valid: '\d{3}'
-destination_location:
-  - level: eod_district
-    code: [{column: dzone, width: 3}]
-    valid: '\d{3}'
+    geo: eod_district.parquet

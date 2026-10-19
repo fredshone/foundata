@@ -61,16 +61,10 @@ act_mappings:
         Other reason: other
 
 
-# trip end locations (see foundata.location; same form as home_location in
-# hh_dictionary.yaml): the origin and destination SA1 (ORIGSA1_2021,
-# DESTSA1_2021, mapped to ozone/dzone before those become urbanity)
-origin_location:
+# trip end locations (see foundata.location): the origin and destination
+# SA1 (ORIGSA1_2021, DESTSA1_2021, mapped to ozone/dzone before those
+# become urbanity)
+trip_location:
   default:
-    - level: sa1_2021
-      code: [ozone]
-      valid: '\d{11}'
-destination_location:
-  default:
-    - level: sa1_2021
-      code: [dzone]
-      valid: '\d{11}'
+    - level: sa1
+      geo: sa1_2021.parquet

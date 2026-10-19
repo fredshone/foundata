@@ -98,8 +98,8 @@ def load(
         "tst",
         "tet",
         "distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
@@ -118,7 +118,15 @@ def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
     ).drop("cars", "motorcycles")
-    return location.add(hhs, config["home_location"], source="mexico")
+    return location.add(
+        hhs.with_columns(home_eod_district=district_code("home_district")),
+        source="mexico",
+    )
+
+
+def district_code(column: str) -> pl.Expr:
+    """The 3-digit EOD 2017 district code."""
+    return location.clean(column, width=3, valid=r"\d{3}")
 
 
 def district_zone_types(hhs: pl.DataFrame) -> dict[int, str]:
@@ -202,11 +210,17 @@ def load_trips(
 
     Unknown (99) times are left null, so filter.null_times drops the plan.
     """
-    trips = location.add_trip_ends(trips, config, source="mexico")
+    trips = location.add_trip_ends(
+        trips.with_columns(
+            origin_eod_district=district_code("ozone"),
+            destination_eod_district=district_code("dzone"),
+        ),
+        source="mexico",
+    )
     trips = trips.with_columns(
         pl.col(c).cast(pl.Int32)
         for c in trips.columns
-        if c != "pid" and not c.startswith(("origin_", "destination_"))
+        if c not in ("pid", "ocode", "dcode")
     ).with_columns(
         pid=pl.col("pid") + pl.col("diary").cast(pl.String),
         seq=(pl.col("seq") - 1).cast(pl.Int8),

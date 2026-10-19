@@ -102,21 +102,8 @@ disabled:
 #     -10: unknown
 
 # home location (see foundata.location): household region
-# (HHoldGOR_B02ID) as ONS region codes (England ITL1 regions, plus Wales and
-# Scotland). -8/-9/-10 are missing.
+# (HHoldGOR_B02ID), mapped by nts.py to ONS region codes with
+# region_codes.csv (England ITL1 regions, plus Wales and Scotland).
 home_location:
   - level: region
-    code:
-      - column: home_region
-        map:
-          1: E12000001  # North East
-          2: E12000002  # North West
-          3: E12000003  # Yorkshire and the Humber
-          4: E12000004  # East Midlands
-          5: E12000005  # West Midlands
-          6: E12000006  # East of England
-          7: E12000007  # London
-          8: E12000008  # South East
-          9: E12000009  # South West
-          10: W92000004  # Wales
-          11: S92000003  # Scotland
+    geo: region.parquet

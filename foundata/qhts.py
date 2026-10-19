@@ -59,7 +59,11 @@ def load_years(
         )
         trips = preprocess_trips(trips, trips_config_year, year=year)
         trips = day_wrap(trips)
-        trips = location.add_trip_ends(trips, trips_config_year, source="qhts")
+        trips = trips.with_columns(
+            origin_sa1=location.clean("ozone", valid=r"\d{11}"),
+            destination_sa1=location.clean("dzone", valid=r"\d{11}"),
+        )
+        trips = location.add_trip_ends(trips, source="qhts")
 
         if zones_mapping is not None:
             trips = (
@@ -127,9 +131,8 @@ def preprocess_households(
         .replace_strict(rurality_mapping, default=pl.col("hh_zone"))
         .fill_null("unknown"),
     )
-    hhs = location.add(hhs, config["home_location"], source="qhts").drop(
-        "home_sa1"
-    )
+    hhs = hhs.with_columns(home_sa1=location.clean("home_sa1", valid=r"\d{11}"))
+    hhs = location.add(hhs, source="qhts")
 
     hhs = hhs.filter(pl.col("hid").is_not_null())
 

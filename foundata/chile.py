@@ -90,7 +90,7 @@ def load(
         persons.drop("income_imputed")
         .join(hhs, on="hid", how="left")
         .join(
-            home_points(raw_hhs, hh_config["home_location"]),
+            home_points(raw_hhs),
             on="hid",
             how="left",
         )
@@ -115,18 +115,22 @@ def load(
         "tst",
         "tet",
         "distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
         pid=pl.lit(SOURCE) + pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
 
 
-def home_points(hhs: pl.DataFrame, spec: list[dict]) -> pl.DataFrame:
+def home_points(hhs: pl.DataFrame) -> pl.DataFrame:
     """Dwelling coordinates per hogar as home location columns."""
     return location.add(
-        hhs.select(pl.col("hid").cast(pl.String), "home_x", "home_y"),
-        spec,
+        location.wgs84(
+            hhs.select(pl.col("hid").cast(pl.String), "home_x", "home_y"),
+            "home_x",
+            "home_y",
+            "EPSG:32719",  # UTM 19S
+        ),
         source=SOURCE,
     ).drop("home_x", "home_y")
 
@@ -342,7 +346,15 @@ def load_trips(
     trips with neither are left null so the plan is dropped downstream.
     """
     duration = pl.col("duration").cast(pl.Int32)
-    trips = location.add_trip_ends(trips, config, source=SOURCE)
+    # EOD zones; 0 and 999 are outside the zoning
+    zone = {"valid": r"\d+", "missing": ["0", "999"]}
+    trips = location.add_trip_ends(
+        trips.with_columns(
+            origin_eod_zone=location.clean("ozone", **zone),
+            destination_eod_zone=location.clean("dzone", **zone),
+        ),
+        source=SOURCE,
+    )
     trips = (
         trips.with_columns(
             pid=pl.col("pid").cast(pl.String),
@@ -401,8 +413,8 @@ def load_trips(
         "tet",
         "distance",
         "access_egress_distance",
-        *location.columns("origin"),
-        *location.columns("destination"),
+        "ocode",
+        "dcode",
     )
 
 

@@ -286,8 +286,7 @@ def test_ktdb_mode_speeds_consistent_across_years():
 
 def test_ktdb_load_years_stacks_all_surveys():
     person_cfg, trips_cfg = nested_configs()
-    hh_cfg = load_yaml_config(CONFIGS_ROOT / "ktdb" / "hh_dictionary.yaml")
-    attrs, trips = ktdb.load_years(DATA_ROOT, hh_cfg, person_cfg, trips_cfg)
+    attrs, trips = ktdb.load_years(DATA_ROOT, person_cfg, trips_cfg)
     assert set(attrs["survey"]) == {
         "ktdb2021",
         "ktdb2016",

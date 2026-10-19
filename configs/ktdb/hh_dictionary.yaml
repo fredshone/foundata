@@ -1,37 +1,27 @@
 # KTDB household-level settings. Household and person attributes come from
 # person_dictionary.yaml; this file only declares the home location.
 
-# home location (see foundata.location): the household's 행정동. 2021 and
-# 2016 give the 10-digit MOIS administrative code of that year; 2010 gives
-# KTDB's 8-digit classification code (시도-시군구-읍면동, the first 8
-# digits of sheet_code), mapped to the 7-digit KOSTAT code with KTDB's
-# classification table (dong_2010_kostat.csv, from "가구통행실태조사 분류
-# 번호 및 행정코드.xls"). sigungu_2010 is keyed by KTDB's 5-digit prefix, so
-# its lookup is KTDB's own (configs/ktdb/locations/).
+# home location (see foundata.location): the household's 행정동, else its
+# 시군구 (a dong renamed or split around the survey). 2021 and 2016 give the
+# 10-digit MOIS administrative code of that year (시군구: its first 5
+# digits); 2010 gives KTDB's 8-digit classification code (시도-시군구-읍면동,
+# the first 8 digits of sheet_code), which ktdb.py maps to the 7-digit
+# KOSTAT code with KTDB's classification table (dong_2010_kostat.csv, from
+# "가구통행실태조사 분류 번호 및 행정코드.xls"); its 시군구 is KTDB's 5-digit
+# prefix (시도 2 + 시군구 3), so sigungu_2010 holds KTDB's own codes.
 home_location:
-  - level: dong_2021
-    when: {year: [2021]}
-    code: [home_dong]
-    valid: '\d{10}'
-    known: true
-  - level: dong_2016
-    when: {year: [2016]}
-    code: [home_dong]
-    valid: '\d{10}'
-    known: true
-  - level: dong_2010
-    when: {year: [2010]}
-    code: [{column: home_dong, map: dong_2010_kostat.csv}]
-    known: true
-  # a dong not in the boundaries (renamed or split around the survey) falls
-  # back to its 시군구: the 10-digit code's first 5 digits, or for 2010 the
-  # KTDB code's first 5 (시도 2 + 시군구 3)
-  - level: sigungu_{year}
-    when: {year: [2016, 2021]}
-    years: [2016, 2021]
-    code: [{column: home_dong, slice: [0, 5]}]
-    valid: '\d{5}'
-  - level: sigungu_2010
-    when: {year: [2010]}
-    code: [{column: home_dong, slice: [0, 5]}]
-    valid: '\d{5}'
+  2021:
+    - level: dong
+      geo: dong_2021.parquet
+    - level: sigungu
+      geo: sigungu_2021.parquet
+  2016:
+    - level: dong
+      geo: dong_2016.parquet
+    - level: sigungu
+      geo: sigungu_2016.parquet
+  2010:
+    - level: dong
+      geo: dong_2010.parquet
+    - level: sigungu
+      geo: sigungu_2010.parquet

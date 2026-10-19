@@ -1,77 +1,57 @@
-"""Locations: where households (and, later, trip ends) are, and how precisely.
+"""Locations: where households and trip ends are, and how precisely.
 
-**Declaring a location.** Each source declares how to locate a household in
-``configs/<source>/hh_dictionary.yaml`` under ``home_location``: a list of
-candidate geographies, finest first. A household takes the first candidate
-that applies (``when``) and has a valid code (or point). For example::
+**Configs list levels and their lookups.** A source lists, finest first,
+the levels it can locate a household at, each with its lookup file in
+``configs/<source>/geo/``, under ``home_location`` in hh_dictionary.yaml
+(and trip ends under ``trip_location`` in trip_dictionary.yaml), keyed by
+survey year (or name), with ``default`` for the rest::
 
     home_location:
-      - level: district_{year}        # {year} is the survey year
-        years: [2019, 2024]           # years with a lookup
-        code:                         # parts joined into one code
-          - {column: home_nss_region, slice: [0, 2]}
-          - {column: home_district, width: 2}
-      - level: nss_region
-        code: [home_nss_region]
+      2023:
+        - level: pc4
+          geo: pc4.parquet
+        - level: gemeente
+          geo: gemeente_2023.parquet
 
-A candidate has ``level`` and either ``code`` (a list of parts) or ``point``
-(``{x, y, crs, scale_m}``), and optionally:
+A point level has no file but an assumed uncertainty:
+``- {level: point, scale_m: 50}``.
 
-- ``when``: ``{year: [...]}`` and/or ``{survey: [...]}``
-- ``prefix``: text before the code, e.g. ``"{survey}/"``
-- ``valid``: regex the whole code must match; others are unknown
-- ``missing``: codes meaning "unknown"
-- ``known``: if true, only codes in the level's lookup count, so a code
-  the boundaries don't have falls through to the next candidate
-- ``years``: the survey years a ``{year}`` level has lookups for
+**Loaders build codes.** Before ``add``, a loader writes one clean code
+column per level, ``<role>_<level>`` (``home_pc4``; ``origin_gemeente``
+and ``destination_gemeente`` for trips), null where unknown; ``clean``,
+``mapped`` and ``wgs84`` help. A point level reads ``<role>_lon`` and
+``<role>_lat`` in WGS84.
 
-A code part is a column name or ``{column | value, slice: [start, length],
-map: {raw: code} or "<file>.csv", width}``, applied in that order: values
-are stripped (and ``"12.0"`` read as ``"12"``), sliced, mapped (unmapped
-values are unknown; a csv map has ``from, to`` columns and lives in
-``configs/<source>/``) and zero-padded. ``add`` applies a declaration;
-``validate_spec`` checks one. Loaders map raw columns to intermediate names
-(never the reserved ``<role>_level/_code/_lon/_lat/_scale_m``) and call
-``add`` once.
+**A location is a key.** ``add`` writes, per row, the key of the first
+level whose code is in its lookup, ``<source>/<geo>/<code>`` (or
+``<source>/point/<lon>,<lat>``), to ``hh_location`` (or ``ocode`` and
+``dcode`` for trips), and drops the code columns. A code its lookup lacks
+falls through to the next level; the last level keeps it, so the location
+has no geometry. A source's ``LocationFinder`` reads and validates its
+declarations and loads each lookup once; ``add(df, source=, key=)`` and
+``add_trip_ends`` use it.
 
-**Level names.** A level is a geography with a fixed code list; a
-``_<year>`` suffix gives the vintage of the code list where codes change
-between rounds (``gemeente_2012``, ``radio_2010``, ``cbsa_2013``). The
-precision class comes from the base name (``LEVEL_PRECISION``).
-
-**From households to locations.** ``extract`` splits the location columns
-off a table as *refs*, one per household (or trip end). ``index``
-collapses refs at the same place into one row of the locations table, with
-a stable ``location_key`` (``<source>/<level>/<code>``, or the point) and a
-``location_id``. ``resolve`` gives each location its polygon, a point
-inside it, its size and provenance from a lookup: the GeoParquet file
-``configs/<source>/locations/<level>.parquet``, else
-``configs/geo/<country>/<level>.parquet`` for geographies shared by
-sources, built by ``scripts/build_location_lookups.py``. ``write`` saves
-the table as GeoParquet.
+**Keys become ids.** After a source is loaded, ``LocationFinder.index``
+builds its locations table, one row per distinct key with its geometry
+from the lookup, and replaces the keys by ``location_id``s (numbered from
+0 in key order; the runner offsets them per source), and releases the
+lookups. ``write`` saves the combined table as GeoParquet.
 
 ``scale_m`` is the radius of a circle with the polygon's area (or the
-point uncertainty), so it can pick a raster resolution or a sampling
-radius. ``geom_source`` says what the geometry is:
+point uncertainty). ``geom_source`` says what the geometry is:
 
-- ``point``: the survey's coordinate (``geometry`` is that point)
+- ``point``: the survey's coordinate
 - ``boundary``: the unit's own polygon
-- ``parent``: the unit has no published polygon, so the polygon of a unit
-  known to contain it (a French zone's draw zone or commune)
-- ``estimated``: work in progress; a provisional area that contains the
-  unit, while its own boundary is not available (Mongolian baghs outside
-  Ulaanbaatar take their soum, Mexico City EOD districts the
-  municipalities they overlap)
-- ``none``: no geometry (the code is not in the lookup, or there is no
-  lookup for the level)
-
-``geom_dataset`` and ``geom_year`` name the boundary dataset and its
-vintage (the survey, for points).
+- ``parent``: the polygon of a unit known to contain it (a French zone's
+  draw zone or commune), where the unit has none
+- ``estimated``: work in progress, a provisional area containing the unit
+  (Mongolian baghs outside Ulaanbaatar, Mexico City EOD districts)
+- ``none``: no geometry (the code is not in its lookup)
 """
 
+import functools
 import json
 import math
-import re
 from pathlib import Path
 
 import polars as pl
@@ -82,10 +62,10 @@ from pyproj import Transformer
 
 from foundata import utils
 
-ROLES = ("home", "origin", "destination")
-LOCATION_FIELDS = ("level", "code", "lon", "lat", "scale_m")
+# the template column each role's location key (then id) goes to
+COLUMNS = {"home": "hh_location", "origin": "ocode", "destination": "dcode"}
 
-# precision class of each level's base name (without a _<year> suffix)
+# precision class of each level
 LEVEL_PRECISION = {
     "point": "coordinate",
     # neighbourhood-scale zones
@@ -99,6 +79,7 @@ LEVEL_PRECISION = {
     "bagh": "small area",
     "detailed_zone": "small area",
     "eod_zone": "small area",
+    "od_zone": "small area",
     # municipality / district scale
     "lad": "large area",
     "lga": "large area",
@@ -117,27 +98,14 @@ LEVEL_PRECISION = {
     "nss_region": "region",
 }
 
-REF_SCHEMA = {
-    "role": pl.String,
-    "source": pl.String,
-    "country": pl.String,
-    "level": pl.String,
-    "code": pl.String,
-    "lon": pl.Float64,
-    "lat": pl.Float64,
-    "scale_m": pl.Float64,
-}
-
-# a location is identified by these ref fields
-LOCATION_KEYS = ["source", "country", "level", "code", "lon", "lat", "scale_m"]
-
 LOCATION_SCHEMA = {
     "location_id": pl.Int32,
-    "location_key": pl.String,  # stable: <source>/<level>/<code or lon,lat>
+    "location_key": pl.String,  # <source>/<geo>/<code>, or the point
     "source": pl.String,
     "country": pl.String,
     "level": pl.String,
     "code": pl.String,
+    "geo": pl.String,  # the lookup the code is from
     "precision": pl.String,
     "lon": pl.Float64,
     "lat": pl.Float64,
@@ -148,267 +116,401 @@ LOCATION_SCHEMA = {
     "geometry": pl.Binary,  # WKB, WGS84; null where geom_source is none
 }
 
-LOOKUP_COLUMNS = [
-    "code",
-    "lon",
-    "lat",
-    "area_km2",
-    "geom_source",
-    "geom_dataset",
-    "geom_year",
-    "geometry",
-]
 
-CANDIDATE_KEYS = {
-    "level",
-    "code",
-    "point",
-    "when",
-    "prefix",
-    "valid",
-    "missing",
-    "known",
-    "years",
+LOOKUP_SCHEMA = {  # configs/<source>/geo/<geo>.parquet
+    "code": pl.String,
+    "lon": pl.Float64,
+    "lat": pl.Float64,
+    "area_km2": pl.Float64,
+    "geom_source": pl.String,
+    "geom_dataset": pl.String,
+    "geom_year": pl.Int16,
+    "geometry": pl.Binary,
 }
-PART_KEYS = {"column", "value", "slice", "map", "width"}
-POINT_KEYS = {"x", "y", "crs", "scale_m"}
+LOOKUP_COLUMNS = list(LOOKUP_SCHEMA)
+
+ENTRY_KEYS = {"level", "geo", "scale_m"}
 
 
-def columns(role: str = "home") -> list[str]:
-    """The location columns a loader adds for *role*, e.g. ``home_code``."""
-    return [f"{role}_{field}" for field in LOCATION_FIELDS]
+def precision_of(level: str) -> str | None:
+    """Precision class of *level*."""
+    return LEVEL_PRECISION.get(level)
 
 
 # -- declarations -------------------------------------------------------------
 
 
-def validate_spec(spec: object) -> list[str]:
-    """Problems with a ``home_location`` declaration (empty if valid)."""
-    if not isinstance(spec, list) or not spec:
-        return ["home_location must be a non-empty list of candidates"]
+def for_key(declaration: list | dict | None, key=None) -> list[dict]:
+    """The levels a declaration gives for *key* (a survey year or name): its
+    block for *key*, else its ``default`` block; a plain list applies to
+    every key. Empty if neither."""
+    if declaration is None:
+        return []
+    if isinstance(declaration, list):
+        return declaration
+    # keys compare as strings: YAML may give 2019 or "2019"
+    by_key = {str(k): v for k, v in declaration.items()}
+    return by_key.get(str(key), by_key.get("default")) or []
+
+
+def blocks(declaration: list | dict | None) -> dict:
+    """Every block of a declaration, by key (``None`` for a plain list)."""
+    if declaration is None:
+        return {}
+    if isinstance(declaration, list):
+        return {None: declaration}
+    return dict(declaration)
+
+
+def geo_stem(entry: dict) -> str | None:
+    """The lookup a level reads (its file name without ``.parquet``)."""
+    return entry["geo"].removesuffix(".parquet") if "geo" in entry else None
+
+
+def geo_files(declaration: list | dict | None) -> list[str]:
+    """Every lookup a declaration reads, as file stems."""
+    stems = [
+        geo_stem(entry)
+        for entries in blocks(declaration).values()
+        for entry in entries or []
+    ]
+    return list(dict.fromkeys(s for s in stems if s))
+
+
+def validate(declaration: object, key: str = "home_location") -> list[str]:
+    """Problems with a ``home_location`` or ``trip_location`` declaration
+    (empty if valid)."""
+    if not isinstance(declaration, (list, dict)) or not declaration:
+        return [f"{key} must be a list of levels, or blocks of them by survey"]
     errors = []
-    points = 0
-    for i, candidate in enumerate(spec):
-        where = f"home_location[{i}]"
-        if not isinstance(candidate, dict):
-            errors.append(f"{where}: not a mapping")
+    for block, entries in blocks(declaration).items():
+        where = key if block is None else f"{key}[{block}]"
+        if entries is None:
+            continue  # no locations for that survey
+        if not isinstance(entries, list) or not entries:
+            errors.append(f"{where}: must be a non-empty list of levels")
             continue
-        if unknown := set(candidate) - CANDIDATE_KEYS:
-            errors.append(f"{where}: unknown keys {sorted(unknown)}")
-        level = candidate.get("level")
-        if not isinstance(level, str):
-            errors.append(f"{where}: needs a level")
-            continue
-        if base_level(level.replace("{year}", "2000")) not in LEVEL_PRECISION:
-            errors.append(f"{where}: no precision class for level {level!r}")
-        if "{year}" in level and not candidate.get("years"):
-            errors.append(f"{where}: {level!r} needs years")
-        if ("code" in candidate) == ("point" in candidate):
-            errors.append(f"{where}: needs exactly one of code and point")
-        if "point" in candidate:
-            points += 1
-            point = candidate["point"]
-            if level != "point":
-                errors.append(f"{where}: a point's level must be 'point'")
-            if not isinstance(point, dict) or set(point) != POINT_KEYS:
-                errors.append(f"{where}: point needs {sorted(POINT_KEYS)}")
-        for j, part in enumerate(candidate.get("code") or []):
-            if isinstance(part, str):
+        levels = []
+        for i, entry in enumerate(entries):
+            at = f"{where}[{i}]"
+            if not isinstance(entry, dict):
+                errors.append(f"{at}: not a mapping")
                 continue
-            if not isinstance(part, dict):
-                errors.append(f"{where}.code[{j}]: not a column or mapping")
-            elif unknown := set(part) - PART_KEYS:
-                errors.append(
-                    f"{where}.code[{j}]: unknown keys {sorted(unknown)}"
-                )
-            elif ("column" in part) == ("value" in part):
-                errors.append(f"{where}.code[{j}]: needs column or value")
-        if unknown := set(candidate.get("when") or {}) - {"year", "survey"}:
-            errors.append(f"{where}: unknown when keys {sorted(unknown)}")
-    if points > 1:
-        errors.append("home_location: at most one point candidate")
+            if unknown := set(entry) - ENTRY_KEYS:
+                errors.append(f"{at}: unknown keys {sorted(unknown)}")
+            level = entry.get("level")
+            levels.append(level)
+            if level not in LEVEL_PRECISION:
+                errors.append(f"{at}: no precision class for level {level!r}")
+            if level == "point":
+                if "geo" in entry or "scale_m" not in entry:
+                    errors.append(f"{at}: a point has scale_m and no geo")
+            elif not str(entry.get("geo", "")).endswith(".parquet"):
+                errors.append(f"{at}: needs geo: <lookup>.parquet")
+            elif "scale_m" in entry:
+                errors.append(f"{at}: only a point has scale_m")
+        if len(levels) != len(set(levels)):
+            errors.append(f"{where}: a level is listed twice")
     return errors
 
 
-def base_level(level: str) -> str:
-    """*level* without its ``_<year>`` vintage suffix."""
-    return re.sub(r"_\d{4}$", "", level)
+# -- finding locations --------------------------------------------------------
 
 
-def precision_of(level: str) -> str | None:
-    """Precision class of *level* (from its base name)."""
-    return LEVEL_PRECISION.get(base_level(level))
+class LocationFinder:
+    """Finds a source's locations: the key of each household's (or trip
+    end's) first known level, then the table of those locations with their
+    geometries. Each lookup is loaded once, and released by ``index``.
+
+    *home* and *trip* are the source's ``home_location`` and
+    ``trip_location`` declarations, read from its configs if neither is
+    given, and validated here.
+    """
+
+    def __init__(
+        self,
+        source: str,
+        home: list | dict | None = None,
+        trip: list | dict | None = None,
+    ):
+        self.source = source
+        if home is None and trip is None:
+            home, trip = (
+                utils.load_yaml_config(path).get(key)
+                if (path := utils.get_config_path(source, name)).exists()
+                else None
+                for name, key in (
+                    ("hh_dictionary.yaml", "home_location"),
+                    ("trip_dictionary.yaml", "trip_location"),
+                )
+            )
+        self.declarations = {"home": home, "trip": trip}
+        self.levels: dict[str, str] = {}  # lookup -> level
+        self.scale_m: float | None = None  # of the point level
+        for name, declaration in self.declarations.items():
+            if declaration is None:
+                continue
+            key = f"{name}_location"
+            if errors := validate(declaration, key):
+                raise ValueError(f"{source}: {'; '.join(errors)}")
+            for entries in blocks(declaration).values():
+                for entry in entries or []:
+                    if entry["level"] == "point":
+                        self.scale_m = float(entry["scale_m"])
+                    else:
+                        self.levels[geo_stem(entry)] = entry["level"]
+        self._lookups: dict[str, pl.DataFrame | None] = {}
+
+    def lookup(self, geo: str) -> pl.DataFrame | None:
+        """The lookup *geo* (configs/<source>/geo/<geo>.parquet), loaded
+        once; None if there is none."""
+        if geo not in self._lookups:
+            self._lookups[geo] = load_lookup(self.source, geo)
+            if self._lookups[geo] is None:
+                logger.warning(f"{self.source}: no lookup {geo}")
+        return self._lookups[geo]
+
+    def add(
+        self, df: pl.DataFrame, *, key=None, role: str = "home"
+    ) -> pl.DataFrame:
+        """Write *role*'s location key to its column (``COLUMNS``), from the
+        levels its declaration gives for *key* (a survey year or name), and
+        drop the code columns read (see the module docstring)."""
+        declaration = self.declarations["home" if role == "home" else "trip"]
+        entries = for_key(declaration, key)
+        inputs = [
+            f"{role}_{e['level']}" for e in entries if e["level"] != "point"
+        ]
+        if any(e["level"] == "point" for e in entries):
+            inputs += [f"{role}_lon", f"{role}_lat"]
+        if missing := [c for c in inputs if c not in df.columns]:
+            raise ValueError(
+                f"{self.source}: {role} location needs columns {missing}"
+            )
+        keys = []
+        for i, entry in enumerate(entries):
+            if entry["level"] == "point":
+                lon, lat = pl.col(f"{role}_lon"), pl.col(f"{role}_lat")
+                known = lon.is_finite() & lat.is_finite()
+                # + 0.0 turns -0.0 into 0.0, so a point has one key
+                value = pl.format(
+                    f"{self.source}/point/{{}},{{}}",
+                    lon.round(6) + 0.0,
+                    lat.round(6) + 0.0,
+                )
+            else:
+                geo = geo_stem(entry)
+                code = pl.col(f"{role}_{entry['level']}").cast(pl.String)
+                known = code.is_not_null()
+                if i < len(entries) - 1:
+                    # a code its lookup doesn't have falls through
+                    lookup = self.lookup(geo)
+                    codes = [] if lookup is None else lookup["code"]
+                    known = known & code.is_in(
+                        pl.Series(codes, dtype=pl.String).implode()
+                    )
+                value = pl.lit(f"{self.source}/{geo}/") + code
+            keys.append(pl.when(known).then(value))
+        location = pl.coalesce(keys) if keys else pl.lit(None, pl.String)
+        return df.with_columns(location.alias(COLUMNS[role])).drop(inputs)
+
+    def add_trip_ends(self, trips: pl.DataFrame, *, key=None) -> pl.DataFrame:
+        """``ocode`` and ``dcode`` from ``trip_location``, read from
+        ``origin_<level>`` and ``destination_<level>`` code columns, if the
+        source has one."""
+        if self.declarations["trip"] is not None:
+            for role in ("origin", "destination"):
+                trips = self.add(trips, key=key, role=role)
+        return trips
+
+    def locations(
+        self, keys: pl.Series, country: str | None = None
+    ) -> pl.DataFrame:
+        """The locations table of *keys* (distinct and sorted): numbered
+        from 0, with each key's level, code, lookup, point, size, geometry
+        and provenance."""
+        refs = (
+            pl.DataFrame({"location_key": keys})
+            .with_row_index("location_id")
+            .with_columns(
+                parts=pl.col("location_key").str.splitn("/", 3),
+                source=pl.lit(self.source),
+                country=pl.lit(country, pl.String),
+            )
+            .with_columns(
+                geo=pl.col("parts").struct.field("field_1"),
+                code=pl.col("parts").struct.field("field_2"),
+            )
+            .drop("parts")
+        )
+        parts = []
+        points = refs.filter(pl.col("geo") == "point")
+        if points.height:
+            lonlat = points["code"].str.split_exact(",", 1)
+            lon = lonlat.struct.field("field_0").cast(pl.Float64)
+            lat = lonlat.struct.field("field_1").cast(pl.Float64)
+            parts.append(
+                points.with_columns(
+                    level=pl.lit("point"),
+                    geo=pl.lit(None, pl.String),
+                    code=pl.lit(None, pl.String),
+                    lon=lon,
+                    lat=lat,
+                    scale_m=pl.lit(self.scale_m, pl.Float64),
+                    geometry=point_wkb(lon, lat),
+                    geom_source=pl.lit("point"),
+                    geom_dataset=pl.lit(f"{self.source} survey"),
+                    geom_year=pl.lit(None, pl.Int16),
+                )
+            )
+        zones = refs.filter(pl.col("geo") != "point")
+        for (geo,), group in zones.group_by("geo", maintain_order=True):
+            lookup = self.lookup(geo)
+            if lookup is None:
+                lookup = pl.DataFrame(schema=LOOKUP_SCHEMA)
+            parts.append(
+                group.join(
+                    lookup.select(
+                        pl.exclude("area_km2"),
+                        scale_m=equivalent_radius_m(pl.col("area_km2")),
+                    ),
+                    on="code",
+                    how="left",
+                ).with_columns(level=pl.lit(self.levels.get(geo)))
+            )
+        if not parts:
+            return pl.DataFrame(schema=LOCATION_SCHEMA)
+        return (
+            pl.concat(parts, how="diagonal_relaxed")
+            .with_columns(
+                precision=pl.col("level").replace_strict(
+                    LEVEL_PRECISION, default=None, return_dtype=pl.String
+                ),
+                geom_source=pl.when(pl.col("geometry").is_null())
+                .then(pl.lit("none"))
+                .otherwise(pl.col("geom_source")),
+            )
+            .select(LOCATION_SCHEMA.keys())
+            .cast(LOCATION_SCHEMA)
+            .sort("location_id")
+        )
+
+    def index(
+        self, attributes: pl.DataFrame, trips: pl.DataFrame
+    ) -> tuple[pl.DataFrame, pl.DataFrame, pl.DataFrame]:
+        """The source's locations table, and *attributes* and *trips* with
+        their location keys replaced by its ``location_id``s. Releases the
+        lookups."""
+        attributes_keys = [
+            c for c in ["hh_location"] if c in attributes.columns
+        ]
+        trips_keys = [c for c in ["ocode", "dcode"] if c in trips.columns]
+        keys = (
+            pl.concat(
+                [attributes[c].cast(pl.String) for c in attributes_keys]
+                + [trips[c].cast(pl.String) for c in trips_keys]
+                + [pl.Series([], dtype=pl.String)]
+            )
+            .drop_nulls()
+            .unique()
+            .sort()
+        )
+        country = attributes["country"].drop_nulls().unique()
+        locations = self.locations(
+            keys, country[0] if len(country) == 1 else None
+        )
+        self._lookups.clear()
+        # an Enum of the sorted keys numbers them as location_id does
+        ids = pl.Enum(keys)
+
+        def to_ids(df: pl.DataFrame, columns: list[str]) -> pl.DataFrame:
+            return df.with_columns(
+                pl.col(c).cast(pl.String).cast(ids).to_physical().cast(pl.Int32)
+                for c in columns
+            )
+
+        return (
+            to_ids(attributes, attributes_keys),
+            to_ids(trips, trips_keys),
+            locations,
+        )
 
 
-def levels(spec: list[dict]) -> list[str]:
-    """Every level a declaration can emit, expanding ``{year}``."""
-    out = []
-    for candidate in spec:
-        level = candidate["level"]
-        if "{year}" in level:
-            out += [level.format(year=y) for y in candidate["years"]]
-        else:
-            out.append(level)
-    return list(dict.fromkeys(out))
+@functools.cache
+def finder(source: str) -> LocationFinder:
+    """The source's LocationFinder (one per source and run)."""
+    return LocationFinder(source)
 
 
 def add(
-    df: pl.DataFrame,
-    spec: list[dict],
-    *,
-    source: str,
-    year: int | None = None,
-    survey: str | None = None,
-    role: str = "home",
+    df: pl.DataFrame, *, source: str, key=None, role: str = "home"
 ) -> pl.DataFrame:
-    """Add *role*'s location columns (``columns(role)``) to *df* from a
-    ``home_location``-style declaration (see the module docstring)."""
-    if errors := validate_spec(spec):
-        raise ValueError(f"{source}: {'; '.join(errors)}")
-    applicable = [c for c in spec if _applies(c, year, survey)]
-    level_col, code_col, lon_col, lat_col, scale_col = columns(role)
-
-    chosen = pl.lit(None, pl.Int8)
-    values = []
-    for i, candidate in enumerate(applicable):
-        if "point" in candidate:
-            point = candidate["point"]
-            x, y = (pl.col(point[k]).cast(pl.Float64) for k in ("x", "y"))
-            known = (
-                x.is_not_null()
-                & y.is_not_null()
-                & x.is_finite()
-                & y.is_finite()
-            )
-            values.append({"x": x, "y": y})
-        else:
-            code = _code(candidate, source, year, survey)
-            if candidate.get("known"):
-                level = candidate["level"].format(year=year)
-                code = pl.when(code.is_in(lookup_codes(source, level))).then(
-                    code
-                )
-            known = code.is_not_null()
-            values.append({"code": code})
-        chosen = (
-            pl.when(chosen.is_null() & known)
-            .then(pl.lit(i, pl.Int8))
-            .otherwise(chosen)
-        )
-
-    def pick(key: str, dtype: pl.DataType) -> pl.Expr:
-        out = pl.lit(None, dtype)
-        for i, value in enumerate(values):
-            if key in value:
-                out = (
-                    pl.when(pl.col("_chosen") == i)
-                    .then(value[key])
-                    .otherwise(out)
-                )
-        return out
-
-    level = pl.lit(None, pl.String)
-    scale = pl.lit(None, pl.Float64)
-    for i, candidate in enumerate(applicable):
-        name = candidate["level"].format(year=year)
-        if "{year}" in candidate["level"] and year not in candidate["years"]:
-            logger.warning(
-                f"{source}: {name} is not in its home_location years "
-                f"{candidate['years']}, so it has no lookup"
-            )
-        level = (
-            pl.when(pl.col("_chosen") == i).then(pl.lit(name)).otherwise(level)
-        )
-        if "point" in candidate:
-            scale = (
-                pl.when(pl.col("_chosen") == i)
-                .then(pl.lit(float(candidate["point"]["scale_m"])))
-                .otherwise(scale)
-            )
-
-    df = df.with_columns(_chosen=chosen).with_columns(
-        level.alias(level_col),
-        pick("code", pl.String).alias(code_col),
-        pick("x", pl.Float64).alias(lon_col),
-        pick("y", pl.Float64).alias(lat_col),
-        scale.alias(scale_col),
-    )
-    points = [c["point"] for c in applicable if "point" in c]
-    if points and points[0]["crs"].upper() not in ("EPSG:4326", "OGC:CRS84"):
-        lon, lat = to_wgs84(df[lon_col], df[lat_col], points[0]["crs"])
-        df = df.with_columns(lon.alias(lon_col), lat.alias(lat_col))
-    return df.drop("_chosen")
+    """``LocationFinder.add`` with the source's finder."""
+    return finder(source).add(df, key=key, role=role)
 
 
 def add_trip_ends(
-    trips: pl.DataFrame,
-    config: dict,
-    *,
-    source: str,
-    year: int | None = None,
-    survey: str | None = None,
+    trips: pl.DataFrame, *, source: str, key=None
 ) -> pl.DataFrame:
-    """Add the origin and destination location columns to *trips* from the
-    ``origin_location`` and ``destination_location`` declarations of a
-    (year-resolved) trip_dictionary.yaml, where present."""
-    for role in ("origin", "destination"):
-        if spec := config.get(f"{role}_location"):
-            trips = add(
-                trips, spec, source=source, year=year, survey=survey, role=role
-            )
-    return trips
+    """``LocationFinder.add_trip_ends`` with the source's finder."""
+    return finder(source).add_trip_ends(trips, key=key)
 
 
-def _applies(candidate: dict, year: int | None, survey: str | None) -> bool:
-    when = candidate.get("when") or {}
-    if "year" in when and year not in when["year"]:
-        return False
-    if "survey" in when and survey not in when["survey"]:
-        return False
-    return True
+# -- helpers for loaders ------------------------------------------------------
 
 
-def _code(candidate: dict, source: str, year, survey) -> pl.Expr:
-    code = pl.concat_str([_part(p, source) for p in candidate["code"]])
-    if prefix := candidate.get("prefix"):
-        code = pl.lit(prefix.format(survey=survey, year=year)) + code
-    if valid := candidate.get("valid"):
-        code = pl.when(code.str.contains(f"^(?:{valid})$")).then(code)
-    if missing := candidate.get("missing"):
-        code = pl.when(~code.is_in([str(m) for m in missing])).then(code)
-    return code
-
-
-def _part(part: str | dict, source: str) -> pl.Expr:
-    if isinstance(part, str):
-        part = {"column": part}
-    if "value" in part:
-        return pl.lit(str(part["value"]))
-    value = (
-        pl.col(part["column"])
-        .cast(pl.String)
+def clean(
+    expr: pl.Expr | str,
+    *,
+    width: int | None = None,
+    valid: str | None = None,
+    missing: list | tuple = (),
+) -> pl.Expr:
+    """A raw code as a clean string: stripped, ``"12.0"`` read as ``"12"``,
+    blank as null, zero-padded to *width*; null where it is in *missing* or
+    doesn't fully match the regex *valid*."""
+    if isinstance(expr, str):
+        expr = pl.col(expr)
+    code = (
+        expr.cast(pl.String)
         .str.strip_chars()
         .str.replace(r"^(-?\d+)\.0*$", "${1}")
     )
-    value = pl.when(value != "").then(value)
-    if "slice" in part:
-        value = value.str.slice(*part["slice"])
-    if "map" in part:
-        value = value.replace_strict(
-            _mapping(part["map"], source), default=None, return_dtype=pl.String
-        )
-    if "width" in part:
-        value = value.str.zfill(part["width"])
-    return value
+    code = pl.when(code != "").then(code)
+    if width:
+        code = code.str.zfill(width)
+    if missing:
+        code = pl.when(~code.is_in([str(m) for m in missing])).then(code)
+    if valid:
+        code = pl.when(code.str.contains(f"^(?:{valid})$")).then(code)
+    return code
 
 
-def _mapping(mapping: dict | str, source: str) -> dict[str, str]:
-    if isinstance(mapping, str):
-        table = pl.read_csv(
-            utils.get_config_path(source, mapping), infer_schema_length=0
-        )
-        return dict(zip(table["from"], table["to"]))
-    return {str(k): str(v) for k, v in mapping.items()}
+def mapping(source: str, name: str) -> dict[str, str]:
+    """A ``from, to`` csv in configs/<source>/ as a dict."""
+    table = pl.read_csv(
+        utils.get_config_path(source, name), infer_schema_length=0
+    )
+    return dict(zip(table["from"], table["to"]))
+
+
+def mapped(expr: pl.Expr | str, source: str, name: str) -> pl.Expr:
+    """A raw code mapped to a standard code by the ``from, to`` csv *name*
+    in configs/<source>/ (null where unmapped)."""
+    return clean(expr).replace_strict(
+        mapping(source, name), default=None, return_dtype=pl.String
+    )
+
+
+def wgs84(
+    df: pl.DataFrame, x: str, y: str, crs: str, role: str = "home"
+) -> pl.DataFrame:
+    """Add ``<role>_lon`` and ``<role>_lat``: the coordinates *x*, *y* (in
+    *crs*) in WGS84, for a point level."""
+    xs, ys = df[x].cast(pl.Float64), df[y].cast(pl.Float64)
+    if crs.upper() not in ("EPSG:4326", "OGC:CRS84"):
+        xs, ys = to_wgs84(xs, ys, crs)
+    return df.with_columns(xs.alias(f"{role}_lon"), ys.alias(f"{role}_lat"))
 
 
 def to_wgs84(
@@ -427,144 +529,30 @@ def to_wgs84(
     )
 
 
-# -- refs and locations -------------------------------------------------------
+# -- lookups and geometry ----------------------------------------------------
 
 
-def extract(
-    df: pl.DataFrame,
-    source: str,
-    role: str = "home",
-    keys: tuple[str, ...] = ("hid",),
-) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """Split *role*'s location columns off *df*.
-
-    Returns *df* without them and one ref per *keys* (``keys, role, source,
-    country, level, code, lon, lat, scale_m``) where the level is known.
-    Rows sharing *keys* (members of a household) should agree; a zone
-    level must have a code.
-    """
-    names = columns(role)
-    present = [c for c in names if c in df.columns]
-    schema = {k: df.schema[k] for k in keys} | REF_SCHEMA
-    if f"{role}_level" not in present:
-        return df.drop(present), pl.DataFrame(schema=schema)
-    country = (
-        pl.col("country").cast(pl.String)
-        if "country" in df.columns
-        else pl.lit(None, pl.String)
-    )
-    refs = (
-        df.select(*keys, *present, country=country)
-        .with_columns(
-            pl.lit(None, pl.Float64).alias(c) for c in names if c not in present
-        )
-        .select(
-            *keys,
-            role=pl.lit(role),
-            source=pl.lit(source),
-            country="country",
-            level=pl.col(f"{role}_level").cast(pl.String),
-            code=pl.col(f"{role}_code").cast(pl.String),
-            lon=pl.col(f"{role}_lon").cast(pl.Float64),
-            lat=pl.col(f"{role}_lat").cast(pl.Float64),
-            scale_m=pl.col(f"{role}_scale_m").cast(pl.Float64),
-        )
-        .filter(pl.col("level").is_not_null())
-    )
-    zone_without_code = refs.filter(
-        (pl.col("level") != "point") & pl.col("code").is_null()
-    )
-    if zone_without_code.height:
-        raise ValueError(
-            f"{source}: {zone_without_code.height} {role} locations have a "
-            "level but no code (location.add leaves both null)"
-        )
-    distinct = refs.unique(maintain_order=True)
-    if n := distinct.height - distinct.select(keys).n_unique():
-        logger.warning(
-            f"{source}: {n} {'/'.join(keys)} have more than one {role} "
-            "location; keeping the first"
-        )
-    refs = distinct.unique(list(keys), keep="first", maintain_order=True)
-    return df.drop(present), refs.cast(schema)
+def lookup_path(source: str, geo: str) -> Path:
+    """Where a lookup lives: ``configs/<source>/geo/<geo>.parquet``."""
+    return utils.get_config_path(source, "geo", f"{geo}.parquet")
 
 
-def location_key() -> pl.Expr:
-    """``<source>/<level>/<code>``, or ``<source>/point/<lon>,<lat>``."""
-    point = pl.format("{},{}", pl.col("lon").round(6), pl.col("lat").round(6))
-    return pl.concat_str(
-        "source",
-        pl.lit("/"),
-        "level",
-        pl.lit("/"),
-        pl.when(pl.col("level") == "point")
-        .then(point)
-        .otherwise(pl.col("code")),
-    )
+def load_lookup(source: str, geo: str) -> pl.DataFrame | None:
+    """The source's lookup *geo* (a file stem); None if there is none."""
+    path = lookup_path(source, geo)
+    if not path.exists():
+        return None
+    return pl.read_parquet(path, columns=LOOKUP_COLUMNS)
 
 
-def index(refs: pl.DataFrame) -> tuple[pl.DataFrame, pl.DataFrame]:
-    """Distinct locations of *refs*, and the refs with their ``location_id``.
-
-    Locations are numbered in ``location_key`` order, so an id depends only
-    on the set of locations in the run; the key is stable across runs.
-    """
-    locations = (
-        refs.select(LOCATION_KEYS)
-        .unique()
-        .with_columns(location_key=location_key())
-        .sort("location_key", "scale_m", nulls_last=True)
-        .with_row_index("location_id")
-        .with_columns(pl.col("location_id").cast(pl.Int32))
-    )
-    refs = refs.join(
-        locations.select(*LOCATION_KEYS, "location_id"),
-        on=LOCATION_KEYS,
-        how="left",
-        nulls_equal=True,
-    )
-    return resolve(locations), refs
-
-
-def load_lookup(
-    source: str, level: str, country: str | None = None
-) -> pl.DataFrame | None:
-    """The lookup for *level*: ``configs/<source>/locations/<level>.parquet``,
-    else ``configs/geo/<country>/<level>.parquet``; None if neither."""
-    paths = [utils.get_config_path(source, "locations", f"{level}.parquet")]
-    if country:
-        paths.append(utils.get_config_path("geo", country, f"{level}.parquet"))
-    for path in paths:
-        if path.exists():
-            return pl.read_parquet(path, columns=LOOKUP_COLUMNS)
-    return None
-
-
-def lookup_codes(source: str, level: str) -> list[str]:
-    """Codes in *level*'s lookup: the source's own, else the one shared
-    lookup ``configs/geo/*/<level>.parquet``; empty if there is none."""
-    paths = [utils.get_config_path(source, "locations", f"{level}.parquet")]
-    paths = [p for p in paths if p.exists()] or sorted(
-        utils.get_config_path("geo").glob(f"*/{level}.parquet")
-    )
-    if len(paths) > 1:
-        raise ValueError(f"{level} has lookups for several countries: {paths}")
-    if not paths:
-        logger.warning(f"{source}: no lookup for {level}, so no code is known")
-        return []
-    return pl.read_parquet(paths[0], columns=["code"])["code"].to_list()
-
-
-def zone_points(
-    source: str, level: str, country: str | None = None, crs: str | None = None
-) -> pl.DataFrame:
-    """Each unit of *level*'s lookup as ``code, area_km2, lon, lat`` (a point
-    inside it), or ``code, area_km2, x, y`` projected to *crs*: zone
-    centroids and sizes for trip distances and densities, from the same
-    lookups as the locations table."""
-    lookup = load_lookup(source, level, country)
+def zone_points(source: str, geo: str, crs: str | None = None) -> pl.DataFrame:
+    """Each unit of the lookup *geo* as ``code, area_km2, lon, lat`` (a
+    point inside it), or ``code, area_km2, x, y`` projected to *crs*: zone
+    centroids and sizes for trip distances and densities, from the source
+    finder's copy of the lookup."""
+    lookup = finder(source).lookup(geo)
     if lookup is None:
-        raise FileNotFoundError(f"no location lookup for {source} {level}")
+        raise FileNotFoundError(f"no location lookup {source} {geo}")
     points = lookup.select("code", "area_km2", "lon", "lat")
     if crs is None:
         return points
@@ -584,68 +572,6 @@ def from_wgs84(
 def equivalent_radius_m(area_km2: pl.Expr) -> pl.Expr:
     """Radius (m) of the circle with the given area (km²)."""
     return (area_km2 / math.pi).sqrt() * 1000
-
-
-def resolve(locations: pl.DataFrame) -> pl.DataFrame:
-    """Fill geometry, centroid, scale, precision and provenance for each
-    location."""
-    parts = []
-    for (source, country, level), group in locations.group_by(
-        "source", "country", "level", maintain_order=True
-    ):
-        if level == "point":
-            group = group.with_columns(
-                geometry=point_wkb(group["lon"], group["lat"]),
-                geom_source=pl.lit("point"),
-                geom_dataset=pl.lit(f"{source} survey"),
-                geom_year=pl.lit(None, pl.Int16),
-            )
-        elif (lookup := load_lookup(source, level, country)) is not None:
-            group = group.drop("lon", "lat", "scale_m").join(
-                lookup.select(
-                    "code",
-                    "lon",
-                    "lat",
-                    "geometry",
-                    "geom_dataset",
-                    "geom_year",
-                    scale_m=equivalent_radius_m(pl.col("area_km2")),
-                    geom_source=pl.col("geom_source").fill_null("boundary"),
-                ),
-                on="code",
-                how="left",
-            )
-        else:
-            logger.warning(f"No location lookup for {source} {level}")
-            group = group.with_columns(
-                *(
-                    pl.lit(None, pl.Float64).alias(c)
-                    for c in ("lon", "lat", "scale_m")
-                ),
-                geometry=pl.lit(None, pl.Binary),
-            )
-        parts.append(group)
-    if not parts:
-        return pl.DataFrame(schema=LOCATION_SCHEMA)
-    precision = {
-        level: precision_of(level) for level in locations["level"].unique()
-    }
-    if unknown := {level for level, p in precision.items() if p is None}:
-        logger.warning(f"No precision class for levels {unknown}")
-    return (
-        pl.concat(parts, how="diagonal_relaxed")
-        .with_columns(
-            precision=pl.col("level").replace_strict(
-                precision, default=None, return_dtype=pl.String
-            ),
-            geom_source=pl.when(pl.col("geometry").is_null())
-            .then(pl.lit("none"))
-            .otherwise(pl.col("geom_source")),
-        )
-        .select(LOCATION_SCHEMA.keys())
-        .cast(LOCATION_SCHEMA)
-        .sort("location_id")
-    )
 
 
 def point_wkb(lon: pl.Series, lat: pl.Series) -> pl.Series:
@@ -691,25 +617,6 @@ def write(locations: pl.DataFrame, path: Path) -> None:
     )
 
 
-def coverage(locations: pl.DataFrame, refs: pl.DataFrame) -> pl.DataFrame:
-    """Per source, role and level: number of refs, and the shares with a
-    geometry and with an exact one (a point or the unit's own boundary)."""
-    return (
-        refs.join(
-            locations.select("location_id", "geom_source"),
-            on="location_id",
-            how="left",
-        )
-        .group_by("source", "role", "level")
-        .agg(
-            n=pl.len(),
-            with_geometry=(pl.col("geom_source") != "none").mean(),
-            exact=pl.col("geom_source").is_in(["point", "boundary"]).mean(),
-        )
-        .sort("source", "role", "level")
-    )
-
-
 def summary(
     attributes: pl.DataFrame, trips: pl.DataFrame, locations: pl.DataFrame
 ) -> pl.DataFrame:
@@ -743,16 +650,16 @@ def summary(
     sources = attributes.select("pid", "source").unique("pid")
     ends = (
         pl.concat(
-            [
-                trips.select("pid", id=pl.col(c))
-                for c in ("olocation", "dlocation")
-            ]
+            [trips.select("pid", id=pl.col(c)) for c in ("ocode", "dcode")]
         )
         .join(sources, on="pid", how="left")
         .join(info, left_on="id", right_on="location_id", how="left")
     )
+    # null for sources without trip-end locations
     trip_ends = ends.group_by("source").agg(
-        trip_end_coverage=(located & pl.col("id").is_not_null()).mean()
+        trip_end_coverage=pl.when(pl.col("id").is_not_null().any()).then(
+            (located & pl.col("id").is_not_null()).mean()
+        )
     )
     return by_source.join(trip_ends, on="source", how="left").sort("source")
 

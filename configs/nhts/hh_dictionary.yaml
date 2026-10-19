@@ -14,7 +14,7 @@ column_mappings:
         "HH_RACE": "race1"
         "HHR_RACE": "race2"
         "WTHHFIN": "weight"
-        "CENSUS_D": "home_division"  # 2022 has no CBSA, MSA or state
+        "CENSUS_D": "home_census_division"  # 2022 has no CBSA, MSA or state
     default:
         "HOUSEID": "hid"
         "HBHUR": "hh_zone"
@@ -41,32 +41,31 @@ column_mappings:
 # home location (see foundata.location), finest first: CBSA (2009: 2003
 # delineations, 2017: 2013 delineations; largest areas only), 1999
 # MSA/CMSA (2001, 2009), state FIPS, else census division (2022 has no
-# finer geography). Suppressed (XXXX), non-MSA (9999) and missing (-1)
-# codes fall through to the next level. CDIVMSAR (2022) is not used: it
-# splits divisions by MSA size, which is not a contiguous area.
+# finer geography). nhts.py nulls suppressed (XXXX), non-MSA (9999) and
+# missing (-1) codes, so they fall through to the next level. CDIVMSAR
+# (2022) is not used: it splits divisions by MSA size, which is not a
+# contiguous area.
 home_location:
-  default:
-    - level: cbsa_2013
-      when: {year: [2017]}
-      code: [{column: home_cbsa, width: 5}]
-      valid: '\d{5}'
-    - level: cbsa_2003
-      when: {year: [2009]}
-      code: [{column: home_cbsa, width: 5}]
-      valid: '\d{5}'
-    - level: msa_1999
-      when: {year: [2001, 2009]}
-      code: [{column: home_msa, width: 4}]
-      valid: '\d{4}'
-      missing: ["9999"]
+  2017:
+    - level: cbsa
+      geo: cbsa_2013.parquet
     - level: state
-      when: {year: [2001, 2009, 2017]}
-      code: [{column: home_state, width: 2}]
-      valid: '\d{2}'
+      geo: state.parquet
+  2009:
+    - level: cbsa
+      geo: cbsa_2003.parquet
+    - level: msa
+      geo: msa_1999.parquet
+    - level: state
+      geo: state.parquet
+  2001:
+    - level: msa
+      geo: msa_1999.parquet
+    - level: state
+      geo: state.parquet
+  2022:
     - level: census_division
-      when: {year: [2022]}
-      code: [{column: home_division, width: 2}]
-      valid: '\d{2}'
+      geo: census_division.parquet
 
 
 hh_zone:

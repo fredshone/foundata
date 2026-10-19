@@ -47,7 +47,7 @@ def add_age_band(
     )
 
 
-def trips_to_activities(
+def trips_to_activity_schedules(
     attributes: Optional[pl.DataFrame], trips: pl.DataFrame
 ) -> pl.DataFrame:
     """ "Convert trips to activities by creating an activity for each trip's origin and destination.
@@ -57,7 +57,10 @@ def trips_to_activities(
         attributes: DataFrame with person attributes, must contain "pid" and "hh_zone".
         trips: DataFrame with columns pid, seq, tst, tet, oact, dact, ozone, dzone.
     Returns:
-        DataFrame with columns pid, seq, act, zone, start, end.
+        DataFrame with columns pid, seq, act, zone, start, end. If trips have
+        ocode/dcode, also location (a location_id): the trip end's, or for a
+        home activity without one (and persons with no trips) the
+        attributes' hh_location.
     """
     logger.info("Converting trips to activities...")
     if attributes is not None:
@@ -66,6 +69,12 @@ def trips_to_activities(
         f"number of persons in trips: {len(trips.select('pid').unique())}"
     )
 
+    located = {"ocode", "dcode"} <= set(trips.columns)
+    homes = (
+        attributes is not None
+        and located
+        and "hh_location" in attributes.columns
+    )
     first_acts = (
         trips.sort("pid", "seq")
         .group_by("pid")
@@ -77,12 +86,14 @@ def trips_to_activities(
             pl.col("ozone").alias("zone"),
             pl.lit(0, dtype=pl.Int32).alias("start"),
             pl.col("tst").alias("end").cast(pl.Int32),
+            *([pl.col("ocode").alias("location")] if located else []),
         )
     )
 
     dest_acts = (
         trips.sort("pid", "seq")
         .with_columns(
+            start=pl.col("tst").cast(pl.Int32),
             end=pl.col("tst")
             .shift(-1)
             .over("pid")
@@ -93,11 +104,12 @@ def trips_to_activities(
         .filter(pl.col("tet") <= 1440)
         .select(
             pl.col("pid"),
-            pl.col("seq").cast(pl.Int8).alias("seq"),
+            pl.col("seq").cast(pl.Int8),
             pl.col("dact").alias("act"),
             pl.col("dzone").alias("zone"),
-            pl.col("tet").alias("start").cast(pl.Int32),
-            pl.col("end").alias("end").cast(pl.Int32),
+            pl.col("start"),
+            pl.col("end"),
+            *([pl.col("dcode").alias("location")] if located else []),
         )
     )
 
@@ -113,12 +125,46 @@ def trips_to_activities(
             pl.col("hh_zone").alias("zone"),
             pl.lit(0, dtype=pl.Int32).alias("start"),
             pl.lit(1440, dtype=pl.Int32).alias("end"),
+            *(
+                [
+                    pl.col("hh_location")
+                    .cast(trips.schema["ocode"])
+                    .alias("location")
+                ]
+                if homes
+                else (
+                    [pl.lit(None, trips.schema["ocode"]).alias("location")]
+                    if located
+                    else []
+                )
+            ),
         )
         logger.debug(
             f"number of persons with no trips after anti join: {len(no_trip_acts.select('pid').unique())}"
         )
 
         activities = pl.concat([activities, no_trip_acts]).sort("pid", "seq")
+        if homes:
+            activities = (
+                activities.join(
+                    attributes.select("pid", "hh_location").unique("pid"),
+                    on="pid",
+                    how="left",
+                )
+                .with_columns(
+                    location=pl.when(
+                        pl.col("location").is_null() & (pl.col("act") == "home")
+                    )
+                    .then(
+                        pl.col("hh_location").cast(
+                            activities.schema["location"]
+                        )
+                    )
+                    .otherwise(pl.col("location"))
+                )
+                .drop("hh_location")
+                .sort("pid", "seq")
+            )
     logger.debug(
         f"number of persons in activities: {len(activities.select('pid').unique())}"
     )
@@ -178,6 +224,14 @@ def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:
             dact=pl.col("act").shift(-1).over("pid"),
             ozone=pl.col("zone"),
             dzone=pl.col("zone").shift(-1).over("pid"),
+            *(
+                [
+                    pl.col("location").alias("ocode"),
+                    pl.col("location").shift(-1).over("pid").alias("dcode"),
+                ]
+                if "location" in activities.columns
+                else []
+            ),
         )
         .filter(
             pl.col("dact").is_not_null()
@@ -191,6 +245,11 @@ def activities_to_trips(activities: pl.DataFrame) -> pl.DataFrame:
             pl.col("dact"),
             pl.col("ozone"),
             pl.col("dzone"),
+            *(
+                [pl.col("ocode"), pl.col("dcode")]
+                if "location" in activities.columns
+                else []
+            ),
         )
     )
     logger.debug(

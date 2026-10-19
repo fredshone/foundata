@@ -289,6 +289,46 @@ def survey_map(config: dict, key: str, survey: str):
     return value.get(survey, value["default"])
 
 
+# provinces of the Santa Fe-Paraná departamentos (Santa Fe, Entre Ríos)
+SFP_PROVINCES = {"63": "82", "70": "82", "84": "30"}
+
+
+def home_codes(survey: str) -> dict[str, pl.Expr]:
+    """The dwelling's 9-digit census radio and 7-digit fracción codes (see
+    home_location), from each survey's own columns (none for a survey
+    without them)."""
+    clean = location.clean
+    if survey not in ("salta", "rc", "nq", "sfp", "enmodo"):
+        return {}
+    if survey == "rc":
+        # PDFR: provincia + departamento + fracción + radio in one
+        radio = clean("home_pdfr", width=9)
+        fraccion = radio.str.slice(0, 7)
+    else:
+        if survey == "enmodo":
+            # PARTIDO (hh_zone) as provincia + departamento: 901-921 are
+            # Ciudad de Buenos Aires distritos escolares, the rest Buenos
+            # Aires partidos
+            departamento = location.mapped(
+                "hh_zone", SOURCE, "enmodo_partido_2001.csv"
+            )
+        else:
+            provincia = {
+                "salta": pl.lit("66"),
+                "nq": clean("home_prov", width=2),
+                "sfp": clean("home_depto").replace_strict(
+                    SFP_PROVINCES, default=None
+                ),
+            }[survey]
+            departamento = provincia + clean("home_depto", width=3)
+        fraccion = departamento + clean("home_frac", width=2)
+        radio = fraccion + clean("home_radio", width=2)
+    return {
+        "home_radio": clean(radio, valid=r"\d{9}"),
+        "home_fraccion": clean(fraccion, valid=r"\d{7}"),
+    }
+
+
 def recode(col: str, mapping: dict, default: str | None = "unknown") -> pl.Expr:
     """Map raw codes (numeric codes are cast to int first) to strings."""
     if not mapping:
@@ -351,10 +391,12 @@ def load_households(
     else:
         income = pl.lit(None, dtype=pl.Int32)
 
-    spec = config.get("home_location")
-    if spec:
-        hhs = location.add(hhs, spec, source="argentina", survey=survey)
-    home = [c for c in location.columns("home") if c in hhs.columns]
+    hhs = location.add(
+        hhs.with_columns(**home_codes(survey)),
+        source=SOURCE,
+        key=survey,
+    )
+    home = ["hh_location"]
     return hhs.select(
         *home,
         hid=pl.col("hid").cast(pl.Int64),

@@ -235,7 +235,26 @@ def load_households(
         country=pl.lit(COUNTRY),
         source=pl.lit(SOURCE),
     )
-    hhs = location.add(hhs, config["home_location"], source=SOURCE, year=year)
+    # home location: aimag + soum (+ bagh) as NSO codes
+    soum = location.clean("home_aimag", width=2) + location.clean(
+        "home_soum", width=2
+    )
+    hhs = hhs.with_columns(
+        home_soum=location.clean(soum, valid=r"\d{4}"),
+        **(
+            {
+                "home_bagh": location.clean(
+                    soum + location.clean("home_bagh", width=2),
+                    valid=r"\d{6}",
+                )
+            }
+            if "home_bagh" in hhs.columns
+            else {}
+        ),
+    )
+    hhs = location.add(hhs, source=SOURCE, key=year).drop(
+        "home_aimag", "home_bagh", strict=False
+    )
     if available:
         hh_mode = (
             pl.when(pl.col("vehicles") > 0)
@@ -259,8 +278,7 @@ def load_households(
         "country",
         "source",
         "hh_mode",
-        "home_level",
-        "home_code",
+        "hh_location",
     )
 
 
