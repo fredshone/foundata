@@ -37,18 +37,16 @@ def test_argentina_load():
 
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("argentina").all()
-    assert attrs["hid"].str.starts_with("argentina").all()
     assert attrs["source"].unique().to_list() == ["argentina"]
     for survey in argentina.SURVEYS:
-        assert attrs["pid"].str.starts_with("argentina" + survey).any()
+        assert attrs["pid"].str.starts_with(survey).any()
     assert attrs["age"].drop_nulls().min() >= 3
     assert trips.group_by("pid").agg(pl.col("seq").min())["seq"].max() == 0
     # some stages record 0 minutes
     assert (trips["distance"].drop_nulls() >= 0).all()
     assert set(attrs["day"]) <= set(argentina.WEEKDAYS) | {"unknown"}
     # ENMODO records no travel date
-    enmodo = attrs.filter(pl.col("pid").str.starts_with("argentinaenmodo"))
+    enmodo = attrs.filter(pl.col("pid").str.starts_with("enmodo"))
     assert enmodo["day"].unique().to_list() == ["unknown"]
     # sampled from the income quintile's range
     assert enmodo["hh_income"].is_not_null().all()

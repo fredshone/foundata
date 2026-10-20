@@ -258,17 +258,12 @@ def _load_pruned_blocks(
 
 
 def _hid_expr(year: int) -> pl.Expr:
-    """hid = source + 2-digit round year + fsu serial + sample hhld no.
+    """hid = 2-digit round year + fsu serial + sample hhld no.
 
     The year prefix keeps 2019 and 2024 household numbering from colliding
     once both rounds are pooled into one dataset (run.py).
     """
-    return (
-        pl.lit(SOURCE)
-        + pl.lit(str(year)[2:4])
-        + pl.col("hid_fsu")
-        + pl.col("hid_sample")
-    )
+    return pl.lit(str(year)[2:4]) + pl.col("hid_fsu") + pl.col("hid_sample")
 
 
 def _pid_expr(year: int) -> pl.Expr:

@@ -95,8 +95,8 @@ def load(
             month=pl.lit(None, dtype=pl.Int8),
             day=pl.lit("unknown"),
             hh_income=pl.lit(None, dtype=pl.Int32),
-            pid=pl.lit(SOURCE) + pl.col("pid"),
-            hid=pl.lit(SOURCE) + pl.col("hid"),
+            pid=pl.col("pid"),
+            hid=pl.col("hid"),
         )
     )
     trips = trips.select(
@@ -111,7 +111,7 @@ def load(
         "distance",
         "ocode",
         "dcode",
-        pid=pl.lit(SOURCE) + pl.col("pid"),
+        pid=pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
 

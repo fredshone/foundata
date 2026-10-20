@@ -101,8 +101,8 @@ def load(
             dwelling=pl.lit("unknown"),
             can_wfh=pl.lit("unknown"),
             race=pl.lit("unknown"),
-            pid=pl.lit(SOURCE) + pl.col("pid"),
-            hid=pl.lit(SOURCE) + pl.col("hid"),
+            pid=pl.col("pid"),
+            hid=pl.col("hid"),
         )
     )
     trips = trips.select(
@@ -117,7 +117,7 @@ def load(
         "distance",
         "ocode",
         "dcode",
-        pid=pl.lit(SOURCE) + pl.col("pid"),
+        pid=pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
 

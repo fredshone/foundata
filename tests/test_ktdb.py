@@ -13,6 +13,7 @@ from foundata import (
 )
 from foundata.utils import (
     config_for_year,
+    enumerate_ids,
     get_config_path,
     load_yaml_config,
     split_employment_type,
@@ -40,7 +41,9 @@ def check_template(attrs: pl.DataFrame, trips: pl.DataFrame):
     attrs = split_employment_type(attrs)
     attrs, trips = fix.missing_columns(attrs, trips)
     attrs, trips = filter.columns(attrs, trips)
+    attrs, trips, _ = enumerate_ids(attrs, trips)
     attrs, trips = fix.fix_types(attrs, trips)
+    assert attrs["pid"].is_not_null().all()
     assert verify.columns(attrs, trips)
 
 
@@ -58,6 +61,8 @@ def test_ktdb_load():
     assert len(trips) > 0
     assert "ktdb" in attrs["source"].unique().to_list()
     assert attrs["survey"].unique().to_list() == ["ktdb2021"]
+    # the survey tag keeps 2021 ids apart from the 2016 and 2010 surveys'
+    assert attrs["pid"].str.starts_with("2021_").all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
     assert (trips.group_by("pid").agg(pl.col("seq").min())["seq"] == 0).all()
     not_working = attrs.filter(pl.col("employment") != "employed")
@@ -130,8 +135,9 @@ def test_ktdb_wave_load(year, weekend):
     assert attrs["pid"].is_unique().all()
     assert attrs["survey"].unique().to_list() == [survey]
     assert attrs["source"].unique().to_list() == ["ktdb"]
-    assert attrs["pid"].str.starts_with(f"{survey}_").all()
-    assert attrs["hid"].str.starts_with(f"{survey}_").all()
+    tag = survey.removeprefix("ktdb")
+    assert attrs["pid"].str.starts_with(f"{tag}_").all()
+    assert attrs["hid"].str.starts_with(f"{tag}_").all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
     assert (trips.group_by("pid").agg(pl.col("seq").min())["seq"] == 0).all()
     assert (attrs["year"] == year).all()
@@ -151,10 +157,10 @@ def test_ktdb_2010_ids_split_weekend_diaries():
         {"sheet_code": ["10010530202", "10010530202"], "member": ["2", "8"]}
     )
     out = ktdb.with_ids_2010(legs, "ktdb2010we", offset=6)
-    assert out["hid"].to_list() == ["ktdb2010we_010010530202"] * 2
+    assert out["hid"].to_list() == ["2010we_010010530202"] * 2
     assert out["pid"].to_list() == [
-        "ktdb2010we_010010530202_2_sat",
-        "ktdb2010we_010010530202_2_sun",
+        "2010we_010010530202_2_sat",
+        "2010we_010010530202_2_sun",
     ]
 
 
@@ -234,7 +240,7 @@ def test_ktdb_2016_stages_set_end_time_mode_and_access():
 
     trips = ktdb.load_trips_2016(raw, trips_cfg, "ktdb2016")
 
-    assert trips["pid"].to_list() == ["ktdb2016_1_1101053-0001-01_1"]
+    assert trips["pid"].to_list() == ["2016_1_1101053-0001-01_1"]
     assert trips["seq"].to_list() == [0]
     assert trips["tst"].to_list() == [480]
     assert trips["tet"].to_list() == [520]

@@ -12,7 +12,7 @@ from loguru import logger
 
 from foundata import config_validator, log, post_process, verify
 from foundata import filter as flt
-from foundata.run import SOURCES, batch_source_dir, runner
+from foundata.run import SOURCES, SourceDataError, batch_source_dir, runner
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
 
@@ -64,7 +64,13 @@ def _with_log_level(fn):
     @functools.wraps(fn)
     def wrapper(*args, log_level: LogLevel = LogLevel.info, **kwargs):
         log.setup(log_level.value)
-        return fn(*args, **kwargs)
+        try:
+            return fn(*args, **kwargs)
+        except SourceDataError as e:
+            # missing data is the user's to fix, so no traceback
+            for line in str(e).splitlines():
+                logger.error(line)
+            raise typer.Exit(1)
 
     sig = inspect.signature(fn)
     wrapper.__signature__ = sig.replace(
@@ -173,6 +179,16 @@ DiagnosticsOpt = Annotated[
         help="Also produce the anomaly-detection reports and supplementary activity heatmaps.",
     ),
 ]
+KeepIdsOpt = Annotated[
+    bool,
+    typer.Option(
+        "--keep-ids",
+        help=(
+            "Also write original_ids.csv, mapping each pid and hid back to "
+            "the survey's own ids. It re-identifies records, so keep it private."
+        ),
+    ),
+]
 
 
 @app.command("run")
@@ -198,6 +214,7 @@ def run(
     home_based: HomeBasedOpt = True,
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
+    keep_ids: KeepIdsOpt = False,
 ):
     """Run the pipeline for a single source, e.g. `foundata run ltds ~/Data/foundata/LTDS`."""
     output = output or Path("output") / source.value
@@ -207,6 +224,7 @@ def run(
         home_based,
         filter_consecutive,
         diagnostics,
+        keep_ids,
     )
 
 
@@ -257,6 +275,7 @@ def batch(
     home_based: HomeBasedOpt = True,
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
+    keep_ids: KeepIdsOpt = False,
 ):
     """Run the pipeline end-to-end over many sources and combine them."""
     select, omit = _split_commas(select), _split_commas(omit)
@@ -280,7 +299,14 @@ def batch(
     else:
         sources = [s for s in SOURCES if s not in omit]
     source_dirs = {s: batch_source_dir(data_root, s) for s in sources}
-    runner(source_dirs, output, home_based, filter_consecutive, diagnostics)
+    runner(
+        source_dirs,
+        output,
+        home_based,
+        filter_consecutive,
+        diagnostics,
+        keep_ids,
+    )
 
 
 @app.command("location-summary")

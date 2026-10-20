@@ -84,9 +84,11 @@ REPO MAP
   SPSS .sav via pyreadstat, per-survey column_mappings and value maps).
 
 OUTPUT CONTRACT (check template.yaml for the full list)
-- attributes: one row per person. pid and hid are strings prefixed with the
-  source name (e.g. "brazil" + raw id). Include people who made no trips: they
-  get a home-all-day plan downstream.
+- attributes: one row per person. pid and hid are strings, unique within the
+  source: the raw id, plus a year or survey tag where the source combines
+  several surveys (e.g. "2019" + raw id). Don't add the source name; the
+  runner replaces them with integer ids (utils.enumerate_ids). Include people
+  who made no trips: they get a home-all-day plan downstream.
   - Set programmatically: source, country (existing codes are mixed: "kr",
     "nl", "uk", "br", "mx", "usa", "aus", "ind"), year, month, and day (lowercase
     weekday name).

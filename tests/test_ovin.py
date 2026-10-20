@@ -34,13 +34,12 @@ def test_ovin_load():
 
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("ovin").all()
     assert (attrs["pid"] == attrs["hid"]).all()
     assert attrs["source"].unique().to_list() == ["ovin"]
     assert attrs["country"].unique().to_list() == ["nl"]
     assert set(attrs["year"]) == set(ovin.DATA_FILES)
     for year in ovin.DATA_FILES:
-        assert attrs["pid"].str.starts_with(f"ovin{year}").any()
+        assert attrs["pid"].str.starts_with(str(year)).any()
     assert (
         attrs["day"]
         .is_in(

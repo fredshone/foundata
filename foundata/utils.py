@@ -133,6 +133,40 @@ def table_stacker(tables: Iterable[pl.DataFrame]) -> pl.DataFrame:
     return pl.concat([table.select(base_order) for table in tables])
 
 
+def enumerate_ids(
+    attributes: pl.DataFrame,
+    trips: pl.DataFrame,
+    columns: Iterable[str] = ("pid", "hid"),
+) -> tuple[pl.DataFrame, pl.DataFrame, dict[str, pl.Series]]:
+    """*attributes* and *trips* with each of *columns* (a source's string
+    ids) replaced by Int32 ids numbered from 0 in sorted id order, and per
+    column the original ids, where id ``i`` is ``keys[col][i]``.
+
+    Both tables are numbered from the same keys, so they still join. The
+    runner offsets the ids per source to keep them unique once combined.
+    """
+    all_keys = {}
+    for col in columns:
+        tables = [df for df in (attributes, trips) if col in df.columns]
+        keys = (
+            pl.concat([df[col].cast(pl.String) for df in tables])
+            .drop_nulls()
+            .unique()
+            .sort()
+        )
+        # an Enum of the sorted keys numbers them in order
+        ids = pl.Enum(keys)
+        to_id = (
+            pl.col(col).cast(pl.String).cast(ids).to_physical().cast(pl.Int32)
+        )
+        if col in attributes.columns:
+            attributes = attributes.with_columns(to_id)
+        if col in trips.columns:
+            trips = trips.with_columns(to_id)
+        all_keys[col] = keys
+    return attributes, trips, all_keys
+
+
 def config_for_year(config: dict, year):
     cnfg = {}
     for key, value in config.items():

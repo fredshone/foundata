@@ -38,8 +38,6 @@ def test_mexico_load():
     assert len(trips) == len(raw_trips)
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("mexico").all()
-    assert attrs["hid"].str.starts_with("mexico").all()
     assert attrs["source"].unique().to_list() == ["mexico"]
     assert set(attrs["day"]) == {"unknown", "saturday"}
     assert attrs["age"].min() >= 6

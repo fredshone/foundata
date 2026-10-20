@@ -10,6 +10,7 @@ directory:
 | `activity_schedules.csv` | activity | Plans as a sequence of activities with preceeding trip duration included with activity |
 | `binned_attributes.csv` | person-day | `attributes.csv` with numeric columns binned into string labels and nulls filled |
 | `locations.parquet` | location | GeoParquet of the home and trip-end zones (or points) referenced by the other tables |
+| `original_ids.csv` | person-day | Only with `--keep-ids`: `source`, `pid`, `hid` and the survey's own `original_pid` and `original_hid`. Keep it private |
 | `*.png` | — | Summary plots (add `--diagnostics` for anomaly reports and extra heatmaps) |
 
 The canonical schema is `configs/core/template.yaml`.
@@ -20,9 +21,13 @@ The canonical schema is `configs/core/template.yaml`.
   Some surveys record several diary days per person (NTS, the KTDB and
   Mexico weekend diaries, Mongolia). Each of those days becomes a separate
   `pid`, so a `pid` is really a person-day.
-- **IDs.** `pid` and `hid` are strings prefixed with the source name, for
-  example `nhts2022...`. This keeps them unique across sources. Where a
-  survey does not record households (KTDB 2021, ODIN), `hid` equals `pid`.
+- **IDs.** `pid` and `hid` are integers, unique across all sources. They
+  are numbered per source and do not carry the surveys' own ids, so records
+  can't be joined back to the raw data by id (unless you run with
+  `--keep-ids`). Each source's ids follow the
+  previous source's, with gaps where plans were filtered out. Where a survey
+  does not record households (KTDB 2021, ODIN), each person is their own
+  household.
 - **Times.** `tst`/`tet` (trip start and end) and `start`/`end` (activities)
   are integer minutes since midnight. All plans end by 1440 (midnight).
 - **Distance** is in km. Depending on the source it is reported, routed,
@@ -47,8 +52,8 @@ The canonical schema is `configs/core/template.yaml`.
 
 | Column | Type | Values / range | Description |
 |---|---|---|---|
-| `pid` | str | | Person (person-day) ID |
-| `hid` | str | | Household ID |
+| `pid` | int | | Person (person-day) ID |
+| `hid` | int | | Household ID |
 | `source` | str | e.g. `nhts`, `odin` | Survey source |
 | `country` | str | e.g. `usa`, `nl` | Country code |
 | `year` | int | | Survey year |
@@ -82,7 +87,7 @@ The canonical schema is `configs/core/template.yaml`.
 
 | Column | Type | Values / range | Description |
 |---|---|---|---|
-| `pid` | str | | Joins to `attributes.pid` |
+| `pid` | int | | Joins to `attributes.pid` |
 | `seq` | int | ≥ 0 | Trip order within the plan |
 | `oact` | str | home, work, education, shop, leisure, visit, escort, other | Activity at the origin |
 | `dact` | str | same as `oact` | Activity at the destination (the trip purpose) |
@@ -103,7 +108,7 @@ first activity starts at 0 and the last ends at 1440.
 
 | Column | Type | Description |
 |---|---|---|
-| `pid` | str | Joins to `attributes.pid` |
+| `pid` | int | Joins to `attributes.pid` |
 | `seq` | int | Activity order within the plan |
 | `act` | str | Activity type, as in `trips.oact` |
 | `start` | int | Start time (minutes since midnight) |

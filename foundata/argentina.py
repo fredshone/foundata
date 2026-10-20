@@ -144,7 +144,7 @@ def load_survey(
     ).drop("travelled")
     trips = trips.filter(pl.col("pid").is_in(persons["pid"].implode()))
 
-    prefix = SOURCE + survey
+    prefix = survey
     attributes = (
         persons.join(hhs, on="hid", how="left")
         .join(travel_dates(persons, trips, hhs), on="pid", how="left")

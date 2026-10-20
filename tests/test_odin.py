@@ -219,13 +219,13 @@ def test_load_prevents_cross_year_pid_collisions(monkeypatch):
     )
 
     assert attributes["pid"].n_unique() == 2
-    assert set(attributes["pid"]) == {"odin20181", "odin20191"}
-    assert set(attributes["hid"]) == {"odin20181", "odin20191"}
-    assert set(trips["pid"]) == {"odin20181", "odin20191"}
+    assert set(attributes["pid"]) == {"20181", "20191"}
+    assert set(attributes["hid"]) == {"20181", "20191"}
+    assert set(trips["pid"]) == {"20181", "20191"}
 
     ages = dict(zip(attributes["pid"], attributes["age"]))
-    assert ages["odin20181"] == 30
-    assert ages["odin20191"] == 50
+    assert ages["20181"] == 30
+    assert ages["20191"] == 50
 
 
 def _write_households_tab(path, header: list[str], rows: list[list[str]]):

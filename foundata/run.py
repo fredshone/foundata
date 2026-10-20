@@ -367,26 +367,76 @@ SOURCES = {
 }
 
 
+class SourceDataError(Exception):
+    """A source's data is missing or not laid out as its loader expects."""
+
+
+def _layout_hint(name: str) -> str:
+    return f"see data_dir_template/{name.upper()} for the expected layout"
+
+
+def check_source_dir(name: str, source_dir: str | Path) -> Path:
+    """*source_dir* expanded, raising SourceDataError if it is missing or
+    empty."""
+    path = Path(source_dir).expanduser()
+    if not path.is_dir():
+        raise SourceDataError(
+            f"{name}: data directory {path} not found; {_layout_hint(name)}"
+        )
+    if not any(path.iterdir()):
+        raise SourceDataError(
+            f"{name}: data directory {path} is empty; {_layout_hint(name)}"
+        )
+    return path
+
+
 def batch_source_dir(data_root: str | Path, name: str) -> Path:
     """The directory holding source *name* within a batch data root."""
     return Path(data_root).expanduser() / name.upper()
 
 
 def load_source(name: str, source_dir: str | Path):
-    """Load and process a single source from its own data directory."""
+    """Load and process a single source from its own data directory.
+
+    Returns its attributes, trips and locations, and its original ids (see
+    ``utils.enumerate_ids``). Raises SourceDataError if its data is missing.
+    """
     if name not in SOURCES:
         raise ValueError(
             f"Unknown source '{name}', expected one of {', '.join(SOURCES)}"
         )
+    path = check_source_dir(name, source_dir)
     with table_logger.source(name.upper()):
-        attributes, trips = SOURCES[name](Path(source_dir).expanduser())
+        try:
+            attributes, trips = SOURCES[name](path)
+        except FileNotFoundError as e:
+            raise SourceDataError(f"{name}: {e}; {_layout_hint(name)}") from e
+        if attributes.is_empty():
+            raise SourceDataError(
+                f"{name}: no persons loaded from {path}; {_layout_hint(name)}"
+            )
         # location keys -> this source's location ids (from 0)
         attributes, trips, locations = location.finder(name).index(
             attributes, trips
         )
+        # source ids -> this source's pid and hid (from 0)
+        attributes, trips, ids = utils.enumerate_ids(attributes, trips)
         logger.info(f"Processing {name.upper()}...")
         attributes, trips = process_source(attributes, trips, name.upper())
-        return attributes, trips, locations
+        return attributes, trips, locations, ids
+
+
+def _id_map(col: str, keys: pl.Series, offset: int) -> pl.DataFrame:
+    """Combined id (*col*) -> original id (``original_<col>``) for one
+    source's *keys*, numbered from *offset*."""
+    return pl.DataFrame(
+        {
+            col: pl.int_range(
+                offset, offset + len(keys), dtype=pl.Int32, eager=True
+            ),
+            f"original_{col}": keys,
+        }
+    )
 
 
 def log_locations(
@@ -417,12 +467,15 @@ def runner(
     home_based: bool = False,
     fix_consecutive: bool = False,
     diagnostics: bool = False,
+    keep_ids: bool = False,
 ):
     """Load, process, combine and write the given sources, then report.
 
     *source_dirs* maps each source name to its own data directory. The
     summary tables and README plots are always produced; *diagnostics* adds
-    the anomaly-detection reports and supplementary heatmaps.
+    the anomaly-detection reports and supplementary heatmaps. *keep_ids*
+    also writes ``original_ids.csv``, mapping each pid and hid back to the
+    survey's own ids.
     """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
@@ -433,27 +486,54 @@ def runner(
         return
 
     logger.info(f"Selected sources: {', '.join(sources)}")
+    # fail before loading anything if a source's directory is missing
+    problems = []
+    for name in sources:
+        try:
+            check_source_dir(name, source_dirs[name])
+        except SourceDataError as e:
+            problems.append(str(e))
+    if problems:
+        raise SourceDataError("\n".join(problems))
     table_logger.reset()
 
     all_attributes = []
     all_trips = []
     all_locations = []
-    offset = 0  # each source's location ids follow the previous source's
+    all_ids = {"pid": [], "hid": []}
+    # each source's location, person and household ids follow the
+    # previous source's
+    offset = 0
+    pid_offset = 0
+    hid_offset = 0
     for i, name in enumerate(sources, start=1):
         logger.info(f"===[{i}/{len(sources)}] Loading {name.upper()}===")
         start = time.perf_counter()
-        attributes, trips, locations = load_source(name, source_dirs[name])
+        attributes, trips, locations, ids = load_source(name, source_dirs[name])
         logger.info(
             f"{name.upper()} done in {time.perf_counter() - start:.1f}s"
         )
         all_attributes.append(
-            attributes.with_columns(pl.col("hh_location") + offset)
+            attributes.with_columns(
+                pl.col("hh_location") + offset,
+                pl.col("pid") + pid_offset,
+                pl.col("hid") + hid_offset,
+            )
         )
-        all_trips.append(trips.with_columns(pl.col("ocode", "dcode") + offset))
+        all_trips.append(
+            trips.with_columns(
+                pl.col("ocode", "dcode") + offset, pl.col("pid") + pid_offset
+            )
+        )
         all_locations.append(
             locations.with_columns(pl.col("location_id") + offset)
         )
+        if keep_ids:
+            for col, col_offset in (("pid", pid_offset), ("hid", hid_offset)):
+                all_ids[col].append(_id_map(col, ids[col], col_offset))
         offset += locations.height
+        pid_offset += len(ids["pid"])
+        hid_offset += len(ids["hid"])
 
     # ------------------------------------------------------------------
     # Concat and write
@@ -480,16 +560,25 @@ def runner(
 
     # the locations households and trips still refer to
     used = pl.concat(
-        [
-            all_attributes["hh_location"],
-            all_trips["ocode"],
-            all_trips["dcode"],
-        ]
+        [all_attributes["hh_location"], all_trips["ocode"], all_trips["dcode"]]
     ).drop_nulls()
     locations = pl.concat(all_locations).filter(
         pl.col("location_id").is_in(used.implode())
     )
     log_locations(all_attributes, all_trips, locations)
+
+    if keep_ids:
+        logger.warning(
+            "Writing original_ids.csv: it links records back to the surveys' "
+            "own ids, so keep it private"
+        )
+        (
+            all_attributes.select("source", "pid", "hid")
+            .join(pl.concat(all_ids["pid"]), on="pid", how="left")
+            .join(pl.concat(all_ids["hid"]), on="hid", how="left")
+            .write_csv(output / "original_ids.csv")
+        )
+    del all_ids
 
     logger.info(f"Writing attributes, trips and locations to {output}...")
     all_attributes.write_csv(output / "attributes.csv")
@@ -514,13 +603,15 @@ def runner(
     if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
         raise ValueError("Trips has pids not in attributes")
 
-    activities = post_process.trips_to_activity_schedules(
+    activity_schedules = post_process.trips_to_activity_schedules(
         all_attributes, all_trips
     )
-    if not verify.activities_pids_match_attributes(all_attributes, activities):
+    if not verify.activities_pids_match_attributes(
+        all_attributes, activity_schedules
+    ):
         raise ValueError("Activities pids do not match attributes pids")
 
-    activities.write_csv(output / "activities.csv")
+    activity_schedules.write_csv(output / "activity_schedules.csv")
 
     logger.info(f"Written attributes, trips and activities to {output}")
 
@@ -599,7 +690,7 @@ def runner(
     logger.info("Plotting activity_duration_by_type.png...")
     plots.activity_duration_by_type(
         all_attributes,
-        activities,
+        activity_schedules,
         on="source",
         save_path=output / "activity_duration_by_type.png",
     )
@@ -607,7 +698,7 @@ def runner(
     logger.info("Plotting activity_counts_grid.png...")
     plots.activities_attributes_grid(
         all_attributes,
-        activities,
+        activity_schedules,
         attribute_cols={
             "employment": "bar",
             "hh_income": "line",
@@ -618,7 +709,7 @@ def runner(
     )
 
     if diagnostics:
-        _diagnostics(all_attributes, all_trips, activities, output)
+        _diagnostics(all_attributes, all_trips, activity_schedules, output)
     else:
         logger.info(
             "Skipping diagnostics reports and supplementary plots "

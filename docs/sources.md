@@ -78,8 +78,8 @@ Onderweg in Nederland, CBS/RWS.
 - **Access:** request via [DANS](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW).
 - **Files:** `ODIN/<year>/ODiN<year>_Databestand*.tab` (the 2023 and 2024
   `.csv` files are also tab-separated).
-- **Notes:** one respondent per household, so `hid = pid`. The data has one
-  row per ride, and these are linked into trips. Age is sampled from age
+- **Notes:** one respondent per household, so each person is their own
+  household. The data has one row per ride, and these are linked into trips. Age is sampled from age
   classes in some years. Income deciles are converted to gross euros. Home
   location is the 4-digit postcode (2018–23), otherwise the municipality.
   The 2024 release groups small municipalities into codes 9000+ for
@@ -211,8 +211,8 @@ Korea Transport Database national travel surveys.
   weekend survey files (CP949 encoding, one row per trip). For 2010,
   `household/` and `weekend/` tables (see `data_dir_template`).
 - **Notes:** there are **no weights**. The 2021 personal survey has no
-  households (`hid = pid`), was mostly collected on Thursdays, and has no
-  income for young people. Weekend surveys give a Saturday and a Sunday
+  households (each person is their own household), was mostly collected on
+  Thursdays, and has no income for young people. Weekend surveys give a Saturday and a Sunday
   plan for each person. Children under 5 (2016) or under school age (2010)
   are not surveyed. 2010 trip ends are only at 시군구 level, so distances
   come from centroids or duration × speed, and the 2010 weekday date is

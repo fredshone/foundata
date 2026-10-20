@@ -396,20 +396,20 @@ def load_2021(
         how="left",
     ).drop(["survey_date", "region_code"])
 
-    # Prefix IDs with source name for global uniqueness
+    # the survey tag keeps ids apart from the 2016 and 2010 surveys'
     attributes = attributes.with_columns(
         survey=pl.lit(f"{SOURCE}2021"),
         source=pl.lit(SOURCE),
         country=pl.lit("kr"),
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        pid=pl.lit("2021_") + pl.col("pid").cast(pl.String),
         # duplicate of pid: the raw data has no household ID linking
         # respondents (each row is an independently surveyed individual),
         # so there is no real household to group by
-        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        hid=pl.lit("2021_") + pl.col("pid").cast(pl.String),
     )
     trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
+        pid=pl.lit("2021_") + pl.col("pid").cast(pl.String),
+        hid=pl.lit("2021_") + pl.col("pid").cast(pl.String),
     )
 
     return attributes, trips
@@ -753,8 +753,12 @@ def read_raw_2016(path: Path) -> pl.DataFrame:
 
 def with_ids_2016(data: pl.DataFrame, survey: str) -> pl.DataFrame:
     """Add hid and pid. Weekend diaries get a _sat/_sun pid suffix."""
+    # the survey tag (2016, 2016we) keeps ids apart from the other surveys'
     hid = pl.concat_str(
-        pl.lit(survey), pl.col("idx"), pl.col("district"), separator="_"
+        pl.lit(survey.removeprefix(SOURCE)),
+        pl.col("idx"),
+        pl.col("district"),
+        separator="_",
     )
     suffix = (
         pl.col("weekend_day")
@@ -1096,7 +1100,8 @@ def with_ids_2010(data: pl.DataFrame, survey: str, offset: int | None):
         member=member,
         diary=diary,
     )
-    hid = pl.lit(f"{survey}_") + pl.col("sheet_code")
+    # the survey tag (2010, 2010we) keeps ids apart from the other surveys'
+    hid = pl.lit(f"{survey.removeprefix(SOURCE)}_") + pl.col("sheet_code")
     suffix = (
         pl.col("diary")
         .replace_strict(DIARY_SUFFIX, default="", return_dtype=pl.String)

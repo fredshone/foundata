@@ -6,6 +6,7 @@ import polars as pl
 from foundata import filter, fix, verify, vista
 from foundata.utils import (
     config_for_year,
+    enumerate_ids,
     get_config_path,
     load_yaml_config,
     split_employment_type,
@@ -40,7 +41,9 @@ def test_vista_load():
     attrs = split_employment_type(attrs)
     attrs, trips = fix.missing_columns(attrs, trips)
     attrs, trips = filter.columns(attrs, trips)
+    attrs, trips, _ = enumerate_ids(attrs, trips)
     attrs, trips = fix.fix_types(attrs, trips)
+    assert attrs["pid"].is_not_null().all()
     assert verify.columns(attrs, trips)
 
 

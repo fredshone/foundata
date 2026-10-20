@@ -31,7 +31,6 @@ def test_mon_load():
 
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("mon").all()
     assert attrs["source"].unique().to_list() == ["mon"]
     assert attrs["country"].unique().to_list() == ["nl"]
     assert set(attrs["year"]) == set(mon.DATA_FILES)

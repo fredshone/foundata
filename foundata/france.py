@@ -36,12 +36,27 @@ METADATA_PATH = "metadata.json"
 
 
 def survey_dirs(root: Path, exclude: list[str]) -> list[Path]:
-    """Survey folders under root (those with a metadata.json), sorted."""
-    return sorted(
+    """Survey folders under root (those with a metadata.json), sorted.
+
+    Raises FileNotFoundError if there are none, or if one lacks a table, so
+    a bad layout fails before any survey is loaded."""
+    surveys = sorted(
         d
         for d in root.iterdir()
         if (d / METADATA_PATH).exists() and d.name not in exclude
     )
+    if not surveys:
+        raise FileNotFoundError(
+            f"no survey folders in {root}: expected one subfolder per "
+            f"MobiSurvStd survey, each with a {METADATA_PATH}"
+        )
+    tables = [HOUSEHOLDS_PATH, PERSONS_PATH, TRIPS_PATH, LEGS_PATH]
+    missing = [
+        str(d / t) for d in surveys for t in tables if not (d / t).exists()
+    ]
+    if missing:
+        raise FileNotFoundError(f"missing survey tables: {', '.join(missing)}")
+    return surveys
 
 
 def read_table(path: Path, column_mapping: dict) -> pl.DataFrame:
@@ -106,7 +121,7 @@ def load_survey(
     )
     date = pl.coalesce("person_date", "hh_date")
 
-    prefix = f"{SOURCE}{survey.name}_"
+    prefix = f"{survey.name}_"
     attributes = (
         persons.join(hhs, on="hid", how="left")
         .join(person_days, on="pid", how="left")

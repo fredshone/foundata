@@ -3,6 +3,7 @@ from pathlib import Path
 
 from foundata import filter, fix, nts, verify
 from foundata.utils import (
+    enumerate_ids,
     get_config_path,
     load_yaml_config,
     split_employment_type,
@@ -35,5 +36,7 @@ def test_nts_load():
     attrs = split_employment_type(attrs)
     attrs, trips = fix.missing_columns(attrs, trips)
     attrs, trips = filter.columns(attrs, trips)
+    attrs, trips, _ = enumerate_ids(attrs, trips)
     attrs, trips = fix.fix_types(attrs, trips)
+    assert attrs["pid"].is_not_null().all()
     assert verify.columns(attrs, trips)

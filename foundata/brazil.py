@@ -127,10 +127,8 @@ def load(
         "dcode",
     )
 
-    attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid"), hid=pl.lit(SOURCE) + pl.col("hid")
-    )
-    trips = trips.with_columns(pid=pl.lit(SOURCE) + pl.col("pid"))
+    attributes = attributes.with_columns(pid=pl.col("pid"), hid=pl.col("hid"))
+    trips = trips.with_columns(pid=pl.col("pid"))
 
     return attributes, trips
 

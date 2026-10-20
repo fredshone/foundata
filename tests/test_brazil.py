@@ -72,8 +72,6 @@ def test_brazil_load():
     assert len(attrs) == raw["ID_PESS"].n_unique()
     assert len(trips) == raw["N_VIAG"].is_not_null().sum()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("brazil").all()
-    assert attrs["hid"].str.starts_with("brazil").all()
     assert attrs["source"].unique().to_list() == ["brazil"]
     assert trips.group_by("pid").agg(pl.col("seq").min())["seq"].max() == 0
     assert set(attrs["day"]) <= {

@@ -50,8 +50,6 @@ def test_france_load():
     assert len(attrs) == persons["is_surveyed"].sum()
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("france").all()
-    assert attrs["hid"].str.starts_with("france").all()
     assert attrs["source"].unique().to_list() == ["france"]
     assert attrs["country"].unique().to_list() == ["fr"]
     assert attrs["day"].is_in(WEEKDAYS + ["unknown"]).all()
@@ -88,7 +86,7 @@ def test_exclude_surveys():
 
     attrs, _ = france.load(root, hh_cfg, person_cfg, trips_cfg)
 
-    assert not attrs["pid"].str.starts_with(f"france{first}_").any()
+    assert not attrs["pid"].str.starts_with(f"{first}_").any()
 
 
 def test_fallback_year_is_survey_midpoint():

@@ -45,19 +45,17 @@ def load(
             data_root, trips_config, year, gemeente_zone=gemeente_zone
         )
         yr = str(year)
-        hhs = hhs.with_columns(
-            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String)
-        )
+        hhs = hhs.with_columns(hid=pl.lit(yr) + pl.col("hid").cast(pl.String))
         persons = persons.with_columns(
-            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
-            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+            pid=pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(yr) + pl.col("hid").cast(pl.String),
             survey=pl.lit(SOURCE) + pl.lit(yr),
             source=pl.lit(SOURCE),
             country=pl.lit("nl"),
         )
         trips = trips.with_columns(
-            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
-            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+            pid=pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(yr) + pl.col("hid").cast(pl.String),
         )
 
         all_hhs.append(hhs)

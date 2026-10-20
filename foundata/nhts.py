@@ -30,13 +30,11 @@ def load(
     trips = load_trips(data_root, trips_config, years=years)
 
     attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        pid=pl.col("pid").cast(pl.String),
+        hid=pl.col("hid").cast(pl.String),
         access_egress_distance=pl.lit(None, dtype=pl.Float32),
     )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
-    )
+    trips = trips.with_columns(pid=pl.col("pid").cast(pl.String))
 
     return attributes, trips
 

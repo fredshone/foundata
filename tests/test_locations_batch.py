@@ -21,14 +21,20 @@ MIN_COVERAGE = {"nhts": 0.9}
 def batch(tmp_path_factory):
     output = tmp_path_factory.mktemp("batch")
     source_dirs = {s: batch_source_dir(TEMPLATE, s) for s in run.SOURCES}
-    run.runner(source_dirs, output, home_based=True, fix_consecutive=True)
+    run.runner(
+        source_dirs,
+        output,
+        home_based=True,
+        fix_consecutive=True,
+        keep_ids=True,
+    )
     attributes = pl.read_csv(
         output / "attributes.csv", infer_schema_length=None
     )
     locations = pl.read_parquet(output / "locations.parquet")
     trips = pl.read_csv(output / "trips.csv", infer_schema_length=None)
     activities = pl.read_csv(
-        output / "activities.csv", infer_schema_length=None
+        output / "activity_schedules.csv", infer_schema_length=None
     )
     return attributes, locations, trips, activities
 
@@ -94,7 +100,8 @@ def test_trip_ends_reference_locations(batch):
         ids = trips[column].drop_nulls().unique()
         assert ids.is_in(locations["location_id"].implode()).all()
     # QHTS declares its trip ends, and a trip home ends in the home SA1
-    qhts = trips.filter(pl.col("pid").str.starts_with("qhts"))
+    qhts_pids = attributes.filter(pl.col("source") == "qhts")["pid"]
+    qhts = trips.filter(pl.col("pid").is_in(qhts_pids.implode()))
     assert qhts["dcode"].is_not_null().mean() > 0.9
     home = qhts.filter(pl.col("dact") == "home").join(
         attributes.select("pid", "hh_location"), on="pid"
@@ -121,3 +128,40 @@ def test_activity_locations(batch):
         .select((pl.col("dcode") == pl.col("location")).all())
         .item()
     )
+
+
+def test_ids_are_unique_across_sources(batch):
+    attributes, _, trips, _ = batch
+    assert attributes["pid"].dtype.is_integer()
+    assert attributes["pid"].is_unique().all()
+    # a household belongs to one source
+    assert (
+        attributes.group_by("hid").agg(pl.col("source").n_unique())["source"]
+        == 1
+    ).all()
+    assert trips["pid"].is_in(attributes["pid"].implode()).all()
+
+
+def test_original_ids_map_back_to_each_source(batch, tmp_path_factory):
+    attributes, _, _, _ = batch
+    output = next(
+        p
+        for p in tmp_path_factory.getbasetemp().glob("batch*")
+        if (p / "original_ids.csv").exists()
+    )
+    ids = pl.read_csv(output / "original_ids.csv", infer_schema_length=None)
+    assert ids.height == attributes.height
+    assert ids["pid"].is_unique().all()
+    assert ids["original_pid"].is_not_null().all()
+    assert ids["original_hid"].is_not_null().all()
+    # original ids are unique within a source
+    assert ids.select(
+        pl.struct("source", "original_pid").is_unique().all()
+    ).item()
+    # a household's members share its original id
+    assert (
+        ids.group_by("hid").agg(pl.col("original_hid").n_unique())[
+            "original_hid"
+        ]
+        == 1
+    ).all()

@@ -92,12 +92,12 @@ def load_years(
             )
 
         attributes = attributes.with_columns(
-            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String),
-            hid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("hid").cast(pl.String),
+            pid=pl.lit(yr) + pl.col("pid").cast(pl.String),
+            hid=pl.lit(yr) + pl.col("hid").cast(pl.String),
             access_egress_distance=pl.lit(None, dtype=pl.Float32),
         )
         trips = trips.with_columns(
-            pid=pl.lit(SOURCE) + pl.lit(yr) + pl.col("pid").cast(pl.String)
+            pid=pl.lit(yr) + pl.col("pid").cast(pl.String)
         )
 
         all_attributes.append(attributes)

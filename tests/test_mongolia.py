@@ -63,7 +63,7 @@ def test_mongolia_ids_carry_round_year(loaded):
 
     for year in (2023, 2019, 2011):
         rows = attrs.filter(pl.col("year") == year)
-        prefix = f"mongolia{str(year)[2:]}"
+        prefix = str(year)[2:]
         assert rows["hid"].str.starts_with(prefix).all()
         assert rows["pid"].str.starts_with(prefix).all()
 
@@ -129,10 +129,10 @@ def test_load_households_2023(configs):
     out = mongolia.load_households(hhs, _year(configs[0], 2023), 2023)
 
     assert out["hid"].to_list() == [
-        "mongolia231",
-        "mongolia232",
-        "mongolia233",
-        "mongolia234",
+        "231",
+        "232",
+        "233",
+        "234",
     ]
     assert out["hh_zone"].to_list() == ["urban", "rural", "rural", "urban"]
     assert out["dwelling"].to_list() == ["other", "flat", "house", "other"]
@@ -170,7 +170,7 @@ def test_load_households_2011_ids_and_no_mode_fallback(configs):
 
     out = mongolia.load_households(hhs, _year(configs[0], 2011), 2011)
 
-    assert out["hid"].to_list() == ["mongolia110012003"]
+    assert out["hid"].to_list() == ["110012003"]
     assert out["dwelling"].to_list() == ["other"]
     assert out["vehicles"].to_list() == [1]
     assert out["hh_mode"].to_list() == [None]
@@ -204,16 +204,16 @@ def test_load_persons_2023(configs):
     out = mongolia.load_persons(persons, cfg, 2023)
 
     assert out["person"].to_list() == [
-        "mongolia2311",
-        "mongolia2312",
-        "mongolia2321",
-        "mongolia2331",
+        "2311",
+        "2312",
+        "2321",
+        "2331",
     ]
     assert out["hid"].to_list() == [
-        "mongolia231",
-        "mongolia231",
-        "mongolia232",
-        "mongolia233",
+        "231",
+        "231",
+        "232",
+        "233",
     ]
     assert out["relationship"].to_list() == [
         "self",
@@ -268,9 +268,7 @@ def test_load_persons_2019_employment_rules_in_order(configs):
 
     out = mongolia.load_persons(persons, cfg, 2019)
 
-    assert out["person"].to_list() == [
-        f"mongolia190001002{i:02d}" for i in range(1, 5)
-    ]
+    assert out["person"].to_list() == [f"190001002{i:02d}" for i in range(1, 5)]
     assert out["employment"].to_list() == [
         "employed",
         "student",

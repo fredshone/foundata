@@ -193,10 +193,10 @@ def _digits(col: str, width: int) -> pl.Expr:
 
 
 def _with_ids(df: pl.DataFrame, year: int) -> pl.DataFrame:
-    """hid and person ids: source + 2-digit round year + the raw ids (2023's
+    """hid and person ids: 2-digit round year + the raw ids (2023's
     single hhid/pid, or the older rounds' cluster, household and line
     numbers, zero-padded). The year keeps the rounds' numbering apart."""
-    prefix = pl.lit(f"{SOURCE}{str(year)[2:]}")
+    prefix = pl.lit(str(year)[2:])
     if "hid_cluster" in df.columns:
         hid = prefix + _digits("hid_cluster", 4) + _digits("hid_hh", 3)
         df = df.with_columns(hid=hid)

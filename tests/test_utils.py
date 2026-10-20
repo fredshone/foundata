@@ -376,3 +376,27 @@ def test_do_not_assign_education_to_escort():
     result = utils.assign_education_to_escort(trips)
     assert result["oact"].to_list() == ["home", "education"]
     assert result["dact"].to_list() == ["education", "home"]
+
+
+# --- enumerate_ids ---
+
+
+def test_enumerate_ids_numbers_from_zero_in_sorted_order():
+    attrs = pl.DataFrame({"pid": ["x2", "x0", "x1"], "hid": ["h1", "h0", "h1"]})
+    trips = pl.DataFrame({"pid": ["x1", "x1", "x2"], "seq": [0, 1, 0]})
+    attrs, trips, keys = utils.enumerate_ids(attrs, trips)
+    assert attrs["pid"].dtype == pl.Int32
+    assert keys["pid"].to_list() == ["x0", "x1", "x2"]
+    assert keys["hid"].to_list() == ["h0", "h1"]
+    assert attrs["pid"].to_list() == [2, 0, 1]
+    assert attrs["hid"].to_list() == [1, 0, 1]
+    assert trips["pid"].to_list() == [1, 1, 2]
+
+
+def test_enumerate_ids_covers_trip_only_pids():
+    # a trip pid missing from attributes still gets an id (filtered later)
+    attrs = pl.DataFrame({"pid": ["b"], "hid": ["h"]})
+    trips = pl.DataFrame({"pid": ["a", "b"]})
+    attrs, trips, _ = utils.enumerate_ids(attrs, trips)
+    assert attrs["pid"].to_list() == [1]
+    assert trips["pid"].to_list() == [0, 1]

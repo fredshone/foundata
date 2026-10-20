@@ -63,7 +63,7 @@ def test_india_ids_prefixed_by_round_year(loaded):
     attrs, _ = loaded
 
     assert attrs["pid"].is_unique().all()
-    for year, prefix in [(2019, "india19"), (2024, "india24")]:
+    for year, prefix in [(2019, "19"), (2024, "24")]:
         rows = attrs.filter(pl.col("year") == year)
         assert rows["hid"].str.starts_with(prefix).all()
         assert rows["pid"].str.starts_with(prefix).all()
@@ -103,7 +103,7 @@ def test_load_households_2019(hh_cfg):
     hhs = india.load_households(_hh_raw_2019(), hh_cfg, 2019)
 
     row = hhs.row(0, named=True)
-    assert row["hid"] == "india191020201"
+    assert row["hid"] == "191020201"
     assert row["hh_size"] == 4
     assert row["hh_zone"] == "urban"
     # monthly INR expenditure -> annual EUR proxy

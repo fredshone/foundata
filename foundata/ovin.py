@@ -71,7 +71,7 @@ def load(
             persons, trips, person_config, trips_config
         )
 
-        prefix = pl.lit(SOURCE) + pl.lit(str(year))
+        prefix = pl.lit(str(year))
         attributes = table_joiner(hhs, persons, on="hid").with_columns(
             pid=prefix + pl.col("pid").cast(pl.String),
             hid=prefix + pl.col("hid").cast(pl.String),

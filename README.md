@@ -1,8 +1,6 @@
 [![Weekly](https://github.com/fredshone/foundata/actions/workflows/weekly.yml/badge.svg)](https://github.com/fredshone/foundata/actions/workflows/weekly.yml)
 
-Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* models of human behaviour — but also a useful source of code for those wishing to work with openly available datasets.
-
-We also have a pre-processed dataset of one-million openly available persons and their plans [here](https://github.com/fredshone/foundata/tree/main/data/).
+Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* or *worldwide* models of human behaviour — but also a useful source of code for those wishing to work with the available datasets. you can read more [here](https://fredshone.github.io/foundata/).
 
 The project is intended to be uses as a discoverable cli via `uv run foundata --help`.
 
@@ -29,15 +27,16 @@ Options:
   -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
   -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities.  [default: filter-consecutive]
   -d, --diagnostics                                   Also produce the anomaly-detection reports and supplementary activity heatmaps.
+  --keep-ids                                          Also write original_ids.csv, mapping each pid and hid back to the survey's own ids. It re-identifies records, so keep it private.
   -l, --log-level [debug|info|warning|error]          Minimum level of log messages to show.  [default: info]
   --help                                              Show this message and exit.
 ```
 
-By default a run writes the outputs, the summary tables and the plots shown in this README. Add `--diagnostics` for the anomaly-detection tables (and their CSVs) and the per-attribute activity heatmaps. Every command takes `-l/--log-level` (default `info`); use `-l debug` for finer-grained detail. The per-source processing notes are logged after the processing log table, each at its own level (e.g. `warning`), so `-l error` shows only the most serious.
+By default a run writes the outputs, the summary tables and the plots shown in this README. Add `--diagnostics` for the anomaly-detection tables (and their CSVs) and the per-attribute activity heatmaps. Add `--keep-ids` to also write `original_ids.csv`, which maps each `pid` and `hid` back to the survey's own ids for debugging; it re-identifies records, so don't share it. Every command takes `-l/--log-level` (default `info`); use `-l debug` for finer-grained detail. The per-source processing notes are logged after the processing log table, each at its own level (e.g. `warning`), so `-l error` shows only the most serious.
 
 The base data directory needs to hold raw data downloaded from the various sources by the user. The template directory `data_dir_template`, shows the expected folder and files structure.
 
-### Data Summary
+### Data summary
 
 The latest output using `uv run foundata batch` is as follows:
 
@@ -67,32 +66,9 @@ The latest output using `uv run foundata batch` is as follows:
 
 \*\* missing attributes: attribute data with `unknown`/`null` values.
 
-### Data Sources
+### Data sources
 
-Foundata makes use of open (safely available, either immediately, or available via simple request) datasources as follows
-
-
-|  Name             | Location  | ~Years    | Note              | Source             |
-| ----------------- |---------- |-----------|-------------------|--------------------|
-| ODIN        | NL | 2018-24 | Household income deciles converted to gross | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
-| OVIN        | NL | 2010-17 | ODiN's predecessor; respondents with foreign, truck or holiday trips are dropped, and professional travel (no trip detail) is kept only as time at work; disposable income bands converted to gross | [Request](https://ssh.datastations.nl/)     |
-| MON         | NL | 2005-07 | OViN's predecessor; whole households; household income summed from members' net income bands and converted to gross (null for ~24% of persons); no migration background or household position | [Request](https://ssh.datastations.nl/)     |
-| KTDB        | KR |  2010,16,21  | National surveys, no weights. 2021 personal survey: mostly Thursdays, no income info for young people. 2016 household (mostly Thursdays) and weekend (Saturday and Sunday diaries) surveys. 2010 household (weekday, date unknown) and weekend (Sat/Sun) surveys with trip ends at 시군구 level only, so distances come from district centroids or duration x speed | Open [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
-| NTS         | UK      | 2002-24     | UK multi-day responses are split into separate persons and schedules    | [Request](https://ukdataservice.ac.uk/)            |
-| CMAP        | US      | 17-19     | Small but good attribute availability | Open [data](https://github.com/CMAP-REPOS/mydailytravel) |
-| NHTS        | US      | 2001,09,17,22 |               | Open [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
-| QHTS        | AUS | 2019-25     | Queensland Australia         | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
-| VISTA       | AUS | 2012-24  | Victoria Australia            | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
-| LTDS        | UK  | 2019-25  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
-| INDIA       | IN | 2019,24 | Time use survey so limited trip info | Open [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
-| BRAZIL      | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
-| MEXICO      | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
-| ARGENTINA   | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, weights normalised within each survey, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
-| URUGUAY     | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
-| MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | Open [data](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
-| CHILE       | CL | 2012-13 | Santiago metro region (EOD 2012), all days of the week incl. summer season, ~68% of households have some member income imputed by the survey, distances from straight-line block or zone centroids | Open [data](https://github.com/PLUMAS-research/palomatrix-dtpm/tree/main/src/palomatrix/eod/datos) (SECTRA EOD 2012 as parquet) |
-| FRANCE      | FR | 2008-23 | 85 surveys standardised by [MobiSurvStd](https://mobisurvstd.github.io/MobiSurvStd/): CEREMA city surveys (EMD, EDGT, EDVM, EMC²) and Île-de-France EGT 2020 (national EMP 2019 excluded: its diary day is always a travel day); mostly weekdays; phone surveys cover 1-2 members per household; income in EGT 2020 only; weights normalised within each survey; distances from survey travel distances or straight line x 1.3 | Via [MobiSurvStd](https://github.com/MobiSurvStd/MobiSurvStd) (each survey has its own licence) |
-
+See the [source docs](https://fredshone.github.io/foundata/sources/) for the full list of sources, how to access them and per-source notes.
 
 ### In progress or todo
 
@@ -102,25 +78,16 @@ Foundata makes use of open (safely available, either immediately, or available v
 - JICA PT surveys via PFLOW
 - Hong Kong TCS 2011 / 2022
 
-### Plans
 
-We encode human activity plans as sequences of activities and associated trips. Foundata `run` will output both an activities table and a trips table. Temporal and spatial consistency is enforced, so that activity sequences should be physically plausible.
+### Formats
 
-### Activities
+Foundata processes input surveys into *harmonised* "plans" and "attributes". These come in various formats as follows. Refer to the [output format docs](https://fredshone.github.io/foundata/format/) for more detail.
 
-The activities output combines activities with their **preceding** trip:
+#### Plans
 
-|   pid | seq | act     |   start |   end |
-|------:|-----|:--------|--------:|------:|
-|     0 | 0   | home    |       0 |   600 |
-|     0 | 1   |  shop   |     600 |  660  |
-|     0 | 2   |  home   |     660 |  1440 |
+We encode human activity plans as sequences of activities and associated trips. Foundata `batch` or `run` will output both a trips table and an activity_schedules table. Temporal and spatial consistency is enforced, so that sequences should be physically plausible.
 
-Activities also carry `zone` (the urban/rural class of the trip end) and `location`, a `location_id` of `locations.parquet` (see [Household location summary](#household-location-summary)): the location of the trip ending there (the first activity takes the first trip's origin), or, for a home activity the trip gives none for, and for persons with no trips, the household's `hh_location`.
-
-We currently map all activities to the following types: {home, work, education, visit, leisure, shop, escort, other}.
-
-### Trips
+#### Trips
 
 The trips output provides both trip information and origin/destination location and activity information:
 
@@ -133,7 +100,22 @@ Trip start time (tst) and trip end time (tet) are in minutes since midnight. Dis
 
 We currently map all transport modes to the following types: {car, walk, bike, bus, rail, other}.
 
-### Person Attributes
+#### Activity schedules
+
+The activities output combines activities with their **preceding** trip to create activity-only sequences:
+
+|   pid | seq | act     |   start |   end |
+|------:|-----|:--------|--------:|------:|
+|     0 | 0   | home    |       0 |   600 |
+|     0 | 1   |  shop   |     600 |  660  |
+|     0 | 2   |  home   |     660 |  1440 |
+
+Activities also carry `zone` (the urban/rural class of the trip end) and `location`, a `location_id` of `locations.parquet` (see [Household location summary](#household-location-summary)): the location of the trip ending there (the first activity takes the first trip's origin), or, for a home activity the trip gives none for, and for persons with no trips, the household's `hh_location`.
+
+We currently map all activities to the following types: {home, work, education, visit, leisure, shop, escort, other}.
+
+
+#### Person attributes
 
 Plans are joinable by a unique person id (pid) to attributes. Attributes include household, individual, day and plan information.
 
@@ -187,11 +169,15 @@ Data availability (non null or unknown) by source and attribute:
 | max_temp_c             | 0%        | 0%     | 0%    | 100% | 0%     | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 13%  |
 | rain                   | 0%        | 0%     | 0%    | 100% | 0%     | 0%    | 30%  | 0%   | 0%     | 0%       | 0%   | 0%   | 100% | 0%   | 0%   | 0%   | 0%      | 0%    | 13%  |
 
-### Household location summary
+#### Location summary
 
-Every household carries its home location in the outputs, and most sources' trips carry their origin and destination: the `hh_location` attribute, the `ocode`/`dcode` trip columns and the `location` activity column reference rows of `locations.parquet` (see below), which gives the zone (or point), its precision, its polygon, centroid, its size and where the geometry came from. 
+Attribute data includes home location, and most trips carry their origin and destination:
 
-`batch` writes one row per distinct location (home or trip end) as GeoParquet (WKB geometry in WGS84; `geopandas.read_parquet` reads it, and `polars.read_parquet` reads the geometry as WKB bytes). The `hh_location` attribute, the `ocode`/`dcode` trip columns and the activities' `location` hold `location_id`s, so households and trip ends in the same zone (or at the same point) share a row; they are null where the source gives no location.
+- `hh_location` in attributes
+- `ocode`/`dcode` in trips
+- `location` in activity_schedules
+
+To minimise size, all locations are indexes, that refer to geoemtries defined by the output `locations.parquet` (see below), which gives the zone (or point), its precision, its polygon, centroid, its size and where the geometry came from. 
 
 | Column | |
 |---|---|

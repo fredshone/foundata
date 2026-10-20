@@ -21,8 +21,8 @@ def sample_attributes_df():
     """Minimal valid attributes DataFrame matching the template schema."""
     attrs = pl.DataFrame(
         {
-            "hid": ["nhts001", "nhts002"],
-            "pid": ["nhts0011", "nhts0021"],
+            "hid": [0, 1],
+            "pid": [0, 1],
             "age": [30, 45],
             "hh_size": [2, 3],
             "hh_income": [40000, 55000],
@@ -51,7 +51,7 @@ def sample_attributes_df():
     )
     trips = pl.DataFrame(
         {
-            "pid": ["nhts0011", "nhts0011", "nhts0021"],
+            "pid": [0, 0, 1],
             "seq": [0, 1, 0],
             "ozone": ["urban", "urban", "suburban"],
             "dzone": ["urban", "suburban", "urban"],
@@ -74,8 +74,8 @@ def sample_trips_df():
     """Minimal valid trips DataFrame matching the template schema."""
     attrs = pl.DataFrame(
         {
-            "hid": ["nhts001", "nhts002"],
-            "pid": ["nhts0011", "nhts0021"],
+            "hid": [0, 1],
+            "pid": [0, 1],
             "age": [30, 45],
             "hh_size": [2, 3],
             "hh_income": [40000, 55000],
@@ -104,7 +104,7 @@ def sample_trips_df():
     )
     trips = pl.DataFrame(
         {
-            "pid": ["nhts0011", "nhts0011", "nhts0021"],
+            "pid": [0, 0, 1],
             "seq": [0, 1, 0],
             "ozone": ["urban", "urban", "suburban"],
             "dzone": ["urban", "suburban", "urban"],

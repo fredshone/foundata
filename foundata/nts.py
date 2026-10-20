@@ -42,12 +42,10 @@ def load(
     trips, attributes = split_days(days, trips, attributes)
 
     attributes = attributes.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String),
-        hid=pl.lit(SOURCE) + pl.col("hid").cast(pl.String),
+        pid=pl.col("pid").cast(pl.String),
+        hid=pl.col("hid").cast(pl.String),
     )
-    trips = trips.with_columns(
-        pid=pl.lit(SOURCE) + pl.col("pid").cast(pl.String)
-    )
+    trips = trips.with_columns(pid=pl.col("pid").cast(pl.String))
 
     return attributes, trips
 

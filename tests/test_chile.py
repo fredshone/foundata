@@ -35,8 +35,6 @@ def test_chile_load():
     assert len(trips) == len(raw_trips)
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("chile").all()
-    assert attrs["hid"].str.starts_with("chile").all()
     assert attrs["source"].unique().to_list() == ["chile"]
     assert attrs["country"].unique().to_list() == ["cl"]
     assert set(attrs["year"].unique()) <= {2012, 2013}

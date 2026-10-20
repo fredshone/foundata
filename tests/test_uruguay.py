@@ -37,8 +37,6 @@ def test_uruguay_load():
     assert len(trips) == len(raw_trips)
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("uruguay").all()
-    assert attrs["hid"].str.starts_with("uruguay").all()
     assert attrs["source"].unique().to_list() == ["uruguay"]
     assert attrs["age"].drop_nulls().min() >= 4
     assert (attrs["hh_size"] < 99).all()

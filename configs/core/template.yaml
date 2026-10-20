@@ -4,8 +4,11 @@ notes:
     are acceptable values — they indicate missing/inapplicable data.
     When default: False or absent, every row must have a real value.
   id_prefix: |
-    pid and hid must be prefixed with the source name to ensure global uniqueness
-    across all surveys. E.g. "nhts2022100012345" or "cmap123456".
+    Loaders give pid and hid as strings unique within the source: the raw id,
+    plus a year or survey tag where the source combines several surveys, e.g.
+    "2022100012345". run.load_source then replaces them with int32 ids
+    numbered from 0 (utils.enumerate_ids), and run.runner offsets them per
+    source so they are unique across all surveys.
   time_format: |
     tst (trip start time) and tet (trip end time) are integers: minutes since
     midnight. Trips crossing midnight have values > 1440. Use fix.day_wrap() to
@@ -14,13 +17,15 @@ notes:
 
 attributes:
   hid:
-    dtype: string
+    dtype: int32
     default: False
-    description: "Household ID. Must be unique within the dataset and prefixed with source name."
+    min: 0
+    description: "Household ID. Unique within the dataset."
   pid:
-    dtype: string
+    dtype: int32
     default: False
-    description: "Person ID. Must be unique within the dataset and prefixed with source name."
+    min: 0
+    description: "Person ID. Unique within the dataset."
   age:
     dtype: int32
     default: True
@@ -163,9 +168,10 @@ attributes:
 
 trips:
   pid:
-    dtype: string
+    dtype: int32
     default: None
-    description: "Person ID, matching attributes.pid. Must be prefixed with source name."
+    min: 0
+    description: "Person ID, matching attributes.pid."
   seq:
     dtype: int8
     default: None
