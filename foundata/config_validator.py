@@ -276,10 +276,12 @@ def validate_all_sources(configs_root: str | Path | None = None) -> bool:
         configs_root = utils.get_config_path()
 
     configs_root = Path(configs_root)
+    # source dirs hold *_dictionary.yaml files; core and shared dirs (e.g.
+    # nl) don't
     sources = [
         d.name
         for d in configs_root.iterdir()
-        if d.is_dir() and d.name != "core"
+        if d.is_dir() and any(d.glob("*_dictionary.yaml"))
     ]
 
     if not sources:

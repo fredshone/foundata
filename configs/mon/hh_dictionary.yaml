@@ -1,4 +1,4 @@
-# Household-level dictionary for OM / MON (Mobiliteitsonderzoek Nederland,
+# Household-level dictionary for MON (Mobiliteitsonderzoek Nederland,
 # 2005-2007), the predecessor of OViN. Value codes are identical in every
 # year, so there is no per-year nesting. Column names are matched
 # case-insensitively (all lower case in 2005-06, mixed case in 2007).
@@ -29,7 +29,7 @@ hh_zone:
 # Household income is the sum of the members' sampled personal net incomes
 # (see personal_income in person_dictionary.yaml), taken as disposable
 # household income and converted to gross by rank like odin and ovin (see
-# configs/core/nl_income.yaml; 2005-07 use the 2011 table, the earliest).
+# configs/nl/nl_income.yaml; 2005-07 use the 2011 table, the earliest).
 # The sum leaves out household-level transfers (e.g. huurtoeslag), so it
 # slightly understates disposable income. It is null if any member didn't
 # respond (fewer person records than AantPers, 2-4% of households) or has an

@@ -272,8 +272,8 @@ GOTCHAS SEEN SO FAR
   encoding: try encoding="latin1", else transliterate the names in a copy
   (argentina.ascii_long_names).
 - A filter like ~(age < 3) drops rows with null age; add fill_null(False).
-- Dutch sources (odin, ovin, om) share foundata/nl_income.py and
-  configs/core/nl_income.yaml: income is converted to gross household income
+- Dutch sources (odin, ovin, mon) share foundata/nl_income.py and
+  configs/nl/nl_income.yaml: income is converted to gross household income
   by rank against CBS decile boundaries, and open top bands are sampled from
   a Pareto tail capped at a shared max_income. Use them for any new NL
   source rather than a fixed upper bound.

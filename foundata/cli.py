@@ -25,9 +25,12 @@ OPEN_SOURCES = (
     "qhts",
     "ktdb",
     "mexico",
+    "brazil",
     "argentina",
     "uruguay",
     "chile",
+    "india",
+    "mongolia",
 )
 
 app = typer.Typer(

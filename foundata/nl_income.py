@@ -1,9 +1,9 @@
-"""Gross household income for the Dutch sources (odin, ovin, om).
+"""Gross household income for the Dutch sources (odin, ovin, mon).
 
 The surveys record disposable household income or personal net income in
 bands. These helpers sample a value within a band and convert disposable
 income to gross by rank, using the CBS decile boundaries in
-configs/core/nl_income.yaml (see there for sources and method).
+configs/nl/nl_income.yaml (see there for sources and method).
 """
 
 import random
@@ -15,7 +15,7 @@ from foundata.utils import get_config_path, load_yaml_config
 
 
 def load_config() -> dict:
-    return load_yaml_config(get_config_path("core", "nl_income.yaml"))
+    return load_yaml_config(get_config_path("nl", "nl_income.yaml"))
 
 
 def year_table(config: dict, year: int) -> dict:

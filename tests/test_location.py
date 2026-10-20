@@ -400,7 +400,7 @@ BOUNDS = {
     "cmap": (-93, 36.5, -84.5, 47.5),  # all of IL, IN and WI
     "qhts": (137, -30, 154, -9),
     "vista": (140, -39.5, 150.5, -33.8),
-    "om": NL,
+    "mon": NL,
     "ovin": NL,
     "odin": NL,
     "ktdb": (124, 33, 132, 39),

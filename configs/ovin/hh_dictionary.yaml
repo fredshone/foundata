@@ -19,8 +19,8 @@ column_mappings:
 
 # HHBestInk (besteedbaar inkomen van het huishouden): annual disposable
 # household income in EUR bands. A disposable income is sampled in the band
-# and converted to gross household income by rank, as for odin and om (see
-# configs/core/nl_income.yaml). The top band is open (26-40% of respondents
+# and converted to gross household income by rank, as for odin and mon (see
+# configs/nl/nl_income.yaml). The top band is open (26-40% of respondents
 # depending on year) and is sampled from that year's Pareto tail, capped at
 # the shared max_income.
 hh_income:

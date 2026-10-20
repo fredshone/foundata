@@ -3,17 +3,17 @@ from pathlib import Path
 
 import polars as pl
 
-from foundata import nl_income, om
+from foundata import mon, nl_income
 from foundata.utils import get_config_path, load_yaml_config
 
 FIXTURE_ROOT = Path(__file__).parent / "fixtures"
-DATA_ROOT = os.getenv("FOUNDATA_OM_DATA", str(FIXTURE_ROOT / "om"))
+DATA_ROOT = os.getenv("FOUNDATA_MON_DATA", str(FIXTURE_ROOT / "mon"))
 CONFIGS_ROOT = get_config_path()
 
 
 def load_configs():
     return [
-        load_yaml_config(CONFIGS_ROOT / "om" / name)
+        load_yaml_config(CONFIGS_ROOT / "mon" / name)
         for name in (
             "hh_dictionary.yaml",
             "person_dictionary.yaml",
@@ -22,19 +22,19 @@ def load_configs():
     ]
 
 
-def test_om_load():
+def test_mon_load():
     hh_cfg, person_cfg, trips_cfg = load_configs()
 
-    attrs, trips = om.load(
-        DATA_ROOT, list(om.DATA_FILES), hh_cfg, person_cfg, trips_cfg
+    attrs, trips = mon.load(
+        DATA_ROOT, list(mon.DATA_FILES), hh_cfg, person_cfg, trips_cfg
     )
 
     assert attrs["pid"].is_unique().all()
     assert set(trips["pid"]).issubset(set(attrs["pid"]))
-    assert attrs["pid"].str.starts_with("om").all()
-    assert attrs["source"].unique().to_list() == ["om"]
+    assert attrs["pid"].str.starts_with("mon").all()
+    assert attrs["source"].unique().to_list() == ["mon"]
     assert attrs["country"].unique().to_list() == ["nl"]
-    assert set(attrs["year"]) == set(om.DATA_FILES)
+    assert set(attrs["year"]) == set(mon.DATA_FILES)
     # whole households: PersID is HHID * 100 + RegelNr
     assert attrs.select(
         pl.col("pid").str.starts_with(pl.col("hid")).all()
@@ -89,7 +89,7 @@ def persons_raw(**overrides):
 def test_persons_mapped_one_row_each():
     _, person_cfg, _ = load_configs()
 
-    persons = om.load_persons(persons_raw(), person_cfg, 2006)
+    persons = mon.load_persons(persons_raw(), person_cfg, 2006)
 
     assert persons["pid"].to_list() == [101, 102, 201, 301]
     assert persons["employment"].to_list() == [
@@ -121,7 +121,7 @@ def test_persons_mapped_one_row_each():
 
 def test_household_income_summed_and_nulled():
     hh_cfg, person_cfg, _ = load_configs()
-    persons = om.load_persons(
+    persons = mon.load_persons(
         persons_raw(
             Persoon=[1, 1, 1, 1, 1],
             PersID=[101, 102, 201, 301, 302],
@@ -140,7 +140,7 @@ def test_household_income_summed_and_nulled():
         WoGem=[363, 344, 1680],
     )
 
-    hhs = om.load_households(data, hh_cfg, persons, 2006).sort("hid")
+    hhs = mon.load_households(data, hh_cfg, persons, 2006).sort("hid")
 
     income = hhs["hh_income"].to_list()
     # net 7.5-15k (plus no own income), converted to gross by rank
@@ -162,7 +162,7 @@ def test_household_income_large_households_capped_size():
     sizes = {1: 11, 2: 9, 3: 11}
     pids = [h * 100 + r for h, n in sizes.items() for r in range(1, n + 1)]
     n = len(pids)
-    persons = om.load_persons(
+    persons = mon.load_persons(
         persons_raw(
             Persoon=[1] * n,
             PersID=pids,
@@ -192,7 +192,7 @@ def test_household_income_large_households_capped_size():
         WoGem=[363, 363, 363],
     )
 
-    hhs = om.load_households(data, hh_cfg, persons, 2006).sort("hid")
+    hhs = mon.load_households(data, hh_cfg, persons, 2006).sort("hid")
 
     income = hhs["hh_income"].to_list()
     assert income[0] is not None  # 11 records, capped to 10 == AantPers

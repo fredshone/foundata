@@ -21,11 +21,11 @@ from foundata import (
     location,
     ltds,
     mexico,
+    mon,
     mongolia,
     nhts,
     nts,
     odin,
-    om,
     ovin,
     plots,
     post_process,
@@ -222,13 +222,13 @@ def _load_ovin(source_dir: Path):
     )
 
 
-def _load_om(source_dir: Path):
+def _load_mon(source_dir: Path):
     hh_config, person_config, trips_config = _configs(
-        "om", "hh", "person", "trip"
+        "mon", "hh", "person", "trip"
     )
-    return om.load(
+    return mon.load(
         data_root=source_dir,
-        years=list(om.DATA_FILES),
+        years=list(mon.DATA_FILES),
         hh_config=hh_config,
         person_config=person_config,
         trips_config=trips_config,
@@ -355,7 +355,7 @@ SOURCES = {
     "nts": _load_nts,
     "odin": _load_odin,
     "ovin": _load_ovin,
-    "om": _load_om,
+    "mon": _load_mon,
     "india": _load_india,
     "brazil": _load_brazil,
     "mexico": _load_mexico,

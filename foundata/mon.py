@@ -1,4 +1,4 @@
-"""OM / MON (Mobiliteitsonderzoek Nederland, 2005-2007).
+"""MON (Mobiliteitsonderzoek Nederland, 2005-2007).
 
 The predecessor of OViN, with the same one-row-per-ride layout and trip
 variables, so trips are loaded by the OViN code. Differences from OViN that
@@ -27,7 +27,7 @@ from foundata.ovin import (
 )
 from foundata.utils import expand_root, table_joiner
 
-SOURCE = "om"
+SOURCE = "mon"
 DATA_FILES = {
     2005: "Databestand MON 2005.sav",
     2006: "MON2006 eindproducten/bestanden/Databestand MON 2006.sav",
@@ -42,7 +42,7 @@ def load(
     person_config: dict,
     trips_config: dict,
 ) -> tuple[pl.DataFrame, pl.DataFrame]:
-    logger.info("Loading OM...")
+    logger.info("Loading MON...")
     root = expand_root(data_root)
     columns = ["Huishoud", "Persoon"] + [
         raw
@@ -57,7 +57,7 @@ def load(
         persons = load_persons(data, person_config, year)
         hhs = load_households(data, hh_config, persons, year)
         zones = gemeente_zone(data.filter(pl.col("Persoon") == 1))
-        trips = load_trips(data, trips_config, zones, year, source="om")
+        trips = load_trips(data, trips_config, zones, year, source="mon")
         persons, trips = drop_non_regular(
             persons.drop("personal_income"),
             trips,
@@ -163,7 +163,7 @@ def load_households(
     ).drop("respondents")
     return location.add(
         hhs.with_columns(home_gemeente=gemeente_code("home_gemeente")),
-        source="om",
+        source="mon",
         key=year,
     )
 

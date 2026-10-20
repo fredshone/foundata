@@ -30,7 +30,7 @@ column_mappings:
 # HHBestInkG (2018-2023) / HHGestInkG (2024): household income 10%-group,
 # from CBS register data. Decile k is given the gross household income band
 # between that year's CBS gross deciles k-1 and k, i.e. converted to gross by
-# rank like ovin and om (see configs/core/nl_income.yaml). The top decile is
+# rank like ovin and mon (see configs/nl/nl_income.yaml). The top decile is
 # sampled from that year's Pareto tail, capped at the shared max_income.
 # 2024 ranks households by standardised (equivalised) income, so its deciles
 # only approximate the gross ranking.

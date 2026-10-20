@@ -47,7 +47,7 @@ differently based on redistribution licensing:
   distributed as SPSS .sav; scripts/ovin_writer.py writes only the columns
   the loader reads, with fresh synthetic ids and shuffled respondent
   attributes, keeping trip rows intact.
-- om (MON 2005-2007, OViN's predecessor) is restricted (DANS) and
+- mon (MON 2005-2007, OViN's predecessor) is restricted (DANS) and
   distributed as SPSS .sav; scripts/ovin_writer.py samples whole
   households, writing only the columns the loader reads, with fresh
   synthetic ids and shuffled household and person attributes, keeping trip
@@ -93,7 +93,7 @@ from nesstar_converter import (
     parse_ddi,
 )
 from nesstar_writer import build_nesstar_file
-from ovin_writer import sample_om, sample_ovin
+from ovin_writer import sample_mon, sample_ovin
 from parquet_writer import sample_chile, sample_france
 from sav_writer import sample_argentina
 
@@ -1178,13 +1178,13 @@ def generate_ovin():
 
 
 # ---------------------------------------------------------------------------
-# OM (restricted — anonymized: shuffled attributes, intact trips, fresh ids)
+# MON (restricted — anonymized: shuffled attributes, intact trips, fresh ids)
 # ---------------------------------------------------------------------------
 
 
-def generate_om():
-    print("Generating OM...")
-    sample_om(DATA_ROOT / "OM", TEMPLATE_ROOT / "OM", 5, SEED, min_trips=2)
+def generate_mon():
+    print("Generating MON...")
+    sample_mon(DATA_ROOT / "MON", TEMPLATE_ROOT / "MON", 5, SEED, min_trips=2)
 
 
 # ---------------------------------------------------------------------------
@@ -1227,7 +1227,7 @@ GENERATORS = {
     "ltds": generate_ltds,
     "odin": generate_odin,
     "ovin": generate_ovin,
-    "om": generate_om,
+    "mon": generate_mon,
     "india": generate_india,
     "brazil": generate_brazil,
     "mexico": generate_mexico,

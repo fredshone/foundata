@@ -1,14 +1,14 @@
-# Dutch household income reference used by odin, ovin and om to put
+# Dutch household income reference used by odin, ovin and mon to put
 # hh_income on one scale: annual GROSS household income (bruto inkomen,
 # CBS definition: primary income plus transfers received, before income tax
 # and social contributions).
 #
 # The surveys record disposable household income (ODiN, OViN) or personal
-# net income (OM). Those are converted to gross by rank: a household at
+# net income (MON). Those are converted to gross by rank: a household at
 # disposable percentile p gets the gross income at percentile p, by linear
 # interpolation between that year's CBS decile boundaries below. Above P90
 # the gross/disposable ratio at P90 (~1.8) is applied. Years outside the
-# table use the nearest year (OM 2005-07 and OViN 2010 use 2011).
+# table use the nearest year (MON 2005-07 and OViN 2010 use 2011).
 #
 # Source: CBS StatLine, all private households incl. students:
 #   83934NED "Welvaart; grenzen van 10%-groepen inkomen & vermogen"
@@ -17,7 +17,7 @@
 #     of the top 10% group, for tail_alpha).
 # 2011-2023 definitive, 2024 provisional (fetched 2026-10).
 
-# Open-ended top bands (ODiN's top decile, OViN's EUR 50 000+, OM's
+# Open-ended top bands (ODiN's top decile, OViN's EUR 50 000+, MON's
 # personal EUR 30 000+) are sampled from a Pareto tail truncated at this
 # gross value, the same for every source.
 max_income: 500000

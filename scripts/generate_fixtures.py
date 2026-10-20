@@ -19,7 +19,7 @@ from csv_writer import sample_uruguay
 from dbf_writer import sample_brazil, sample_mexico
 from ktdb_writer import sample_ktdb_2010, sample_ktdb_2016
 from mongolia_writer import sample_mongolia
-from ovin_writer import sample_om, sample_ovin
+from ovin_writer import sample_mon, sample_ovin
 from parquet_writer import sample_chile, sample_france
 from sav_writer import sample_argentina
 
@@ -456,14 +456,14 @@ def generate_ovin():
 
 
 # ---------------------------------------------------------------------------
-# OM (restricted — shuffled attributes, intact trips, fresh ids)
+# MON (restricted — shuffled attributes, intact trips, fresh ids)
 # ---------------------------------------------------------------------------
 
 
-def generate_om():
-    print("Generating OM fixtures...")
+def generate_mon():
+    print("Generating MON fixtures...")
     # 20 households per survey year, 60 across the three years
-    sample_om(DATA_ROOT / "OM", FIXTURE_ROOT / "om", 20, SEED)
+    sample_mon(DATA_ROOT / "MON", FIXTURE_ROOT / "mon", 20, SEED)
 
 
 # ---------------------------------------------------------------------------
@@ -570,7 +570,7 @@ if __name__ == "__main__":
     generate_mexico()
     generate_argentina()
     generate_ovin()
-    generate_om()
+    generate_mon()
     generate_uruguay()
     generate_mongolia()
     generate_chile()

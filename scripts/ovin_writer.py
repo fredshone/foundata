@@ -1,17 +1,17 @@
-"""Write samples of the ovin and om sources' raw SPSS .sav files.
+"""Write samples of the ovin and mon sources' raw SPSS .sav files.
 
-OViN and OM/MON are restricted (DANS registered access, like ODiN), so
+OViN and MON are restricted (DANS registered access, like ODiN), so
 samples are anonymised like the other restricted sources:
 
 - only the columns the loader reads are kept, and only respondent rows and
   trip rows (Verpl >= 1), not the extra ride rows;
-- respondents (and om households) get fresh synthetic ids;
+- respondents (and mon households) get fresh synthetic ids;
 - attributes are shuffled independently across the sample, so no real
   respondent's combination survives. Columns that must stay consistent
   are shuffled as a block: home gemeente with its Sted (the loaders'
   trip-zone lookup), and month with day of month and weekday. Columns
   that describe a respondent's trips (Weggeweest/Responsc, Vertrekp) or
-  the household's structure (om AantPers) stay put;
+  the household's structure (mon AantPers) stay put;
 - trip rows are kept intact apart from the remapped ids, so trip
   sequencing, times and zones stay coherent.
 """
@@ -115,19 +115,19 @@ def sample_ovin(
         print(f"  {year}: respondents: {len(respondents)}, trips: {len(trips)}")
 
 
-def sample_om(
+def sample_mon(
     src_root: Path, dst_root: Path, n: int, seed: int, min_trips: int = 0
 ) -> None:
-    """Write `n` anonymised households per OM/MON year.
+    """Write `n` anonymised households per MON year.
 
     With `min_trips`, only households where someone made at least that many
     regular trips are sampled. Household attributes are shuffled across
     households and person attributes across persons; the diary date is
     shuffled as a household attribute, so all members get the same day.
     """
-    from foundata.om import DATA_FILES, read_sav
+    from foundata.mon import DATA_FILES, read_sav
 
-    hh_cols, person_cols, trip_cols = loader_columns("om")
+    hh_cols, person_cols, trip_cols = loader_columns("mon")
     person_cols = [c for c in person_cols if c not in hh_cols]
     date = ["Jaar"] + DATE
     trip_cols = [c for c in trip_cols if c not in hh_cols + person_cols]

@@ -1,0 +1,38 @@
+site_name: Foundata
+site_description: Harmonised household travel and time-use surveys
+site_url: https://fredshone.github.io/foundata/
+repo_url: https://github.com/fredshone/foundata
+repo_name: fredshone/foundata
+edit_uri: edit/main/docs/
+
+nav:
+  - Introduction: index.md
+  - Output format: format.md
+  - Sources: sources.md
+
+theme:
+  name: material
+  features:
+    - navigation.sections
+    - navigation.top
+    - toc.follow
+    - content.code.copy
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+markdown_extensions:
+  - tables
+  - toc:
+      permalink: true
+  - admonition
+  - pymdownx.highlight
+  - pymdownx.superfences

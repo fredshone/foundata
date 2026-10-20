@@ -1,4 +1,4 @@
-# Person-level dictionary for OM / MON (2005-2007). One row per person has
+# Person-level dictionary for MON (2005-2007). One row per person has
 # Persoon == 1. The diary date is per person: in a few households members
 # filled in different days.
 
@@ -25,7 +25,7 @@ away_non_regular: [3]
 
 # Inkomen (persoonlijk netto-inkomen), annual EUR. A value is sampled in the
 # band; the open top band is sampled from the Pareto tail in
-# configs/core/nl_income.yaml (2011's, the nearest year), capped at the
+# configs/nl/nl_income.yaml (2011's, the nearest year), capped at the
 # disposable equivalent of the shared max_income.
 personal_income:
   0: [0, 0]          # Jonger dan 12 jaar (no own income)

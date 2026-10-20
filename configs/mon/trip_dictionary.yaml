@@ -1,4 +1,4 @@
-# Trip-level dictionary for OM / MON (2005-2007). Same ride-level layout as
+# Trip-level dictionary for MON (2005-2007). Same ride-level layout as
 # OViN and loaded by the same code (foundata.ovin.load_trips): a trip's
 # first ride row has Verpl set, and regular trips are Verpl == 1. Verpl 2
 # (vrachtwagen verplaatsing, 2006-07 only) marks truck trips; respondents

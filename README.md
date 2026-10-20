@@ -51,7 +51,7 @@ The latest output using `uv run foundata batch` is as follows:
 | odin      | 384,215       | 25%                | 887,774        | 9.7                 |
 | mexico    | 348,072       | 47%                | 494,953        | 5.3                 |
 | ovin      | 291,125       | 31%                | 724,075        | 7.7                 |
-| om        | 158,815       | 39%                | 421,908        | 4.2                 |
+| mon       | 158,815       | 39%                | 421,908        | 4.2                 |
 | vista     | 89,507        | 28%                | 235,983        | 2.0                 |
 | argentina | 85,950        | 32%                | 133,105        | 0.9                 |
 | brazil    | 83,895        | 32%                | 150,846        | 0.9                 |
@@ -76,20 +76,20 @@ Foundata makes use of open (safely available, either immediately, or available v
 | ----------------- |---------- |-----------|-------------------|--------------------|
 | ODIN        | NL | 2018-24 | Household income deciles converted to gross | [Request](https://ssh.datastations.nl/dataset.xhtml?persistentId=doi:10.17026/SS/TR1TUW)     |
 | OVIN        | NL | 2010-17 | ODiN's predecessor; respondents with foreign, truck or holiday trips are dropped, and professional travel (no trip detail) is kept only as time at work; disposable income bands converted to gross | [Request](https://ssh.datastations.nl/)     |
-| OM          | NL | 2005-07 | MON, OViN's predecessor; whole households; household income summed from members' net income bands and converted to gross (null for ~24% of persons); no migration background or household position | [Request](https://ssh.datastations.nl/)     |
+| MON         | NL | 2005-07 | OViN's predecessor; whole households; household income summed from members' net income bands and converted to gross (null for ~24% of persons); no migration background or household position | [Request](https://ssh.datastations.nl/)     |
 | KTDB        | KR |  2010,16,21  | National surveys, no weights. 2021 personal survey: mostly Thursdays, no income info for young people. 2016 household (mostly Thursdays) and weekend (Saturday and Sunday diaries) surveys. 2010 household (weekday, date unknown) and weekend (Sat/Sun) surveys with trip ends at 시군구 level only, so distances come from district centroids or duration x speed | Open [data](https://www.ktdb.go.kr/www/index.do) (stay on korean language site)     |
 | NTS         | UK      | 2002-24     | UK multi-day responses are split into separate persons and schedules    | [Request](https://ukdataservice.ac.uk/)            |
 | CMAP        | US      | 17-19     | Small but good attribute availability | Open [data](https://github.com/CMAP-REPOS/mydailytravel) |
 | NHTS        | US      | 2001,09,17,22 |               | Open [data](https://nhts.ornl.gov/downloads) & [docs](https://nhts.ornl.gov/documentation) |
-| QHTS        | AUS | 2012-24     | Queensland Australia         | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
-| VISTA       | AUS | 2012-25  | Victoria Australia            | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
-| LTDS        | UK  | 2019-24  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
-| INDIA       | IN | 2019,24 | Time use survey so limited trip info | [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
+| QHTS        | AUS | 2019-25     | Queensland Australia         | Open [data](https://www.data.qld.gov.au/dataset/queensland-household-travel-survey-series) |
+| VISTA       | AUS | 2012-24  | Victoria Australia            | Open [data](https://opendata.transport.vic.gov.au/dataset/victorian-integrated-survey-of-travel-and-activity-vista) |
+| LTDS        | UK  | 2019-25  | Exact trip times and durations are sampled | Request from TfL (try to contact the LTDS team) |
+| INDIA       | IN | 2019,24 | Time use survey so limited trip info | Open [data](https://microdata.gov.in/nada/index.php/catalog/236/related-materials)     |
 | BRAZIL      | BR | 2017-18 | São Paulo metro region, weekdays only, ~56% of incomes imputed by the survey | Open [data](https://transparencia.metrosp.com.br/dataset/pesquisa-origem-e-destino/resource/4362eaa3-c0aa-410a-a32b-37355c091075) |
 | MEXICO      | MX | 2017 | Mexico City metro region, weekday (Tue-Thu) and Saturday diaries, no income, distances estimated from stage durations | Open [data](https://www.inegi.org.mx/programas/eod/2017/#microdatos) |
 | ARGENTINA   | AR | 2009-13 | Five household mobility surveys (Buenos Aires ENMODO, Salta, Santa Fe-Paraná, Neuquén-Cipolletti, Resistencia-Corrientes), weekdays only, weights normalised within each survey, distances estimated from stage durations, short personal trips lack times | Open [data](https://www.argentina.gob.ar/transporte/dgppse/publicaciones/encuestas) |
 | URUGUAY     | UY | 2016 | Montevideo metro region, one weekday (Mon-Fri, day not recorded), no income, distances from blocks walked or census segment centroids | Open [data](https://montevideo.gub.uy/tipo/area-tematica/movilidad/observatorio-de-movilidad) |
-| MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | [Request](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
+| MONGOLIA    | MN | 2011,19,23 | Time use survey, so limited trip info: many trips implied by a change of place; 2-3 diary days per person in 2011/19; mode recorded only for travel in 2023 (else the person's or household's best mode) and 2011, never in 2019; no income or distance | Open [data](https://nada.nso.mn/en/catalog/53/get-microdata) (free registration) |
 | CHILE       | CL | 2012-13 | Santiago metro region (EOD 2012), all days of the week incl. summer season, ~68% of households have some member income imputed by the survey, distances from straight-line block or zone centroids | Open [data](https://github.com/PLUMAS-research/palomatrix-dtpm/tree/main/src/palomatrix/eod/datos) (SECTRA EOD 2012 as parquet) |
 | FRANCE      | FR | 2008-23 | 85 surveys standardised by [MobiSurvStd](https://mobisurvstd.github.io/MobiSurvStd/): CEREMA city surveys (EMD, EDGT, EDVM, EMC²) and Île-de-France EGT 2020 (national EMP 2019 excluded: its diary day is always a travel day); mostly weekdays; phone surveys cover 1-2 members per household; income in EGT 2020 only; weights normalised within each survey; distances from survey travel distances or straight line x 1.3 | Via [MobiSurvStd](https://github.com/MobiSurvStd/MobiSurvStd) (each survey has its own licence) |
 
@@ -118,7 +118,7 @@ The activities output combines activities with their **preceding** trip:
 
 Activities also carry `zone` (the urban/rural class of the trip end) and `location`, a `location_id` of `locations.parquet` (see [Household location summary](#household-location-summary)): the location of the trip ending there (the first activity takes the first trip's origin), or, for a home activity the trip gives none for, and for persons with no trips, the household's `hh_location`.
 
-We currently map all activities to the following types: {home, work, education, visit, medical, leisure, shop, escort, other}. Note that not all sources use all of these types. Medical, for example, is not included in many datasets.
+We currently map all activities to the following types: {home, work, education, visit, leisure, shop, escort, other}.
 
 ### Trips
 
@@ -145,7 +145,7 @@ Categorical person attributes, **Blank** signifies missing or "unknown" data:
 
 ![Categorical person attributes](assets/attributes_categorical.png)
 
-There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (null or unknown), and (ii) in some cases we allow "overlapping" categories.
+There has been a lot of effort to consolidate categories across the different data sources. You can see the mappings used in `/configs`. Note that (i) we allow unknown categories (null or unknown), and (ii) in some cases we allow "overlapping" categories (for the `race` attribute in particular).
 
 Numeric person attributes:
 
@@ -157,7 +157,7 @@ A sample of some trends:
 
 Data availability (non null or unknown) by source and attribute:
 
-| Attribute              | argentina | brazil | chile | cmap | france | india | ktdb | ltds | mexico | mongolia | nhts | nts  | odin | om   | ovin | qhts | uruguay | vista | all  |
+| Attribute              | argentina | brazil | chile | cmap | france | india | ktdb | ltds | mexico | mongolia | nhts | nts  | odin | mon  | ovin | qhts | uruguay | vista | all  |
 |------------------------|-----------|--------|-------|------|--------|-------|------|------|--------|----------|------|------|------|------|------|------|---------|-------|------|
 | country                | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
 | year                   | 100%      | 100%   | 100%  | 100% | 100%   | 100%  | 100% | 100% | 100%   | 100%     | 100% | 100% | 100% | 100% | 100% | 100% | 100%    | 100%  | 100% |
@@ -230,7 +230,7 @@ Coverage is the share of households in the full batch with a geometry (any `geom
 | nhts | cbsa, census_division, msa, state | 99.6% | 99.6% | 167.8 km | — |
 | nts | region | 100% | 100% | 70.6 km | — |
 | odin | gemeente, pc4 | 99.7% | 99.7% | 1.3 km | 98.1% |
-| om | gemeente | 100% | 100% | 5.1 km | 99.8% |
+| mon | gemeente | 100% | 100% | 5.1 km | 99.8% |
 | ovin | gemeente | 100% | 100% | 5.3 km | 97.4% |
 | qhts | sa1 | 100% | 100% | 256 m | 99.8% |
 | uruguay | segment | 100% | 100% | 320 m | 99.6% |
@@ -312,7 +312,7 @@ foundata batch ~/Data/foundata -s ktdb -s nts --output /tmp/out
 foundata batch ~/Data/foundata --omit nts --output /tmp/out
 ```
 
-Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `om`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`, `france`.
+Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin`, `ovin`, `mon`, `india`, `brazil`, `mexico`, `argentina`, `uruguay`, `mongolia`, `chile`, `france`.
 
 ### Binning numeric attributes
 

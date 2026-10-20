@@ -46,3 +46,4 @@ mike-*.yml
 
 # Jupyter notebooks
 .ipynb_checkpoints
+site/

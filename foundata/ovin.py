@@ -40,7 +40,7 @@ FLOAT_COLUMNS = {"FactorP"}
 
 
 def gemeente_code(column: str) -> pl.Expr:
-    """A 4-digit CBS gemeente code (OViN and OM); null for 0 (unknown)."""
+    """A 4-digit CBS gemeente code (OViN and MON); null for 0 (unknown)."""
     return location.clean(column, width=4, missing=["0000"])
 
 
@@ -222,7 +222,7 @@ def load_trips(
     """All trips (any Verpl type), one row per trip; `trip_type` is kept so
     `drop_non_regular` can use it. Activities are mapped but not chained
     yet (see `finalise_trips`). hid is the person id unless the config maps
-    a household id (om)."""
+    a household id (mon)."""
     column_mapping = config["column_mappings"]
     data = (
         data.filter(pl.col("Verpl") >= 1)
