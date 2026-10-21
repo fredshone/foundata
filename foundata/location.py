@@ -594,8 +594,11 @@ GEOMETRY_TYPES = {
 }
 
 
-def write(locations: pl.DataFrame, path: Path) -> None:
-    """Write the locations table as GeoParquet (WKB geometry, WGS84)."""
+def write(
+    locations: pl.DataFrame, path: Path, metadata: dict | None = None
+) -> None:
+    """Write the locations table as GeoParquet (WKB geometry, WGS84), with
+    any extra *metadata* (key -> JSON-able value) in its schema."""
     table = locations.to_arrow()
     geometry = shapely.from_wkb(locations["geometry"].drop_nulls().to_numpy())
     types = sorted(set(shapely.get_type_id(geometry).tolist()))
@@ -611,7 +614,12 @@ def write(locations: pl.DataFrame, path: Path) -> None:
             }
         },
     }
-    metadata = {**(table.schema.metadata or {}), b"geo": json.dumps(geo)}
+    extra = {k: json.dumps(v) for k, v in (metadata or {}).items()}
+    metadata = {
+        **(table.schema.metadata or {}),
+        **extra,
+        b"geo": json.dumps(geo),
+    }
     pq.write_table(
         table.replace_schema_metadata(metadata), path, compression="zstd"
     )

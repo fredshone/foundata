@@ -6,6 +6,8 @@ from foundata import table_logger, utils
 
 # trip-end locations, which only some sources have
 FILLED_AFTER_COMBINING = {"ocode", "dcode"}
+# WorldTensor values, joined from the combined locations
+FILLED_AFTER_COMBINING_PREFIXES = ("wt_",)
 
 
 def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
@@ -114,7 +116,12 @@ def missing_columns(
 
     for table, cols in added.items():
         # filled in after all sources are combined (run.runner)
-        cols = [c for c in cols if c not in FILLED_AFTER_COMBINING]
+        cols = [
+            c
+            for c in cols
+            if c not in FILLED_AFTER_COMBINING
+            and not c.startswith(FILLED_AFTER_COMBINING_PREFIXES)
+        ]
         if cols:
             table_logger.note(
                 f"Optional {table} columns missing — added as null: {', '.join(cols)}",

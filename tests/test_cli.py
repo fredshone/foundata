@@ -8,11 +8,13 @@ from foundata import cli
 def batch_sources(monkeypatch, tmp_path):
     """Invoke `batch` with the pipeline stubbed, returning the sources run."""
     calls = []
-    monkeypatch.setattr(
-        cli,
-        "runner",
-        lambda source_dirs, *args: calls.append(list(source_dirs)),
-    )
+    options = []
+
+    def runner(source_dirs, *args, **kwargs):
+        calls.append(list(source_dirs))
+        options.append(kwargs)
+
+    monkeypatch.setattr(cli, "runner", runner)
 
     def invoke(*args):
         result = CliRunner().invoke(cli.app, ["batch", *args])
@@ -20,6 +22,7 @@ def batch_sources(monkeypatch, tmp_path):
         return calls[-1]
 
     invoke.root = str(tmp_path)
+    invoke.options = options
     return invoke
 
 
@@ -54,3 +57,10 @@ def test_every_command_has_log_level():
     for typer_app in (cli.app, cli.filter_app):
         for command in typer_app.registered_commands:
             assert "log_level" in command.callback.__signature__.parameters
+
+
+def test_grid_join_is_on_unless_no_grid(batch_sources, tmp_path):
+    batch_sources("-s", "chile", "--world", str(tmp_path), batch_sources.root)
+    assert batch_sources.options[-1]["world"] == tmp_path
+    batch_sources("-s", "chile", "--no-grid", batch_sources.root)
+    assert batch_sources.options[-1]["world"] is None

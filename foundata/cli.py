@@ -10,11 +10,12 @@ import polars as pl
 import typer
 from loguru import logger
 
-from foundata import config_validator, log, post_process, verify
+from foundata import config_validator, gridjoin, log, post_process, verify
 from foundata import filter as flt
 from foundata.run import SOURCES, SourceDataError, batch_source_dir, runner
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
+_DEFAULT_WORLD = gridjoin.DEFAULT_WORLD
 
 Source = Enum("Source", {name: name for name in SOURCES}, type=str)
 
@@ -189,6 +190,20 @@ KeepIdsOpt = Annotated[
         ),
     ),
 ]
+GridOpt = Annotated[
+    bool,
+    typer.Option(
+        "--grid/--no-grid",
+        help="Join WorldTensor data to locations and households (wt_ columns).",
+    ),
+]
+WorldOpt = Annotated[
+    Path,
+    typer.Option(
+        "--world",
+        help="WorldTensor data root, holding worldtensor_*/ folders.",
+    ),
+]
 
 
 @app.command("run")
@@ -215,6 +230,8 @@ def run(
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
     keep_ids: KeepIdsOpt = False,
+    grid: GridOpt = True,
+    world: WorldOpt = _DEFAULT_WORLD,
 ):
     """Run the pipeline for a single source, e.g. `foundata run ltds ~/Data/foundata/LTDS`."""
     output = output or Path("output") / source.value
@@ -225,6 +242,7 @@ def run(
         filter_consecutive,
         diagnostics,
         keep_ids,
+        world=world if grid else None,
     )
 
 
@@ -276,6 +294,8 @@ def batch(
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
     keep_ids: KeepIdsOpt = False,
+    grid: GridOpt = True,
+    world: WorldOpt = _DEFAULT_WORLD,
 ):
     """Run the pipeline end-to-end over many sources and combine them."""
     select, omit = _split_commas(select), _split_commas(omit)
@@ -306,6 +326,7 @@ def batch(
         filter_consecutive,
         diagnostics,
         keep_ids,
+        world=world if grid else None,
     )
 
 
@@ -886,6 +907,72 @@ def split_cmd(
     logger.info(f"Wrote outputs to {out_dir}")
 
 
-for _typer in (app, filter_app):
+# ---------------------------------------------------------------------------
+# gridjoin group
+# ---------------------------------------------------------------------------
+
+gridjoin_app = typer.Typer(
+    help="WorldTensor data on locations (also done by run and batch).",
+    no_args_is_help=True,
+)
+app.add_typer(gridjoin_app, name="gridjoin")
+
+CacheOpt = Annotated[
+    Optional[Path],
+    typer.Option("--cache", help="Cache dir for preprocessed layers."),
+]
+
+
+@gridjoin_app.command("preprocess")
+def gridjoin_preprocess(
+    world: WorldOpt = _DEFAULT_WORLD,
+    cache: CacheOpt = None,
+    force: Annotated[
+        bool, typer.Option("--force", help="Redo even if up to date.")
+    ] = False,
+):
+    """Preprocess WorldTensor layers into the cache (skipping those up to date)."""
+
+    gridjoin.worldtensor.preprocess(
+        world, cache or gridjoin.DEFAULT_CACHE, force=force
+    )
+
+
+@gridjoin_app.command("join")
+def gridjoin_join(
+    locations: Annotated[
+        Path,
+        typer.Argument(exists=True, help="Locations GeoParquet."),
+    ],
+    output: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--output",
+            "-o",
+            help="Output parquet (default <locations>_grid.parquet).",
+        ),
+    ] = None,
+    world: WorldOpt = _DEFAULT_WORLD,
+    cache: CacheOpt = None,
+    max_fallback_km: Annotated[
+        float,
+        typer.Option(
+            help="Furthest valid cell to use for a location on a NaN cell."
+        ),
+    ] = 50.0,
+):
+    """Add the wt_ columns to LOCATIONS, keeping its columns and rows."""
+
+    cache = cache or gridjoin.DEFAULT_CACHE
+    gridjoin.worldtensor.preprocess(world, cache)
+    gridjoin.join.join_file(
+        locations,
+        cache,
+        output or _default_out(locations, "_grid"),
+        max_fallback_km=max_fallback_km,
+    )
+
+
+for _typer in (app, filter_app, gridjoin_app):
     for _command in _typer.registered_commands:
         _command.callback = _with_log_level(_command.callback)

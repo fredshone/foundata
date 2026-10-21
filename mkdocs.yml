@@ -9,6 +9,7 @@ nav:
   - Introduction: index.md
   - Output format: format.md
   - Sources: sources.md
+  - Gridded data: gridjoin.md
 
 theme:
   name: material

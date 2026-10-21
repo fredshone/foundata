@@ -16,6 +16,7 @@ from foundata import (
     filter,
     fix,
     france,
+    gridjoin,
     india,
     ktdb,
     location,
@@ -468,6 +469,8 @@ def runner(
     fix_consecutive: bool = False,
     diagnostics: bool = False,
     keep_ids: bool = False,
+    world: str | Path | None = gridjoin.DEFAULT_WORLD,
+    grid_cache: str | Path = gridjoin.DEFAULT_CACHE,
 ):
     """Load, process, combine and write the given sources, then report.
 
@@ -476,6 +479,10 @@ def runner(
     the anomaly-detection reports and supplementary heatmaps. *keep_ids*
     also writes ``original_ids.csv``, mapping each pid and hid back to the
     survey's own ids.
+
+    WorldTensor layers under *world* (preprocessed into *grid_cache*) are
+    joined to the locations, and from them to each household's
+    attributes (``wt_`` columns); with *world* None they stay null.
     """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
@@ -493,6 +500,12 @@ def runner(
             check_source_dir(name, source_dirs[name])
         except SourceDataError as e:
             problems.append(str(e))
+    if world is not None:
+        world = Path(world).expanduser()
+        problems += [
+            f"{p} (or run without the WorldTensor join: --no-grid)"
+            for p in gridjoin.worldtensor.missing_sources(world)
+        ]
     if problems:
         raise SourceDataError("\n".join(problems))
     table_logger.reset()
@@ -566,6 +579,12 @@ def runner(
         pl.col("location_id").is_in(used.implode())
     )
     log_locations(all_attributes, all_trips, locations)
+    grid_meta = None
+    if world is not None:
+        locations, grid_meta = gridjoin.join.join_locations(
+            locations, world, Path(grid_cache).expanduser()
+        )
+        all_attributes = gridjoin.join.to_attributes(all_attributes, locations)
 
     if keep_ids:
         logger.warning(
@@ -582,7 +601,11 @@ def runner(
 
     logger.info(f"Writing attributes, trips and locations to {output}...")
     all_attributes.write_csv(output / "attributes.csv")
-    location.write(locations, output / "locations.parquet")
+    location.write(
+        locations,
+        output / "locations.parquet",
+        metadata=grid_meta and {gridjoin.join.METADATA_KEY: grid_meta},
+    )
     binned_attributes = post_process.discretise_numeric(
         all_attributes,
         n_bins=5,
