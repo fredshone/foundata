@@ -27,6 +27,7 @@ def batch(tmp_path_factory):
         home_based=True,
         fix_consecutive=True,
         keep_ids=True,
+        world=None,
     )
     attributes = pl.read_csv(
         output / "attributes.csv", infer_schema_length=None
