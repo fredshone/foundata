@@ -6,8 +6,8 @@ Attribute data includes home location, and most trips carry their origin and des
 - `ocode`/`dcode` in trips
 - `location` in activity_schedules
 
-<figure>
-<img src="assets/coverage.png" alt="Locations precision and coverage" style="display: block; margin: 0 auto; max-width: 100%;"/>
+<figure markdown="span">
+![Locations precision and coverage](assets/coverage.png){ style="display: block; margin: 0 auto; max-width: 100%;" }
 <figcaption style="text-align: center">Locations </figcaption> 
 </figure>
 

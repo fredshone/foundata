@@ -18,8 +18,8 @@ uv run foundata batch ~/Data/foundata --no-grid       # skip it: wt_ columns are
 
 The 0.25° global grid call vary in size from zero a the poles to aroun 25km x 25km at the equator.
 
-<figure>
-<img src="assets/wt_log_pop_density_uk.png" alt="WorldTensor UK population density (logged)" style="display: block; margin: 0 auto; max-width: 100%;"/>
+<figure markdown="span">
+![WorldTensor UK population density (logged)](assets/wt_log_pop_density_uk.png){ style="display: block; margin: 0 auto; max-width: 100%;" }
 <figcaption style="text-align: center">WorldTensor UK (log) population density </figcaption> 
 </figure>
 
@@ -40,8 +40,8 @@ The 0.25° global grid call vary in size from zero a the poles to aroun 25km x 2
 | `wt_elevation_mean` | static topography | static | Elevation above sea level in m |
 | `wt_travel_time_to_cities` | static (Weiss et al. 2018) | 2015 | Travel time to nearest city (minutes) |
 
-<figure>
-<img src="assets/wt_log_pop_density.png" alt="WorldTensor population density (logged)" style="display: block; margin: 0 auto; max-width: 100%;"/>
+<figure markdown="span">
+![WorldTensor population density (logged)](assets/wt_log_pop_density.png){ style="display: block; margin: 0 auto; max-width: 100%;" }
 <figcaption style="text-align: center"> WorldTensor (log) population density </figcaption> 
 </figure>
 
