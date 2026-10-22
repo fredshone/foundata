@@ -618,11 +618,6 @@ def runner(
             "vehicles",
             "hh_size",
             "hh_location",
-            *(
-                c
-                for c in all_attributes.columns
-                if c.startswith("wt_") and c.endswith("_year")
-            ),
         ],
     )
     binned_attributes = post_process.fill_nulls(binned_attributes)

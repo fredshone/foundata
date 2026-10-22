@@ -239,15 +239,14 @@ def test_worldtensor_values(wt_cache):
     lat = np.array([10.0, -90.0, 90.0, np.nan, 5.0])
     year = np.array([2020, 2020, 2020, 2020, np.nan])
     cols, meta = worldtensor.values(lon, lat, year, cache, max_fallback_km=50)
-    v, y = cols["wt_v"], cols["wt_v_year"]
+    v = cols["wt_v"]
     row, col = WORLDTENSOR.rows(lat[:3]), WORLDTENSOR.cols(lon[:3])
     np.testing.assert_array_equal(v[1:3], row[1:3] * 10000.0 + col[1:3])
     # column 0 is lon 0, so both antimeridian points are in column 720
     assert row[1] == 0 and col[1] == 720 and row[2] == 720 and col[2] == 720
     assert np.isfinite(v[0])  # its cell is NaN: falls back
-    assert np.isnan(v[3]) and y.mask[3]  # unlocated
-    assert np.isnan(v[4]) and y.mask[4]  # no year
-    assert y[:3].tolist() == [2020] * 3
+    assert np.isnan(v[3])  # unlocated
+    assert np.isnan(v[4])  # no year
     assert meta["variables"]["v"]["years"] == {"2020": 2020}
     assert meta["variables"]["v"]["on_nan_cells"] == 1
     assert meta["variables"]["v"]["filled"] == 1
@@ -260,7 +259,6 @@ def test_worldtensor_values_by_nearest_year(wt_cache):
     cols, meta = worldtensor.values(
         lon, lat, np.array([2018.0, 2025.0, 2020.0]), cache
     )
-    assert cols["wt_v_year"].tolist() == [2019, 2022, 2020]
     # 2019 is all 0; 2022 has no hole here, so needs no fallback
     assert cols["wt_v"][0] == 0
     assert cols["wt_v"][1] == expected(20.0, 10.0) + 1e7
@@ -288,7 +286,7 @@ def test_worldtensor_fallback_respects_radius(wt_cache):
         cache,
         max_fallback_km=5,
     )
-    assert np.isnan(cols["wt_v"][0]) and cols["wt_v_year"].mask[0]
+    assert np.isnan(cols["wt_v"][0])
 
 
 def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
@@ -312,7 +310,6 @@ def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
         cache,
     )
     assert cols["wt_s"].tolist() == [1, 1]
-    assert cols["wt_s_year"].tolist() == [2015, 2015]
     assert meta["variables"]["s"]["years"] == {"2010": 2015, "2020": 2015}
 
 
@@ -364,7 +361,7 @@ def test_template_lists_every_attribute_column():
     template = utils.get_template_attributes()
     assert [
         c for c in template if c.startswith("wt_")
-    ] == worldtensor.attribute_columns()
+    ] == worldtensor.value_columns()
 
 
 # ---------------------------------------------------------------------------
@@ -406,23 +403,19 @@ def test_to_attributes_by_home_location_and_year(wt_cache):
             "year": [2020, 2020, 2020, 2020, 2024],
             # null, as fix.missing_columns adds
             "wt_v": [None] * 5,
-            "wt_v_year": [None] * 5,
         },
         schema_overrides={
             "hh_location": pl.Int32,
             "year": pl.Int32,
             "wt_v": pl.Float32,
-            "wt_v_year": pl.Int32,
         },
     )
     out, meta = join.to_attributes(attributes, locations, world, cache)
-    assert out.columns == ["pid", "hh_location", "year", "wt_v", "wt_v_year"]
+    assert out.columns == ["pid", "hh_location", "year", "wt_v"]
     assert out["pid"].to_list() == [0, 1, 2, 3, 4]
     here = expected(5.0, 5.0)
     assert out["wt_v"][[0, 1, 2, 4]].to_list() == [here, None, here, here + 1e7]
     assert out["wt_v"][3] is not None  # fell back
-    assert out["wt_v_year"].to_list() == [2020, None, 2020, 2020, 2022]
-    assert out["wt_v_year"].dtype == pl.Int32
     assert meta["worldtensor"]["variables"]["v"]["years"] == {
         "2020": 2020,
         "2024": 2022,

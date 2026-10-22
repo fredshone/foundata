@@ -5,8 +5,7 @@
 (``wt_cell``, ``wt_spans_cells``): these do not depend on the year. Then
 ``to_attributes`` reads the values for each distinct (``hh_location``,
 ``year``) of the households, from each variable's year nearest the
-survey's, and copies them to each person's row with the year used
-(``wt_<var>``, ``wt_<var>_year``).
+survey's, and copies them to each person's row (``wt_<var>``).
 """
 
 import time
@@ -73,7 +72,7 @@ def to_attributes(
     values = pairs.select("hh_location", "year").with_columns(
         pl.from_arrow(pa.table({c: _arrow(v) for c, v in columns.items()}))
     )
-    names = worldtensor.attribute_columns()
+    names = worldtensor.value_columns()
     stale = [c for c in names if c in attributes.columns]
     out = attributes.drop(stale).join(
         values.select("hh_location", "year", *names),

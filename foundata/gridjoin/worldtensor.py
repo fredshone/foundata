@@ -4,8 +4,7 @@
 year on disk nearest to it (the earlier of two equally near), so a 2023
 survey gets ``hdi`` 2015 (its last year) and ``t2m_mean`` 2023. Static
 layers have one year, their snapshot's, where the file gives one. The
-year used is the ``wt_<var>_year`` column; the mapping of survey years
-to years used is in the output's metadata.
+mapping of survey years to years used is in the output's metadata.
 
 **Preprocess.** Each (variable, year) layer becomes a float32 ``(721,
 1440)`` ``.npy`` in the cache, rows south to north, columns from lon 0
@@ -55,14 +54,9 @@ VARIABLES = {
 
 
 def value_columns() -> list[str]:
-    """The columns with a value per variable (as opposed to diagnostics)."""
+    """The columns with a value per variable (as opposed to diagnostics),
+    as joined to attributes."""
     return [PREFIX + v for v in VARIABLES]
-
-
-def attribute_columns() -> list[str]:
-    """The columns joined to attributes: each variable's value, then the
-    year it is from."""
-    return [c for v in VARIABLES for c in (PREFIX + v, PREFIX + v + "_year")]
 
 
 DEFAULT_MAX_FALLBACK_KM = 50.0
@@ -257,9 +251,8 @@ def values(
     survey *year* (NaN for any of the three: no value), from the layers
     preprocessed into *cache*.
 
-    Columns, per variable: ``wt_<var>`` (float32, NaN where none) and
-    ``wt_<var>_year`` (int32, the year used, masked where there is no
-    value or a static layer gives no year). Metadata: per variable, its
+    Columns, per variable: ``wt_<var>`` (float32, NaN where none).
+    Metadata: per variable, its
     units, source and the year used for each survey year, and the number
     of points on NaN cells and how many the fallback filled.
     """
@@ -294,8 +287,6 @@ def values(
                 f"years {survey_years})"
             )
         vals = np.full(n, np.nan, np.float32)
-        year_used = np.zeros(n, np.int32)
-        has_year = np.zeros(n, bool)
         holes_n = filled_n = 0
         for key in sorted(set(years.values())):
             surveys = [y for y, k in years.items() if k == key]
@@ -315,15 +306,7 @@ def values(
                 vals[holes[found]] = layer[near[found]]
                 holes_n += holes.size
                 filled_n += int(found.sum())
-            layer_year = entry.get("year") if key == STATIC else int(key)
-            if layer_year is not None:
-                year_used[sel] = layer_year
-                has_year[sel] = True
-        has_year &= ~np.isnan(vals)
         columns[PREFIX + var] = vals
-        columns[PREFIX + var + "_year"] = np.ma.masked_array(
-            year_used, ~has_year
-        )
         if holes_n:
             logger.debug(
                 f"worldtensor {var}: {holes_n} points on NaN cells, "

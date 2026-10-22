@@ -84,7 +84,6 @@ The canonical schema is `configs/core/template.yaml`.
 | `max_temp_c` | float | | Daily maximum temperature on the diary day (CMAP, ODIN, some KTDB) |
 | `rain` | bool | | Precipitation > 0 mm on the diary day (CMAP, ODIN, some KTDB) |
 | `wt_<var>` | float | | WorldTensor values at the home location, for example `wt_population_density` and `wt_travel_time_to_cities`, from each variable's year nearest the survey year. Null without a home location, or with `--no-grid`. See [Gridded data](gridjoin.md) |
-| `wt_<var>_year` | int | | The year `wt_<var>` is from (a static layer's snapshot year). Null where `wt_<var>` is |
 
 ## trips
 

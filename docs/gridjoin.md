@@ -54,10 +54,8 @@ survey year itself; past the end of a range it is the last year, so a
 static layer has one year, its snapshot's where the file gives one
 (`travel_time_to_cities` 2015), else null.
 
-`wt_<var>_year` records the year used on every row, so you can see how
-far each value is from its survey year (`year - wt_<var>_year`). The
-`gridjoin` key of `locations.parquet`'s metadata has the same mapping,
-per variable from each survey year to the year used, with its units and
+The `gridjoin` key of `locations.parquet`'s metadata records, per
+variable, the year used for each survey year, with its units and
 source.
 
 `wt_tp_sum` averages 0.029 m a year worldwide. It appears to be the sum
