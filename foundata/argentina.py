@@ -26,6 +26,7 @@ from foundata.utils import sample_to_euro
 
 SOURCE = "argentina"
 COUNTRY = "ar"
+CONTINENT = "south_americas"
 
 # raw table paths under data_root, per survey
 SURVEYS = {
@@ -153,6 +154,7 @@ def load_survey(
         .with_columns(
             source=pl.lit(SOURCE),
             country=pl.lit(COUNTRY),
+            continent=pl.lit(CONTINENT),
             pid=pl.lit(prefix) + pl.col("pid").cast(pl.String),
             hid=pl.lit(prefix) + pl.col("hid").cast(pl.String),
             # each survey's weights sum to its own area's population, so

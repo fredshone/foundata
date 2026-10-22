@@ -14,6 +14,7 @@ from foundata.utils import (
 USD_TO_EURO = 0.85
 
 SOURCE = "nhts"
+CONTINENT = "north_americas"
 
 
 def load(
@@ -134,7 +135,10 @@ def load_households(
         )
 
         data = data.with_columns(
-            survey=pl.lit("nhts"), source=pl.lit("nhts"), country=pl.lit("usa")
+            survey=pl.lit("nhts"),
+            source=pl.lit("nhts"),
+            country=pl.lit("usa"),
+            continent=pl.lit(CONTINENT),
         )
 
         data = data.filter(pl.col("hid").is_not_null())

@@ -28,6 +28,7 @@ from foundata.ovin import (
 from foundata.utils import expand_root, table_joiner
 
 SOURCE = "mon"
+CONTINENT = "europe"
 DATA_FILES = {
     2005: "Databestand MON 2005.sav",
     2006: "MON2006 eindproducten/bestanden/Databestand MON 2006.sav",
@@ -71,6 +72,7 @@ def load(
             hid=prefix + pl.col("hid").cast(pl.String),
             source=pl.lit(SOURCE),
             country=pl.lit("nl"),
+            continent=pl.lit(CONTINENT),
         )
         trips = trips.with_columns(
             pid=prefix + pl.col("pid").cast(pl.String),

@@ -42,6 +42,7 @@ from foundata.utils import add_implied_trips, table_joiner, table_stacker
 
 SOURCE = "india"
 COUNTRY = "ind"
+CONTINENT = "asia"
 
 # Average annual EUR/INR rate for each round's survey year -- approximate,
 # used only to turn household consumer expenditure into a hh_income proxy
@@ -302,6 +303,7 @@ def load_households(
         ).cast(pl.Int32),
         weight=pl.col("weight").cast(pl.Float64, strict=False).cast(pl.Float32),
         country=pl.lit(COUNTRY),
+        continent=pl.lit(CONTINENT),
         source=pl.lit(SOURCE),
     )
     # home location: NSS state (2 digits of the NSS region) + district

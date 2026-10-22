@@ -113,6 +113,11 @@ attributes:
     dtype: str
     default: True
     description: "ISO country code (e.g. 'usa', 'gbr', 'aus'). Set programmatically per source."
+  continent:
+    dtype: str
+    default: True
+    set: [north_americas, south_americas, europe, africa, asia, oceania]
+    description: "Continent of the survey country. Set programmatically per source."
   source:
     dtype: str
     default: True

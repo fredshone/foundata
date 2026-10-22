@@ -1,13 +1,12 @@
 # Gridded data
 
-`foundata run` and `foundata batch` attach WorldTensor's 0.25° global
-layers to each household, from each layer's year nearest the survey
-year. The pipeline first gives each location in the combined locations
-table its cell, adding `wt_cell` and `wt_spans_cells` to
-`locations.parquet`; these do not depend on the year. It then reads the
-values for each distinct home location and survey year, and adds them to
-every person row of `attributes.csv`: `wt_<var>`, with `wt_<var>_year`,
-the year it is from. A household without a home location gets nulls.
+To allow for a worldwide model we provide household location labels that are:
+
+- globally available
+- that are invariant from location to location
+- likely to be correlated to human behaviors
+
+We use [WorldTensor](https://zenodo.org/records/19047618) datasets. WorldTensor provides various variables on a 0.25° global grid. Both `run` and `batch` join these variables to the attributes table using hh_location.
 
 ```bash
 uv run foundata batch ~/Data/foundata                 # WorldTensor from ~/Data/foundata/WORLD
@@ -15,28 +14,36 @@ uv run foundata batch ~/Data/foundata --world DIR     # another WorldTensor root
 uv run foundata batch ~/Data/foundata --no-grid       # skip it: wt_ columns are null
 ```
 
-A run checks that every layer exists before loading any survey. It
-preprocesses each (variable, year) layer it needs into a `.npy` under
-`~/Data/foundata/cache/gridjoin/worldtensor` (about 4 MB each, so under
-1 GB for every survey year from 2008 to 2025). Layers stay cached across
-runs, a layer is redone only when its source file changes, and the WORLD
-folder is never written to.
+## Precision
+
+The 0.25° global grid call vary in size from zero a the poles to aroun 25km x 25km at the equator.
+
+<figure>
+<img src="assets/wt_log_pop_density_uk.png" alt="WorldTensor UK population density (logged)" style="display: block; margin: 0 auto; max-width: 100%;"/>
+<figcaption style="text-align: center">WorldTensor UK (log) population density </figcaption> 
+</figure>
+
 
 ## Variables
 
-| column | WorldTensor layer | years on disk | units |
+| column | WorldTensor layer | available years | units |
 |---|---|---|---|
-| `wt_gdp_per_capita` | human_systems | 1990–2022 | USD per capita (PPP, constant 2021) |
-| `wt_ghsl_built_volume` | human_systems | 1975–2020 | m³ |
-| `wt_gini` | human_systems | 1990–2023 | 1 |
-| `wt_hdi` | human_systems | 1990–2015 | 1 |
-| `wt_ntl_harmonized` | human_systems | 1992–2018 | 1 |
-| `wt_population_density` | human_systems | 2000–2020 | persons/km² |
-| `wt_tp_sum` | climate (ERA5) | 1940–2025 | m (see below) |
-| `wt_t2m_mean` | climate (ERA5) | 1940–2025 | K |
-| `wt_skt_max` | climate (ERA5) | 1940–2025 | K (skin temperature) |
-| `wt_elevation_mean` | static topography | static | m |
-| `wt_travel_time_to_cities` | static (Weiss et al. 2018) | 2015 | minutes |
+| `wt_gdp_per_capita` | human_systems | 1990–2022 | GDP as USD per capita (PPP, constant 2021) |
+| `wt_ghsl_built_volume` | human_systems | 1975–2020 | Building volume as m³ |
+| `wt_gini` | human_systems | 1990–2023 | Gini index |
+| `wt_hdi` | human_systems | 1990–2015 | Human development index |
+| `wt_ntl_harmonized` | human_systems | 1992–2018 | Night-time lighting |
+| `wt_population_density` | human_systems | 2000–2020 | Persons/km² |
+| `wt_tp_sum` | climate (ERA5) | 1940–2025 | Total precipitation as m (see below) |
+| `wt_t2m_mean` | climate (ERA5) | 1940–2025 | Mean temperature in K |
+| `wt_skt_max` | climate (ERA5) | 1940–2025 | Max temperature K |
+| `wt_elevation_mean` | static topography | static | Elevation above sea level in m |
+| `wt_travel_time_to_cities` | static (Weiss et al. 2018) | 2015 | Travel time to nearest city (minutes) |
+
+<figure>
+<img src="assets/wt_log_pop_density.png" alt="WorldTensor population density (logged)" style="display: block; margin: 0 auto; max-width: 100%;"/>
+<figcaption style="text-align: center"> WorldTensor (log) population density </figcaption> 
+</figure>
 
 ## Years
 

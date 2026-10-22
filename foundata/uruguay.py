@@ -21,6 +21,7 @@ from foundata import location, utils
 
 SOURCE = "uruguay"
 COUNTRY = "uy"
+CONTINENT = "south_americas"
 
 SURVEY_DIR = "EOD2016"
 HOUSEHOLDS_PATH = "Base Hogar Habitos.csv"
@@ -91,6 +92,7 @@ def load(
         .with_columns(
             source=pl.lit(SOURCE),
             country=pl.lit(COUNTRY),
+            continent=pl.lit(CONTINENT),
             year=pl.lit(trips_config["year"], dtype=pl.Int32),
             month=pl.lit(None, dtype=pl.Int8),
             day=pl.lit("unknown"),

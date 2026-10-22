@@ -14,6 +14,7 @@ from foundata.utils import (
 GBP_TO_EURO = 1.14
 
 SOURCE = "nts"
+CONTINENT = "europe"
 
 
 def load(
@@ -82,6 +83,7 @@ def load_households(
         pl.lit("nts").alias("source"),
         pl.lit("nts").alias("survey"),
         pl.lit("uk").alias("country"),
+        pl.lit(CONTINENT).alias("continent"),
     )
 
     # HHoldGOR_B02ID numbering as ONS codes; -8/-9/-10 (missing) unmapped

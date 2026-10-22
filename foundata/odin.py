@@ -14,6 +14,7 @@ from foundata.utils import (
 from foundata.utils import resolve_activity_chain as _resolve_activity_chain
 
 SOURCE = "odin"
+CONTINENT = "europe"
 DATA_FILES = {
     2018: "ODiN2018_Databestand_v2.0.tab",
     2019: "ODiN2019_Databestand_v2.0.tab",
@@ -52,6 +53,7 @@ def load(
             survey=pl.lit(SOURCE) + pl.lit(yr),
             source=pl.lit(SOURCE),
             country=pl.lit("nl"),
+            continent=pl.lit(CONTINENT),
         )
         trips = trips.with_columns(
             pid=pl.lit(yr) + pl.col("pid").cast(pl.String),

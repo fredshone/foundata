@@ -20,6 +20,7 @@ from foundata.brazil import read_dbf
 
 SOURCE = "mexico"
 COUNTRY = "mx"
+CONTINENT = "north_americas"
 YEAR = 2017
 
 HOUSEHOLDS_PATH = "THOGAR.DBF"
@@ -81,6 +82,7 @@ def load(
         .with_columns(
             source=pl.lit(SOURCE),
             country=pl.lit(COUNTRY),
+            continent=pl.lit(CONTINENT),
             year=pl.lit(YEAR, dtype=pl.Int32),
             month=pl.lit(None, dtype=pl.Int8),
             hh_income=pl.lit(None, dtype=pl.Int32),

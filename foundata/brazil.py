@@ -19,6 +19,7 @@ from foundata import fix, location, utils
 
 SOURCE = "brazil"
 COUNTRY = "br"
+CONTINENT = "south_americas"
 # CRS of the survey's coordinates and zone shapefiles (Córrego Alegre / UTM 23S)
 CRS = "EPSG:22523"
 
@@ -111,7 +112,11 @@ def load(
     trips = load_trips(raw, trips_config, zone_types)
     attributes = attributes.join(
         access_egress(trips), on="pid", how="left"
-    ).with_columns(source=pl.lit(SOURCE), country=pl.lit(COUNTRY))
+    ).with_columns(
+        source=pl.lit(SOURCE),
+        country=pl.lit(COUNTRY),
+        continent=pl.lit(CONTINENT),
+    )
     trips = trips.select(
         "pid",
         "seq",

@@ -26,6 +26,7 @@ from foundata import fix, location, nl_income
 from foundata.utils import expand_root, resolve_activity_chain, table_joiner
 
 SOURCE = "ovin"
+CONTINENT = "europe"
 DATA_FILES = {
     2010: "OViN2010_Databestand.sav",
     2011: "OViN2011_Databestand_revisie.sav",
@@ -77,6 +78,7 @@ def load(
             hid=prefix + pl.col("hid").cast(pl.String),
             source=pl.lit(SOURCE),
             country=pl.lit("nl"),
+            continent=pl.lit(CONTINENT),
         )
         trips = trips.with_columns(
             pid=prefix + pl.col("pid").cast(pl.String),

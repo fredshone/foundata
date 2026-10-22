@@ -11,6 +11,7 @@ from .utils import config_for_year, sample_to_euro, table_joiner
 AUD_TO_EURO = 0.6
 
 SOURCE = "qhts"
+CONTINENT = "oceania"
 
 
 def load_years(
@@ -194,6 +195,7 @@ def preprocess_persons(
 
     persons = persons.with_columns(
         country=pl.lit("aus"),
+        continent=pl.lit(CONTINENT),
         survey=pl.lit(SOURCE) + pl.lit(year),
         source=pl.lit(SOURCE),
         race=pl.lit("unknown"),

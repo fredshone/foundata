@@ -56,6 +56,7 @@ The canonical schema is `configs/core/template.yaml`.
 | `hid` | int | | Household ID |
 | `source` | str | e.g. `nhts`, `odin` | Survey source |
 | `country` | str | e.g. `usa`, `nl` | Country code |
+| `continent` | str | `north_americas`, `south_americas`, `europe`, `africa`, `asia`, `oceania` | Continent |
 | `year` | int | | Survey year |
 | `month` | int | 1–12 | Month of the diary day |
 | `day` | str | `monday` … `sunday` | Day of week of the diary day |
@@ -135,7 +136,7 @@ is WKB in WGS84, so you can read it with `geopandas.read_parquet`.
 |---|---|
 | `location_id` | ID referenced by `hh_location`, `ocode`, `dcode` and `location`. It is only valid within this run |
 | `location_key` | ID that is stable across runs: `<source>/<geo>/<code>` or `<source>/point/<lon>,<lat>` |
-| `source`, `country` | Source and country |
+| `source`, `country`, `continent` | Source, country and continent |
 | `level`, `code` | Unit type (for example `sa1`, `gemeente`, `point`) and its code |
 | `geo` | Lookup table and vintage the code comes from (for example `gemeente_2018`) |
 | `precision` | coordinate, small area, large area or region |

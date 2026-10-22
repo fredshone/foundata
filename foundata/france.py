@@ -27,6 +27,7 @@ from foundata.utils import sample_to_euro
 
 SOURCE = "france"
 COUNTRY = "fr"
+CONTINENT = "europe"
 
 HOUSEHOLDS_PATH = "households.parquet"
 PERSONS_PATH = "persons.parquet"
@@ -131,6 +132,7 @@ def load_survey(
             hid=pl.lit(prefix) + pl.col("hid").cast(pl.String),
             source=pl.lit(SOURCE),
             country=pl.lit(COUNTRY),
+            continent=pl.lit(CONTINENT),
             race=pl.lit("unknown"),
             day=pl.coalesce("person_day", "hh_day").fill_null("unknown"),
             year=date.dt.year()

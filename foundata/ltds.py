@@ -19,6 +19,7 @@ from foundata.utils import (
 
 GBP_TO_EURO = 1.14
 SOURCE = "ltds"
+CONTINENT = "europe"
 
 
 def load_mapping(path: Path) -> dict:
@@ -134,6 +135,7 @@ def load_years(
 
     attributes = attributes.with_columns(
         country=pl.lit("uk"),
+        continent=pl.lit(CONTINENT),
         education=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
         dwelling=pl.lit("unknown"),

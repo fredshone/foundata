@@ -35,6 +35,7 @@ from loguru import logger
 from foundata import fix, location, utils
 
 SOURCE = "ktdb"
+CONTINENT = "asia"
 # (year, weekend) of every survey
 SURVEYS = [
     (2021, False),
@@ -401,6 +402,7 @@ def load_2021(
         survey=pl.lit(f"{SOURCE}2021"),
         source=pl.lit(SOURCE),
         country=pl.lit("kr"),
+        continent=pl.lit(CONTINENT),
         pid=pl.lit("2021_") + pl.col("pid").cast(pl.String),
         # duplicate of pid: the raw data has no household ID linking
         # respondents (each row is an independently surveyed individual),
@@ -906,7 +908,10 @@ def load_persons_2016(
     )
 
     return data.with_columns(
-        survey=pl.lit(survey), source=pl.lit(SOURCE), country=pl.lit("kr")
+        survey=pl.lit(survey),
+        source=pl.lit(SOURCE),
+        country=pl.lit("kr"),
+        continent=pl.lit(CONTINENT),
     ).drop(
         "idx",
         "district",
@@ -1219,7 +1224,10 @@ def load_persons_2010(
     )
 
     return data.with_columns(
-        survey=pl.lit(survey), source=pl.lit(SOURCE), country=pl.lit("kr")
+        survey=pl.lit(survey),
+        source=pl.lit(SOURCE),
+        country=pl.lit("kr"),
+        continent=pl.lit(CONTINENT),
     ).drop(
         "sheet_code",
         "member",

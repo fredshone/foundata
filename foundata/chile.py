@@ -22,6 +22,7 @@ from foundata import fix, location
 
 SOURCE = "chile"
 COUNTRY = "cl"
+CONTINENT = "south_americas"
 
 HOUSEHOLDS_PATH = "hogares.parquet"
 VEHICLES_PATH = "vehiculos.parquet"
@@ -98,6 +99,7 @@ def load(
         .with_columns(
             source=pl.lit(SOURCE),
             country=pl.lit(COUNTRY),
+            continent=pl.lit(CONTINENT),
             dwelling=pl.lit("unknown"),
             can_wfh=pl.lit("unknown"),
             race=pl.lit("unknown"),

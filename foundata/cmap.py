@@ -9,6 +9,7 @@ from .utils import expand_root, get_config_path, sample_to_euro, table_joiner
 USD_TO_EURO = 0.85
 
 SOURCE = "cmap"
+CONTINENT = "north_americas"
 
 
 def load(
@@ -46,6 +47,7 @@ def load(
         survey=pl.lit(SOURCE),
         source=pl.lit(SOURCE),
         country=pl.lit("usa"),
+        continent=pl.lit(CONTINENT),
         pid=pl.col("pid").cast(pl.String),
         hid=pl.col("hid").cast(pl.String),
         access_egress_distance=pl.lit(None, dtype=pl.Float32),

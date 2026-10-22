@@ -15,6 +15,7 @@ from .utils import (
 AUD_TO_EURO = 0.6
 
 SOURCE = "vista"
+CONTINENT = "oceania"
 
 
 def load_years(
@@ -181,6 +182,7 @@ def preprocess_households(
         survey=pl.lit(SOURCE) + pl.lit(year),
         source=pl.lit(SOURCE),
         country=pl.lit("aus"),
+        continent=pl.lit(CONTINENT),
         can_wfh=pl.lit("unknown"),
     )
 

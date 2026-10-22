@@ -479,7 +479,7 @@ def categorical_bar_grid(
     save_path: str | Path | None = None,
 ):
     if ignore_cols is None:
-        ignore_cols = {"source", "pid", "hid", "country"}
+        ignore_cols = {"source", "pid", "hid", "country", "continent"}
 
     cat_cols = {
         col

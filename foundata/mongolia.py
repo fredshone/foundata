@@ -41,6 +41,7 @@ from foundata.utils import (
 
 SOURCE = "mongolia"
 COUNTRY = "mng"
+CONTINENT = "asia"
 
 ROUNDS = {
     2023: {
@@ -233,6 +234,7 @@ def load_households(
         ).cast(pl.Int32),
         hh_income=pl.lit(None, dtype=pl.Int32),
         country=pl.lit(COUNTRY),
+        continent=pl.lit(CONTINENT),
         source=pl.lit(SOURCE),
     )
     # home location: aimag + soum (+ bagh) as NSO codes
@@ -276,6 +278,7 @@ def load_households(
         "vehicles",
         "hh_income",
         "country",
+        "continent",
         "source",
         "hh_mode",
         "hh_location",

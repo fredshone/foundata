@@ -6,6 +6,7 @@ from foundata import location, utils
 
 PROGRAMMATIC_FIELDS = {
     "country",
+    "continent",
     "source",
     "year",
     "month",
