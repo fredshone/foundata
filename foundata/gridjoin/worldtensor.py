@@ -1,22 +1,26 @@
 """WorldTensor: 0.25 degree layers joined to zones by their point.
 
-**Which year.** Each variable is taken from its *most recent* year on
-disk (``gdp_per_capita`` 2022, ``hdi`` 2015, ``tp_sum`` 2025, ...), not
-the zone's survey year; the year used is in the output's metadata and
-the cache manifest.
+**Which year.** A zone with a survey year takes each variable from the
+year on disk nearest to it (the earlier of two equally near), so a 2023
+survey gets ``hdi`` 2015 (its last year) and ``t2m_mean`` 2023. Static
+layers have one year, their snapshot's, where the file gives one. The
+year used is the ``wt_<var>_year`` column; the mapping of survey years
+to years used is in the output's metadata.
 
-**Preprocess.** Each variable's layer becomes a float32 ``(721, 1440)``
-``.npy`` in the cache, rows south to north, columns from lon 0 east
-(the files' own layout, checked on read). It is redone only when the
-source file changes.
+**Preprocess.** Each (variable, year) layer becomes a float32 ``(721,
+1440)`` ``.npy`` in the cache, rows south to north, columns from lon 0
+east (the files' own layout, checked on read). Only the years asked for
+are cached, and each is redone only when its source file changes.
 
-**Join.** A zone takes the value of the cell its point is in, found by
-index arithmetic (see ``grid``), looked up once per distinct cell. Where
-that cell is NaN (ocean, or masked) it takes the nearest non-NaN cell
-whose centre is within ``max_fallback_km`` of its point, else null.
-Masks differ by layer: ``gdp_per_capita``'s is eroded at coasts (Nice's
-nearest valid cell is 35 km away, Montevideo's 43 km), hence a default
-of 50 km, about two cells.
+**Join.** Space and time are separate: ``cells`` gives each zone the
+cell its point is in, found by index arithmetic (see ``grid``), and
+``values`` reads each (variable, year) layer at those cells, once per
+distinct cell. Where that cell is NaN (ocean, or masked, which can
+differ by year) it takes the nearest non-NaN cell whose centre is within
+``max_fallback_km`` of its point, else null. Masks differ by layer:
+``gdp_per_capita``'s is eroded at coasts (Nice's nearest valid cell is
+35 km away, Montevideo's 43 km), hence a default of 50 km, about two
+cells.
 """
 
 import json
@@ -31,6 +35,7 @@ from foundata.gridjoin.grid import WORLDTENSOR
 from foundata.gridjoin.zones import Zones
 
 PREFIX = "wt_"
+STATIC = "static"  # the layer key of a static variable
 
 # variable -> its folder of <year>.nc files, or a single static file,
 # under the WORLD data root
@@ -54,6 +59,12 @@ def value_columns() -> list[str]:
     return [PREFIX + v for v in VARIABLES]
 
 
+def attribute_columns() -> list[str]:
+    """The columns joined to attributes: each variable's value, then the
+    year it is from."""
+    return [c for v in VARIABLES for c in (PREFIX + v, PREFIX + v + "_year")]
+
+
 DEFAULT_MAX_FALLBACK_KM = 50.0
 
 
@@ -64,16 +75,16 @@ def missing_sources(
     problems = []
     for var, rel in (variables or VARIABLES).items():
         try:
-            latest(world / rel)
+            available(world / rel)
         except FileNotFoundError as e:
             problems.append(f"WorldTensor {var}: {e}")
     return problems
 
 
-def latest(source: Path) -> tuple[Path, int | None]:
-    """The file to use for a variable, and its year (None if static)."""
+def available(source: Path) -> dict[int, Path] | None:
+    """A variable's files by year, or None if it is a single static file."""
     if source.is_file():
-        return source, None
+        return None
     if not source.is_dir():
         raise FileNotFoundError(f"{source} not found")
     years = {
@@ -83,19 +94,32 @@ def latest(source: Path) -> tuple[Path, int | None]:
     }
     if not years:
         raise FileNotFoundError(f"no <year>.nc files in {source}")
-    year = max(years)
-    return years[year], year
+    return dict(sorted(years.items()))
+
+
+def nearest_year(years: list[int], year: int) -> int:
+    """The year in *years* nearest to *year* (the earlier, on a tie)."""
+    return min(years, key=lambda y: (abs(y - year), y))
 
 
 def preprocess(
     world: Path,
     cache: Path,
+    years: list[int] | None = None,
     variables: dict[str, str] | None = None,
     force: bool = False,
 ) -> dict:
-    """Write each variable's layer to ``cache/worldtensor``; return the
-    manifest (variable -> file, year, units, source). Layers of variables
-    no longer in *variables* are removed."""
+    """Write each variable's layers for *years* (each mapped to its
+    nearest year on disk; None: the most recent) to ``cache/worldtensor``,
+    and return the manifest. Layers already cached for other years are
+    kept; those of variables no longer in *variables* are removed.
+
+    The manifest gives, per variable, its ``source``, ``available`` (its years on disk,
+    empty if static), ``static``, ``year`` (a static layer's snapshot
+    year, where the file gives one), ``units``, ``long_name``, and
+    ``layers``: per year (or ``"static"``) its file, source and NaN
+    fraction.
+    """
     variables = variables or VARIABLES
     out = cache / "worldtensor"
     out.mkdir(parents=True, exist_ok=True)
@@ -103,45 +127,68 @@ def preprocess(
     manifest = (
         json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
     )
-    for var in set(manifest) - set(variables):
-        (out / manifest.pop(var)["file"]).unlink(missing_ok=True)
-        logger.info(f"worldtensor {var}: no longer used, removed")
-    for var, rel in variables.items():
-        src, year = latest(world / rel)
-        stat = src.stat()
-        stamp = {
-            "source": str(src),
-            "mtime": stat.st_mtime,
-            "bytes": stat.st_size,
-        }
-        entry = manifest.get(var, {})
-        npy = out / f"{var}.npy"
-        if (
-            not force
-            and npy.exists()
-            and all(entry.get(k) == v for k, v in stamp.items())
-        ):
-            logger.debug(f"worldtensor {var}: up to date ({year})")
+    for var in list(manifest):
+        entry = manifest[var]
+        if var in variables and "layers" in entry:
             continue
-        layer, attrs = _read_layer(src, var)
-        _save_npy(npy, layer)
-        manifest[var] = {
-            **stamp,
-            "file": npy.name,
-            # a static layer's snapshot year, where the file gives one
-            "year": year or attrs.get("reference_year"),
-            "static": year is None,
-            "units": attrs.get("units"),
-            "long_name": attrs.get("long_name"),
-            "nan_fraction": round(float(np.isnan(layer).mean()), 4),
-        }
-        logger.info(f"worldtensor {var}: {year or 'static'} -> {npy}")
+        # no longer used, or cached by a version with one layer each
+        layers = entry.get("layers", {"": {"file": entry.get("file")}})
+        for layer in layers.values():
+            if layer.get("file"):
+                (out / layer["file"]).unlink(missing_ok=True)
+        del manifest[var]
+        if var not in variables:
+            logger.info(f"worldtensor {var}: no longer used, removed")
+    for var, rel in variables.items():
+        files = available(world / rel)
+        if files is None:
+            wanted = {STATIC: world / rel}
+        else:
+            need = [max(files)] if years is None else years
+            wanted = {
+                str(y): files[y]
+                for y in {nearest_year(list(files), n) for n in need}
+            }
+        entry = manifest.setdefault(var, {"layers": {}})
+        entry["source"] = str(world / rel)
+        entry["available"] = [] if files is None else list(files)
+        entry["static"] = files is None
+        for key, src in sorted(wanted.items()):
+            _preprocess_layer(out, var, key, src, entry, force)
     if (
         not manifest_path.exists()
         or json.loads(manifest_path.read_text()) != manifest
     ):
         _write_manifest(manifest_path, manifest)
     return manifest
+
+
+def _preprocess_layer(
+    out: Path, var: str, key: str, src: Path, entry: dict, force: bool
+) -> None:
+    stat = src.stat()
+    stamp = {"source": str(src), "mtime": stat.st_mtime, "bytes": stat.st_size}
+    layer = entry["layers"].get(key, {})
+    npy = out / (f"{var}.npy" if key == STATIC else f"{var}_{key}.npy")
+    if (
+        not force
+        and npy.exists()
+        and all(layer.get(k) == v for k, v in stamp.items())
+    ):
+        logger.debug(f"worldtensor {var} {key}: up to date")
+        return
+    data, attrs = _read_layer(src, var)
+    _save_npy(npy, data)
+    entry["layers"][key] = {
+        **stamp,
+        "file": npy.name,
+        "nan_fraction": round(float(np.isnan(data).mean()), 4),
+    }
+    entry["units"] = attrs.get("units")
+    entry["long_name"] = attrs.get("long_name")
+    if key == STATIC:
+        entry["year"] = attrs.get("reference_year")
+    logger.info(f"worldtensor {var} {key} -> {npy}")
 
 
 def _write_manifest(manifest_path: Path, manifest: dict) -> None:
@@ -177,19 +224,44 @@ def _save_npy(path: Path, array: np.ndarray) -> None:
     os.replace(tmp, path)
 
 
-def join(
-    zones: Zones,
+def cells(zones: Zones) -> dict[str, np.ndarray]:
+    """Each zone's cell, which does not depend on the year.
+
+    Columns: ``wt_cell`` (row * 1440 + col, null for an unlocated zone);
+    ``wt_spans_cells`` (the footprint box crosses a cell edge, so the
+    point's cell is an approximation).
+    """
+    g = WORLDTENSOR
+    ok = zones.located
+    cell = np.full(len(zones), -1, np.int64)
+    cell[ok] = g.cell(zones.lon[ok], zones.lat[ok])
+    spans = np.zeros(len(zones), bool)
+    spans[ok] = g.spans_cells(
+        zones.xmin[ok], zones.ymin[ok], zones.xmax[ok], zones.ymax[ok]
+    )
+    return {
+        PREFIX + "cell": np.ma.masked_array(cell.astype(np.int32), ~ok),
+        PREFIX + "spans_cells": spans,
+    }
+
+
+def values(
+    lon: np.ndarray,
+    lat: np.ndarray,
+    year: np.ndarray,
     cache: Path,
     variables: list[str] | None = None,
     max_fallback_km: float = DEFAULT_MAX_FALLBACK_KM,
 ) -> tuple[dict[str, np.ndarray], dict]:
-    """New columns for *zones*, and metadata (the manifest of what was used).
+    """Each variable's value at each point (``lon``, ``lat``) in its
+    survey *year* (NaN for any of the three: no value), from the layers
+    preprocessed into *cache*.
 
-    Columns: ``wt_<var>`` per variable; ``wt_<var>_fallback_km`` for
-    each variable whose layer has NaNs (distance to the cell used: 0 for
-    the zone's own, null if none in range); ``wt_cell`` (row * 1440 +
-    col, null for an unlocated zone); ``wt_spans_cells`` (the footprint box crosses a cell edge, so
-    the point's cell is an approximation).
+    Columns, per variable: ``wt_<var>`` (float32, NaN where none) and
+    ``wt_<var>_year`` (int32, the year used, masked where there is no
+    value or a static layer gives no year). Metadata: per variable, its
+    units, source and the year used for each survey year, and the number
+    of points on NaN cells and how many the fallback filled.
     """
     out = cache / "worldtensor"
     manifest = json.loads((out / "manifest.json").read_text())
@@ -198,42 +270,73 @@ def join(
     if missing:
         raise KeyError(f"not preprocessed: {missing} (run preprocess first)")
     g = WORLDTENSOR
-    n = len(zones)
-    ok = zones.located
+    lon, lat = np.asarray(lon, float), np.asarray(lat, float)
+    year = np.asarray(year, float)
+    n = lon.size
+    ok = np.isfinite(lon) & np.isfinite(lat) & np.isfinite(year)
     cell = np.full(n, -1, np.int64)
-    cell[ok] = g.cell(zones.lon[ok], zones.lat[ok])
-    cells, inverse = np.unique(cell[ok], return_inverse=True)
-    columns = {}
+    cell[ok] = g.cell(lon[ok], lat[ok])
+    survey_years = sorted({int(y) for y in year[ok]})
+    columns, used = {}, {}
     for var in variables:
-        layer = np.load(out / manifest[var]["file"], mmap_mode="r").ravel()
-        valid = ~np.isnan(layer)
-        values = np.full(n, np.nan, np.float32)
-        values[ok] = np.asarray(layer[cells])[inverse]
-        columns[PREFIX + var] = values
-        if valid.all():
-            continue
-        fallback_km = np.where(ok, 0.0, np.nan).astype(np.float32)
-        holes = np.flatnonzero(ok & np.isnan(values))
-        if holes.size:
-            near, km = g.nearest_valid(
-                zones.lon[holes], zones.lat[holes], valid, max_fallback_km
+        entry = manifest[var]
+        if entry["static"]:
+            years = {y: STATIC for y in survey_years}
+        else:
+            years = {
+                y: str(nearest_year(entry["available"], y))
+                for y in survey_years
+            }
+        absent = sorted(set(years.values()) - set(entry["layers"]))
+        if absent:
+            raise KeyError(
+                f"{var} {absent} not preprocessed (run preprocess for "
+                f"years {survey_years})"
             )
-            found = near >= 0
-            values[holes[found]] = layer[near[found]]
-            fallback_km[holes] = km
+        vals = np.full(n, np.nan, np.float32)
+        year_used = np.zeros(n, np.int32)
+        has_year = np.zeros(n, bool)
+        holes_n = filled_n = 0
+        for key in sorted(set(years.values())):
+            surveys = [y for y, k in years.items() if k == key]
+            sel = np.flatnonzero(ok & np.isin(year, surveys))
+            layer = np.load(
+                out / entry["layers"][key]["file"], mmap_mode="r"
+            ).ravel()
+            cs, inverse = np.unique(cell[sel], return_inverse=True)
+            vals[sel] = np.asarray(layer[cs])[inverse]
+            holes = sel[np.isnan(vals[sel])]
+            if holes.size:
+                valid = ~np.isnan(layer)
+                near, _ = g.nearest_valid(
+                    lon[holes], lat[holes], valid, max_fallback_km
+                )
+                found = near >= 0
+                vals[holes[found]] = layer[near[found]]
+                holes_n += holes.size
+                filled_n += int(found.sum())
+            layer_year = entry.get("year") if key == STATIC else int(key)
+            if layer_year is not None:
+                year_used[sel] = layer_year
+                has_year[sel] = True
+        has_year &= ~np.isnan(vals)
+        columns[PREFIX + var] = vals
+        columns[PREFIX + var + "_year"] = np.ma.masked_array(
+            year_used, ~has_year
+        )
+        if holes_n:
             logger.debug(
-                f"worldtensor {var}: {holes.size} zones on NaN cells, "
-                f"{found.sum()} filled within {max_fallback_km} km"
+                f"worldtensor {var}: {holes_n} points on NaN cells, "
+                f"{filled_n} filled within {max_fallback_km} km"
             )
-        columns[PREFIX + var + "_fallback_km"] = fallback_km
-    columns[PREFIX + "cell"] = np.ma.masked_array(cell.astype(np.int32), ~ok)
-    spans = np.zeros(n, bool)
-    spans[ok] = g.spans_cells(
-        zones.xmin[ok], zones.ymin[ok], zones.xmax[ok], zones.ymax[ok]
-    )
-    columns[PREFIX + "spans_cells"] = spans
-    used = {
-        v: {k: manifest[v][k] for k in ("year", "units", "source")}
-        for v in variables
-    }
+        used[var] = {
+            "units": entry.get("units"),
+            "source": entry["source"],
+            "years": {
+                str(y): (entry.get("year") if k == STATIC else int(k))
+                for y, k in years.items()
+            },
+            "on_nan_cells": holes_n,
+            "filled": filled_n,
+        }
     return columns, {"variables": used, "max_fallback_km": max_fallback_km}

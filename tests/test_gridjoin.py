@@ -167,8 +167,9 @@ def write_wt(world, var, year, data):
 
 @pytest.fixture
 def wt_cache(tmp_path, monkeypatch):
-    """A world with one variable, ``v`` (row * 1e4 + col, NaN at lon 20,
-    lat 10), preprocessed; it is the only variable joined."""
+    """A world with one variable, ``v``: 0 in 2019, row * 1e4 + col in 2020
+    and 2022 plus 1e7 in 2022, and NaN at lon 20, lat 10 in 2020 only;
+    preprocessed for 2020, and the only variable joined."""
     monkeypatch.setattr(worldtensor, "VARIABLES", {"v": "wt/v"})
     world, cache = tmp_path / "world", tmp_path / "cache"
     field = np.add.outer(
@@ -181,48 +182,138 @@ def wt_cache(tmp_path, monkeypatch):
         WORLDTENSOR.cols(np.array([20.0]))[0],
     ] = np.nan
     write_wt(world, "v", 2020, masked)
-    worldtensor.preprocess(world, cache)
+    write_wt(world, "v", 2022, field + 1e7)
+    worldtensor.preprocess(world, cache, years=[2020])
     return world, cache
 
 
-def test_worldtensor_uses_latest_year_and_is_idempotent(wt_cache):
-    world, cache = wt_cache
-    npy = cache / "worldtensor" / "v.npy"
-    mtime = npy.stat().st_mtime_ns
-    manifest = worldtensor.preprocess(world, cache)
-    assert manifest["v"]["year"] == 2020
-    assert npy.stat().st_mtime_ns == mtime
-
-
-def test_worldtensor_join(wt_cache):
-    _, cache = wt_cache
-    z = zones.from_table(
-        zones_table(
-            [
-                (20.0, 10.0, 50, None),  # its cell is NaN: falls back
-                (-179.99, -90.0, 50, None),  # pole, antimeridian
-                (180.0, 90.0, 50, None),
-                (None, None, None, None),  # unlocated
-            ]
-        )
+def expected(lon, lat):
+    return (
+        WORLDTENSOR.rows(np.array([lat]))[0] * 1e4
+        + WORLDTENSOR.cols(np.array([lon]))[0]
     )
-    cols, meta = worldtensor.join(z, cache, max_fallback_km=50)
-    v = cols["wt_v"]
-    row, col = WORLDTENSOR.rows(z.lat[:3]), WORLDTENSOR.cols(z.lon[:3])
+
+
+def test_nearest_year():
+    years = [2019, 2020, 2022]
+    assert worldtensor.nearest_year(years, 2020) == 2020
+    assert worldtensor.nearest_year(years, 2021) == 2020  # tie: earlier
+    assert worldtensor.nearest_year(years, 2030) == 2022
+    assert worldtensor.nearest_year(years, 1990) == 2019
+
+
+def test_preprocess_caches_years_asked_for_and_is_idempotent(wt_cache):
+    world, cache = wt_cache
+    out = cache / "worldtensor"
+    assert not (out / "v_2022.npy").exists()
+    mtime = (out / "v_2020.npy").stat().st_mtime_ns
+    manifest = worldtensor.preprocess(world, cache, years=[2020, 2030])
+    assert manifest["v"]["available"] == [2019, 2020, 2022]
+    assert set(manifest["v"]["layers"]) == {"2020", "2022"}
+    assert (out / "v_2020.npy").stat().st_mtime_ns == mtime
+    # no years: the most recent, and earlier layers are kept
+    assert set(worldtensor.preprocess(world, cache)["v"]["layers"]) == {
+        "2020",
+        "2022",
+    }
+
+
+def test_preprocess_replaces_an_old_style_cache(tmp_path, monkeypatch):
+    monkeypatch.setattr(worldtensor, "VARIABLES", {"v": "wt/v"})
+    world, cache = tmp_path / "world", tmp_path / "cache"
+    write_wt(world, "v", 2020, np.zeros((721, 1440)))
+    out = cache / "worldtensor"
+    out.mkdir(parents=True)
+    (out / "v.npy").write_bytes(b"old")
+    (out / "manifest.json").write_text(
+        json.dumps({"v": {"file": "v.npy", "year": 2020}})
+    )
+    manifest = worldtensor.preprocess(world, cache)
+    assert not (out / "v.npy").exists()
+    assert manifest["v"]["layers"]["2020"]["file"] == "v_2020.npy"
+
+
+def test_worldtensor_values(wt_cache):
+    _, cache = wt_cache
+    lon = np.array([20.0, -179.99, 180.0, np.nan, 5.0])
+    lat = np.array([10.0, -90.0, 90.0, np.nan, 5.0])
+    year = np.array([2020, 2020, 2020, 2020, np.nan])
+    cols, meta = worldtensor.values(lon, lat, year, cache, max_fallback_km=50)
+    v, y = cols["wt_v"], cols["wt_v_year"]
+    row, col = WORLDTENSOR.rows(lat[:3]), WORLDTENSOR.cols(lon[:3])
     np.testing.assert_array_equal(v[1:3], row[1:3] * 10000.0 + col[1:3])
     # column 0 is lon 0, so both antimeridian points are in column 720
     assert row[1] == 0 and col[1] == 720 and row[2] == 720 and col[2] == 720
-    assert np.isfinite(v[0]) and 20 < cols["wt_v_fallback_km"][0] < 50
-    assert cols["wt_v_fallback_km"][1] == 0
-    assert np.isnan(v[3]) and cols["wt_cell"].mask[3]
-    assert meta["variables"]["v"]["year"] == 2020
+    assert np.isfinite(v[0])  # its cell is NaN: falls back
+    assert np.isnan(v[3]) and y.mask[3]  # unlocated
+    assert np.isnan(v[4]) and y.mask[4]  # no year
+    assert y[:3].tolist() == [2020] * 3
+    assert meta["variables"]["v"]["years"] == {"2020": 2020}
+    assert meta["variables"]["v"]["on_nan_cells"] == 1
+    assert meta["variables"]["v"]["filled"] == 1
+
+
+def test_worldtensor_values_by_nearest_year(wt_cache):
+    world, cache = wt_cache
+    worldtensor.preprocess(world, cache, years=[2018, 2025])
+    lon, lat = np.full(3, 20.0), np.full(3, 10.0)
+    cols, meta = worldtensor.values(
+        lon, lat, np.array([2018.0, 2025.0, 2020.0]), cache
+    )
+    assert cols["wt_v_year"].tolist() == [2019, 2022, 2020]
+    # 2019 is all 0; 2022 has no hole here, so needs no fallback
+    assert cols["wt_v"][0] == 0
+    assert cols["wt_v"][1] == expected(20.0, 10.0) + 1e7
+    assert meta["variables"]["v"]["years"] == {
+        "2018": 2019,
+        "2020": 2020,
+        "2025": 2022,
+    }
+
+
+def test_worldtensor_values_needs_its_years_preprocessed(wt_cache):
+    _, cache = wt_cache
+    with pytest.raises(KeyError, match="2022"):
+        worldtensor.values(
+            np.array([5.0]), np.array([5.0]), np.array([2024.0]), cache
+        )
 
 
 def test_worldtensor_fallback_respects_radius(wt_cache):
     _, cache = wt_cache
-    z = zones.from_table(zones_table([(20.0, 10.0, 50, None)]))
-    cols, _ = worldtensor.join(z, cache, max_fallback_km=5)
-    assert np.isnan(cols["wt_v"][0]) and np.isnan(cols["wt_v_fallback_km"][0])
+    cols, _ = worldtensor.values(
+        np.array([20.0]),
+        np.array([10.0]),
+        np.array([2020.0]),
+        cache,
+        max_fallback_km=5,
+    )
+    assert np.isnan(cols["wt_v"][0]) and cols["wt_v_year"].mask[0]
+
+
+def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
+    world, cache = tmp_path / "world", tmp_path / "cache"
+    ds = xr.Dataset(
+        {"s": (("lat", "lon"), np.ones((721, 1440), np.float32))},
+        coords={
+            "lat": np.linspace(-90, 90, 721),
+            "lon": np.arange(1440) * 0.25,
+        },
+        attrs={"reference_year": 2015},
+    )
+    (world / "static").mkdir(parents=True)
+    ds.to_netcdf(world / "static" / "s.nc")
+    monkeypatch.setattr(worldtensor, "VARIABLES", {"s": "static/s.nc"})
+    worldtensor.preprocess(world, cache, years=[2010, 2020])
+    cols, meta = worldtensor.values(
+        np.array([5.0, 5.0]),
+        np.array([5.0, 5.0]),
+        np.array([2010.0, 2020.0]),
+        cache,
+    )
+    assert cols["wt_s"].tolist() == [1, 1]
+    assert cols["wt_s_year"].tolist() == [2015, 2015]
+    assert meta["variables"]["s"]["years"] == {"2010": 2015, "2020": 2015}
 
 
 def test_preprocess_removes_variables_no_longer_used(wt_cache, monkeypatch):
@@ -231,7 +322,7 @@ def test_preprocess_removes_variables_no_longer_used(wt_cache, monkeypatch):
     monkeypatch.setattr(worldtensor, "VARIABLES", {"w": "wt/w"})
     manifest = worldtensor.preprocess(world, cache)
     assert set(manifest) == {"w"}
-    assert not (cache / "worldtensor" / "v.npy").exists()
+    assert not (cache / "worldtensor" / "v_2020.npy").exists()
     saved = json.loads((cache / "worldtensor" / "manifest.json").read_text())
     assert set(saved) == {"w"}
 
@@ -243,8 +334,7 @@ def test_missing_sources(wt_cache, tmp_path):
     assert len(problems) == 1 and "WorldTensor v" in problems[0]
 
 
-def test_point_outside_its_concave_polygon(wt_cache):
-    _, cache = wt_cache
+def test_point_outside_its_concave_polygon():
     # a U whose centroid is in the gap: the join uses the zone's own point,
     # and the box flags that the polygon spans cells
     u = shapely.Polygon(
@@ -262,18 +352,19 @@ def test_point_outside_its_concave_polygon(wt_cache):
     centroid = shapely.centroid(u)
     assert not u.contains(centroid)
     z = zones.from_table(zones_table([(centroid.x, centroid.y, 5e4, u)]))
-    cols, _ = worldtensor.join(z, cache)
-    cell = WORLDTENSOR.cell(np.array([centroid.x]), np.array([centroid.y]))[0]
-    assert cols["wt_cell"][0] == cell
-    assert cols["wt_v"][0] == (cell // 1440) * 10000.0 + cell % 1440
+    cols = worldtensor.cells(z)
+    assert (
+        cols["wt_cell"][0]
+        == WORLDTENSOR.cell(np.array([centroid.x]), np.array([centroid.y]))[0]
+    )
     assert cols["wt_spans_cells"][0]
 
 
-def test_template_lists_every_value_column():
+def test_template_lists_every_attribute_column():
     template = utils.get_template_attributes()
     assert [
         c for c in template if c.startswith("wt_")
-    ] == worldtensor.value_columns()
+    ] == worldtensor.attribute_columns()
 
 
 # ---------------------------------------------------------------------------
@@ -285,7 +376,7 @@ def locations_frame() -> pl.DataFrame:
     return pl.from_arrow(
         zones_table(
             [
-                (20.0, 10.0, 50, None),  # a NaN cell
+                (20.0, 10.0, 50, None),  # a NaN cell in 2020
                 (5.0, 5.0, 2000, None),
                 (None, None, None, None),  # no geometry
             ]
@@ -293,51 +384,59 @@ def locations_frame() -> pl.DataFrame:
     ).with_columns(pl.Series("extra", ["a", "b", "c"]))
 
 
-def test_join_locations_keeps_rows_and_columns(wt_cache):
-    world, cache = wt_cache
+def test_join_locations_adds_cells(wt_cache):
     locations = locations_frame()
-    out, meta = join.join_locations(locations, world, cache)
-    assert out.columns[: locations.width] == locations.columns
+    out = join.join_locations(locations)
     assert out.select(locations.columns).equals(locations)
-    assert set(out.columns[locations.width :]) == {
-        "wt_v",
-        "wt_v_fallback_km",
-        "wt_cell",
-        "wt_spans_cells",
-    }
-    assert out["wt_v"][2] is None and out["wt_cell"][2] is None
-    assert out["wt_v"][1] == WORLDTENSOR.rows(np.array([5.0]))[0] * 1e4 + 20
-    assert meta["worldtensor"]["variables"]["v"]["year"] == 2020
+    assert out.columns[locations.width :] == ["wt_cell", "wt_spans_cells"]
+    assert out["wt_cell"][2] is None
+    assert (
+        out["wt_cell"][1]
+        == WORLDTENSOR.cell(np.array([5.0]), np.array([5.0]))[0]
+    )
 
 
-def test_to_attributes_by_home_location(wt_cache):
+def test_to_attributes_by_home_location_and_year(wt_cache):
     world, cache = wt_cache
-    locations, _ = join.join_locations(locations_frame(), world, cache)
+    locations = join.join_locations(locations_frame())
     attributes = pl.DataFrame(
         {
-            "pid": [0, 1, 2, 3],
-            "hh_location": [1, None, 1, 0],
-            "wt_v": [
-                None,
-                None,
-                None,
-                None,
-            ],  # null, as fix.missing_columns adds
+            "pid": [0, 1, 2, 3, 4],
+            "hh_location": [1, None, 1, 0, 1],
+            "year": [2020, 2020, 2020, 2020, 2024],
+            # null, as fix.missing_columns adds
+            "wt_v": [None] * 5,
+            "wt_v_year": [None] * 5,
         },
-        schema_overrides={"hh_location": pl.Int32, "wt_v": pl.Float32},
+        schema_overrides={
+            "hh_location": pl.Int32,
+            "year": pl.Int32,
+            "wt_v": pl.Float32,
+            "wt_v_year": pl.Int32,
+        },
     )
-    out = join.to_attributes(attributes, locations)
-    assert out.columns == ["pid", "hh_location", "wt_v"]
-    assert out["pid"].to_list() == [0, 1, 2, 3]
-    v = locations["wt_v"]
-    assert out["wt_v"].to_list() == [v[1], None, v[1], v[0]]
+    out, meta = join.to_attributes(attributes, locations, world, cache)
+    assert out.columns == ["pid", "hh_location", "year", "wt_v", "wt_v_year"]
+    assert out["pid"].to_list() == [0, 1, 2, 3, 4]
+    here = expected(5.0, 5.0)
+    assert out["wt_v"][[0, 1, 2, 4]].to_list() == [here, None, here, here + 1e7]
+    assert out["wt_v"][3] is not None  # fell back
+    assert out["wt_v_year"].to_list() == [2020, None, 2020, 2020, 2022]
+    assert out["wt_v_year"].dtype == pl.Int32
+    assert meta["worldtensor"]["variables"]["v"]["years"] == {
+        "2020": 2020,
+        "2024": 2022,
+    }
 
 
-def test_locations_metadata_is_written(wt_cache, tmp_path):
-    world, cache = wt_cache
-    locations, meta = join.join_locations(locations_frame(), world, cache)
+def test_locations_metadata_is_written(tmp_path):
+    meta = {"worldtensor": {"variables": {}}}
     path = tmp_path / "locations.parquet"
-    location.write(locations, path, metadata={join.METADATA_KEY: meta})
+    location.write(
+        join.join_locations(locations_frame()),
+        path,
+        metadata={join.METADATA_KEY: meta},
+    )
     schema_meta = pq.read_schema(path).metadata
     assert json.loads(schema_meta[join.METADATA_KEY]) == meta
     assert b"geo" in schema_meta
@@ -355,13 +454,3 @@ def test_runner_checks_worldtensor_before_loading(tmp_path, monkeypatch):
             world=tmp_path / "no_world",
         )
     assert not loaded
-
-
-def test_join_file(wt_cache, tmp_path):
-    _, cache = wt_cache
-    table = zones_table([(5.0, 5.0, 50, None)])
-    pq.write_table(table, tmp_path / "in.parquet")
-    join.join_file(tmp_path / "in.parquet", cache, tmp_path / "out.parquet")
-    written = pq.read_table(tmp_path / "out.parquet")
-    assert written.column_names[: table.num_columns] == table.column_names
-    assert b"gridjoin" in written.schema.metadata

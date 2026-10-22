@@ -82,7 +82,8 @@ The canonical schema is `configs/core/template.yaml`.
 | `avg_speed` | float | ≥ 0 | Total distance / total trip duration (km/h) |
 | `max_temp_c` | float | | Daily maximum temperature on the diary day (CMAP, ODIN, some KTDB) |
 | `rain` | bool | | Precipitation > 0 mm on the diary day (CMAP, ODIN, some KTDB) |
-| `wt_*` | float | | WorldTensor values at the home location, for example `wt_population_density` and `wt_travel_time_to_cities`. Each is from its variable's most recent year, not the survey year. Null without a home location, or with `--no-grid`. See [Gridded data](gridjoin.md) |
+| `wt_<var>` | float | | WorldTensor values at the home location, for example `wt_population_density` and `wt_travel_time_to_cities`, from each variable's year nearest the survey year. Null without a home location, or with `--no-grid`. See [Gridded data](gridjoin.md) |
+| `wt_<var>_year` | int | | The year `wt_<var>` is from (a static layer's snapshot year). Null where `wt_<var>` is |
 
 ## trips
 
@@ -143,12 +144,11 @@ is WKB in WGS84, so you can read it with `geopandas.read_parquet`.
 | `geom_source` | `point`, `boundary`, `parent` (a containing unit), `estimated` or `none` |
 | `geom_dataset`, `geom_year` | Boundary dataset and its vintage |
 | `geometry` | Point, or the simplified polygon |
-| `wt_<var>` | WorldTensor value of the 0.25° cell containing `lon`, `lat` |
-| `wt_<var>_fallback_km` | For a layer with gaps: the distance to the cell used (0 for its own cell) |
-| `wt_cell`, `wt_spans_cells` | The cell (`row * 1440 + col`), and whether the location's box crosses a cell edge |
+| `wt_cell`, `wt_spans_cells` | The WorldTensor cell (`row * 1440 + col`), and whether the location's box crosses a cell edge |
 
-The `gridjoin` metadata key records the year, units and source file of
-each `wt_` variable.
+The `gridjoin` metadata key records, for each `wt_` variable, its units,
+source, the year used for each survey year, and how many home locations
+fell back to a nearby cell.
 
 Location precision varies widely between sources, from about 50 m points
 (Brazil, Chile) to whole regions (NTS, NHTS). The README's household

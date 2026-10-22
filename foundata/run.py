@@ -480,9 +480,10 @@ def runner(
     also writes ``original_ids.csv``, mapping each pid and hid back to the
     survey's own ids.
 
-    WorldTensor layers under *world* (preprocessed into *grid_cache*) are
-    joined to the locations, and from them to each household's
-    attributes (``wt_`` columns); with *world* None they stay null.
+    Each location gets its WorldTensor cell, and each household the values
+    of the WorldTensor layers under *world* (preprocessed into
+    *grid_cache*) at its home in the year nearest its survey's, with the
+    year used (``wt_`` columns); with *world* None they stay null.
     """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
@@ -581,10 +582,10 @@ def runner(
     log_locations(all_attributes, all_trips, locations)
     grid_meta = None
     if world is not None:
-        locations, grid_meta = gridjoin.join.join_locations(
-            locations, world, Path(grid_cache).expanduser()
+        locations = gridjoin.join.join_locations(locations)
+        all_attributes, grid_meta = gridjoin.join.to_attributes(
+            all_attributes, locations, world, Path(grid_cache).expanduser()
         )
-        all_attributes = gridjoin.join.to_attributes(all_attributes, locations)
 
     if keep_ids:
         logger.warning(
@@ -617,6 +618,11 @@ def runner(
             "vehicles",
             "hh_size",
             "hh_location",
+            *(
+                c
+                for c in all_attributes.columns
+                if c.startswith("wt_") and c.endswith("_year")
+            ),
         ],
     )
     binned_attributes = post_process.fill_nulls(binned_attributes)
