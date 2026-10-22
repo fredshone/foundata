@@ -2,10 +2,10 @@
 
 Foundata is a pipeline for creating reconciled household travel surveys, aimed at enabling *foundational* or *worldwide* models of human behaviour — but also a useful source of code for those wishing to work with the available datasets. you can read more [here](https://fredshone.github.io/foundata/).
 
-<figure>
-<img src="assets/source.png" alt="Available countries" style="display: block; margin: 0 auto; max-width: 100%;"/>
-<figcaption style="text-align: center"> Foundata national-level coverage </figcaption> 
-</figure>
+<p align="center">
+<img src="assets/source.png" alt="Available countries" width="100%"/>
+<br/>
+</p>
 
 Run a single source with `foundata run <SOURCE> <SOURCE_DIR>`, pointing at that source's own data folder, e.g.:
 
