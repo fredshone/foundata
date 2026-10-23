@@ -462,6 +462,24 @@ def log_locations(
     )
 
 
+def write_table(df: pl.DataFrame, output: Path, name: str, csv: bool = False):
+    """Write *df* to *output* as ``<name>.parquet``, or ``<name>.csv`` if *csv*."""
+    if csv:
+        df.write_csv(output / f"{name}.csv")
+    else:
+        df.write_parquet(output / f"{name}.parquet")
+
+
+def read_table(output: Path, name: str, **kwargs) -> pl.DataFrame:
+    """Read table *name* from *output*, as parquet if present, else csv."""
+    path = output / f"{name}.parquet"
+    if path.exists():
+        return pl.read_parquet(path, **kwargs)
+    return pl.read_csv(
+        output / f"{name}.csv", infer_schema_length=None, **kwargs
+    )
+
+
 def runner(
     source_dirs: dict[str, str | Path],
     output: str | Path,
@@ -469,6 +487,7 @@ def runner(
     fix_consecutive: bool = False,
     diagnostics: bool = False,
     keep_ids: bool = False,
+    csv: bool = False,
     world: str | Path | None = gridjoin.DEFAULT_WORLD,
     grid_cache: str | Path = gridjoin.DEFAULT_CACHE,
     grid_config: str | Path = gridjoin.worldtensor.CONFIG,
@@ -478,8 +497,9 @@ def runner(
     *source_dirs* maps each source name to its own data directory. The
     summary tables and README plots are always produced; *diagnostics* adds
     the anomaly-detection reports and supplementary heatmaps. *keep_ids*
-    also writes ``original_ids.csv``, mapping each pid and hid back to the
-    survey's own ids.
+    also writes ``original_ids``, mapping each pid and hid back to the
+    survey's own ids. Data tables are written as parquet, or as csv if
+    *csv*; the human-readable summary tables are always csv.
 
     Each location gets its WorldTensor cell, and each household the values
     of the WorldTensor layers under *world* (preprocessed into
@@ -598,19 +618,19 @@ def runner(
 
     if keep_ids:
         logger.warning(
-            "Writing original_ids.csv: it links records back to the surveys' "
+            "Writing original_ids: it links records back to the surveys' "
             "own ids, so keep it private"
         )
-        (
+        original_ids = (
             all_attributes.select("source", "pid", "hid")
             .join(pl.concat(all_ids["pid"]), on="pid", how="left")
             .join(pl.concat(all_ids["hid"]), on="hid", how="left")
-            .write_csv(output / "original_ids.csv")
         )
+        write_table(original_ids, output, "original_ids", csv)
     del all_ids
 
     logger.info(f"Writing attributes, trips and locations to {output}...")
-    all_attributes.write_csv(output / "attributes.csv")
+    write_table(all_attributes, output, "attributes", csv)
     location.write(
         locations,
         output / "locations.parquet",
@@ -632,8 +652,8 @@ def runner(
         ],
     )
     binned_attributes = post_process.fill_nulls(binned_attributes)
-    binned_attributes.write_csv(output / "binned_attributes.csv")
-    all_trips.write_csv(output / "trips.csv")
+    write_table(binned_attributes, output, "binned_attributes", csv)
+    write_table(all_trips, output, "trips", csv)
 
     if not verify.trips_pids_subset_of_attributes(all_attributes, all_trips):
         raise ValueError("Trips has pids not in attributes")
@@ -646,7 +666,7 @@ def runner(
     ):
         raise ValueError("Activities pids do not match attributes pids")
 
-    activity_schedules.write_csv(output / "activity_schedules.csv")
+    write_table(activity_schedules, output, "activity_schedules", csv)
 
     logger.info(f"Written attributes, trips and activities to {output}")
 

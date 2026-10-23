@@ -23,19 +23,20 @@ Arguments:
   DATA_ROOT  Base data directory containing one folder per source (LTDS/, NTS/, ...), e.g. ~/Data/foundata  [required]
 
 Options:
-  -o, --output PATH                                   Directory where CSVs and PNGs are written.  [default: output]
+  -o, --output PATH                                   Directory where tables and PNGs are written.  [default: output]
   -s, --select SOURCE...                              Sources to process (e.g. -s nhts ktdb, or -s nhts,ktdb). Defaults to all.
   -x, --omit SOURCE...                                Sources to omit (e.g. -x nhts ktdb, or -x nhts,ktdb).
   --open                                              Run only the open-data sources (nhts, cmap, vista, qhts, ktdb, mexico, argentina, uruguay, chile). Overrides --select and --omit.
   -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
   -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities.  [default: filter-consecutive]
   -d, --diagnostics                                   Also produce the anomaly-detection reports and supplementary activity heatmaps.
-  --keep-ids                                          Also write original_ids.csv, mapping each pid and hid back to the survey's own ids. It re-identifies records, so keep it private.
+  --keep-ids                                          Also write original_ids, mapping each pid and hid back to the survey's own ids. It re-identifies records, so keep it private.
+  --csv                                               Write output tables as CSV instead of Parquet.
   -l, --log-level [debug|info|warning|error]          Minimum level of log messages to show.  [default: info]
   --help                                              Show this message and exit.
 ```
 
-By default a run writes the outputs, the summary tables and the plots shown in this README. Add `--diagnostics` for the anomaly-detection tables (and their CSVs) and the per-attribute activity heatmaps. Add `--keep-ids` to also write `original_ids.csv`, which maps each `pid` and `hid` back to the survey's own ids for debugging; it re-identifies records, so don't share it. Every command takes `-l/--log-level` (default `info`); use `-l debug` for finer-grained detail. The per-source processing notes are logged after the processing log table, each at its own level (e.g. `warning`), so `-l error` shows only the most serious.
+By default a run writes the outputs (as Parquet; add `--csv` for CSV), the summary tables and the plots shown in this README. Add `--diagnostics` for the anomaly-detection tables (and their CSVs, which stay CSV so they're easy to read) and the per-attribute activity heatmaps. Add `--keep-ids` to also write `original_ids`, which maps each `pid` and `hid` back to the survey's own ids for debugging; it re-identifies records, so don't share it. Every command takes `-l/--log-level` (default `info`); use `-l debug` for finer-grained detail. The per-source processing notes are logged after the processing log table, each at its own level (e.g. `warning`), so `-l error` shows only the most serious.
 
 The base data directory needs to hold raw data downloaded from the various sources by the user. The template directory `data_dir_template`, shows the expected folder and files structure.
 
@@ -266,20 +267,22 @@ Available sources: `ltds`, `vista`, `qhts`, `cmap`, `nhts`, `nts`, `ktdb`, `odin
 
 ### Binning numeric attributes
 
-The `bin` command discretises numeric columns in an attributes CSV into labelled string bins, using the same quantile/uniform logic as the pipeline's `binned_attributes.csv` output — but runnable on any attributes file with full control over bin counts.
+The `bin` command discretises numeric columns in an attributes table into labelled string bins, using the same quantile/uniform logic as the pipeline's `binned_attributes` output — but runnable on any attributes file with full control over bin counts.
+
+This command and `fill-unknown`, `filter`, `split` and `validate-table` all read `.parquet` or `.csv`, and write their outputs in the same format as their input, unless you give an explicit output path, whose extension (`.parquet` or `.csv`) then sets the format.
 
 ```bash
 # All numeric columns binned into 5 quantile bins (default)
-foundata bin attributes.csv
+foundata bin attributes.parquet
 
 # Override the default bin count
-foundata bin attributes.csv --default 8
+foundata bin attributes.parquet --default 8
 
 # Per-column overrides: --COLUMN N takes precedence over --default
-foundata bin attributes.csv --default 5 --age 10 --hh_income 3
+foundata bin attributes.parquet --default 5 --age 10 --hh_income 3
 
 # Uniform (equal-width) bins, explicit output path
-foundata bin attributes.csv --default 5 --method uniform --output binned.csv
+foundata bin attributes.parquet --default 5 --method uniform --output binned.parquet
 ```
 
 Options:
@@ -288,28 +291,28 @@ Options:
 |--------|-------|---------|-------------|
 | `--default N` | `-n` | `5` | Default number of bins for all numeric columns. |
 | `--method` | `-m` | `quantile` | `quantile` (equal-frequency) or `uniform` (equal-width). |
-| `--output PATH` | `-o` | `<input>_binned.csv` | Output CSV path. |
+| `--output PATH` | `-o` | `<input>_binned` | Output path; `.parquet` or `.csv` sets the format. |
 | `--select TEXT` | `-s` | | Columns to bin (repeatable, e.g. `--select age --select hh_income`). |
 | `--omit TEXT` | `-x` | | Columns to exclude from binning (repeatable). |
 | `--COLUMN N` | | | Per-column bin count override (e.g. `--age 10`). |
 
 ### Filling missing values
 
-The `fill-unknown` command fills null/missing values in an attributes CSV with the string `"unknown"`, and reports the percentage of each column filled. It warns if a column is entirely unknown or looks numeric (filling a numeric column with a string is usually a mistake).
+The `fill-unknown` command fills null/missing values in an attributes table with the string `"unknown"`, and reports the percentage of each column filled. It warns if a column is entirely unknown or looks numeric (filling a numeric column with a string is usually a mistake).
 
 ```bash
-foundata fill-unknown attributes.csv --output filled.csv
+foundata fill-unknown attributes.parquet --output filled.parquet
 ```
 
 Options:
 
 | Option | Short | Default | Description |
 |--------|-------|---------|-------------|
-| `--output PATH` | `-o` | `<input>_filled.csv` | Output CSV path. |
+| `--output PATH` | `-o` | `<input>_filled` | Output path; `.parquet` or `.csv` sets the format. |
 
-### Filtering output CSVs
+### Filtering output tables
 
-The `filter` command group applies post-processing filters to `attributes.csv` / `trips.csv` outputs.
+The `filter` command group applies post-processing filters to `attributes` / `trips` outputs.
 All filter commands accept `-a`/`--attributes` (optional), `-t`/`--trips` (required), and output options `-o` (directory), `-oa` (explicit attributes path), `-ot` (explicit trips path).
 
 ```bash
@@ -330,28 +333,28 @@ foundata filter --help
 Example:
 
 ```bash
-foundata filter consecutive-activities -t trips.csv -a attributes.csv -n work -n education -o output/
+foundata filter consecutive-activities -t trips.parquet -a attributes.parquet -n work -n education -o output/
 ```
 
 ### Splitting into train/test sets
 
-The `split` command creates train/test splits of one or more CSVs, keeping all records for each person entirely in one set (never split across both). Pass any number of CSV files — they must all share the same set of group IDs.
+The `split` command creates train/test splits of one or more tables, keeping all records for each person entirely in one set (never split across both). Pass any number of files — they must all share the same set of group IDs.
 
 ```bash
-foundata split attributes.csv trips.csv activities.csv --split 20 --output /tmp/split/
+foundata split attributes.parquet trips.parquet activities.parquet --split 20 --output /tmp/split/
 ```
 
 Output:
 
 ```
 Split on 'pid': 800 train / 200 test (20%)
-  attributes.csv                 →     800 train /     200 test rows
-  trips.csv                      →    6431 train /    1612 test rows
-  activities.csv                 →    9204 train /    2301 test rows
+  attributes.parquet             →     800 train /     200 test rows
+  trips.parquet                  →    6431 train /    1612 test rows
+  activities.parquet             →    9204 train /    2301 test rows
 Wrote outputs to /tmp/split/
 ```
 
-Each input file produces `<stem>_train.csv` and `<stem>_test.csv` in the output directory.
+Each input file produces `<stem>_train` and `<stem>_test` files, in its own format, in the output directory.
 
 Options:
 

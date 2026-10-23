@@ -1,3 +1,4 @@
+import polars as pl
 import pytest
 from typer.testing import CliRunner
 
@@ -76,3 +77,64 @@ def test_grid_config_option(batch_sources, tmp_path):
         "-s", "chile", "--grid-config", str(config), batch_sources.root
     )
     assert batch_sources.options[-1]["grid_config"] == config
+
+
+def test_tables_are_parquet_unless_csv(batch_sources):
+    batch_sources("-s", "chile", batch_sources.root)
+    assert batch_sources.options[-1]["csv"] is False
+    batch_sources("-s", "chile", "--csv", batch_sources.root)
+    assert batch_sources.options[-1]["csv"] is True
+
+
+@pytest.fixture
+def tables(tmp_path):
+    """Write small attributes and trips tables as both parquet and csv."""
+    attrs = pl.DataFrame({"pid": [1, 2, 3, 4], "age": [10, 20, None, 40]})
+    trips = pl.DataFrame({"pid": [1, 2, 3, 4], "seq": [1, 1, 1, 2]})
+    for ext, write in (("parquet", "write_parquet"), ("csv", "write_csv")):
+        getattr(attrs, write)(tmp_path / f"attributes.{ext}")
+        getattr(trips, write)(tmp_path / f"trips.{ext}")
+    return tmp_path
+
+
+def _invoke(*args):
+    result = CliRunner().invoke(cli.app, [str(a) for a in args])
+    assert result.exit_code == 0, result.output
+
+
+@pytest.mark.parametrize("ext", ["parquet", "csv"])
+def test_commands_write_their_input_format(tables, ext):
+    attrs, trips = tables / f"attributes.{ext}", tables / f"trips.{ext}"
+    read = pl.read_parquet if ext == "parquet" else pl.read_csv
+
+    _invoke("bin", attrs)
+    assert read(tables / f"attributes_binned.{ext}").height == 4
+    _invoke("fill-unknown", attrs)
+    assert read(tables / f"attributes_filled.{ext}")["age"].null_count() == 0
+
+    out = tables / "filtered"
+    _invoke(
+        "filter",
+        "attributes",
+        "-a",
+        attrs,
+        "-t",
+        trips,
+        "-k",
+        "pid",
+        "-v",
+        "1",
+        "-o",
+        out,
+    )
+    assert read(out / f"attributes.{ext}")["pid"].to_list() == [1]
+    assert read(out / f"trips.{ext}")["pid"].to_list() == [1]
+
+    _invoke("split", attrs, trips, "-o", tables / "split")
+    for stem in ("attributes_train", "attributes_test", "trips_test"):
+        assert (tables / "split" / f"{stem}.{ext}").exists()
+
+
+def test_explicit_output_format_follows_its_extension(tables):
+    _invoke("bin", tables / "attributes.parquet", "-o", tables / "b.csv")
+    assert pl.read_csv(tables / "b.csv").height == 4

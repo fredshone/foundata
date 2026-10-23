@@ -12,7 +12,13 @@ from loguru import logger
 
 from foundata import config_validator, gridjoin, log, post_process, verify
 from foundata import filter as flt
-from foundata.run import SOURCES, SourceDataError, batch_source_dir, runner
+from foundata.run import (
+    SOURCES,
+    SourceDataError,
+    batch_source_dir,
+    read_table,
+    runner,
+)
 
 _DEFAULT_CONFIGS_ROOT = Path(__file__).parent.parent / "configs"
 _DEFAULT_WORLD = gridjoin.DEFAULT_WORLD
@@ -118,6 +124,22 @@ class MultiSourceCommand(typer.core.TyperCommand):
         return super().parse_args(ctx, expanded)
 
 
+def _read(path: str | Path) -> pl.DataFrame:
+    """Read a table from a .parquet or .csv file."""
+    if Path(path).suffix == ".parquet":
+        return pl.read_parquet(path)
+    return pl.read_csv(path)
+
+
+def _write(df: pl.DataFrame, path: str | Path):
+    """Write *df* to *path*, as parquet if it ends .parquet, else csv."""
+    if Path(path).suffix == ".parquet":
+        df.write_parquet(path)
+    else:
+        df.write_csv(path)
+    logger.info(f"Wrote {path}")
+
+
 def _default_out(input_path: str | Path, suffix: str) -> Path:
     """Derive a default output path by appending *suffix* to the input stem."""
     p = Path(input_path)
@@ -185,9 +207,16 @@ KeepIdsOpt = Annotated[
     typer.Option(
         "--keep-ids",
         help=(
-            "Also write original_ids.csv, mapping each pid and hid back to "
+            "Also write original_ids, mapping each pid and hid back to "
             "the survey's own ids. It re-identifies records, so keep it private."
         ),
+    ),
+]
+CsvOpt = Annotated[
+    bool,
+    typer.Option(
+        "--csv",
+        help="Write output tables as CSV instead of Parquet.",
     ),
 ]
 GridOpt = Annotated[
@@ -231,7 +260,7 @@ def run(
         typer.Option(
             "--output",
             "-o",
-            help="Directory where CSVs and PNGs are written [default: output/<SOURCE>]",
+            help="Directory where tables and PNGs are written [default: output/<SOURCE>]",
             show_default=False,
         ),
     ] = None,
@@ -239,6 +268,7 @@ def run(
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
     keep_ids: KeepIdsOpt = False,
+    csv: CsvOpt = False,
     grid: GridOpt = True,
     world: WorldOpt = _DEFAULT_WORLD,
     grid_config: GridConfigOpt = gridjoin.worldtensor.CONFIG,
@@ -252,6 +282,7 @@ def run(
         filter_consecutive,
         diagnostics,
         keep_ids,
+        csv=csv,
         world=world if grid else None,
         grid_config=grid_config,
     )
@@ -270,7 +301,9 @@ def batch(
     output: Annotated[
         Path,
         typer.Option(
-            "--output", "-o", help="Directory where CSVs and PNGs are written."
+            "--output",
+            "-o",
+            help="Directory where tables and PNGs are written.",
         ),
     ] = Path("output"),
     select: Annotated[
@@ -305,6 +338,7 @@ def batch(
     filter_consecutive: FilterConsecutiveOpt = True,
     diagnostics: DiagnosticsOpt = False,
     keep_ids: KeepIdsOpt = False,
+    csv: CsvOpt = False,
     grid: GridOpt = True,
     world: WorldOpt = _DEFAULT_WORLD,
     grid_config: GridConfigOpt = gridjoin.worldtensor.CONFIG,
@@ -338,6 +372,7 @@ def batch(
         filter_consecutive,
         diagnostics,
         keep_ids,
+        csv=csv,
         world=world if grid else None,
         grid_config=grid_config,
     )
@@ -348,7 +383,7 @@ def location_summary(
     output: Annotated[
         Path,
         typer.Argument(
-            help="A batch output directory (attributes.csv, trips.csv, "
+            help="A batch output directory (attributes, trips and "
             "locations.parquet)"
         ),
     ],
@@ -356,16 +391,10 @@ def location_summary(
     """Print the per-source location coverage table (as in the README)."""
     from foundata import location
 
-    attributes = pl.read_csv(
-        output / "attributes.csv",
-        columns=["pid", "hid", "source", "hh_location"],
-        infer_schema_length=None,
+    attributes = read_table(
+        output, "attributes", columns=["pid", "hid", "source", "hh_location"]
     )
-    trips = pl.read_csv(
-        output / "trips.csv",
-        columns=["pid", "ocode", "dcode"],
-        infer_schema_length=None,
-    )
+    trips = read_table(output, "trips", columns=["pid", "ocode", "dcode"])
     locations = pl.read_parquet(output / "locations.parquet")
     print(
         location.summary_markdown(
@@ -411,16 +440,16 @@ def validate_config(
 
 @app.command("validate-table")
 def validate_table(
-    attributes_csv: Annotated[Path, typer.Argument(exists=True)],
-    trips_csv: Annotated[Path, typer.Argument(exists=True)],
+    attributes: Annotated[Path, typer.Argument(exists=True)],
+    trips: Annotated[Path, typer.Argument(exists=True)],
 ):
-    """Validate pipeline output CSVs against the template schema.
+    """Validate pipeline output tables (.parquet or .csv) against the template schema.
 
-    ATTRIBUTES_CSV and TRIPS_CSV are paths to the output files produced by the
+    ATTRIBUTES and TRIPS are paths to the output files produced by the
     pipeline (one row per person and one row per trip, respectively).
     """
-    attributes = pl.read_csv(attributes_csv)
-    trips = pl.read_csv(trips_csv)
+    attributes = _read(attributes)
+    trips = _read(trips)
     ok = verify.columns(attributes, trips)
     if not ok:
         raise typer.Exit(1)
@@ -464,7 +493,7 @@ def bin_attributes(
         typer.Option(
             "--output",
             "-o",
-            help="Output CSV path (default: <input>_binned.csv alongside input).",
+            help="Output path, .parquet or .csv (default: <input>_binned alongside input, in its format).",
         ),
     ] = None,
     select: Annotated[
@@ -484,7 +513,7 @@ def bin_attributes(
         ),
     ] = None,
 ):
-    """Bin numeric columns of an attributes CSV.
+    """Bin numeric columns of an attributes table (.parquet or .csv).
 
     Per-column bin counts can be specified as --COLUMN N, e.g.:
 
@@ -504,7 +533,7 @@ def bin_attributes(
                 logger.warning(f"ignoring --{col} (expected integer bin count)")
         i += 1
 
-    df = pl.read_csv(attributes)
+    df = _read(attributes)
     binned = post_process.discretise_numeric(
         df,
         n_bins=n_bins,
@@ -516,8 +545,7 @@ def bin_attributes(
 
     out = output or _default_out(attributes, "_binned")
     out.parent.mkdir(parents=True, exist_ok=True)
-    binned.write_csv(out)
-    logger.info(f"Wrote {out}")
+    _write(binned, out)
 
 
 @app.command("fill-unknown")
@@ -528,16 +556,16 @@ def fill_unknown_cmd(
         typer.Option(
             "--output",
             "-o",
-            help="Output CSV path (default: <input>_filled.csv alongside input).",
+            help="Output path, .parquet or .csv (default: <input>_filled alongside input, in its format).",
         ),
     ] = None,
 ):
-    """Fill null/missing values in an attributes CSV with 'unknown'.
+    """Fill null/missing values in an attributes table with 'unknown'.
 
     Reports the percentage of each column filled and warns when a column
     is entirely unknown or appears to be numeric.
     """
-    df = pl.read_csv(attributes)
+    df = _read(attributes)
     filled, stats = post_process.fill_unknown(df)
 
     if not stats:
@@ -552,8 +580,7 @@ def fill_unknown_cmd(
 
     out = output or _default_out(attributes, "_filled")
     out.parent.mkdir(parents=True, exist_ok=True)
-    filled.write_csv(out)
-    logger.info(f"Wrote {out}")
+    _write(filled, out)
 
 
 # ---------------------------------------------------------------------------
@@ -561,7 +588,7 @@ def fill_unknown_cmd(
 # ---------------------------------------------------------------------------
 
 filter_app = typer.Typer(
-    help="Post-process attributes/trips CSVs with built-in filters.",
+    help="Post-process attributes/trips tables (.parquet or .csv) with built-in filters.",
     no_args_is_help=True,
 )
 app.add_typer(filter_app, name="filter")
@@ -569,17 +596,18 @@ app.add_typer(filter_app, name="filter")
 AttrOpt = Annotated[
     Optional[Path],
     typer.Option(
-        "--attributes", "-a", exists=True, help="Path to attributes CSV."
+        "--attributes", "-a", exists=True, help="Path to attributes table."
     ),
 ]
 RequiredAttrOpt = Annotated[
     Path,
     typer.Option(
-        "--attributes", "-a", exists=True, help="Path to attributes CSV."
+        "--attributes", "-a", exists=True, help="Path to attributes table."
     ),
 ]
 TripsOpt = Annotated[
-    Path, typer.Option("--trips", "-t", exists=True, help="Path to trips CSV.")
+    Path,
+    typer.Option("--trips", "-t", exists=True, help="Path to trips table."),
 ]
 OutDirOpt = Annotated[
     Optional[Path],
@@ -594,7 +622,7 @@ OutAttrOpt = Annotated[
     typer.Option(
         "--output-attributes",
         "-oa",
-        help="Explicit output path for attributes CSV (overrides -o).",
+        help="Explicit output path for attributes, .parquet or .csv (overrides -o).",
     ),
 ]
 OutTripsOpt = Annotated[
@@ -602,7 +630,7 @@ OutTripsOpt = Annotated[
     typer.Option(
         "--output-trips",
         "-ot",
-        help="Explicit output path for trips CSV (overrides -o).",
+        help="Explicit output path for trips, .parquet or .csv (overrides -o).",
     ),
 ]
 
@@ -620,15 +648,13 @@ def _apply_filter(
     oa = _resolve_out(output_attributes, output, attributes, suffix)
     ot = _resolve_out(output_trips, output, trips, suffix)
 
-    attrs_df = pl.read_csv(attributes) if attributes else None
-    trips_df = pl.read_csv(trips)
+    attrs_df = _read(attributes) if attributes else None
+    trips_df = _read(trips)
     attrs_out, trips_out = filter_fn(attrs_df, trips_df)
 
     if oa and attrs_out is not None:
-        attrs_out.write_csv(oa)
-        logger.info(f"Wrote {oa}")
-    trips_out.write_csv(ot)
-    logger.info(f"Wrote {ot}")
+        _write(attrs_out, oa)
+    _write(trips_out, ot)
 
 
 @filter_app.command("homebased")
@@ -804,8 +830,8 @@ def filter_attributes(
     oa = _resolve_out(output_attributes, output, attributes, suffix)
     ot = _resolve_out(output_trips, output, trips, suffix)
 
-    attrs_df = pl.read_csv(attributes)
-    trips_df = pl.read_csv(trips)
+    attrs_df = _read(attributes)
+    trips_df = _read(trips)
 
     total = len(attrs_df)
     col_dtype = attrs_df[key].dtype
@@ -821,10 +847,8 @@ def filter_attributes(
     )
 
     if oa:
-        attrs_out.write_csv(oa)
-        logger.info(f"Wrote {oa}")
-    trips_out.write_csv(ot)
-    logger.info(f"Wrote {ot}")
+        _write(attrs_out, oa)
+    _write(trips_out, ot)
 
 
 # ---------------------------------------------------------------------------
@@ -863,9 +887,9 @@ def split_cmd(
         int, typer.Option(help="Random seed for reproducibility.")
     ] = 42,
 ):
-    """Randomly split CSVs into train/test while keeping group entities intact."""
+    """Randomly split tables (.parquet or .csv) into train/test while keeping group entities intact."""
     # 1. Read
-    dfs = [(path, pl.read_csv(path)) for path in inputs]
+    dfs = [(path, _read(path)) for path in inputs]
     # 2. Validate group column present
     for path, df in dfs:
         if group not in df.columns:
@@ -907,15 +931,15 @@ def split_cmd(
     out_dir = output or Path(inputs[0]).parent
     out_dir.mkdir(parents=True, exist_ok=True)
     for path, df in dfs:
-        stem = Path(path).stem
+        path = Path(path)
         train_df = df.filter(pl.col(group).is_in(train_ids))
         test_df = df.filter(pl.col(group).is_in(test_ids))
-        train_path = out_dir / f"{stem}_train.csv"
-        test_path = out_dir / f"{stem}_test.csv"
-        train_df.write_csv(train_path)
-        test_df.write_csv(test_path)
+        train_path = out_dir / f"{path.stem}_train{path.suffix}"
+        test_path = out_dir / f"{path.stem}_test{path.suffix}"
+        _write(train_df, train_path)
+        _write(test_df, test_path)
         logger.info(
-            f"  {Path(path).name:30s} → {len(train_df):>7} train / {len(test_df):>7} test rows"
+            f"  {path.name:30s} → {len(train_df):>7} train / {len(test_df):>7} test rows"
         )
     logger.info(f"Wrote outputs to {out_dir}")
 

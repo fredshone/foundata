@@ -1,17 +1,20 @@
 # Output format
 
 `foundata batch` (and `foundata run`) write the following files to the output
-directory:
+directory. Tables are Parquet by default; pass `--csv` to write them as CSV
+(`attributes.csv`, `trips.csv`, ...) instead. `locations.parquet` is always
+GeoParquet.
 
 | File | One row per | Description |
 |---|---|---|
-| `attributes.csv` | person-day | Person, household and diary-day attributes |
-| `trips.csv` | trip | Trip times, distance, mode, origin and destination activity and zone |
-| `activity_schedules.csv` | activity | Plans as a sequence of activities with preceeding trip duration included with activity |
-| `binned_attributes.csv` | person-day | `attributes.csv` with numeric columns binned into string labels and nulls filled |
+| `attributes.parquet` | person-day | Person, household and diary-day attributes |
+| `trips.parquet` | trip | Trip times, distance, mode, origin and destination activity and zone |
+| `activity_schedules.parquet` | activity | Plans as a sequence of activities with preceeding trip duration included with activity |
+| `binned_attributes.parquet` | person-day | `attributes` with numeric columns binned into string labels and nulls filled |
 | `locations.parquet` | location | GeoParquet of the home and trip-end zones (or points) referenced by the other tables |
-| `original_ids.csv` | person-day | Only with `--keep-ids`: `source`, `pid`, `hid` and the survey's own `original_pid` and `original_hid`. Keep it private |
+| `original_ids.parquet` | person-day | Only with `--keep-ids`: `source`, `pid`, `hid` and the survey's own `original_pid` and `original_hid`. Keep it private |
 | `*.png` | — | Summary plots (add `--diagnostics` for anomaly reports and extra heatmaps) |
+| `*_matrix*.csv` | — | Only with `--diagnostics`: anomaly-detection summary tables, always CSV |
 
 The canonical schema is `configs/core/template.yaml`.
 
@@ -33,9 +36,9 @@ The canonical schema is `configs/core/template.yaml`.
 - **Distance** is in km. Depending on the source it is reported, routed,
   straight-line or estimated from duration × mode speed (see
   [Sources](sources.md)).
-- **Missing values.** In `attributes.csv`, missing or unknown values are
+- **Missing values.** In `attributes`, missing or unknown values are
   null (an empty cell). `void` means the field does not apply, for example
-  `employment` for young children. In `trips.csv`, unknown categories are
+  `employment` for young children. In `trips`, unknown categories are
   the string `unknown`.
 - **Weights** are normalised to a mean of 1 within each source. They are not
   comparable across sources. KTDB has no weights.
@@ -44,7 +47,7 @@ The canonical schema is `configs/core/template.yaml`.
   home, work and education activities (`--any-consecutive` turns this off).
   Every source also has time-inconsistent, activity-inconsistent and
   infeasible plans removed (trips over 1000 km, over 12 h, or too fast).
-- **Non-travellers.** Persons who made no trips stay in `attributes.csv` and
+- **Non-travellers.** Persons who made no trips stay in `attributes` and
   get a single all-day `home` activity. They usually make up 15–30% of a
   source.
 
@@ -120,7 +123,7 @@ first activity starts at 0 and the last ends at 1440.
 
 ## binned_attributes
 
-This table has the same columns as `attributes.csv`. Numeric columns
+This table has the same columns as `attributes`. Numeric columns
 (except `year`, `month`, `weight`, `vehicles`, `hh_size` and `hh_location`)
 are replaced by 5 quantile-bin labels such as `54-66`. Null strings become
 `unknown` and null numerics become `-1`. You can re-bin any attributes file

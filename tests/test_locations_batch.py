@@ -29,14 +29,10 @@ def batch(tmp_path_factory):
         keep_ids=True,
         world=None,
     )
-    attributes = pl.read_csv(
-        output / "attributes.csv", infer_schema_length=None
-    )
+    attributes = pl.read_parquet(output / "attributes.parquet")
     locations = pl.read_parquet(output / "locations.parquet")
-    trips = pl.read_csv(output / "trips.csv", infer_schema_length=None)
-    activities = pl.read_csv(
-        output / "activity_schedules.csv", infer_schema_length=None
-    )
+    trips = pl.read_parquet(output / "trips.parquet")
+    activities = pl.read_parquet(output / "activity_schedules.parquet")
     return attributes, locations, trips, activities
 
 
@@ -148,9 +144,9 @@ def test_original_ids_map_back_to_each_source(batch, tmp_path_factory):
     output = next(
         p
         for p in tmp_path_factory.getbasetemp().glob("batch*")
-        if (p / "original_ids.csv").exists()
+        if (p / "original_ids.parquet").exists()
     )
-    ids = pl.read_csv(output / "original_ids.csv", infer_schema_length=None)
+    ids = pl.read_parquet(output / "original_ids.parquet")
     assert ids.height == attributes.height
     assert ids["pid"].is_unique().all()
     assert ids["original_pid"].is_not_null().all()
