@@ -3,9 +3,11 @@
 ``run.runner`` calls ``join_locations`` on the combined locations table
 (one row per zone or point), which adds each location's cell
 (``wt_cell``, ``wt_spans_cells``): these do not depend on the year. Then
-``to_attributes`` reads the values for each distinct (``hh_location``,
-``year``) of the households, from each variable's year nearest the
-survey's, and copies them to each person's row (``wt_<var>``).
+``to_attributes`` finds the cells each home location covers, reads the
+values for each distinct (``hh_location``, ``year``) of the households,
+from each variable's year nearest the survey's, averaged over those
+cells by its weight, and copies them to each person's row
+(``wt_<var>``).
 """
 
 import time
@@ -38,6 +40,7 @@ def to_attributes(
     world: Path,
     cache: Path,
     max_fallback_km: float = worldtensor.DEFAULT_MAX_FALLBACK_KM,
+    config: worldtensor.Config | None = None,
 ) -> tuple[pl.DataFrame, dict]:
     """*attributes* with each WorldTensor value at its home location in
     its survey year (null without either), and the year each is from,
@@ -45,7 +48,8 @@ def to_attributes(
     unchanged. Also returns what was used (years, units, settings).
 
     Preprocesses the layers for the survey years into *cache* first if
-    needed.
+    needed. *config*: the variables and their weights (default:
+    ``configs/core/gridjoin.yaml``).
     """
     t0 = time.perf_counter()
     pairs = (
@@ -61,18 +65,20 @@ def to_attributes(
         )
     )
     years = pairs["year"].drop_nulls().unique().sort().to_list()
-    worldtensor.preprocess(world, cache, years=years)
+    worldtensor.preprocess(world, cache, years=years, config=config)
     columns, meta = worldtensor.values(
         pairs["lon"].to_numpy().astype(float),
         pairs["lat"].to_numpy().astype(float),
         pairs["year"].cast(pl.Float64).to_numpy(),
         cache,
+        config=config,
         max_fallback_km=max_fallback_km,
+        footprint=_footprints(pairs, locations),
     )
     values = pairs.select("hh_location", "year").with_columns(
         pl.from_arrow(pa.table({c: _arrow(v) for c, v in columns.items()}))
     )
-    names = worldtensor.value_columns()
+    names = worldtensor.value_columns(config)
     stale = [c for c in names if c in attributes.columns]
     out = attributes.drop(stale).join(
         values.select("hh_location", "year", *names),
@@ -85,6 +91,37 @@ def to_attributes(
         f"in {time.perf_counter() - t0:.1f}s"
     )
     return out, {"worldtensor": meta}
+
+
+def _footprints(
+    pairs: pl.DataFrame, locations: pl.DataFrame
+) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """The cells each of *pairs*' home locations covers, as ``(pair, cell,
+    fraction)`` rows (see ``worldtensor.footprints``)."""
+    homes = locations.filter(
+        pl.col("location_id").is_in(pairs["hh_location"].implode())
+    )
+    zone, cell, fraction = worldtensor.footprints(
+        zones_mod.from_table(homes.to_arrow())
+    )
+    rows = pl.DataFrame(
+        {"zone": zone, "cell": cell, "fraction": fraction}
+    ).join(
+        pairs.with_row_index("pair")
+        .join(
+            homes.select(pl.col("location_id").alias("hh_location"))
+            .with_row_index("zone")
+            .with_columns(pl.col("zone").cast(pl.Int64)),
+            on="hh_location",
+        )
+        .select("pair", "zone"),
+        on="zone",
+    )
+    return (
+        rows["pair"].to_numpy().astype(np.int64),
+        rows["cell"].to_numpy(),
+        rows["fraction"].to_numpy(),
+    )
 
 
 def _arrow(values: np.ndarray) -> pa.Array:

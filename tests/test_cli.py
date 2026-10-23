@@ -2,6 +2,7 @@ import pytest
 from typer.testing import CliRunner
 
 from foundata import cli
+from foundata.gridjoin import worldtensor
 
 
 @pytest.fixture
@@ -64,3 +65,14 @@ def test_grid_join_is_on_unless_no_grid(batch_sources, tmp_path):
     assert batch_sources.options[-1]["world"] == tmp_path
     batch_sources("-s", "chile", "--no-grid", batch_sources.root)
     assert batch_sources.options[-1]["world"] is None
+
+
+def test_grid_config_option(batch_sources, tmp_path):
+    batch_sources("-s", "chile", batch_sources.root)
+    assert batch_sources.options[-1]["grid_config"] == worldtensor.CONFIG
+    config = tmp_path / "gridjoin.yaml"
+    config.write_text("")
+    batch_sources(
+        "-s", "chile", "--grid-config", str(config), batch_sources.root
+    )
+    assert batch_sources.options[-1]["grid_config"] == config

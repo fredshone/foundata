@@ -268,14 +268,16 @@ def trips_with_following_activity(
     )
 
 
-def _bin_labels(breaks: list[float]) -> list[str]:
+def _bin_labels(
+    breaks: list[float], min_val: float, max_val: float
+) -> list[str]:
     def fmt(v: float) -> str:
         return str(int(v)) if v == int(v) else f"{v:g}"
 
-    result = [f"≤{fmt(breaks[0])}"]
+    result = [f"{fmt(min_val)}-{fmt(breaks[0])}"]
     for i in range(1, len(breaks)):
         result.append(f"{fmt(breaks[i - 1])}-{fmt(breaks[i])}")
-    result.append(f">{fmt(breaks[-1])}")
+    result.append(f"{fmt(breaks[-1])}-{fmt(max_val)}")
     return result
 
 
@@ -414,23 +416,28 @@ def discretise_numeric(
 
     exprs = []
     for col in cols:
+        if col not in df.columns:
+            logger.warning(f"Column {col} not found in DataFrame, skipping.")
+            continue
         non_null = df[col].drop_nulls()
         if non_null.len() == 0 or non_null.n_unique() < 2:
             continue
+        min_val = non_null.min()
+        max_val = non_null.max()
         n = per_col_bins.get(col, n_bins) if per_col_bins else n_bins
         if method == "quantile":
             quantiles = [i / n for i in range(1, n)]
             breaks = sorted({float(non_null.quantile(q)) for q in quantiles})
             if not breaks:
                 continue
-            labels = _bin_labels(breaks)
+            labels = _bin_labels(breaks, min_val=min_val, max_val=max_val)
             exprs.append(pl.col(col).cut(breaks, labels=labels).cast(pl.String))
         else:  # uniform
             min_val = float(non_null.min())
             max_val = float(non_null.max())
             step = (max_val - min_val) / n
             breaks = [min_val + i * step for i in range(1, n)]
-            labels = _bin_labels(breaks)
+            labels = _bin_labels(breaks, min_val=min_val, max_val=max_val)
             exprs.append(pl.col(col).cut(breaks, labels=labels).cast(pl.String))
 
     if not exprs:

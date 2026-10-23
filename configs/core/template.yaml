@@ -173,47 +173,47 @@ attributes:
   wt_gdp_per_capita:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): GDP per capita (USD PPP, constant 2021). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): GDP per capita (USD PPP, constant 2021). Null without a home location."
   wt_ghsl_built_volume:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Built-up volume (m³, GHSL). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Built-up volume (m³, GHSL). Null without a home location."
   wt_gini:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Gini coefficient of income. Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Gini coefficient of income. Null without a home location."
   wt_hdi:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Human Development Index. Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Human Development Index. Null without a home location."
   wt_ntl_harmonized:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Harmonized night-time lights (DMSP/VIIRS). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Harmonized night-time lights (DMSP/VIIRS). Null without a home location."
   wt_population_density:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Population density (persons/km², GPWv4.11). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Population density (persons/km², GPWv4.11). Null without a home location."
   wt_tp_sum:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): ERA5 total precipitation, sum of the 12 monthly means of daily totals (m). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): ERA5 total precipitation, sum of the 12 monthly means of daily totals (m). Null without a home location."
   wt_t2m_mean:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): ERA5 mean 2 m air temperature (K). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): ERA5 mean 2 m air temperature (K). Null without a home location."
   wt_skt_max:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): ERA5 maximum skin temperature (K). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): ERA5 maximum skin temperature (K). Null without a home location."
   wt_elevation_mean:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Mean elevation (m, GMTED2010). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Mean elevation (m, GMTED2010). Null without a home location."
   wt_travel_time_to_cities:
     dtype: float32
     default: True
-    description: "WorldTensor at the home location (0.25° cell) in the year nearest the survey year (see docs/gridjoin.md): Travel time to the nearest city (minutes, Weiss et al. 2018). Null without a home location."
+    description: "WorldTensor at the home location (averaged over the 0.25° cells it covers) in the year nearest the survey year (see docs/gridjoin.md): Travel time to the nearest city (minutes, Weiss et al. 2018). Null without a home location."
 
 trips:
   pid:

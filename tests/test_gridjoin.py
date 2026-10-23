@@ -136,15 +136,41 @@ def test_antimeridian_polygon_gets_a_narrow_box():
     assert z.ymin[0] == 50 and z.ymax[0] == 65
 
 
-def test_point_box_widens_with_latitude():
-    z = zones.from_table(
-        zones_table([(0, 0, 1000, None), (0, 60, 1000, None), (0, 0, 10, None)])
+def test_point_box_is_the_point():
+    # its scale_m is ignored: a point on a cell edge is in one cell
+    z = zones.from_table(zones_table([(10.125, 10.0, 5000, None)]))
+    assert z.xmin[0] == z.xmax[0] == 10.125
+    assert z.ymin[0] == z.ymax[0] == 10.0
+    assert not worldtensor.cells(z)["wt_spans_cells"][0]
+
+
+def cell_at(lon, lat) -> int:
+    return int(WORLDTENSOR.cell(np.array([lon]), np.array([lat]))[0])
+
+
+def test_cell_fractions():
+    # cells centred on 10 and 10.25 (lon), 10 (lat), and a quarter of
+    # the one centred on 10.5
+    poly = shapely.box(9.875, 9.875, 10.4375, 10.125)
+    z = zones.from_table(zones_table([(10.0, 10.0, 3e4, poly)]))
+    zone, cell, fraction = zones.cell_fractions(z, WORLDTENSOR, [0])
+    got = dict(zip(cell.tolist(), fraction.tolist()))
+    assert set(zone) == {0}
+    assert got == pytest.approx(
+        {cell_at(10, 10): 1, cell_at(10.25, 10): 1, cell_at(10.5, 10): 0.25}
     )
-    w = z.xmax - z.xmin
-    h = z.ymax - z.ymin
-    np.testing.assert_allclose(w[1] / w[0], 2, rtol=1e-6)
-    np.testing.assert_allclose(h[0], h[1])
-    assert z.radius_m[2] == zones.MIN_RADIUS_M
+
+
+def test_cell_fractions_across_the_antimeridian():
+    # the cell centred on 180 runs from 179.875 to -179.875
+    west = shapely.box(-180, 0.0, -179.875, 0.1)
+    east = shapely.box(179.875, 0.0, 180, 0.1)
+    z = zones.from_table(
+        zones_table([(-179.9, 0.05, 1e4, shapely.MultiPolygon([west, east]))])
+    )
+    zone, cell, fraction = zones.cell_fractions(z, WORLDTENSOR, [0])
+    assert cell.tolist() == [cell_at(180, 0)]
+    assert fraction[0] == pytest.approx(0.4)
 
 
 # ---------------------------------------------------------------------------
@@ -165,13 +191,33 @@ def write_wt(world, var, year, data):
     ds.to_netcdf(d / f"{year}.nc")
 
 
+def use_config(monkeypatch, variables: dict[str, tuple[str, str]]):
+    """Join *variables* (name -> (source, weight)), with a
+    ``population_count`` weight layer in ``wt/``."""
+    config = worldtensor.Config(
+        {v: src for v, (src, _) in variables.items()},
+        {v: w for v, (_, w) in variables.items()},
+        {"population_count": "wt/population_count"},
+    )
+    monkeypatch.setattr(worldtensor, "default_config", lambda: config)
+    return config
+
+
+def write_weight(world, data=None):
+    """A population of 1 per cell (or *data*) in 2020."""
+    data = np.ones((721, 1440)) if data is None else data
+    write_wt(world, "population_count", 2020, data)
+
+
 @pytest.fixture
 def wt_cache(tmp_path, monkeypatch):
     """A world with one variable, ``v``: 0 in 2019, row * 1e4 + col in 2020
-    and 2022 plus 1e7 in 2022, and NaN at lon 20, lat 10 in 2020 only;
-    preprocessed for 2020, and the only variable joined."""
-    monkeypatch.setattr(worldtensor, "VARIABLES", {"v": "wt/v"})
+    and 2022 plus 1e7 in 2022, and NaN at lon 20, lat 10 in 2020 only, and
+    a population of 1 per cell; preprocessed for 2020, and the only
+    variable joined, weighted by population."""
+    use_config(monkeypatch, {"v": ("wt/v", "population_count")})
     world, cache = tmp_path / "world", tmp_path / "cache"
+    write_weight(world)
     field = np.add.outer(
         np.arange(721) * 10000.0, np.arange(1440)
     )  # row * 1e4 + col
@@ -219,9 +265,10 @@ def test_preprocess_caches_years_asked_for_and_is_idempotent(wt_cache):
 
 
 def test_preprocess_replaces_an_old_style_cache(tmp_path, monkeypatch):
-    monkeypatch.setattr(worldtensor, "VARIABLES", {"v": "wt/v"})
+    use_config(monkeypatch, {"v": ("wt/v", "population_count")})
     world, cache = tmp_path / "world", tmp_path / "cache"
     write_wt(world, "v", 2020, np.zeros((721, 1440)))
+    write_weight(world)
     out = cache / "worldtensor"
     out.mkdir(parents=True)
     (out / "v.npy").write_bytes(b"old")
@@ -289,6 +336,46 @@ def test_worldtensor_fallback_respects_radius(wt_cache):
     assert np.isnan(cols["wt_v"][0])
 
 
+@pytest.mark.parametrize("weight", ["population_count", "area"])
+def test_worldtensor_values_weighted(wt_cache, monkeypatch, weight):
+    world, cache = wt_cache
+    use_config(monkeypatch, {"v": ("wt/v", weight)})
+    a, b, hole = cell_at(5, 5), cell_at(5.25, 5), cell_at(20, 10)
+    pop = np.ones(WORLDTENSOR.size)
+    pop[a], pop[b] = 3, 1
+    pop[cell_at(30, 30)] = pop[cell_at(30.25, 30)] = 0
+    write_weight(world, pop.reshape(721, 1440))
+    worldtensor.preprocess(world, cache, years=[2020])
+    va, vb = expected(5, 5), expected(5.25, 5)
+    footprint = (
+        np.array([0, 0, 1, 1, 2, 2]),
+        np.array([a, b, a, hole, cell_at(30, 30), cell_at(30.25, 30)]),
+        np.array([1.0, 0.5, 1.0, 1.0, 1.0, 0.25]),
+    )
+    cols, meta = worldtensor.values(
+        np.array([5.0, 5.0, 30.0]),
+        np.array([5.0, 5.0, 30.0]),
+        np.full(3, 2020.0),
+        cache,
+        footprint=footprint,
+    )
+    v = cols["wt_v"]
+    if weight == "area":
+        assert v[0] == pytest.approx((va + 0.5 * vb) / 1.5)
+        assert meta["weights"] == {}
+    else:
+        assert v[0] == pytest.approx((3 * va + 0.5 * vb) / 3.5)
+        assert meta["weights"] == {
+            "population_count": {"years": {"2020": 2020}}
+        }
+    assert v[1] == va  # its NaN cell is left out
+    # no people: by area
+    va, vb = expected(30, 30), expected(30.25, 30)
+    assert v[2] == pytest.approx((va + 0.25 * vb) / 1.25)
+    assert meta["variables"]["v"]["weight"] == weight
+    assert meta["variables"]["v"]["on_nan_cells"] == 0
+
+
 def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
     world, cache = tmp_path / "world", tmp_path / "cache"
     ds = xr.Dataset(
@@ -301,7 +388,8 @@ def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
     )
     (world / "static").mkdir(parents=True)
     ds.to_netcdf(world / "static" / "s.nc")
-    monkeypatch.setattr(worldtensor, "VARIABLES", {"s": "static/s.nc"})
+    # weighted by area: no weight layer needed
+    use_config(monkeypatch, {"s": ("static/s.nc", "area")})
     worldtensor.preprocess(world, cache, years=[2010, 2020])
     cols, meta = worldtensor.values(
         np.array([5.0, 5.0]),
@@ -316,9 +404,9 @@ def test_static_layer_takes_its_reference_year(tmp_path, monkeypatch):
 def test_preprocess_removes_variables_no_longer_used(wt_cache, monkeypatch):
     world, cache = wt_cache
     write_wt(world, "w", 2000, np.zeros((721, 1440)))
-    monkeypatch.setattr(worldtensor, "VARIABLES", {"w": "wt/w"})
+    use_config(monkeypatch, {"w": ("wt/w", "area")})
     manifest = worldtensor.preprocess(world, cache)
-    assert set(manifest) == {"w"}
+    assert set(manifest) == {"w"}  # and no longer the unused weight
     assert not (cache / "worldtensor" / "v_2020.npy").exists()
     saved = json.loads((cache / "worldtensor" / "manifest.json").read_text())
     assert set(saved) == {"w"}
@@ -328,7 +416,8 @@ def test_missing_sources(wt_cache, tmp_path):
     world, _ = wt_cache
     assert worldtensor.missing_sources(world) == []
     problems = worldtensor.missing_sources(tmp_path / "nowhere")
-    assert len(problems) == 1 and "WorldTensor v" in problems[0]
+    assert len(problems) == 2 and "WorldTensor v" in problems[0]
+    assert "WorldTensor population_count" in problems[1]
 
 
 def test_point_outside_its_concave_polygon():
@@ -355,6 +444,31 @@ def test_point_outside_its_concave_polygon():
         == WORLDTENSOR.cell(np.array([centroid.x]), np.array([centroid.y]))[0]
     )
     assert cols["wt_spans_cells"][0]
+
+
+def test_config():
+    config = worldtensor.load_config()
+    assert set(config.weight.values()) == {"area", "population_count"}
+    assert set(config.layers) == {*config.sources, "population_count"}
+
+
+@pytest.mark.parametrize(
+    "text, problem",
+    [
+        ("variables: {v: {source: a, weight: people}}", "weight 'people'"),
+        ("variables: {v: {source: a}}", "source and weight"),
+        (
+            "weights: {area: a}\nvariables: {v: {source: a, weight: area}}",
+            "built in",
+        ),
+        ("variables: {}", "no variables"),
+    ],
+)
+def test_config_problems(tmp_path, text, problem):
+    path = tmp_path / "gridjoin.yaml"
+    path.write_text(text)
+    with pytest.raises(ValueError, match=problem):
+        worldtensor.load_config(path)
 
 
 def test_template_lists_every_attribute_column():
@@ -420,6 +534,22 @@ def test_to_attributes_by_home_location_and_year(wt_cache):
         "2020": 2020,
         "2024": 2022,
     }
+
+
+def test_to_attributes_averages_the_cells_a_polygon_covers(wt_cache):
+    world, cache = wt_cache
+    poly = shapely.box(4.875, 4.875, 5.375, 5.125)  # two cells
+    locations = join.join_locations(
+        pl.from_arrow(zones_table([(5.0, 5.0, 2e4, poly)]))
+    )
+    assert locations["wt_spans_cells"][0]
+    attributes = pl.DataFrame(
+        {"hh_location": [0], "year": [2020]},
+        schema={"hh_location": pl.Int32, "year": pl.Int32},
+    )
+    out, _ = join.to_attributes(attributes, locations, world, cache)
+    mean = (expected(5.0, 5.0) + expected(5.25, 5.0)) / 2
+    assert out["wt_v"][0] == pytest.approx(mean)
 
 
 def test_locations_metadata_is_written(tmp_path):

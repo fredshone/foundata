@@ -1,0 +1,46 @@
+# WorldTensor variables joined to attributes as wt_<name> (docs/gridjoin.md).
+# Each lists its source under the WORLD root (a folder of <year>.nc files, or
+# one static .nc) and its weight: how a home polygon averages the cells it
+# overlaps.
+#   area: by the share of each cell it covers (land use, climate, static)
+#   a layer under weights: by that layer times the share (human systems,
+#   and travel time to cities)
+# A variable added here also needs its wt_ column in template.yaml.
+
+weights:
+  population_count: worldtensor_human_systems/human_systems/population_count
+
+variables:
+  gdp_per_capita:
+    source: worldtensor_human_systems/human_systems/gdp_per_capita
+    weight: population_count
+  ghsl_built_volume:
+    source: worldtensor_human_systems/human_systems/ghsl_built_volume
+    weight: population_count
+  gini:
+    source: worldtensor_human_systems/human_systems/gini
+    weight: population_count
+  hdi:
+    source: worldtensor_human_systems/human_systems/hdi
+    weight: population_count
+  ntl_harmonized:
+    source: worldtensor_human_systems/human_systems/ntl_harmonized
+    weight: population_count
+  population_density:
+    source: worldtensor_human_systems/human_systems/population_density
+    weight: population_count
+  tp_sum:
+    source: worldtensor_climate/climate/tp_sum
+    weight: area
+  t2m_mean:
+    source: worldtensor_climate/climate/t2m_mean
+    weight: area
+  skt_max:
+    source: worldtensor_climate/climate/skt_max
+    weight: area
+  elevation_mean:
+    source: worldtensor_static/static/topography/elevation_mean.nc
+    weight: area
+  travel_time_to_cities:
+    source: worldtensor_static/static/travel_time_to_cities/travel_time_to_cities.nc
+    weight: population_count

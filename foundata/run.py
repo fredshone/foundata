@@ -471,6 +471,7 @@ def runner(
     keep_ids: bool = False,
     world: str | Path | None = gridjoin.DEFAULT_WORLD,
     grid_cache: str | Path = gridjoin.DEFAULT_CACHE,
+    grid_config: str | Path = gridjoin.worldtensor.CONFIG,
 ):
     """Load, process, combine and write the given sources, then report.
 
@@ -483,7 +484,8 @@ def runner(
     Each location gets its WorldTensor cell, and each household the values
     of the WorldTensor layers under *world* (preprocessed into
     *grid_cache*) at its home in the year nearest its survey's, with the
-    year used (``wt_`` columns); with *world* None they stay null.
+    year used (``wt_`` columns); *grid_config* lists the layers and their
+    weights. With *world* None they stay null.
     """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
@@ -503,9 +505,12 @@ def runner(
             problems.append(str(e))
     if world is not None:
         world = Path(world).expanduser()
+        grid_config = gridjoin.worldtensor.load_config(
+            Path(grid_config).expanduser()
+        )
         problems += [
             f"{p} (or run without the WorldTensor join: --no-grid)"
-            for p in gridjoin.worldtensor.missing_sources(world)
+            for p in gridjoin.worldtensor.missing_sources(world, grid_config)
         ]
     if problems:
         raise SourceDataError("\n".join(problems))
@@ -584,7 +589,11 @@ def runner(
     if world is not None:
         locations = gridjoin.join.join_locations(locations)
         all_attributes, grid_meta = gridjoin.join.to_attributes(
-            all_attributes, locations, world, Path(grid_cache).expanduser()
+            all_attributes,
+            locations,
+            world,
+            Path(grid_cache).expanduser(),
+            config=grid_config,
         )
 
     if keep_ids:
@@ -612,6 +621,8 @@ def runner(
         n_bins=5,
         method="quantile",
         exclude_cols=[
+            "hid",
+            "pid",
             "year",
             "month",
             "weight",

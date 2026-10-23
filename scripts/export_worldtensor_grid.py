@@ -36,8 +36,8 @@ parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
 parser.add_argument(
     "--variables",
     nargs="+",
-    choices=list(worldtensor.VARIABLES),
-    default=list(worldtensor.VARIABLES),
+    choices=list(worldtensor.default_config().sources),
+    default=list(worldtensor.default_config().sources),
 )
 parser.add_argument(
     "--bbox",
@@ -66,7 +66,7 @@ if args.bbox:
 
 columns, meta = {}, {}
 for var in args.variables:
-    source = args.world / worldtensor.VARIABLES[var]
+    source = args.world / worldtensor.default_config().sources[var]
     files = worldtensor.available(source)
     path = source if files is None else files[max(files)]
     data, attrs = worldtensor._read_layer(path, var)  # rows south to north

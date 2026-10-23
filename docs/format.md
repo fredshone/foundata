@@ -144,7 +144,7 @@ is WKB in WGS84, so you can read it with `geopandas.read_parquet`.
 | `geom_source` | `point`, `boundary`, `parent` (a containing unit), `estimated` or `none` |
 | `geom_dataset`, `geom_year` | Boundary dataset and its vintage |
 | `geometry` | Point, or the simplified polygon |
-| `wt_cell`, `wt_spans_cells` | The WorldTensor cell (`row * 1440 + col`), and whether the location's box crosses a cell edge |
+| `wt_cell`, `wt_spans_cells` | The WorldTensor cell of the location's point (`row * 1440 + col`), and whether its box crosses a cell edge (its `wt_` values then average the cells it covers, see docs/gridjoin.md) |
 
 The `gridjoin` metadata key records, for each `wt_` variable, its units,
 source, the year used for each survey year, and how many home locations

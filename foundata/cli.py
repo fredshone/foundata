@@ -204,6 +204,15 @@ WorldOpt = Annotated[
         help="WorldTensor data root, holding worldtensor_*/ folders.",
     ),
 ]
+GridConfigOpt = Annotated[
+    Path,
+    typer.Option(
+        "--grid-config",
+        help="WorldTensor variables to join and their weights.",
+        exists=True,
+        dir_okay=False,
+    ),
+]
 
 
 @app.command("run")
@@ -232,6 +241,7 @@ def run(
     keep_ids: KeepIdsOpt = False,
     grid: GridOpt = True,
     world: WorldOpt = _DEFAULT_WORLD,
+    grid_config: GridConfigOpt = gridjoin.worldtensor.CONFIG,
 ):
     """Run the pipeline for a single source, e.g. `foundata run ltds ~/Data/foundata/LTDS`."""
     output = output or Path("output") / source.value
@@ -243,6 +253,7 @@ def run(
         diagnostics,
         keep_ids,
         world=world if grid else None,
+        grid_config=grid_config,
     )
 
 
@@ -296,6 +307,7 @@ def batch(
     keep_ids: KeepIdsOpt = False,
     grid: GridOpt = True,
     world: WorldOpt = _DEFAULT_WORLD,
+    grid_config: GridConfigOpt = gridjoin.worldtensor.CONFIG,
 ):
     """Run the pipeline end-to-end over many sources and combine them."""
     select, omit = _split_commas(select), _split_commas(omit)
@@ -327,6 +339,7 @@ def batch(
         diagnostics,
         keep_ids,
         world=world if grid else None,
+        grid_config=grid_config,
     )
 
 

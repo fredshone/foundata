@@ -11,6 +11,7 @@ We use [WorldTensor](https://zenodo.org/records/19047618) datasets. WorldTensor 
 ```bash
 uv run foundata batch ~/Data/foundata                 # WorldTensor from ~/Data/foundata/WORLD
 uv run foundata batch ~/Data/foundata --world DIR     # another WorldTensor root
+uv run foundata batch ~/Data/foundata --grid-config F # other variables or weights
 uv run foundata batch ~/Data/foundata --no-grid       # skip it: wt_ columns are null
 ```
 
@@ -26,19 +27,19 @@ The 0.25° global grid call vary in size from zero a the poles to aroun 25km x 2
 
 ## Variables
 
-| column | WorldTensor layer | available years | units |
-|---|---|---|---|
-| `wt_gdp_per_capita` | human_systems | 1990–2022 | GDP as USD per capita (PPP, constant 2021) |
-| `wt_ghsl_built_volume` | human_systems | 1975–2020 | Building volume as m³ |
-| `wt_gini` | human_systems | 1990–2023 | Gini index |
-| `wt_hdi` | human_systems | 1990–2015 | Human development index |
-| `wt_ntl_harmonized` | human_systems | 1992–2018 | Night-time lighting |
-| `wt_population_density` | human_systems | 2000–2020 | Persons/km² |
-| `wt_tp_sum` | climate (ERA5) | 1940–2025 | Total precipitation as m (see below) |
-| `wt_t2m_mean` | climate (ERA5) | 1940–2025 | Mean temperature in K |
-| `wt_skt_max` | climate (ERA5) | 1940–2025 | Max temperature K |
-| `wt_elevation_mean` | static topography | static | Elevation above sea level in m |
-| `wt_travel_time_to_cities` | static (Weiss et al. 2018) | 2015 | Travel time to nearest city (minutes) |
+| column | WorldTensor layer | available years | weight | units |
+|---|---|---|---|---|
+| `wt_gdp_per_capita` | human_systems | 1990–2022 | population | GDP as USD per capita (PPP, constant 2021) |
+| `wt_ghsl_built_volume` | human_systems | 1975–2020 | population | Building volume as m³ |
+| `wt_gini` | human_systems | 1990–2023 | population | Gini index |
+| `wt_hdi` | human_systems | 1990–2015 | population | Human development index |
+| `wt_ntl_harmonized` | human_systems | 1992–2018 | population | Night-time lighting |
+| `wt_population_density` | human_systems | 2000–2020 | population | Persons/km² |
+| `wt_tp_sum` | climate (ERA5) | 1940–2025 | area | Total precipitation as m (see below) |
+| `wt_t2m_mean` | climate (ERA5) | 1940–2025 | area | Mean temperature in K |
+| `wt_skt_max` | climate (ERA5) | 1940–2025 | area | Max temperature K |
+| `wt_elevation_mean` | static topography | static | area | Elevation above sea level in m |
+| `wt_travel_time_to_cities` | static (Weiss et al. 2018) | 2015 | population | Travel time to nearest city (minutes) |
 
 <figure markdown="span">
 ![WorldTensor population density (logged)](assets/wt_log_pop_density.png){ style="display: block; margin: 0 auto; max-width: 100%;" }
@@ -62,47 +63,73 @@ source.
 of 12 monthly means of daily totals, not an annual total (multiply by
 about 30.4 to get one). The values are kept as the files give them.
 
-To change the variables, edit `VARIABLES` in
-`foundata/gridjoin/worldtensor.py` and the matching `wt_` entries in
-`configs/core/template.yaml`; a test checks that the two agree.
+## Config
 
-## How a location gets a cell
+`configs/core/gridjoin.yaml` lists the variables (another file:
+`--grid-config`). Each one has its
+source under the WORLD root and its weight:
 
-Each location has a point (`lon`, `lat`) and a radius (`scale_m`). The
-point is the polygon's point on surface, so it is always inside the
-polygon. The location takes the cell its point is in, found by
-arithmetic with no geometry library, and each distinct cell is looked
-up once.
+```yaml
+weights:
+  population_count: worldtensor_human_systems/human_systems/population_count
+variables:
+  gdp_per_capita:
+    source: worldtensor_human_systems/human_systems/gdp_per_capita
+    weight: population_count  # or area
+```
 
-The grid is point-registered: there are 721 × 1440 cell centres at
-latitudes -90…90 and longitudes 0…359.75, so cell edges sit halfway
-between centres. The cell is:
+Use `area` for land use, climate and static layers, and
+`population_count` for human systems and travel time to cities. A variable added to the config
+also needs its `wt_` entry in `configs/core/template.yaml`. A test
+checks that the two agree.
+
+## How a location gets its values
+
+- **Points** take the value of the cell they are in. `scale_m` is ignored.
+- **Polygons** take the mean over every cell they overlap, weighted by
+  the variable's weight:
+    - `area`: the share of each cell the polygon covers.
+    - `population_count`: the people in each overlap, which is
+      `population_count` (year nearest the survey) times that share.
+      Where the overlaps have no people, the mean is weighted by area.
+- **Missing cells** (sea, or masked) are left out of the mean. If none
+  are left, the location takes the nearest valid cell within 50 km of
+  its point, else null.
+
+A polygon in a single cell takes that cell's value, the same as a point.
+
+### Details
+
+The grid is point-registered: 721 × 1440 cell centres at latitudes
+-90…90 and longitudes 0…359.75, with edges halfway between them. A point
+is in cell `row * 1440 + col`, with
 
 - `row = floor((lat + 90.125) / 0.25)`, clipped to 0…720;
 - `col = floor((lon + 0.125) / 0.25) mod 1440`.
 
-A point exactly on an edge goes to the cell north or east of it.
-Latitudes ±90 stay in the polar rows, and longitudes 180 and -180 are
-the same column.
+A point on an edge goes to the cell north or east of it. Longitudes 180
+and -180 are the same column. A polygon's point (`lon`, `lat`) is its
+point on surface, so always inside it. Polygons split at the
+antimeridian, like Alaska, are handled.
 
-These columns are in `locations.parquet`:
+Overlaps are measured in degrees, which is equal-area within a cell.
+Only polygons whose bounding box crosses a cell edge are intersected
+with the grid. Across all sources that takes a few seconds.
 
-- `wt_cell` is `row * 1440 + col`.
-- `wt_spans_cells` is true when the location's bounding box crosses a
-  cell edge, so the single cell is an approximation. That is 33% of
-  polygons and under 1% of points. A point's box is the point ± its
-  radius. A polygon split at the antimeridian, like Alaska, gets the
-  narrow box across ±180°, not one spanning the globe.
+`locations.parquet` has two of these columns:
 
-A location whose cell is NaN in a layer (over the sea, or masked out,
-which can differ by year) takes the nearest valid cell of that layer
-whose centre is within 50 km of its point, else null. The `gridjoin`
-metadata gives, per variable, how many home locations and years were on
-a NaN cell (`on_nan_cells`) and how many the fallback filled (`filled`).
+- `wt_cell`: the cell of the location's point;
+- `wt_spans_cells`: whether its bounding box crosses a cell edge, so
+  that its values average several cells. This is true for about a third
+  of polygons, and never for a point.
+
+The `gridjoin` metadata gives each variable's weight and the
+`population_count` year used for each survey year. Per variable it gives how many home locations and years
+had no valid cell (`on_nan_cells`) and how many the fallback filled
+(`filled`).
 
 The fallback radius is 50 km, about two cells, because some masks are
 eroded at coasts. For `gdp_per_capita`, the nearest valid cell is 35 km
-from Nice and 43 km from Montevideo. With each layer's most recent year,
-across the 183k locations from all sources, the fallback filled 7,763
-locations for GDP and 7,285 for travel time, and at most 25 stayed null
-for any one variable. The counts for a run are in its metadata.
+from Nice and 43 km from Montevideo. For the 143k home locations and
+years of all sources, the fallback filled about 8,100 for GDP and 6,800
+for travel time, and at most 23 stayed null for any one variable.
