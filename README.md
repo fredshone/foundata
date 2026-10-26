@@ -365,6 +365,37 @@ Options:
 | `--output DIR` | `-o` | parent of first input | Output directory. |
 | `--seed N` | | `42` | Random seed for reproducibility. |
 
+### Sampling
+
+The `sample` command randomly samples persons from an activity schedules table, and optionally their attributes and trips.
+
+```bash
+# 1000 persons at random
+foundata sample activities.parquet -n 1000 -a attributes.parquet -t trips.parquet -o /tmp/sample/
+
+# Stratified: an equal number of persons from each age/sex combination
+foundata sample activities.parquet -n 1000 -a attributes.parquet -t trips.parquet -s age,sex -o /tmp/sample/
+```
+
+> **Sampling is by person (`pid`), not by household.** Each person is drawn independently, so a sampled person's household members are usually not in the sample, and households are not kept whole. Don't use the output for household-level analysis such as household composition or joint trips.
+
+- With `--strata`, each stratum (combination of the strata values) gets `n // n_strata` persons, sampled without replacement. A stratum with fewer persons than its share is oversampled, with a warning.
+- Numeric strata with more than 5 unique values are binned into 5 quantile bins (as by `foundata bin`), with a warning.
+- By default, sampled persons get new integer pids `0..n-1`, and their households new integer hids. Sampled persons from the same household share a new hid; repeat draws of a household's persons form a separate household, so no household holds the same person twice.
+
+Options:
+
+| Option | Short | Default | Description |
+|--------|-------|---------|-------------|
+| `--size N` | `-n` | required | Number of persons to sample. |
+| `--attributes PATH` | `-a` | | Attributes table. Required for `--strata`. |
+| `--trips PATH` | `-t` | | Trips table. |
+| `--strata COLS` | `-s` | | Attribute columns to stratify on, repeatable or comma-separated. |
+| `--output DIR` | `-o` | alongside inputs | Output directory. Outputs keep their input names, suffixed `_sample` only to avoid overwriting. |
+| `--output-schedules/-attributes/-trips PATH` | `-os/-oa/-ot` | | Explicit output paths (override `-o`). |
+| `--keep-index` | | off | Keep original pids and hids. Repeat draws get pids suffixed `_1`, `_2`, ... |
+| `--seed N` | | `42` | Random seed for reproducibility. |
+
 
 ### Diagnostics
 

@@ -12,6 +12,7 @@ from loguru import logger
 
 from foundata import config_validator, gridjoin, log, post_process, verify
 from foundata import filter as flt
+from foundata import sample as sampling
 from foundata.run import (
     SOURCES,
     SourceDataError,
@@ -942,6 +943,122 @@ def split_cmd(
             f"  {path.name:30s} → {len(train_df):>7} train / {len(test_df):>7} test rows"
         )
     logger.info(f"Wrote outputs to {out_dir}")
+
+
+# ---------------------------------------------------------------------------
+# sample command
+# ---------------------------------------------------------------------------
+
+
+@app.command("sample")
+def sample_cmd(
+    activity_schedules: Annotated[Path, typer.Argument(exists=True)],
+    size: Annotated[
+        int,
+        typer.Option(
+            "--size",
+            "-n",
+            help="Number of persons to sample (split equally across strata).",
+        ),
+    ],
+    attributes: AttrOpt = None,
+    trips: Annotated[
+        Optional[Path],
+        typer.Option("--trips", "-t", exists=True, help="Path to trips table."),
+    ] = None,
+    strata: Annotated[
+        Optional[list[str]],
+        typer.Option(
+            "--strata",
+            "-s",
+            help=(
+                "Attribute columns to stratify on, repeatable or "
+                "comma-separated (e.g. --strata age,hh_income). "
+                "Requires --attributes."
+            ),
+        ),
+    ] = None,
+    output: OutDirOpt = None,
+    output_schedules: Annotated[
+        Optional[Path],
+        typer.Option(
+            "--output-schedules",
+            "-os",
+            help="Explicit output path for activity schedules, .parquet or .csv (overrides -o).",
+        ),
+    ] = None,
+    output_attributes: OutAttrOpt = None,
+    output_trips: OutTripsOpt = None,
+    seed: Annotated[
+        int, typer.Option(help="Random seed for reproducibility.")
+    ] = 42,
+    keep_index: Annotated[
+        bool,
+        typer.Option(
+            "--keep-index",
+            help=(
+                "Keep the original pids and hids instead of reindexing to "
+                "integers. Repeat draws of a person get pids suffixed _1, _2, ..."
+            ),
+        ),
+    ] = False,
+):
+    """Randomly sample persons from activity schedules (.parquet or .csv),
+    and optionally their attributes and trips.
+
+    Sampling is by person (pid), not by household: persons are drawn
+    independently, so households are not kept whole.
+
+    With --strata, each stratum gets an equal number of persons, sampled
+    without replacement. Strata smaller than their share are oversampled
+    (with a warning). Numeric strata with more than 5 values are binned
+    into 5 categories. Sampled persons are given integer pids 0..n-1, and
+    households integer hids, unless --keep-index is passed. Persons sharing
+    a household still share one, but repeat draws of a household's persons
+    form a new household.
+
+    Example: foundata sample activity_schedules.parquet -n 1000 -a attributes.parquet -s age,sex
+    """
+    strata = _split_commas(strata)
+    if strata and attributes is None:
+        raise typer.BadParameter("--strata requires --attributes")
+
+    suffix = "_sample"
+    os_ = _resolve_out(output_schedules, output, activity_schedules, suffix)
+    oa = _resolve_out(output_attributes, output, attributes, suffix)
+    ot = _resolve_out(output_trips, output, trips, suffix)
+
+    schedules_df = _read(activity_schedules)
+    attrs_df = _read(attributes) if attributes else None
+    try:
+        sample = sampling.sample_pids(
+            schedules_df["pid"].unique().to_list(),
+            size,
+            attributes=attrs_df,
+            strata=strata,
+            seed=seed,
+        )
+    except ValueError as e:
+        raise typer.BadParameter(str(e))
+    logger.info(f"Sampled {sample.height} persons")
+    trips_df = _read(trips) if trips else None
+    if not keep_index:
+        # take households from the first table that has them
+        hids = next(
+            (
+                df
+                for df in (attrs_df, schedules_df, trips_df)
+                if df is not None and "hid" in df.columns
+            ),
+            None,
+        )
+        sample = sampling.reindex(sample, hids)
+
+    _write(sampling.apply_sample(schedules_df, sample), os_)
+    if attrs_df is not None:
+        _write(sampling.apply_sample(attrs_df, sample), oa)
+    if trips_df is not None:
+        _write(sampling.apply_sample(trips_df, sample), ot)
 
 
 for _typer in (app, filter_app):
