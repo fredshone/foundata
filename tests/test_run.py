@@ -87,3 +87,22 @@ def test_france_survey_dirs(tmp_path):
     a = _survey(tmp_path, "a_2015")
     _survey(tmp_path, "EMP2019", tables=False)
     assert france.survey_dirs(tmp_path, ["EMP2019"]) == [a]
+
+
+def test_runner_writes_metadata(tmp_path, monkeypatch):
+    repo = Path(__file__).parent.parent
+    monkeypatch.chdir(repo)
+    template = repo / "data_dir_template"
+    source_dirs = {"chile": run.batch_source_dir(template, "chile")}
+    run.runner(source_dirs, tmp_path, home_based=True, world=None)
+    meta = json.loads((tmp_path / "metadata.json").read_text())
+    assert meta["started"] <= meta["created"]
+    assert meta["options"]["home_based"] is True
+    assert meta["options"]["world"] is None
+    chile = meta["sources"]["chile"]
+    assert chile["data_dir"] == "data_dir_template/CHILE"
+    assert chile["persons"] > 0 and chile["trips"] > 0
+    assert chile["years"] and all(isinstance(y, int) for y in chile["years"])
+    assert meta["command"]["argv"]
+    assert str(Path.home()) not in json.dumps(meta)
+    assert meta["code"]["commit"]

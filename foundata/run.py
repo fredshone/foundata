@@ -21,6 +21,7 @@ from foundata import (
     ktdb,
     location,
     ltds,
+    metadata,
     mexico,
     mon,
     mongolia,
@@ -506,9 +507,24 @@ def runner(
     *grid_cache*) at its home in the year nearest its survey's, with the
     year used (``wt_`` columns); *grid_config* lists the layers and their
     weights. With *world* None they stay null.
+
+    ``metadata.json`` records when the run happened, its command and
+    options, each source's data directory and contribution, and the code
+    version (see ``foundata.metadata``).
     """
     output = Path(output).expanduser()
     output.mkdir(exist_ok=True, parents=True)
+    started = metadata.now()
+    options = {
+        "home_based": home_based,
+        "fix_consecutive": fix_consecutive,
+        "diagnostics": diagnostics,
+        "keep_ids": keep_ids,
+        "csv": csv,
+        "world": metadata.relative(world),
+        "grid_cache": metadata.relative(grid_cache),
+        "grid_config": metadata.relative(grid_config),
+    }
 
     sources = [s for s in SOURCES if s in source_dirs]
     if not sources:
@@ -771,6 +787,17 @@ def runner(
             "(enable with --diagnostics)"
         )
 
+    path = metadata.write(
+        output,
+        started=started,
+        options=options,
+        configs_root=metadata.relative(CONFIGS_ROOT),
+        sources=metadata.source_summary(
+            {s: source_dirs[s] for s in sources}, all_attributes, all_trips
+        ),
+        gridjoin=grid_meta,
+    )
+    logger.info(f"Wrote run metadata to {path}")
     logger.success(f"Done, outputs saved to {output}")
 
 
