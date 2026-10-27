@@ -131,10 +131,34 @@ def load(
     person_config = utils.config_for_year(person_config, year)
     trips_config = utils.config_for_year(trips_config, year)
     if year == 2021:
-        return load_2021(root, person_config, trips_config)
-    if year == 2016:
-        return load_2016(root, person_config, trips_config, weekend)
-    return load_2010(root, person_config, trips_config, weekend)
+        attributes, trips = load_2021(root, person_config, trips_config)
+    elif year == 2016:
+        attributes, trips = load_2016(
+            root, person_config, trips_config, weekend
+        )
+    else:
+        attributes, trips = load_2010(
+            root, person_config, trips_config, weekend
+        )
+    return household_members(attributes), trips
+
+
+def household_members(attributes: pl.DataFrame) -> pl.DataFrame:
+    """Add hh_adults and hh_children, counted over each household's members
+    (see utils.household_composition). Weekend diaries are one row per
+    member per day, so each member is counted once. Households with
+    unsurveyed young children, and 2021's (hid = pid) of more than one
+    person, are incomplete and get null."""
+    suffix = "|".join(DIARY_SUFFIX.values())
+    members = attributes.with_columns(
+        pl.col("pid").str.replace(f"({suffix})$", "")
+    ).unique("pid")
+    counts = (
+        utils.household_composition(members)
+        .select("hid", "hh_adults", "hh_children")
+        .unique("hid")
+    )
+    return attributes.join(counts, on="hid", how="left")
 
 
 # ----------------------------------------------------------------------

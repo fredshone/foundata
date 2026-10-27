@@ -64,6 +64,23 @@ attributes:
     min: 0
     max: 100
     description: "Number of motorised vehicles available to the household."
+  hh_adults:
+    dtype: int32
+    default: True
+    min: 0
+    max: 100
+    description: "Number of adults (18+, unless the source defines adults otherwise) in the household. From the source's own count where it has one, else counted from the household's members (see utils.household_composition()). Null when unknown."
+  hh_children:
+    dtype: int32
+    default: True
+    min: 0
+    max: 100
+    description: "Number of children (under 18, unless the source defines adults otherwise) in the household. Null when unknown."
+  veh_per_adult:
+    dtype: str
+    default: True
+    set: ["0", "0-1", "1+", unknown]
+    description: "Household vehicles per adult (vehicles / hh_adults): '0' for no vehicles, '0-1' for fewer vehicles than adults, '1+' for at least one per adult. Derived by utils.vehicles_per_adult()."
   disability:
     dtype: str
     default: True

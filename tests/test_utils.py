@@ -143,6 +143,83 @@ def test_split_employment_type_unknown():
     ]
 
 
+# --- household_composition / add_member_counts / vehicles_per_adult ---
+
+
+def test_household_composition_counts_complete_households():
+    # h1 complete (2 of 2), h2 incomplete (1 of 3), h3 has an unknown age
+    attributes = pl.DataFrame(
+        {
+            "pid": ["a", "b", "c", "d", "e"],
+            "hid": ["h1", "h1", "h2", "h3", "h3"],
+            "age": [40, 17, 30, 50, None],
+            "hh_size": [2, 2, 3, 2, 2],
+        }
+    )
+    result = utils.household_composition(attributes).sort("pid")
+    assert result["hh_adults"].to_list() == [1, 1, None, None, None]
+    assert result["hh_children"].to_list() == [1, 1, None, None, None]
+    assert result["hh_adults"].dtype == pl.Int32
+
+
+def test_household_composition_keeps_loader_counts():
+    attributes = pl.DataFrame(
+        {
+            "pid": ["a"],
+            "hid": ["h1"],
+            "age": [40],
+            "hh_size": [3],
+            "hh_adults": [2],
+            "hh_children": [None],
+        }
+    )
+    result = utils.household_composition(attributes)
+    assert result["hh_adults"].to_list() == [2]
+    assert result["hh_children"].to_list() == [None]
+
+
+def test_household_composition_null_hh_size_is_unknown():
+    attributes = pl.DataFrame(
+        {"pid": ["a"], "hid": ["h1"], "age": [40], "hh_size": [None]}
+    )
+    result = utils.household_composition(attributes)
+    assert result["hh_adults"].to_list() == [None]
+
+
+def test_add_member_counts_nulls_short_rosters():
+    hhs = pl.DataFrame({"hid": ["h1", "h2", "h3"], "hh_size": [3, 2, None]})
+    persons = pl.DataFrame(
+        {
+            "hid": ["h1", "h1", "h1", "h2", "h3"],
+            "age": [5, 18, 70, 30, 10],
+        }
+    )
+    result = utils.add_member_counts(hhs, persons).sort("hid")
+    assert result["hh_adults"].to_list() == [2, None, 0]
+    assert result["hh_children"].to_list() == [1, None, 1]
+    assert result.columns == ["hid", "hh_size", "hh_adults", "hh_children"]
+
+
+def test_vehicles_per_adult_categories():
+    attributes = pl.DataFrame(
+        {
+            "vehicles": [0, 0, 1, 2, 3, 1, None, 2],
+            "hh_adults": [2, None, 2, 2, 2, 0, 2, None],
+        }
+    )
+    result = utils.vehicles_per_adult(attributes)
+    assert result["veh_per_adult"].to_list() == [
+        "0",
+        "0",  # no vehicles, whatever the adults
+        "0-1",
+        "1+",  # exactly one per adult
+        "1+",
+        "1+",  # vehicles but no adults
+        "unknown",
+        "unknown",
+    ]
+
+
 # --- assign_retired ---
 
 
@@ -400,3 +477,9 @@ def test_enumerate_ids_covers_trip_only_pids():
     attrs, trips, _ = utils.enumerate_ids(attrs, trips)
     assert attrs["pid"].to_list() == [1]
     assert trips["pid"].to_list() == [0, 1]
+
+
+def test_vehicles_per_adult_no_vehicles_column():
+    attributes = pl.DataFrame({"hh_adults": [2]})
+    result = utils.vehicles_per_adult(attributes)
+    assert result["veh_per_adult"].to_list() == ["unknown"]

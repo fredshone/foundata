@@ -157,12 +157,16 @@ def load_households(
         ),
         hh_size=pl.col("hh_size").cast(pl.Int32),
         vehicles=pl.col("vehicles").cast(pl.Int32),
+        hh_adults=pl.col("hh_lft4").cast(pl.Int32),
+        hh_children=pl.sum_horizontal("hh_lft1", "hh_lft2", "hh_lft3").cast(
+            pl.Int32
+        ),
         hh_zone=pl.col("hh_zone").replace_strict(
             config["hh_zone"], default="unknown"
         ),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
-    ).drop("respondents")
+    ).drop("respondents", "hh_lft1", "hh_lft2", "hh_lft3", "hh_lft4")
     return location.add(
         hhs.with_columns(home_gemeente=gemeente_code("home_gemeente")),
         source="mon",

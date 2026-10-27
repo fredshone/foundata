@@ -10,6 +10,10 @@ column_mappings:
   HHPers: hh_size
   HHBestInk: hh_income
   HHAuto: vehicles
+  HHLft1: hh_lft1  # household members under 6
+  HHLft2: hh_lft2  # 6 to 11
+  HHLft3: hh_lft3  # 12 to 17
+  HHLft4: hh_lft4  # 18 or older
   Sted: hh_zone
   WoGem: home_gemeente
   Weekdag: day

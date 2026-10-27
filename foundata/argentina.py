@@ -22,7 +22,7 @@ import pyreadstat
 from loguru import logger
 
 from foundata import fix, location
-from foundata.utils import sample_to_euro
+from foundata.utils import add_member_counts, sample_to_euro
 
 SOURCE = "argentina"
 COUNTRY = "ar"
@@ -124,9 +124,14 @@ def load_survey(
     )
     persons = read("persons", person_config["column_mappings"][survey])
     persons = persons.with_columns(pl.col("pid", "hid").cast(pl.Int64))
+    age = pl.col("age").cast(pl.Int32)
+    members = persons.with_columns(
+        age=pl.when(age <= person_config["max_age"]).then(age)
+    )
     hhs = hhs.join(
         persons.group_by("hid").agg(hh_size=pl.len().cast(pl.Int32)), on="hid"
     )
+    hhs = add_member_counts(hhs, members)
     persons = load_persons(persons, person_config, survey)
 
     home_zones = persons.join(hhs, on="hid").select("pid", "hh_zone")

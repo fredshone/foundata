@@ -143,6 +143,7 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
         ),
         hh_size=pl.col("hh_size").cast(pl.Int32, strict=False),
         vehicles=pl.col("vehicles").cast(pl.Int32, strict=False),
+        **household_members(year_config["hh_members_top_codes"]),
         hh_zone=pl.col("hh_zone").replace_strict(year_config["hh_zone"]),
         survey_date=(
             week1_monday
@@ -175,7 +176,39 @@ def load_households(root: str | Path, config: dict, year: int) -> pl.DataFrame:
     # home location: 4-digit postcode (2018-23), else gemeente
     data = location.add(data, source="odin", key=year)
 
-    return data.filter(pl.col("hid").is_not_null())
+    return data.drop(AGE_GROUPS).filter(pl.col("hid").is_not_null())
+
+
+AGE_GROUPS = ["hh_lft1", "hh_lft2", "hh_lft3", "hh_lft4"]
+
+
+def household_members(top_codes: dict | None) -> dict[str, pl.Expr]:
+    """hh_adults and hh_children from the HHLft age-group columns.
+
+    HHLft1-3 count members under 18 and HHLft4 those 18 or older. With
+    `top_codes` (DANS 2024) HHLft1-3 are only yes/no flags and HHLft4 and
+    hh_size are top-coded, so children are hh_size - adults where neither is
+    top-coded. Top-coded adults are hh_size in households without children,
+    else null.
+    """
+    lft = [pl.col(c).cast(pl.Int32, strict=False) for c in AGE_GROUPS]
+    if top_codes is None:
+        return {"hh_adults": lft[3], "hh_children": pl.sum_horizontal(lft[:3])}
+    size = pl.col("hh_size").cast(pl.Int32, strict=False)
+    no_children = pl.sum_horizontal(lft[:3]) == 0
+    adults = (
+        pl.when(lft[3] < top_codes["adults"])
+        .then(lft[3])
+        .when(no_children & (size < top_codes["hh_size"]))
+        .then(size)
+    )
+    return {
+        "hh_adults": adults,
+        "hh_children": pl.when(no_children)
+        .then(pl.lit(0, pl.Int32))
+        .when(size < top_codes["hh_size"])
+        .then(size - adults),
+    }
 
 
 def load_persons(root: str | Path, config: dict, year: int) -> pl.DataFrame:

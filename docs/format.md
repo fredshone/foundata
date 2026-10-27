@@ -78,6 +78,9 @@ The canonical schema is `configs/core/template.yaml`.
 | `hh_size` | int | 1–100 | Persons in the household |
 | `hh_income` | int | ≥ 0 | Annual gross household income in euros, usually sampled from a coded band |
 | `vehicles` | int | 0–100 | Motor vehicles available to the household |
+| `hh_adults` | int | 0–100 | Adults (18+) in the household. From the source's own count where it has one (NTS counts 16+), else counted from the ages of the household's members where the survey lists them all |
+| `hh_children` | int | 0–100 | Children (under 18; NTS under 16) in the household |
+| `veh_per_adult` | str | 0, 0-1, 1+ | `vehicles` / `hh_adults`: no vehicles, fewer vehicles than adults, or at least one per adult |
 | `dwelling` | str | house, flat, other | |
 | `ownership` | str | owned, rented, other | Housing tenure |
 | `hh_zone` | str | urban, suburban, rural | Urban/rural class of the home |
@@ -124,7 +127,8 @@ first activity starts at 0 and the last ends at 1440.
 ## binned_attributes
 
 This table has the same columns as `attributes`. Numeric columns
-(except `year`, `month`, `weight`, `vehicles`, `hh_size` and `hh_location`)
+(except `year`, `month`, `weight`, `vehicles`, `hh_size`, `hh_adults`,
+`hh_children` and `hh_location`)
 are replaced by 5 quantile-bin labels such as `54-66`. Null strings become
 `unknown` and null numerics become `-1`. You can re-bin any attributes file
 with `foundata bin`.

@@ -90,6 +90,17 @@ def test_load_person_days():
     ]
 
 
+def test_load_person_days_unknown_age_is_null():
+    _, person_cfg, trips_cfg = load_configs()
+
+    result = mexico.load_person_days(
+        raw_persons(age=["40", "99", "03"]), person_cfg, trips_cfg["day"]
+    ).sort("pid")
+
+    # EDAD 99 is "no sabe", not 99 years old
+    assert result["age"].to_list() == [40, 40, None, None]
+
+
 def test_district_zone_types_weighted_mode():
     hhs = pl.DataFrame(
         {

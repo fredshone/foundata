@@ -117,6 +117,9 @@ DEFAULT_CONDITIONALITY_ATTRS = [
     "hh_size",
     "hh_income",
     "vehicles",
+    "hh_adults",
+    "hh_children",
+    "veh_per_adult",
 ]
 
 

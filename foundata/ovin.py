@@ -141,6 +141,10 @@ def load_households(
         vehicles=pl.when(pl.col("vehicles") != config["vehicles_unknown"])
         .then(pl.col("vehicles"))
         .cast(pl.Int32),
+        hh_adults=pl.col("hh_lft4").cast(pl.Int32),
+        hh_children=pl.sum_horizontal("hh_lft1", "hh_lft2", "hh_lft3").cast(
+            pl.Int32
+        ),
         hh_zone=pl.col("hh_zone").replace_strict(
             config["hh_zone"], default="unknown"
         ),
@@ -149,7 +153,7 @@ def load_households(
         month=pl.col("month").cast(pl.Int8),
         dwelling=pl.lit("unknown"),
         ownership=pl.lit("unknown"),
-    ).drop("day_of_month")
+    ).drop("day_of_month", "hh_lft1", "hh_lft2", "hh_lft3", "hh_lft4")
     return location.add(
         data.with_columns(home_gemeente=gemeente_code("home_gemeente")),
         source="ovin",

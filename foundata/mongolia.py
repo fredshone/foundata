@@ -34,6 +34,7 @@ from loguru import logger
 from foundata import location
 from foundata.utils import (
     add_implied_trips,
+    add_member_counts,
     config_for_year,
     table_joiner,
     table_stacker,
@@ -149,6 +150,8 @@ def load(
         if trips_cfg["pid_day_suffix"]
         else pl.col("person")
     )
+    # counted over the whole roster, before members with no diary are dropped
+    hhs = add_member_counts(hhs, persons)
     persons = _diary_days_only(persons, diary_days(episodes, trips_cfg))
     attributes = table_joiner(
         hhs, persons, on="hid", lhs_name="hh", rhs_name="person"

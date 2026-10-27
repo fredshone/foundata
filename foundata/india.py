@@ -38,7 +38,12 @@ from nesstar_converter import (
 )
 
 from foundata import location
-from foundata.utils import add_implied_trips, table_joiner, table_stacker
+from foundata.utils import (
+    add_implied_trips,
+    add_member_counts,
+    table_joiner,
+    table_stacker,
+)
 
 SOURCE = "india"
 COUNTRY = "ind"
@@ -194,6 +199,8 @@ def load(
     )
 
     hhs = load_households(raw[blocks["hh"]], hh_config, year)
+    # counted over every member, before those with no diary are dropped
+    hhs = add_member_counts(hhs, persons)
     attributes = table_joiner(
         hhs, persons, on="hid", lhs_name="hh", rhs_name="person"
     )

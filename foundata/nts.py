@@ -80,6 +80,11 @@ def load_households(
         pl.col("ownership").replace_strict(config["ownership"]),
         pl.col("dwelling").replace_strict(config["dwelling"]),
         pl.col("hh_zone").replace_strict(config["hh_zone"]),
+        # negative codes are missing values
+        *(
+            pl.when(pl.col(c) >= 0).then(pl.col(c)).cast(pl.Int32).alias(c)
+            for c in ("hh_adults", "hh_children")
+        ),
         pl.lit("nts").alias("source"),
         pl.lit("nts").alias("survey"),
         pl.lit("uk").alias("country"),

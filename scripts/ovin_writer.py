@@ -13,7 +13,9 @@ samples are anonymised like the other restricted sources:
   that describe a respondent's trips (Weggeweest/Responsc, Vertrekp) or
   the household's structure (mon AantPers) stay put;
 - trip rows are kept intact apart from the remapped ids, so trip
-  sequencing, times and zones stay coherent.
+  sequencing, times and zones stay coherent. Household size and its
+  members by age group (HHPers/AantPers, HHLft1-4) stay consistent: a
+  block in ovin, fixed with the household in mon.
 """
 
 from pathlib import Path
@@ -23,6 +25,7 @@ import pyreadstat
 
 GEMEENTE = ["WoGem", "Sted"]
 DATE = ["Maand", "Dag", "Weekdag"]
+AGE_GROUPS = ["HHLft1", "HHLft2", "HHLft3", "HHLft4"]
 
 
 def loader_columns(source: str) -> tuple[list[str], list[str], list[str]]:
@@ -85,7 +88,7 @@ def sample_ovin(
 
         respondents = shuffle(
             respondents.filter(pl.col("OPID").is_in(ids.implode())),
-            blocks=[GEMEENTE, DATE],
+            blocks=[GEMEENTE, DATE, ["HHPers", *AGE_GROUPS]],
             fixed={"OP", "OPID", "Jaar", "Weggeweest", "Vertrekp"},
             seed=seed,
         )
@@ -153,7 +156,7 @@ def sample_mon(
         hhs = shuffle(
             persons.filter(pl.col("Huishoud") == 1).select(hh_cols + date),
             blocks=[GEMEENTE, DATE],
-            fixed={"HHID", "AantPers", "Jaar"},
+            fixed={"HHID", "AantPers", "Jaar", *AGE_GROUPS},
             seed=seed,
         )
         persons = shuffle(

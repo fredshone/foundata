@@ -332,6 +332,104 @@ def compute_avg_speed(
     return attributes
 
 
+ADULT_AGE = 18
+
+
+def household_composition(
+    attributes: pl.DataFrame, adult_age: int = ADULT_AGE
+) -> pl.DataFrame:
+    """Add hh_adults and hh_children (Int32) counted from household members.
+
+    Loaders that set hh_adults and hh_children themselves (from the source's
+    own counts) are left alone. Otherwise each household's persons are
+    counted by age (adults are `adult_age` or over), but only where the
+    attributes hold the whole household: as many persons as hh_size, each
+    with a known age. Other households get null. Sources without a household
+    id (hid = pid) therefore only get counts for one-person households.
+
+    Must run before persons are filtered out, and only for sources with one
+    row per person (not per person-day).
+    """
+    if {"hh_adults", "hh_children"} <= set(attributes.columns):
+        return attributes.with_columns(
+            pl.col("hh_adults", "hh_children").cast(pl.Int32, strict=False)
+        )
+    hhs = (
+        attributes.group_by("hid")
+        .agg(pl.col("hh_size").cast(pl.Int32, strict=False).first())
+        .filter(pl.col("hh_size").is_not_null())
+    )
+    counts = add_member_counts(hhs, attributes, adult_age).drop("hh_size")
+    return attributes.drop("hh_adults", "hh_children", strict=False).join(
+        counts, on="hid", how="left"
+    )
+
+
+def member_counts(
+    persons: pl.DataFrame, adult_age: int = ADULT_AGE
+) -> pl.DataFrame:
+    """hid, hh_adults and hh_children (Int32) of each household in `persons`.
+
+    `persons` holds one row per household member with hid and age. Counts
+    are null for households with any member of unknown (null) age. Loaders
+    whose person table is the full roster can use this before dropping
+    persons who weren't asked the travel questions.
+    """
+    age = pl.col("age").cast(pl.Int32, strict=False)
+    aged = age.is_not_null().all()
+    return persons.group_by("hid").agg(
+        hh_adults=pl.when(aged).then((age >= adult_age).sum()).cast(pl.Int32),
+        hh_children=pl.when(aged).then((age < adult_age).sum()).cast(pl.Int32),
+    )
+
+
+def add_member_counts(
+    hhs: pl.DataFrame, persons: pl.DataFrame, adult_age: int = ADULT_AGE
+) -> pl.DataFrame:
+    """Join hh_adults and hh_children, counted over `persons`, onto `hhs`.
+
+    For loaders whose person table is the household roster: call it before
+    dropping members who kept no diary. Households whose roster holds a
+    different number of members than their hh_size (where known) get null.
+    """
+    counts = member_counts(persons, adult_age).join(
+        persons.group_by("hid").agg(members=pl.len()), on="hid"
+    )
+    size = pl.col("hh_size").cast(pl.Int32, strict=False)
+    complete = size.is_null() | (pl.col("members") == size)
+    return (
+        hhs.join(counts, on="hid", how="left")
+        .with_columns(
+            pl.when(complete).then(pl.col("hh_adults", "hh_children"))
+        )
+        .drop("members")
+    )
+
+
+def vehicles_per_adult(attributes: pl.DataFrame) -> pl.DataFrame:
+    """Add veh_per_adult, household vehicles / hh_adults as a category.
+
+    "0" for no vehicles, "0-1" for fewer vehicles than adults, "1+" for at
+    least one vehicle per adult (including vehicles with no adults), and
+    "unknown" where either count is (or the source has no vehicles).
+    """
+    if "vehicles" not in attributes.columns:
+        return attributes.with_columns(veh_per_adult=pl.lit("unknown"))
+    vehicles = pl.col("vehicles").cast(pl.Int32, strict=False)
+    adults = pl.col("hh_adults").cast(pl.Int32, strict=False)
+    return attributes.with_columns(
+        veh_per_adult=pl.when(vehicles.is_null())
+        .then(pl.lit("unknown"))
+        .when(vehicles == 0)
+        .then(pl.lit("0"))
+        .when(adults.is_null())
+        .then(pl.lit("unknown"))
+        .when(vehicles < adults)
+        .then(pl.lit("0-1"))
+        .otherwise(pl.lit("1+"))
+    )
+
+
 def split_employment_type(attributes: pl.DataFrame) -> pl.DataFrame:
     """Split the ft/pt distinction out of employment into employed_type.
 

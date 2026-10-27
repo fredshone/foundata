@@ -10,6 +10,10 @@ column_mappings:
   HHID: hid
   AantPers: hh_size   # 10 = "10 personen of meer"
   HAuto: vehicles     # 9 = "9 of meer"
+  HHLft1: hh_lft1     # household members under 6
+  HHLft2: hh_lft2     # 6 to 11
+  HHLft3: hh_lft3     # 12 to 17
+  HHLft4: hh_lft4     # 18 or older; each 9 = "9 of meer"
   Sted: hh_zone
   WoGem: home_gemeente
 

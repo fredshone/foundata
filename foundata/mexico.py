@@ -15,7 +15,7 @@ from pathlib import Path
 import polars as pl
 from loguru import logger
 
-from foundata import fix, location
+from foundata import fix, location, utils
 from foundata.brazil import read_dbf
 
 SOURCE = "mexico"
@@ -63,6 +63,7 @@ def load(
     hhs = hhs.join(
         persons.group_by("hid").agg(hh_size=pl.len().cast(pl.Int32)), on="hid"
     )
+    hhs = household_members(hhs, persons, person_config)
     person_days = load_person_days(persons, person_config, trips_config["day"])
     zone_types = district_zone_types(hhs)
 
@@ -105,6 +106,22 @@ def load(
         pid=pl.col("pid"),
     ).select("pid", pl.exclude("pid"))
     return attributes, trips
+
+
+def household_members(
+    hhs: pl.DataFrame, persons: pl.DataFrame, config: dict
+) -> pl.DataFrame:
+    """Add hh_adults and hh_children, counted over every member (including
+    the under-6s later dropped), before persons become diaries."""
+    return utils.add_member_counts(
+        hhs, persons.with_columns(age=person_age(config))
+    )
+
+
+def person_age(config: dict) -> pl.Expr:
+    """EDAD in years, null for the "no sabe" code."""
+    age = pl.col("age").cast(pl.Int32)
+    return pl.when(age != config["age_unknown"]).then(age)
 
 
 def load_households(hhs: pl.DataFrame, config: dict) -> pl.DataFrame:
@@ -161,9 +178,8 @@ def load_person_days(
     """
     persons = persons.filter(pl.col("weekday_travel").is_not_null())
     persons = persons.with_columns(
-        pl.col("age", "sex", "relationship", "education", "employment").cast(
-            pl.Int32
-        ),
+        pl.col("sex", "relationship", "education", "employment").cast(pl.Int32),
+        age=person_age(config),
         worked_anyway=pl.col("worked_anyway").cast(pl.Int32),
         weight=pl.col("weight").cast(pl.Float32),
     ).with_columns(

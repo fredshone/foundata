@@ -109,6 +109,10 @@ def test_households_unknown_income_and_vehicles():
         HHPers=[2, 1, 3, 3],
         HHBestInk=[3, 7, None, None],
         HHAuto=[1, 10, 2, 2],
+        HHLft1=[0, 0, 1, 1],
+        HHLft2=[0, 0, 0, 0],
+        HHLft3=[1, 0, 0, 0],
+        HHLft4=[1, 1, 2, 2],
         Sted=[1, 3, 5, 5],
         WoGem=[363, 344, 1680, 1680],
         Weekdag=[1, 2, 7, 7],
@@ -128,6 +132,9 @@ def test_households_unknown_income_and_vehicles():
     assert 20000 < lo <= income[0] <= hi
     assert income[1:] == [None, None]
     assert hhs["vehicles"].to_list() == [1, None, 2]
+    assert hhs["hh_adults"].to_list() == [1, 1, 2]
+    assert hhs["hh_children"].to_list() == [1, 0, 1]
+    assert "hh_lft1" not in hhs.columns
     assert hhs["hh_zone"].to_list() == ["urban", "suburban", "rural"]
     assert hhs["day"].to_list() == ["sunday", "monday", "saturday"]
     assert "home_gemeente" not in hhs.columns

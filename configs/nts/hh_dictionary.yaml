@@ -9,8 +9,9 @@ column_mappings:
     Ten1_B02ID: ownership
     AddressType_B01ID: dwelling
     HHoldNumPeople: hh_size
+    HHoldNumAdults: hh_adults  # NTS adults are 16+
+    HHoldNumChildren: hh_children  # under 16
     # HHoldStruct_B02ID: hh_composition
-    # HHoldNumChildren: hh_children
     NumCar: vehicles
     # NumBike: hh_bikes
     # NumMCycle: hh_motorcycles

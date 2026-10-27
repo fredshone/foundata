@@ -69,10 +69,12 @@ def load(
         read_table(root / HOUSEHOLDS_PATH, hh_config["column_mappings"]),
         hh_config,
     )
-    persons = load_persons(
-        read_table(root / PERSONS_PATH, person_config["column_mappings"]),
-        person_config,
+    raw_persons = read_table(
+        root / PERSONS_PATH, person_config["column_mappings"]
     )
+    # counted over every member, before the under-4s are dropped
+    hhs = utils.add_member_counts(hhs, raw_persons)
+    persons = load_persons(raw_persons, person_config)
     segments = load_segments(hh_config)
     trips = load_trips(
         read_table(root / TRIPS_PATH, trip_mappings["Base Viajes"]),

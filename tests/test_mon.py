@@ -135,6 +135,10 @@ def test_household_income_summed_and_nulled():
         HHID=[1, 2, 3],
         AantPers=[2, 2, 2],  # household 2 has a non-responding member
         HAuto=[1, 0, 2],
+        HHLft1=[0, 1, 0],
+        HHLft2=[0, 0, 0],
+        HHLft3=[0, 0, 0],
+        HHLft4=[2, 1, 2],
         Sted=[1, 3, 5],
         WoGem=[363, 344, 1680],
     )
@@ -151,6 +155,8 @@ def test_household_income_summed_and_nulled():
     assert income[2] is None  # a member's income unknown
     assert hhs["hh_zone"].to_list() == ["urban", "suburban", "rural"]
     assert hhs["vehicles"].to_list() == [1, 0, 2]
+    assert hhs["hh_adults"].to_list() == [2, 1, 2]
+    assert hhs["hh_children"].to_list() == [0, 1, 0]
     assert "respondents" not in hhs.columns
 
 
@@ -187,6 +193,10 @@ def test_household_income_large_households_capped_size():
         HHID=[1, 2, 3],
         AantPers=[10, 10, 10],
         HAuto=[1, 1, 1],
+        HHLft1=[0, 0, 0],
+        HHLft2=[0, 0, 0],
+        HHLft3=[0, 0, 0],
+        HHLft4=[9, 9, 9],
         Sted=[1, 1, 1],
         WoGem=[363, 363, 363],
     )

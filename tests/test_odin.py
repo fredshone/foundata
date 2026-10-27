@@ -247,6 +247,10 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
         "HHPers",
         "HHBestInkG",
         "HHAuto",
+        "HHLft1",
+        "HHLft2",
+        "HHLft3",
+        "HHLft4",
         "Sted",
         "Weekdag",
         "Jaar",
@@ -256,7 +260,10 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
         "WoPC",
     ]
     # 2018-01-01 is a Monday (ISO week 1); Weekdag 2 == Monday.
-    rows = [["1", "1", "2", "11", "1", "1", "2", "2018", "1", "1", "3", "9901"]]
+    rows = [
+        ["1", "1", "2", "11", "1", "0", "0", "0", "2"]
+        + ["1", "2", "2018", "1", "1", "3", "9901"]
+    ]
     _write_households_tab(
         tmp_path / "2018" / odin.DATA_FILES[2018], header, rows
     )
@@ -267,6 +274,8 @@ def test_load_households_derives_survey_date_from_iso_week(tmp_path):
     assert result["weather_gemeente"].to_list() == ["0003"]
     # the postcode is the finer home location
     assert result["hh_location"].to_list() == ["odin/pc4/9901"]
+    assert result["hh_adults"].to_list() == [2]
+    assert result["hh_children"].to_list() == [0]
 
 
 def test_load_households_nulls_dans_privacy_codes(tmp_path):
@@ -282,6 +291,10 @@ def test_load_households_nulls_dans_privacy_codes(tmp_path):
         "HHPers_DANS24",
         "HHGestInkG",
         "HHAuto_DANS24",
+        "HHLft1_DANS24",
+        "HHLft2_DANS24",
+        "HHLft3_DANS24",
+        "HHLft4_DANS24",
         "Sted",
         "Weekdag",
         "Jaar",
@@ -290,7 +303,10 @@ def test_load_households_nulls_dans_privacy_codes(tmp_path):
         "Wogem_DANS24",
     ]
     # 2024-12-29 is a Sunday (ISO week 52); Weekdag 1 == Sunday.
-    rows = [["1", "1", "2", "11", "1", "1", "1", "2024", "12", "52", "9000"]]
+    rows = [
+        ["1", "1", "2", "11", "1", "0", "0", "0", "2"]
+        + ["1", "1", "2024", "12", "52", "9000"]
+    ]
     _write_households_tab(
         tmp_path / "2024" / odin.DATA_FILES[2024], header, rows
     )
@@ -300,3 +316,34 @@ def test_load_households_nulls_dans_privacy_codes(tmp_path):
     assert result["survey_date"].to_list() == ["2024-12-29"]
     assert result["weather_gemeente"].to_list() == [None]
     assert result["hh_location"].to_list() == [None]
+
+
+def test_household_members_counts_age_groups():
+    df = pl.DataFrame(
+        {
+            "hh_size": ["4"],
+            "hh_lft1": ["1"],
+            "hh_lft2": ["0"],
+            "hh_lft3": ["1"],
+            "hh_lft4": ["2"],
+        }
+    )
+    result = df.select(**odin.household_members(None))
+    assert result.row(0, named=True) == {"hh_adults": 2, "hh_children": 2}
+
+
+def test_household_members_dans_2024_top_codes():
+    top_codes = {"hh_size": 6, "adults": 4}
+    # HHLft1-3 are yes/no flags; HHLft4 and hh_size are top-coded
+    df = pl.DataFrame(
+        {
+            "hh_size": ["4", "6", "5", "6", "4"],
+            "hh_lft1": ["1", "1", "0", "0", "0"],
+            "hh_lft2": ["1", "0", "0", "0", "0"],
+            "hh_lft3": ["0", "0", "0", "0", "0"],
+            "hh_lft4": ["2", "2", "4", "4", "4"],
+        }
+    )
+    result = df.select(**odin.household_members(top_codes))
+    assert result["hh_adults"].to_list() == [2, 2, 5, None, 4]
+    assert result["hh_children"].to_list() == [2, None, 0, 0, 0]

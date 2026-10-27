@@ -15,6 +15,10 @@ column_mappings:
   P4_2: weekday_travel  # 1 travelled on the weekday, 2 did not, null not asked
   P4_3: saturday_travel  # 1 travelled on Saturday, 2 did not, null not asked
 
+# EDAD code for "no sabe": age is null, and the member's household has
+# unknown hh_adults/hh_children
+age_unknown: 99
+
 # sex mapping
   # Valid values: male, female, other, unknown
 sex:

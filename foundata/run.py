@@ -50,6 +50,8 @@ def log_markdown_table(title: str, table: str):
 def process_source(attributes, trips, source_name):
     n_plans_in = trips["pid"].n_unique()
 
+    attributes = utils.household_composition(attributes)
+    attributes = utils.vehicles_per_adult(attributes)
     attributes = utils.compute_avg_speed(attributes, trips)
     attributes = utils.split_employment_type(attributes)
     attributes = utils.correct_child_employment(attributes)
@@ -664,6 +666,8 @@ def runner(
             "weight",
             "vehicles",
             "hh_size",
+            "hh_adults",
+            "hh_children",
             "hh_location",
         ],
     )

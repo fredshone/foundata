@@ -5,6 +5,7 @@ column_mappings:
         # "HBPPOPDN": "population_density"
         "HHFAMINC": "hh_income"
         "HHSIZE": "hh_size"
+        "NUMADLT": "hh_adults"  # adults (18+); children are HHSIZE - NUMADLT
         "HHVEHCNT": "vehicles"
         "HOMEOWN": "ownership"
         # "LIF_CYC": "life_cycle"
@@ -21,6 +22,7 @@ column_mappings:
         # "HBPPOPDN": "population_density"
         "HHFAMINC": "hh_income"
         "HHSIZE": "hh_size"
+        "NUMADLT": "hh_adults"  # adults (18+); children are HHSIZE - NUMADLT
         "HHVEHCNT": "vehicles"
         "HOMEOWN": "ownership"
         # "LIF_CYC": "life_cycle"

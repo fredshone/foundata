@@ -23,7 +23,7 @@ import polars as pl
 from loguru import logger
 
 from foundata import fix, location
-from foundata.utils import sample_to_euro
+from foundata.utils import add_member_counts, sample_to_euro
 
 SOURCE = "france"
 COUNTRY = "fr"
@@ -112,10 +112,12 @@ def load_survey(
         raw_trips,
         hh_config,
     )
-    persons = load_persons(
-        read_table(survey / PERSONS_PATH, person_config["column_mappings"]),
-        person_config,
+    raw_persons = read_table(
+        survey / PERSONS_PATH, person_config["column_mappings"]
     )
+    # counted over every member, before those not surveyed are dropped
+    hhs = add_member_counts(hhs, raw_persons)
+    persons = load_persons(raw_persons, person_config)
     person_days = raw_trips.group_by("pid").agg(
         person_day=pl.col("weekday").sort_by("seq").first(),
         person_date=pl.col("date").sort_by("seq").first(),

@@ -128,6 +128,14 @@ def load_households(
         else:
             data = data.with_columns(race=pl.lit("unknown"))
 
+        # negative codes are missing values
+        adults = pl.col("hh_adults").cast(pl.Int32, strict=False)
+        adults = pl.when(adults >= 0).then(adults)
+        data = data.with_columns(
+            hh_adults=adults,
+            hh_children=(pl.col("hh_size").cast(pl.Int32) - adults),
+        )
+
         data = data.with_columns(
             hid=(
                 pl.lit(year).cast(pl.String) + pl.col("hid").cast(pl.String)
