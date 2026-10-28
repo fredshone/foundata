@@ -672,6 +672,7 @@ def runner(
             "hh_children",
             "hh_location",
         ],
+        per_col_bins={"age": 10},
     )
     binned_attributes = post_process.fill_nulls(binned_attributes)
     write_table(binned_attributes, output, "binned_attributes", csv)
