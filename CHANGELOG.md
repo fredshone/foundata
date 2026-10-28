@@ -7,6 +7,16 @@ and give the section a date (or version) when a batch output is published.
 
 ## 2026-10-28 
 
+### Changed
+
+- **NTS diary sample and weight.** NTS now keeps only fully productive
+  households (`W1 = 1`). Partially productive households include members who
+  returned no diary, whose 7 blank days were loaded as stay-at-home plans
+  (18,542 persons). The NTS `weight` is now the diary-sample weight `W2`
+  instead of the interview weight `W3`. Persons with no trips all week are
+  assumed to be at home every day; some may have been away (see
+  `docs/sources.md`).
+
 ### Fixed
 
 - **Trip and activity `seq` numbering.** cmap, odin, qhts, vista and some

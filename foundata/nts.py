@@ -40,6 +40,9 @@ def load(
     trips = load_trips(data_root, trips_config)
 
     days = load_days(data_root, days_config)
+    # drop the days and trips of persons outside the diary sample
+    days = days.join(attributes.select("pid"), on="pid", how="semi")
+    trips = trips.join(attributes.select("pid"), on="pid", how="semi")
     trips, attributes = split_days(days, trips, attributes)
 
     attributes = attributes.with_columns(
@@ -97,6 +100,18 @@ def load_households(
     )
     hhs = location.add(hhs, source="nts")
     hhs = hhs.filter(pl.col("hid").is_not_null())
+
+    # keep the diary sample: in partially productive households (W1 = 0)
+    # some members returned no diary, so their blank days are missing data,
+    # not days at home. Fully productive households have all 7 days filled in
+    # by everyone, a blank day counting as filled in only if no journeys made,
+    # so every blank day is kept as a stay-at-home plan (including persons
+    # who never travel, though some of them may have been away all week).
+    n_hhs = hhs.height
+    hhs = hhs.filter(pl.col("diary_sample") == 1).drop("diary_sample")
+    logger.info(
+        f"Removed {n_hhs - hhs.height}/{n_hhs} NTS households outside the diary sample"
+    )
 
     return hhs
 

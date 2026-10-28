@@ -17,7 +17,8 @@ column_mappings:
     # NumMCycle: hh_motorcycles
     # BlueBdg_B01ID: disabled
     # NumLicHolders: num_license_holders
-    W3: weight
+    W2: weight  # diary-sample household weight
+    W1: diary_sample  # 1 fully productive (all diaries complete), 0 partially
 
 
 dwelling:

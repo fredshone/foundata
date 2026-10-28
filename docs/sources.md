@@ -59,6 +59,16 @@ UK National Travel Survey, DfT (Great Britain to 2012, England from 2013).
   distance is derived from stages. "Day trip / just walk" purposes are
   resolved to the previous activity. `relationship` is only about 56%
   complete.
+- **Diary sample:** only fully productive households (`W1 = 1`, every member
+  returned a complete diary) are kept, weighted by the diary-sample weight
+  `W2`. Partially productive households are dropped, since their blank days
+  are missing diaries rather than days at home.
+- **Stay-at-home days (assumption):** the released data has no per-day
+  "no journeys" code, so a diary day with no trips is assumed to be a day at
+  home. This includes the ~4% of persons with no trips all week, who get 7
+  stay-at-home plans, although some will really have been away (e.g.
+  abroad) all week. Walks under a mile are only recorded on one diary day,
+  so a stay-at-home day may hide a short walk.
 
 ### LTDS
 London Travel Demand Survey, TfL.
