@@ -27,7 +27,7 @@ Options:
   -s, --select SOURCE...                              Sources to process (e.g. -s nhts ktdb, or -s nhts,ktdb). Defaults to all.
   -x, --omit SOURCE...                                Sources to omit (e.g. -x nhts ktdb, or -x nhts,ktdb).
   --open                                              Run only the open-data sources (nhts, cmap, vista, qhts, ktdb, mexico, argentina, uruguay, chile). Overrides --select and --omit.
-  -hb, --home-based / -ab, --any-based                Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).  [default: home-based]
+  -hb, --home-based / -ab, --any-based                Whether to only include home-based plans (i.e. those that start and end at home, with some time spent at home before the first trip and after the last).  [default: home-based]
   -fc, --filter-consecutive / -ac, --any-consecutive  Whether to filter out consecutive home, work and education activities.  [default: filter-consecutive]
   -d, --diagnostics                                   Also produce the anomaly-detection reports and supplementary activity heatmaps.
   --keep-ids                                          Also write original_ids, mapping each pid and hid back to the survey's own ids. It re-identifies records, so keep it private.

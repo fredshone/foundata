@@ -57,6 +57,20 @@ def day_wrap(trips: pl.DataFrame) -> pl.DataFrame:
     return trips
 
 
+def enumerate_trips(trips: pl.DataFrame) -> pl.DataFrame:
+    """Order each plan's trips by start time and number them 0, 1, 2, ...
+
+    Loaders may number from 1, and filters that drop single trips (e.g.
+    utils.combine_consecutive_acts) leave gaps; activity seq is derived from
+    trip seq, so both need it to be a 0-indexed position. Ties on start time
+    keep the source's seq order. Expects day-wrapped, non-null times.
+    """
+    order = ["pid", "tst", "tet"] + (["seq"] if "seq" in trips.columns else [])
+    return trips.sort(order, maintain_order=True).with_columns(
+        seq=pl.int_range(pl.len(), dtype=pl.Int8).over("pid")
+    )
+
+
 def _cast_df(df: pl.DataFrame, template: dict) -> pl.DataFrame:
     for col, cnfg in template.items():
         if col not in df.columns:

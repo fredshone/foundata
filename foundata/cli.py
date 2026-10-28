@@ -184,7 +184,7 @@ HomeBasedOpt = Annotated[
     typer.Option(
         "--home-based/--any-based",
         "-hb/-ab",
-        help="Whether to only include home-based trips (i.e. those with 'home' as the origin or destination activity).",
+        help="Whether to only include home-based plans (i.e. those that start and end at home, with some time spent at home before the first trip and after the last).",
     ),
 ]
 FilterConsecutiveOpt = Annotated[

@@ -21,9 +21,11 @@ def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
     table_logger.record(
         "late end",
         table_logger.pct(nn, n),
-        f"Removed {nn}/{n} trips that end after {time_limit} minutes ({table_logger.pct(nn, n)})"
-        if nn
-        else None,
+        (
+            f"Removed {nn}/{n} trips that end after {time_limit} minutes ({table_logger.pct(nn, n)})"
+            if nn
+            else None
+        ),
     )
     return clean_trips
 
@@ -31,12 +33,13 @@ def trips_on_endings(trips: pl.DataFrame, time_limit: int = 1440):
 def home_based(
     attributes: Optional[pl.DataFrame], trips: pl.DataFrame, on: str = "pid"
 ) -> tuple[Optional[pl.DataFrame], pl.DataFrame]:
-    """Filter out non-home-based plans (first and last activity must be home).
+    """Filter out non-home-based plans.
+    First and last activity must be non-zero duration home activities.
 
     Args:
         attributes: DataFrame of plan attributes with a column matching `on`.
             If None, only trips are filtered.
-        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact".
+        trips: DataFrame of trips with columns matching `on`, "seq", "oact", "dact", "tst".
         on: Column name to join on (default "pid").
 
     Returns:
@@ -54,10 +57,15 @@ def home_based(
         trips.group_by(on)
         .agg(
             pl.col("oact").sort_by("seq").first().alias("first_act"),
+            pl.col("tst").sort_by("seq").first().alias("first_tst"),
             pl.col("dact").sort_by("seq").last().alias("last_act"),
+            pl.col("tst").sort_by("seq").last().alias("last_tst"),
         )
         .filter(
-            (pl.col("first_act") != "home") | (pl.col("last_act") != "home")
+            (pl.col("first_act") != "home")
+            | (pl.col("last_act") != "home")
+            | (pl.col("first_tst") == 0)
+            | (pl.col("last_tst") == 1440)
         )
         .select(on)
     )
@@ -366,9 +374,11 @@ def trips_on_attribute_pids(
     table_logger.record(
         "orphan trips",
         table_logger.pct(nn, n),
-        f"Removed {nn}/{n} plans with pids not found in attributes ({table_logger.pct(nn, n)})"
-        if nn
-        else None,
+        (
+            f"Removed {nn}/{n} plans with pids not found in attributes ({table_logger.pct(nn, n)})"
+            if nn
+            else None
+        ),
     )
     return attributes, clean_trips
 
@@ -403,9 +413,11 @@ def activity_consistency(
     table_logger.record(
         "act chain",
         table_logger.pct(nn, n),
-        f"Removed {nn}/{n} plans due to activity chain inconsistencies ({table_logger.pct(nn, n)})"
-        if nn
-        else None,
+        (
+            f"Removed {nn}/{n} plans due to activity chain inconsistencies ({table_logger.pct(nn, n)})"
+            if nn
+            else None
+        ),
     )
     return clean_attributes, clean_trips
 

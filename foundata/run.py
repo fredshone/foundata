@@ -56,6 +56,7 @@ def process_source(attributes, trips, source_name):
     attributes = utils.split_employment_type(attributes)
     attributes = utils.correct_child_employment(attributes)
     attributes, trips = filter.time_consistent(attributes, trips, on="pid")
+    trips = fix.enumerate_trips(trips)
     utils.check_overlap(
         attributes, trips, on="pid", lhs_name="attributes", rhs_name="trips"
     )
@@ -614,6 +615,7 @@ def runner(
         all_trips = utils.combine_consecutive_acts(
             all_trips, non_consecutive_types=non_consecutive_types
         )
+    all_trips = fix.enumerate_trips(all_trips)
 
     # the locations households and trips still refer to
     used = pl.concat(

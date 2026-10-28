@@ -161,8 +161,12 @@ def test_time_consistent_chains_all_three():
 def make_trips_with_acts(
     pids: list[str], seqs: list[int], oacts: list[str], dacts: list[str]
 ) -> pl.DataFrame:
+    # times clear of midnight, so only home_based's zero-length home checks
+    # look at them
     return pl.DataFrame(
         {"pid": pids, "seq": seqs, "oact": oacts, "dact": dacts}
+    ).with_columns(
+        tst=(pl.col("seq") + 1) * 60, tet=(pl.col("seq") + 1) * 60 + 10
     )
 
 
@@ -219,10 +223,43 @@ def test_home_based_uses_seq_order():
             "seq": [1, 0],  # reversed
             "oact": ["work", "home"],
             "dact": ["home", "work"],
+            "tst": [600, 480],
+            "tet": [620, 500],
         }
     )
     clean_attrs, clean_trips = filter.home_based(attrs, trips)
     assert set(clean_attrs["pid"]) == {"p1"}
+
+
+def test_home_based_removes_zero_length_first_home():
+    # p1's first trip leaves at minute 0, so its first home lasts no time
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2", "p2"],
+        [0, 1, 0, 1],
+        ["home", "shop", "home", "shop"],
+        ["shop", "home", "shop", "home"],
+    ).with_columns(tst=pl.Series([0, 10, 1, 10]))
+    clean_attrs, clean_trips = filter.home_based(attrs, trips)
+    assert set(clean_attrs["pid"]) == {"p2"}
+    assert set(clean_trips["pid"]) == {"p2"}
+
+
+def test_home_based_removes_zero_length_last_home():
+    # p1's last trip leaves at minute 1440, so its last home lasts no time
+    attrs = make_attrs(["p1", "p2"])
+    trips = make_trips_with_acts(
+        ["p1", "p1", "p2", "p2"],
+        [0, 1, 0, 1],
+        ["home", "shop", "home", "shop"],
+        ["shop", "home", "shop", "home"],
+    ).with_columns(
+        tst=pl.Series([600, 1440, 600, 1430]),
+        tet=pl.Series([610, 1440, 610, 1440]),
+    )
+    clean_attrs, clean_trips = filter.home_based(attrs, trips)
+    assert set(clean_attrs["pid"]) == {"p2"}
+    assert set(clean_trips["pid"]) == {"p2"}
 
 
 def test_home_based_keeps_pids_with_no_trips():

@@ -69,3 +69,37 @@ def test_day_wrap_does_not_cascade_beyond_one_day():
     # beyond +2880 would mean a second (cascading) shift was applied
     assert result["tst"].max() < 1000 + 2 * 1440
     assert result["tet"].max() < 900 + 2 * 1440
+
+
+def test_enumerate_trips_from_zero_by_start_time():
+    trips = pl.DataFrame(
+        {
+            "pid": [1, 1, 1, 2, 2, 2],
+            "seq": [5, 1, 2, 0, 3, 4],
+            "tst": [300, 100, 200, 50, 60, 60],
+            "tet": [310, 110, 210, 55, 60, 70],
+            "dact": ["c", "a", "b", "x", "y", "z"],
+        },
+        schema_overrides={"seq": pl.Int8},
+    )
+    result = fix.enumerate_trips(trips)
+    assert result["pid"].to_list() == [1, 1, 1, 2, 2, 2]
+    assert result["seq"].to_list() == [0, 1, 2, 0, 1, 2]
+    assert result["dact"].to_list() == ["a", "b", "c", "x", "y", "z"]
+    assert result["seq"].dtype == pl.Int8
+
+
+def test_enumerate_trips_orders_by_time_not_source_seq():
+    # source seq disagrees with the timing; start time wins
+    trips = pl.DataFrame(
+        {
+            "pid": [1, 1],
+            "seq": [1, 2],
+            "tst": [500, 100],
+            "tet": [510, 110],
+            "dact": ["late", "early"],
+        }
+    )
+    result = fix.enumerate_trips(trips)
+    assert result["dact"].to_list() == ["early", "late"]
+    assert result["seq"].to_list() == [0, 1]
