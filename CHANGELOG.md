@@ -2,10 +2,29 @@
 
 Notable changes to foundata, especially fixes and changes that affect the
 outputs. Newest first. Add an entry under **Unreleased** with each change,
-and give the section a date (or version) when a batch output is published.
+and give the section a version and date when a release is made.
 
 
-## 2026-10-28 
+## Unreleased
+
+
+## 0.2.0 — 2026-10-29
+
+First tagged release.
+
+### Added
+
+- `hh_adults` and `hh_children` household counts for every source, from the
+  survey's own counts where given, else counted from the household roster
+  (null when the roster is incomplete or an age is unknown).
+- `veh_per_adult` category (`0`, `0-1`, `1+`, `unknown`) from `vehicles` and
+  `hh_adults`.
+- Metadata output (`metadata.json`).
+- Stratified sampler.
+- Weighted grid join.
+- Survey year in the grid join.
+- World tensor join.
+- Location documentation.
 
 ### Changed
 
@@ -16,6 +35,10 @@ and give the section a date (or version) when a batch output is published.
   instead of the interview weight `W3`. Persons with no trips all week are
   assumed to be at home every day; some may have been away (see
   `docs/sources.md`).
+- `age` is split into 10 quantile bins in `binned_attributes` (other numeric
+  columns keep 5).
+- Parquet is the default output format (`--csv` for CSV).
+- Removed the `_year` columns from the locations table.
 
 ### Fixed
 
@@ -36,51 +59,4 @@ and give the section a date (or version) when a batch output is published.
   starts at 0 or whose last trip starts at 1440.
 - **`--home-based` help text** described a trip-level filter; it now
   describes the plan-level one actually applied.
-
-## 2026-10-27
-
-### Added
-
-- `hh_adults` and `hh_children` household counts for every source, from the
-  survey's own counts where given, else counted from the household roster
-  (null when the roster is incomplete or an age is unknown).
-- `veh_per_adult` category (`0`, `0-1`, `1+`, `unknown`) from `vehicles` and
-  `hh_adults`.
-- Metadata output (`metadata.json`).
-
-### Fixed
-
 - Mexico: `EDAD` code 99 ("no sabe") is now an unknown age, not age 99.
-
-## 2026-10-26
-
-### Added
-
-- Stratified sampler.
-
-## 2026-10-23
-
-### Changed
-
-- Parquet is the default output format (`--csv` for CSV).
-
-### Added
-
-- Weighted grid join.
-
-## 2026-10-22
-
-### Added
-
-- Survey year in the grid join.
-- Location documentation.
-
-### Changed
-
-- Removed the `_year` columns from the locations table.
-
-## 2026-10-21
-
-### Added
-
-- World tensor join.
