@@ -110,14 +110,14 @@ def main(
 
     if regions_csv:
         # Multi-region mode: read regions CSV, fetch in batches, write combined output
-        with open(regions_csv) as f:
+        with open(regions_csv, encoding="utf-8") as f:
             regions = list(csv.DictReader(f))
 
         # Resume support: skip regions already written by a prior (rate-limited)
         # run rather than re-fetching and re-burning quota on them.
         done_codes: set[str] = set()
         if out_path.exists():
-            with open(out_path) as f:
+            with open(out_path, encoding="utf-8") as f:
                 done_codes = {row["region_code"] for row in csv.DictReader(f)}
             if done_codes:
                 print(
@@ -132,7 +132,7 @@ def main(
             f"{batch_size} ({start} → {end})..."
         )
         write_mode = "a" if done_codes else "w"
-        with open(out_path, write_mode) as f:
+        with open(out_path, write_mode, encoding="utf-8") as f:
             if not done_codes:
                 f.write("date,region_code,max_temp_c,precipitation_mm\n")
             total_rows = 0
@@ -158,7 +158,7 @@ def main(
         print(f"Fetching weather data from Open-Meteo ({start} → {end})...")
         dates, temps, precip = fetch_daily(lat, lon, start, end)
 
-        with open(out_path, "w") as f:
+        with open(out_path, "w", encoding="utf-8") as f:
             f.write("date,max_temp_c,precipitation_mm\n")
             for date, temp, pr in zip(dates, temps, precip):
                 temp_str = "" if temp is None else str(temp)

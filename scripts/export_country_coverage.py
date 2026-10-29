@@ -65,7 +65,7 @@ def source_countries() -> dict[str, list[str]]:
     """Map each foundata country code to the sources that write it."""
     coverage: dict[str, list[str]] = {}
     for path in sorted(SOURCE_DIR.glob("*.py")):
-        text = path.read_text()
+        text = path.read_text(encoding="utf-8")
         codes = {c for p in PATTERNS for c in p.findall(text)}
         for code in codes:
             coverage.setdefault(code, []).append(path.stem)

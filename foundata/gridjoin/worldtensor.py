@@ -71,7 +71,7 @@ class Config:
 
 
 def load_config(path: str | Path = CONFIG) -> Config:
-    raw = yaml.safe_load(Path(path).read_text()) or {}
+    raw = yaml.safe_load(Path(path).read_text(encoding="utf-8")) or {}
     weights = raw.get("weights") or {}
     sources, weight, problems = {}, {}, []
     if AREA in weights:
@@ -165,7 +165,9 @@ def preprocess(
     out.mkdir(parents=True, exist_ok=True)
     manifest_path = out / "manifest.json"
     manifest = (
-        json.loads(manifest_path.read_text()) if manifest_path.exists() else {}
+        json.loads(manifest_path.read_text(encoding="utf-8"))
+        if manifest_path.exists()
+        else {}
     )
     for var in list(manifest):
         entry = manifest[var]
@@ -197,7 +199,7 @@ def preprocess(
             _preprocess_layer(out, var, key, src, entry, force)
     if (
         not manifest_path.exists()
-        or json.loads(manifest_path.read_text()) != manifest
+        or json.loads(manifest_path.read_text(encoding="utf-8")) != manifest
     ):
         _write_manifest(manifest_path, manifest)
     return manifest
@@ -233,7 +235,7 @@ def _preprocess_layer(
 
 def _write_manifest(manifest_path: Path, manifest: dict) -> None:
     tmp = manifest_path.with_suffix(".tmp")
-    tmp.write_text(json.dumps(manifest, indent=2))
+    tmp.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
     os.replace(tmp, manifest_path)
 
 
@@ -336,7 +338,7 @@ def values(
     """
     config = config or default_config()
     out = cache / "worldtensor"
-    manifest = json.loads((out / "manifest.json").read_text())
+    manifest = json.loads((out / "manifest.json").read_text(encoding="utf-8"))
     missing = [v for v in config.layers if v not in manifest]
     if missing:
         raise KeyError(f"not preprocessed: {missing} (run preprocess first)")

@@ -57,7 +57,7 @@ def expand_root(root: str | Path) -> Path:
 
 
 def load_yaml_config(path: str | Path) -> dict:
-    with open(path) as handle:
+    with open(path, encoding="utf-8") as handle:
         return yaml.safe_load(handle)
 
 
@@ -554,7 +554,7 @@ def assign_education_to_escort(trips: pl.DataFrame) -> pl.DataFrame:
 
 @functools.lru_cache(maxsize=1)
 def _load_template() -> dict:
-    with open(template()) as f:
+    with open(template(), encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 

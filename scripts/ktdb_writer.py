@@ -179,7 +179,10 @@ def read_2010(path: Path) -> pl.DataFrame:
 def write_2010(data: pl.DataFrame, path: Path):
     path.parent.mkdir(parents=True, exist_ok=True)
     if path.suffix != ".xlsx":
-        path.write_text(data.write_csv(separator="\t", quote_style="never"))
+        path.write_text(
+            data.write_csv(separator="\t", quote_style="never"),
+            encoding="utf-8",
+        )
         return
     wb = openpyxl.Workbook()
     ws = wb.active

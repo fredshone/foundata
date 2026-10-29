@@ -62,7 +62,7 @@ def main():
         name = REGION_NAMES.get(code, code)
         rows.append((code, name, round(lat, 6), round(lon, 6)))
 
-    with open(OUT_CSV, "w", newline="") as f:
+    with open(OUT_CSV, "w", newline="", encoding="utf-8") as f:
         writer = csv.writer(f)
         writer.writerow(["region_code", "region_name", "lat", "lon"])
         writer.writerows(rows)

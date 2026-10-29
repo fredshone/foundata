@@ -21,8 +21,8 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 def _home_relative(path: Path) -> str:
     """Absolute *path* as ``~/...`` if under the home directory."""
     if path.is_relative_to(Path.home()):
-        return str(Path("~") / path.relative_to(Path.home()))
-    return str(path)
+        return (Path("~") / path.relative_to(Path.home())).as_posix()
+    return path.as_posix()
 
 
 def relative(path: str | Path | None) -> str | None:
@@ -33,7 +33,7 @@ def relative(path: str | Path | None) -> str | None:
         return None
     path = Path(path).expanduser().resolve()
     if path.is_relative_to(Path.cwd()):
-        return str(path.relative_to(Path.cwd()))
+        return path.relative_to(Path.cwd()).as_posix()
     return _home_relative(path)
 
 
@@ -126,5 +126,7 @@ def write(output: Path, **fields) -> Path:
         "code": code_version(),
     }
     path = Path(output) / FILENAME
-    path.write_text(json.dumps(meta, indent=2, default=str) + "\n")
+    path.write_text(
+        json.dumps(meta, indent=2, default=str) + "\n", encoding="utf-8"
+    )
     return path

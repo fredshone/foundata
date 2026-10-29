@@ -105,7 +105,7 @@ def load_survey(
     trip_mappings = trips_config["column_mappings"]
     raw_trips = read_table(survey / TRIPS_PATH, trip_mappings["trips"])
     legs = read_table(survey / LEGS_PATH, trip_mappings["legs"])
-    metadata = json.loads((survey / METADATA_PATH).read_text())
+    metadata = json.loads((survey / METADATA_PATH).read_text(encoding="utf-8"))
 
     hhs = load_households(
         read_table(survey / HOUSEHOLDS_PATH, hh_config["column_mappings"]),

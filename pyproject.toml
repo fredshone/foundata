@@ -5,7 +5,7 @@ description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "cml-pam>=0.3.2",
+    "cml-pam>=0.3.2; sys_platform != 'win32'",
     "fastexcel>=0.16.0",
     "ipykernel>=6.31.0",
     "ipython>=9.7.0",

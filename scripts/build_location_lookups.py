@@ -493,12 +493,12 @@ class Builder:
 def read_lock() -> dict[str, dict]:
     if not LOCK.exists():
         return {}
-    with LOCK.open() as f:
+    with LOCK.open(encoding="utf-8") as f:
         return {row["id"]: row for row in csv.DictReader(f)}
 
 
 def write_lock(lock: dict[str, dict]) -> None:
-    with LOCK.open("w", newline="") as f:
+    with LOCK.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
             f, fieldnames=["id", "url", "file", "sha256", "bytes", "retrieved"]
         )
@@ -555,7 +555,11 @@ def source_lookups(source: str) -> list[str]:
     stems = []
     for dictionary, key in (("hh", "home_location"), ("trip", "trip_location")):
         path = CONFIGS / source / f"{dictionary}_dictionary.yaml"
-        config = yaml.safe_load(path.read_text()) if path.exists() else {}
+        config = (
+            yaml.safe_load(path.read_text(encoding="utf-8"))
+            if path.exists()
+            else {}
+        )
         stems += location.geo_files(config.get(key))
     return list(dict.fromkeys(stems))
 
@@ -618,7 +622,10 @@ def nhts(b: Builder) -> set[str]:
     cmsa = census("census_cmsa_1999").set_crs("EPSG:4269")
     aliases = CONFIGS / "nhts" / "geo" / "msa_1999.aliases.yaml"
     nhts_code = {
-        c: n for n, c in yaml.safe_load(aliases.read_text())["cmsa"].items()
+        c: n
+        for n, c in yaml.safe_load(aliases.read_text(encoding="utf-8"))[
+            "cmsa"
+        ].items()
     }
     unmatched = sorted(set(cmsa.CMSA) - set(nhts_code))
     b.write(
@@ -917,7 +924,7 @@ def india(b: Builder) -> set[str]:
     c11 = gpd.read_parquet(b.fetch("census_districts_2011"))
     splits = pd.read_csv(b.fetch("india_district_splits"))
     alias_file = CONFIGS / "india" / "geo" / "district.aliases.yaml"
-    aliases = yaml.safe_load(alias_file.read_text())
+    aliases = yaml.safe_load(alias_file.read_text(encoding="utf-8"))
     names = aliases["names"]
     for table in (lgd, c11):
         table["st"] = table.stcode11.astype(str).str.zfill(2)
@@ -1082,7 +1089,9 @@ def mongolia(b: Builder) -> set[str]:
 
     # NSO units: region digit + aimag (2) + soum (2) [+ bag (2)]; survey
     # codes leave out the region digit
-    units = json.loads(b.fetch("nso_units").read_text())["variables"][0]
+    units = json.loads(b.fetch("nso_units").read_text(encoding="utf-8"))[
+        "variables"
+    ][0]
     soum_codes = [code[1:] for code in units["values"] if len(code) == 5]
     bags = [code[1:] for code in units["values"] if len(code) == 7]
 
@@ -1146,7 +1155,7 @@ def khoroo_polygons(path: Path) -> gpd.GeoDataFrame:
     """Khoroo map records (district, khoroo_number, geometry) as a frame."""
     from shapely.geometry import shape
 
-    records = json.loads(path.read_text())
+    records = json.loads(path.read_text(encoding="utf-8"))
     return gpd.GeoDataFrame(
         {
             "district": [r["district"] for r in records],

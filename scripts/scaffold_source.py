@@ -24,7 +24,7 @@ TEMPLATE_PATH = CONFIGS_ROOT / "core" / "template.yaml"
 
 
 def load_template() -> dict:
-    with open(TEMPLATE_PATH) as f:
+    with open(TEMPLATE_PATH, encoding="utf-8") as f:
         return yaml.safe_load(f)
 
 
@@ -330,16 +330,20 @@ def scaffold_source(source_name: str) -> None:
     person_yaml = build_person_yaml(template_attributes)
     trip_yaml = build_trip_yaml(template_trips)
 
-    (config_dir / "hh_dictionary.yaml").write_text(hh_yaml)
-    (config_dir / "person_dictionary.yaml").write_text(person_yaml)
-    (config_dir / "trip_dictionary.yaml").write_text(trip_yaml)
+    (config_dir / "hh_dictionary.yaml").write_text(hh_yaml, encoding="utf-8")
+    (config_dir / "person_dictionary.yaml").write_text(
+        person_yaml, encoding="utf-8"
+    )
+    (config_dir / "trip_dictionary.yaml").write_text(
+        trip_yaml, encoding="utf-8"
+    )
 
     # Write Python module
     py_path = FOUNDATA_ROOT / f"{source_name}.py"
     if py_path.exists():
         print(f"ERROR: Python module already exists: {py_path}")
         sys.exit(1)
-    py_path.write_text(build_python_module(source_name))
+    py_path.write_text(build_python_module(source_name), encoding="utf-8")
 
     print(f"Scaffolded new source: {source_name!r}")
     print(f"  {config_dir}/hh_dictionary.yaml")

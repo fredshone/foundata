@@ -102,5 +102,7 @@ gdf = gpd.GeoDataFrame(
 
 args.out.parent.mkdir(parents=True, exist_ok=True)
 gdf.to_parquet(args.out)
-args.out.with_suffix(".json").write_text(json.dumps(meta, indent=2))
+args.out.with_suffix(".json").write_text(
+    json.dumps(meta, indent=2), encoding="utf-8"
+)
 logger.info(f"{len(gdf)} cells -> {args.out}")

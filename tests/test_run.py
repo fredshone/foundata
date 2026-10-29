@@ -79,7 +79,7 @@ def test_france_only_excluded_surveys(tmp_path):
 def test_france_survey_missing_table_fails_up_front(tmp_path):
     _survey(tmp_path, "a_2015")
     _survey(tmp_path, "b_2016", tables=False)
-    with pytest.raises(FileNotFoundError, match=r"b_2016/households\.parquet"):
+    with pytest.raises(FileNotFoundError, match=r"b_2016[/\\]households\.parquet"):
         france.survey_dirs(tmp_path, [])
 
 
